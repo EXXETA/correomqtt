@@ -1,0 +1,19 @@
+@import "global.css";
+
+.aboutView {
+    -fx-padding: 10;
+}
+
+.appIconAndName {
+    -fx-graphic: url("../icons/app-icon/Icon_64x64.png");
+    -fx-font-weight: bold;
+    -fx-font-size: 20;
+    -fx-font-family: "sans-serif";
+    -fx-padding: 20 0 20 0;
+}
+
+.aboutHeadline {
+    -fx-font-family: "sans-serif";
+    -fx-font-weight: bold;
+    -fx-padding: 10 0 0 0;
+}

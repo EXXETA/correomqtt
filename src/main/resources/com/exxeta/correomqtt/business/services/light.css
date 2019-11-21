@@ -1,0 +1,235 @@
+.root {
+    -fx-base: #ececec;
+}
+
+.basicColors {
+    -fx-background-color: #ececec;
+    -fx-text-fill: black;
+}
+
+.styled-text-area {
+    -fx-background-color: #ececec;
+}
+
+/*connections.css*/
+.errorOnSave {
+    -fx-background-color: #e8c1c1;
+}
+
+.inactive {
+    -fx-text-fill: #666666;
+}
+
+.editMenu {
+    -fx-background-color: white;
+    -fx-border-color: lightgray;
+}
+
+.codeAreaPayload {
+    -fx-background-color: #FFFFFF;
+}
+
+/*controlBarView.css*/
+.brokerInfo {
+    -fx-text-fill: #666666;
+}
+
+.brokerStatus {
+    -fx-text-fill: #aaaaaa;
+}
+
+/*detailView.css*/
+.codeArea {
+    -fx-background-color: #FFFFFF;
+}
+
+.emptyPayloadLabel{
+    -fx-text-fill: grey;
+}
+
+/*global.css*/
+.tag {
+    -fx-background-color: LightSkyBlue;
+    -fx-text-fill: white;
+}
+
+.tag.special {
+    -fx-background-color: coral;
+}
+
+.tag.secure {
+    -fx-background-color: #1a611a;
+}
+
+.tag.inactive {
+    -fx-background-color: #999999;
+}
+
+.secondaryText {
+    -fx-text-fill: #666666;
+}
+
+.secondaryText.dirty {
+    -fx-text-fill: #666666;
+}
+
+.list-view .list-cell:odd {
+    -fx-background-color: #FFFFFF;
+}
+
+.list-view .list-cell:even {
+    -fx-background-color: #eeeeee;
+}
+
+.list-view .list-cell:filled:selected, .list-view  .list-cell:filled:selected {
+    -fx-background-color: #85b2d7;
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected {
+    -fx-background-color: #2180d7;
+}
+
+.list-view .list-cell:filled:selected .secondaryText {
+    -fx-text-fill: #222222;
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .secondaryText {
+    -fx-text-fill: #eeeeee;
+}
+
+.list-view .list-cell:filled:selected .secondaryText.dirty {
+    -fx-text-fill: #666666;
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .secondaryText.dirty {
+    -fx-text-fill: #dddddd;
+}
+
+.list-view .list-cell .dirty {
+    -fx-text-fill: #931410;
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected:odd  {
+    -fx-background-color: #FFFFFF;
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected:even  {
+    -fx-background-color: #eeeeee;
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .stdLine{
+    -fx-text-fill: #000000;
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .firstLine {
+    -fx-text-fill: #000000;
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .secondaryText {
+    -fx-text-fill: #666666;
+}
+
+.combo-box .list-view .list-cell:hover {
+    -fx-background-color: #2180d7 !important;
+}
+
+.combo-box .list-view .list-cell:hover .stdLine {
+    -fx-text-fill: #FFFFFF  !important;
+}
+
+.combo-box .list-view .list-cell:hover .firstLine {
+    -fx-text-fill: #FFFFFF  !important;
+}
+
+.combo-box .list-view .list-cell:hover .secondLine {
+    -fx-text-fill: #FFFFFF  !important;
+}
+
+.emptyError {
+    -fx-background-color: #e8c1c1;
+}
+
+.hello {
+    -fx-background-color: blue;
+}
+
+*:disabled .styled-text-area .text {
+    -fx-fill: #bbbbbb;
+}
+
+*:disabled .styled-text-area{
+    -fx-background-color: #f5f5f5;
+}
+
+/*mainView.css*/
+.tab.dirty .tab-label {
+    -fx-text-fill: #8e1dd3;
+}
+
+/*messageView.css*/
+.published {
+    -fx-text-fill: gray;
+}
+
+.succeeded {
+    -fx-text-fill: black;
+}
+
+.failed {
+    -fx-text-fill: red;
+}
+
+/*.publishBody.css*/
+.codeArea {
+    -fx-background-color: #FFFFFF;
+}
+
+.codeAreaPayload {
+    -fx-background-color: #FFFFFF;
+}
+
+/*richtextfx.css*/
+.commentXML {
+    -fx-fill: #939393;
+}
+
+.tagmarkXML {
+    -fx-fill: #273e7a;
+
+}
+
+.anytagXML {
+    -fx-fill: #273e7a;
+}
+
+.attributeXML {
+    -fx-fill: #a52c2f;
+}
+
+.avalueXML {
+    -fx-fill: #1a611a;
+}
+
+.braceJSON, .bracketJSON {
+    -fx-fill: #273e7a;
+}
+
+.keyJSON {
+    -fx-fill: #273e7a;
+}
+
+.valueJSON {
+    -fx-fill: #1a611a;
+}
+
+.numberJSON {
+    -fx-fill: #a52c2f;
+}
+
+.booleanJSON {
+    -fx-fill: #a56c00;
+}
+
+.nullJSON {
+    -fx-fill: #505050;
+}

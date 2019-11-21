@@ -1,0 +1,9 @@
+@import "global.css";
+
+.black .trash-alt-solid {
+    -fx-graphic: url('../icons/trash-alt-solid-black.png');
+}
+
+.white .trash-alt-solid {
+    -fx-graphic: url('../icons/trash-alt-solid-white.png');
+}

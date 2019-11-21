@@ -1,0 +1,68 @@
+@import "global.css";
+
+/*.tab.dirty {
+    -fx-background-color: linear-gradient(to bottom, derive(#ffa19c, 30%) 40%, derive(#ffa19c, -5%) 95%);
+    -fx-border-color: #7c0004;
+}*/
+
+.tab .tab-label {
+    -fx-padding: 0 10 0 2;
+}
+
+.tab.connection .tab-label {
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: contain;
+    -fx-background-position: left center;
+}
+
+.tab.connection.disconnecting .tab-label {
+    -fx-padding: 0 10 0 20;
+    -fx-background-image: url('../icons/wifi-solid-yellow.png');
+}
+
+.tab.connection.graceful .tab-label {
+    -fx-padding: 0 10 0 20;
+    -fx-background-image: url('../icons/wifi-solid-gray.png');
+}
+
+.tab.connection.ungraceful .tab-label {
+    -fx-padding: 0 10 0 20;
+    -fx-background-image: url('../icons/wifi-solid-red.png');
+}
+
+.tab.connection.connecting .tab-label {
+    -fx-padding: 0 10 0 20;
+    -fx-background-image: url('../icons/wifi-solid-yellow.png');
+}
+
+.tab.connection.connected .tab-label {
+    -fx-padding: 0 10 0 20;
+}
+
+.black .tab.connection.connected .tab-label {
+    -fx-background-image: url('../icons/wifi-solid-green-black.png');
+}
+
+.white .tab.connection.connected .tab-label {
+    -fx-background-image: url('../icons/wifi-solid-green-white.png');
+}
+
+.tab.connection.onboarding .tab-label {
+    -fx-padding: 0 10 0 2;
+    -fx-background-image: none;
+}
+
+.tab.addConnectionTab .tab-label {
+    -fx-padding: 0 10 0 10;
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: contain;
+    -fx-background-position: center center;
+}
+
+.black .tab.addConnectionTab .tab-label {
+    -fx-background-image: url('../icons/plus-solid-black.png');
+}
+
+.white .tab.addConnectionTab .tab-label {
+    -fx-background-image: url('../icons/plus-solid-white.png');
+}

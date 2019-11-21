@@ -1,0 +1,84 @@
+@import "global.css";
+
+.black .checked {
+    -fx-graphic: url('../icons/check-checked-black.png');
+}
+
+.white .checked {
+    -fx-graphic: url('../icons/check-checked-white.png');
+}
+
+.black .unchecked {
+    -fx-graphic: url('../icons/check-unchecked-black.png');
+}
+
+.white .unchecked {
+    -fx-graphic: url('../icons/check-unchecked-white.png');
+}
+
+.black .trash-alt-solid {
+    -fx-graphic: url('../icons/trash-alt-solid-black.png');
+}
+
+.white .trash-alt-solid {
+    -fx-graphic: url('../icons/trash-alt-solid-white.png');
+}
+
+.black .file-upload-solid {
+    -fx-graphic: url('../icons/file-upload-solid-black.png');
+}
+
+.white .file-upload-solid {
+    -fx-graphic: url('../icons/file-upload-solid-white.png');
+}
+
+.black .window-maximize-regular {
+    -fx-graphic: url('../icons/window-maximize-regular-black.png');
+}
+
+.white .window-maximize-regular {
+    -fx-graphic: url('../icons/window-maximize-regular-white.png');
+}
+
+.black .columns-solid-without-toolbar {
+    -fx-graphic: url('../icons/columns-solid-without-toolbar-black.png');
+}
+
+.white .columns-solid-without-toolbar {
+    -fx-graphic: url('../icons/columns-solid-without-toolbar-white.png');
+}
+
+.black .broom-solid {
+    -fx-graphic: url('../icons/broom-solid-black.png');
+}
+
+.white .broom-solid {
+    -fx-graphic: url('../icons/broom-solid-white.png');
+}
+
+.messageSearchTextField {
+    -fx-background-radius: 3 0 0 3;
+}
+
+.messageSearchClear {
+    -fx-background-radius: 0 3 3 0;
+}
+
+.subscriptionAnchorPane {
+    -fx-min-height: 30;
+}
+
+.subscriptionTopicLabel {
+    -fx-font-weight: bold;
+}
+
+.subscriptionList .list-cell:empty {
+    -fx-padding: 0;
+    -fx-pref-height: 28;
+}
+
+
+.subscriptionList .list-cell {
+    -fx-padding: 0;
+}
+

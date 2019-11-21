@@ -1,0 +1,279 @@
+.root {
+    -fx-base: #282828;
+    -fx-background: #282828;
+    -fx-color: #222222;
+    -fx-control-inner-background: #222222;
+    /* version of -fx-control-inner-background for alternative rows */
+    -fx-control-inner-background-alt: derive(-fx-control-inner-background, 2.5%);
+
+    /* text colors depending on background's brightness */
+    -fx-light-text-color: rgb(220, 220, 220);
+    -fx-mid-text-color: rgb(100, 100, 100);
+    -fx-dark-text-color: rgb(20, 20, 20);
+
+    /* A bright blue for highlighting/accenting objects.  For example: selected
+     * text; selected items in menus, lists, trees, and tables; progress bars */
+    -fx-accent: rgb(0, 80, 100);
+
+    /* color of non-focused yet selected elements */
+    -fx-selection-bar-non-focused: rgb(50, 50, 50);
+}
+
+/* Fix derived prompt color for text fields */
+.text-input {
+    -fx-background-color: #161616;
+    -fx-prompt-text-fill: #FFFFFF;
+}
+
+/* Keep prompt invisible when focused (above color fix overrides it) */
+.text-input:focused {
+    -fx-prompt-text-fill: transparent;
+}
+
+/* Fix scroll bar buttons arrows colors */
+.scroll-bar > .increment-button > .increment-arrow,
+.scroll-bar > .decrement-button > .decrement-arrow {
+    -fx-background-color: -fx-mark-highlight-color, rgb(220, 220, 220);
+}
+
+.scroll-bar > .increment-button:hover > .increment-arrow,
+.scroll-bar > .decrement-button:hover > .decrement-arrow {
+    -fx-background-color: -fx-mark-highlight-color, rgb(240, 240, 240);
+}
+
+.scroll-bar > .increment-button:pressed > .increment-arrow,
+.scroll-bar > .decrement-button:pressed > .decrement-arrow {
+    -fx-background-color: -fx-mark-highlight-color, rgb(255, 255, 255);
+}
+.basicColors {
+    -fx-background-color: #1f1f1f;
+    -fx-text-fill: #FFFFFF;
+}
+.styled-text-area {
+    -fx-background-color: #1f1f1f;
+}
+
+/*connections.css*/
+.errorOnSave {
+    -fx-background-color: #e8c1c1;
+}
+
+.inactive {
+    -fx-text-fill: #666666;
+}
+
+.editMenu {
+    -fx-background-color: black;
+    -fx-border-color: gray;
+}
+
+.codeAreaPayload {
+    -fx-background-color: #111111;
+    -fx-text-fill: #FFFFFF;
+}
+
+/*controlBarView.css*/
+.brokerInfo {
+    -fx-text-fill: #aaaaaa;
+}
+
+.brokerStatus {
+    -fx-text-fill: #666666;
+}
+
+/*detailView.css*/
+.codeArea {
+    -fx-background-color: #8a8a8a;
+}
+
+.emptyPayloadLabel{
+    -fx-text-fill: grey;
+}
+
+/*global.css*/
+.tag {
+    -fx-background-color: #125491;
+    -fx-text-fill: #FFFFFF;
+}
+
+.tag.special {
+    -fx-background-color: coral;
+}
+
+.tag.secure {
+    -fx-background-color: #1a611a;
+}
+
+.tag.inactive {
+    -fx-background-color: #999999;
+}
+
+.secondaryText {
+    -fx-text-fill: #666666;
+}
+
+.secondaryText.dirty {
+    -fx-text-fill: #666666;
+}
+
+.list-view .list-cell .topic{
+    -fx-text-fill: #FFFFFF;
+}
+
+.list-view .list-cell:odd {
+    -fx-background-color: #333333;
+}
+
+.list-view .list-cell:odd {
+    -fx-background-color: #222222;
+}
+
+.list-view .list-cell:even {
+    -fx-background-color: #333333;
+}
+
+.list-view .list-cell:filled:selected, .list-view  .list-cell:filled:selected {
+    -fx-background-color: #195494;
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected {
+    -fx-background-color: #2180d7;
+}
+
+.list-view .list-cell:filled:selected .secondaryText {
+    -fx-text-fill: #cccccc;
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .secondaryText {
+    -fx-text-fill: #eeeeee;
+}
+
+.list-view .list-cell:filled:selected .secondaryText.dirty {
+    -fx-text-fill: #666666;
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .secondaryText.dirty {
+    -fx-text-fill: #dddddd;
+}
+
+.list-view .list-cell .dirty {
+    -fx-text-fill: #e21e18;
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected:odd  {
+    -fx-background-color: #6e6e6e;
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected:even  {
+    -fx-background-color: #8a8a8a;
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .stdLine{
+    -fx-text-fill: #FFFFFF;
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .firstLine {
+    -fx-text-fill: #FFFFFF;
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .secondaryText {
+    -fx-text-fill: #666666;
+}
+
+.combo-box .list-view .list-cell:hover {
+    -fx-background-color: #2180d7 !important;
+}
+
+.combo-box .list-view .list-cell:hover .stdLine {
+    -fx-text-fill: #FFFFFF  !important;
+}
+
+.combo-box .list-view .list-cell:hover .firstLine {
+    -fx-text-fill: #FFFFFF  !important;
+}
+
+.combo-box .list-view .list-cell:hover .secondLine {
+    -fx-text-fill: #FFFFFF  !important;
+}
+
+.emptyError {
+    -fx-background-color: #e8c1c1;
+}
+
+.hello {
+    -fx-background-color: blue;
+}
+
+*:disabled .styled-text-area .text {
+    -fx-fill: #bbbbbb;
+}
+
+*:disabled .styled-text-area{
+    -fx-background-color: #f5f5f5;
+}
+
+/*mainView.css*/
+.tab.dirty .tab-label {
+    -fx-text-fill: #8e1dd3;
+}
+
+/*messageView.css*/
+.published {
+    -fx-text-fill: gray;
+}
+
+.succeeded {
+    -fx-text-fill: black;
+}
+
+.failed {
+    -fx-text-fill: red;
+}
+
+/*.publishBody.css*/
+
+/*richtextfx.css*/
+.commentXML {
+    -fx-fill: #939393;
+}
+
+.tagmarkXML {
+    -fx-fill: #273e7a;
+
+}
+
+.anytagXML {
+    -fx-fill: #273e7a;
+}
+
+.attributeXML {
+    -fx-fill: #a52c2f;
+}
+
+.avalueXML {
+    -fx-fill: #1a611a;
+}
+
+.braceJSON, .bracketJSON {
+    -fx-fill: #273e7a;
+}
+
+.keyJSON {
+    -fx-fill: #273e7a;
+}
+
+.valueJSON {
+    -fx-fill: #1a611a;
+}
+
+.numberJSON {
+    -fx-fill: #a52c2f;
+}
+
+.booleanJSON {
+    -fx-fill: #a56c00;
+}
+
+.nullJSON {
+    -fx-fill: #505050;
+}

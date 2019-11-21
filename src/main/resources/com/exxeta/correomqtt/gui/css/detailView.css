@@ -1,0 +1,104 @@
+@import "global.css";
+@import "richtextfx.css";
+
+.detailTopic {
+    -fx-font-family:"sans-serif";
+    -fx-font-weight:  bold;
+}
+
+.metaHolder {
+    -fx-padding: 5 5 5 5;
+}
+
+.detailView .tag {
+    -fx-padding: 2 5 2 10;
+    -fx-border-insets: 0 0 0 5;
+    -fx-background-insets: 0 0 0 5;
+}
+
+.angle-down-solid {
+    -fx-background-radius: 0 3 3 0;
+}
+
+.angle-up-solid {
+    -fx-background-radius: 3 0 0 3;
+}
+
+.black .angle-down-solid {
+    -fx-graphic: url('../icons/angle-down-solid-black.png');
+}
+
+.white .angle-down-solid {
+    -fx-graphic: url('../icons/angle-down-solid-white.png');
+}
+
+.black .angle-up-solid {
+    -fx-graphic: url('../icons/angle-up-solid-black.png');
+
+}
+
+.white .angle-up-solid {
+    -fx-graphic: url('../icons/angle-up-solid-white.png');
+}
+
+.black .times-solid {
+    -fx-graphic: url('../icons/times-solid-black.png');
+}
+
+.white .times-solid {
+    -fx-graphic: url('../icons/times-solid-white.png');
+}
+
+.emptyPayloadLabel{
+    -fx-content-display: center;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+}
+
+.black .save-solid {
+    -fx-graphic: url("../icons/save-solid-black.png");
+}
+
+.white .save-solid {
+    -fx-graphic: url("../icons/save-solid-white.png");
+}
+
+.black .search-solid {
+    -fx-graphic: url("../icons/search-solid-black.png");
+}
+
+.white .search-solid {
+    -fx-graphic: url("../icons/search-solid-white.png");
+}
+
+.black .highlighter-solid {
+    -fx-graphic: url("../icons/highlighter-solid-black.png");
+}
+
+.white .highlighter-solid {
+    -fx-graphic: url("../icons/highlighter-solid-white.png");
+}
+
+.black .check-solid .label {
+    -fx-background-image:url('../icons/check-solid-black.png');
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: left 0 center;
+}
+
+.white .check-solid .label{
+    -fx-background-image:url('../icons/check-solid-white.png');
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: left 0 center;
+}
+
+.black .tasks-solid {
+    -fx-graphic: url("../icons/tasks-solid-black.png");
+}
+
+.white .tasks-solid {
+    -fx-graphic: url("../icons/tasks-solid-white.png");
+}
+
+.menuItem .label{
+    -fx-padding: 0 0 0 20;
+}

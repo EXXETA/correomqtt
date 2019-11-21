@@ -1,0 +1,24 @@
+
+.commentXML {
+    -fx-font-style: italic;
+}
+
+.anytagXML {
+    -fx-font-weight: bold;
+}
+
+.keyJSON {
+    -fx-font-weight: bold;
+}
+
+.numberJSON {
+    -fx-font-weight: bold;
+}
+
+.booleanJSON {
+    -fx-font-weight: bold;
+}
+
+.nullJSON {
+    -fx-font-weight: bold;
+}

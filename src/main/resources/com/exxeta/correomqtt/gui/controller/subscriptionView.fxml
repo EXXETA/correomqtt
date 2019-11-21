@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane fx:id="subscribeBodyViewAnchor" minWidth="410.0" stylesheets="@../css/subscribeBody.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.exxeta.correomqtt.gui.controller.SubscriptionViewController">
+    <SplitPane fx:id="splitPane" orientation="VERTICAL" prefHeight="500.0" prefWidth="300.0" styleClass="noBorder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <AnchorPane minHeight="150.0" minWidth="0.0" prefHeight="322.0" prefWidth="354.0" styleClass="noBorder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                <Label alignment="CENTER" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="SUBSCRIBE">
+                    <styleClass>
+                        <String fx:value="basicColors" />
+                        <String fx:value="sectionHeadline" />
+                    </styleClass>
+                </Label>
+                <HBox maxHeight="34.0" minHeight="34.0">
+                    <children>
+                        <ComboBox fx:id="subscribeTopicComboBox" editable="true" maxWidth="1.7976931348623157E308" onKeyPressed="#onClickSubscribeKey" promptText="Topic" HBox.hgrow="ALWAYS">
+                            <HBox.margin>
+                                <Insets right="5.0" />
+                            </HBox.margin>
+                        </ComboBox>
+                        <ComboBox fx:id="qosComboBox" maxWidth="-Infinity" minWidth="-Infinity" prefHeight="27.0" prefWidth="90.0" promptText="QoS 0" HBox.hgrow="NEVER">
+                            <tooltip>
+                                <Tooltip text="%commonSelectQosTooltip" />
+                            </tooltip>
+                            <HBox.margin>
+                                <Insets right="5.0" />
+                            </HBox.margin>
+                        </ComboBox>
+                        <Button fx:id="subscribeBtn" maxWidth="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#onClickSubscribe" text="Subscribe" HBox.hgrow="NEVER">
+                            <tooltip>
+                                <Tooltip text="%subscriptionViewSubscribeTooltip" />
+                            </tooltip>
+                        </Button>
+                    </children>
+                    <styleClass>
+                        <String fx:value="toolbar" />
+                        <String fx:value="top" />
+                    </styleClass>
+                </HBox>
+                <HBox maxHeight="40.0" minHeight="40.0">
+                    <children>
+                        <Button fx:id="unsubscribeButton" mnemonicParsing="false" onAction="#onClickUnsubscribe" text="Unsubscribe">
+                            <tooltip>
+                                <Tooltip text="%subscriptionViewUnsubscribeTooltip" />
+                            </tooltip>
+                            <HBox.margin>
+                                <Insets right="5.0" />
+                            </HBox.margin>
+                        </Button>
+                        <Button fx:id="unsubscribeAllButton" mnemonicParsing="false" onAction="#onClickUnsubscribeAll" text="%subscriptionViewUnsubscribeAllButton">
+                            <tooltip>
+                                <Tooltip text="%subscriptionViewUnsubscribeAllTooltip" />
+                            </tooltip>
+                        </Button>
+                        <Pane maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
+                        <Button fx:id="selectAllButton" mnemonicParsing="false" onAction="#selectAll" styleClass="checked">
+                            <tooltip>
+                                <Tooltip text="%subscriptionViewSelectAllTooltip" />
+                            </tooltip>
+                            <HBox.margin>
+                                <Insets right="5.0" />
+                            </HBox.margin>
+                        </Button>
+                        <Button fx:id="selectNoneButton" mnemonicParsing="false" onAction="#selectNone" styleClass="unchecked">
+                            <tooltip>
+                                <Tooltip text="%subscriptionViewSelectNoneTooltip" />
+                            </tooltip>
+                        </Button>
+                    </children>
+                    <styleClass>
+                        <String fx:value="toolbar" />
+                        <String fx:value="bottom" />
+                    </styleClass>
+                </HBox>
+                <ListView fx:id="subscriptionListView" VBox.vgrow="ALWAYS">
+                    <styleClass>
+                        <String fx:value="noBorder" />
+                        <String fx:value="subscriptionList" />
+                    </styleClass>
+                </ListView>
+            </VBox>
+        </AnchorPane>
+    </SplitPane>
+</AnchorPane>

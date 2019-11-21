@@ -1,0 +1,6 @@
+@import "global.css";
+
+.topicMainNode {
+    -fx-padding: 5;
+    -fx-font-weight: bold;
+}

@@ -1,0 +1,68 @@
+@import "global.css";
+
+.black .trash-alt-solid {
+    -fx-graphic: url('../icons/trash-alt-solid-black.png');
+}
+
+.white .trash-alt-solid {
+    -fx-graphic: url('../icons/trash-alt-solid-white.png');
+}
+
+.black .folder-open-solid {
+    -fx-graphic: url('../icons/folder-open-solid-black.png');
+}
+
+.white .folder-open-solid {
+    -fx-graphic: url('../icons/folder-open-solid-white.png');
+}
+
+.black .file-upload-solid {
+    -fx-graphic: url('../icons/file-upload-solid-black.png');
+}
+
+.white .file-upload-solid {
+    -fx-graphic: url('../icons/file-upload-solid-white.png');
+}
+
+.black .window-maximize-regular {
+    -fx-graphic: url('../icons/window-maximize-regular-black.png');
+}
+
+.white .window-maximize-regular {
+    -fx-graphic: url('../icons/window-maximize-regular-white.png');
+}
+
+.black .columns-solid-without-toolbar {
+    -fx-graphic: url('../icons/columns-solid-without-toolbar-black.png');
+}
+
+.white .columns-solid-without-toolbar {
+    -fx-graphic: url('../icons/columns-solid-without-toolbar-white.png');
+}
+
+.black .broom-solid {
+    -fx-graphic: url('../icons/broom-solid-black.png');
+}
+
+.white .broom-solid {
+    -fx-graphic: url('../icons/broom-solid-white.png');
+}
+
+.messageSearchTextField {
+    -fx-background-radius: 3 0 0 3;
+}
+
+.messageSearchClear {
+    -fx-background-radius: 0 3 3 0;
+}
+
+.codeArea {
+    -fx-padding: 5;
+}
+
+.codeAreaPayload {
+    -fx-padding: 5;
+    -fx-border-width: 1;
+    -fx-border-style: solid;
+    -fx-border-color: derive(-fx-base, -10%);
+}

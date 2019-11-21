@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane fx:id="mainNode" stylesheets="@../css/messageView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1">
+    <styleClass>
+        <String fx:value="basicColors" />
+        <String fx:value="messageView" />
+    </styleClass>
+    <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <HBox alignment="CENTER_LEFT" styleClass="firstLine">
+            <Label fx:id="topicLabel" styleClass="topic" text="/topic" HBox.hgrow="NEVER">
+            </Label>
+            <Label fx:id="subscriptionLabel" styleClass="subscription" text="sub" />
+            <Region HBox.hgrow="SOMETIMES" />
+            <Label fx:id="answerExpectedLabel" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" text="Answer Expected" textAlignment="CENTER">
+                <styleClass>
+                    <String fx:value="tag" />
+                    <String fx:value="special" />
+                </styleClass>
+            </Label>
+            <Label fx:id="retainedLabel" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" styleClass="tag" text="Retained" textAlignment="CENTER">
+            </Label>
+            <Label fx:id="qosLabel" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" styleClass="tag" text="QoS2" textAlignment="CENTER">
+            </Label>
+        </HBox>
+        <Label fx:id="payloadLabel" text="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;">
+            <styleClass>
+                <String fx:value="secondLine" />
+                <String fx:value="payload" />
+            </styleClass>
+        </Label>
+    </VBox>
+</AnchorPane>

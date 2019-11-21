@@ -1,0 +1,164 @@
+.noBorder {
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.root {
+    -fx-font-family: "sans-serif";
+    -fx-font-size: 13px;
+}
+
+.tag {
+    -fx-font-family: "sans-serif";
+    -fx-font-size: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 2 5 2 5;
+}
+
+.connectionIconTag {
+    -fx-background-size: 12px 12px;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+    -fx-min-height: 16;
+    -fx-max-height: 16;
+    -fx-min-width: 16;
+    -fx-max-width: 16;
+}
+
+.black .mqtt3 {
+    -fx-background-image: url('../icons/circle-3-black.png');
+}
+
+.white .mqtt3 {
+    -fx-background-image: url('../icons/circle-3-white.png');
+}
+
+.black .mqtt5 {
+    -fx-background-image: url('../icons/circle-5-black.png');
+}
+
+.white .mqtt5 {
+    -fx-background-image: url('../icons/circle-5-white.png');
+}
+
+.black .key-solid {
+    -fx-background-image: url('../icons/key-solid-black.png');
+}
+
+.white .key-solid {
+    -fx-background-image: url('../icons/key-solid-white.png');
+}
+
+.black .lock-solid {
+    -fx-background-image: url('../icons/lock-solid-black.png');
+}
+
+.white .lock-solid {
+    -fx-background-image: url('../icons/lock-solid-white.png');
+}
+
+.black .archway-solid {
+    -fx-background-image: url('../icons/archway-solid-black.png');
+}
+
+.white .archway-solid {
+    -fx-background-image: url('../icons/archway-solid-white.png');
+}
+
+.black .skull-crossbones-solid {
+    -fx-background-image: url('../icons/skull-crossbones-solid-black.png');
+}
+
+.white .skull-crossbones-solid {
+    -fx-background-image: url('../icons/skull-crossbones-solid-white.png');
+}
+
+.list-view .list-cell {
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.list-view .list-cell:empty {
+    -fx-pref-height: 39;
+}
+
+.messageView {
+    -fx-background-color: transparent;
+}
+
+.messageView .topic {
+    -fx-font-family: "sans-serif";
+    -fx-font-weight: bold !important;
+}
+
+.messageView .subscription {
+    -fx-font-family: "sans-serif";
+    -fx-opacity: 0.3;
+    -fx-padding: 0 0 0 5;
+}
+
+.messageView .payload {
+    -fx-font-family: monospace;
+    -fx-font-size: 10px;
+}
+
+.list-cell .firstLine {
+    -fx-padding: 5 5 2 5;
+}
+
+.list-cell .secondLine {
+    -fx-padding: 0 5 5 5;
+}
+
+.messageView .tag {
+    -fx-padding: 2 5 2 10;
+    -fx-border-insets: 0 0 0 5;
+    -fx-background-insets: 0 0 0 5;
+}
+
+.subscriptionView {
+    -fx-background-color: transparent;
+    -fx-padding: 5;
+}
+
+.subscriptionView .tag {
+    -fx-padding: 2 10 2 10;
+    -fx-border-insets: 0 5 0 5;
+    -fx-background-insets: 0 5 0 5;
+}
+
+.exclamationCircleSolid {
+    -fx-background-image: url('../icons/exclamation-circle-solid.png');
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: right 5 center;
+    -fx-padding: 5 23 5 8;
+    -fx-background-size: 15;
+}
+
+.sectionHeadline {
+    -fx-padding: 5;
+    -fx-font-weight: bold;
+    -fx-font-family: "sans-serif";
+}
+
+.toolbar {
+    -fx-padding: 6 8 6 8;
+}
+
+.toolbar.top {
+    -fx-padding: 6 8 0 8;
+    -fx-background-color: derive(-fx-base, 30%);
+}
+
+.toolbar.bottom {
+    -fx-background-color: linear-gradient(to bottom, derive(-fx-base, 30%) 40%, derive(-fx-base, -5%) 95%); /*, derive(-fx-base, 0%));*/
+    -fx-border-width: 0 0 1 0;
+    -fx-border-style: solid;
+    -fx-border-color: transparent transparent derive(-fx-base, -35%) transparent;
+}
+
+.copyLink {
+    -fx-font-size: 10;
+}
+
+/* disabled style for RichTextFX */

@@ -1,0 +1,55 @@
+{
+  "connections": [
+    {
+      "id": "b9640522-db21-11e9-a31c-57c858de472e",
+      "name": "LocalBroker",
+      "url": "localhost",
+      "port": 1883,
+      "clientId": "Test",
+      "username": null,
+      "password": null,
+      "cleanSession": false,
+      "mqttVersion": "V3",
+      "ssl": "OFF",
+      "ssl_keystore": null,
+      "ssl_keystore_password": null,
+      "proxy": "OFF",
+      "sshHost": null,
+      "sshPort": 22,
+      "localPort": null,
+      "auth": "OFF",
+      "authUsername": null,
+      "authPassword": null,
+      "authKeyfile": null,
+      "lwt": "OFF",
+      "lwtTopic": null,
+      "lwtQoS": 0,
+      "lwtMessageId": false,
+      "lwtAnswerExpected": false,
+      "lwtRetained": false,
+      "lwtPayload": null
+    }
+  ],
+  "themesSettings": {
+    "activeTheme": null,
+    "themes": [
+      {
+        "name": "Light",
+        "file": "light.css",
+        "iconMode": "black"
+      },
+      {
+        "name": "Dark",
+        "file": "dark.css",
+        "iconMode": "white"
+      }
+    ]
+  },
+  "settings": {
+    "base64DecodingPayload": true,
+    "unzippingPayload": true,
+    "useRegexForSearch": true,
+    "useIgnoreCase": true
+  }
+}
+

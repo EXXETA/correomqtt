@@ -1,0 +1,25 @@
+@import "global.css";
+
+.headline {
+    -fx-font-size: 20;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 10 0;
+}
+
+.dialog {
+    -fx-padding: 10;
+}
+
+.settingsLabel {
+    -fx-padding: 5 0 5 0;
+    -fx-font-weight: bold;
+}
+
+.settingsDescription {
+    -fx-padding: 0 10 20 0;
+}
+
+.settingsLabel.disabled {
+    -fx-text-fill: #777777;
+    -fx-font-weight: bold;
+}
