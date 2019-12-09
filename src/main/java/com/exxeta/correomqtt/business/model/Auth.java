@@ -6,8 +6,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Auth implements GenericCellModel {
     OFF("authEnumOff"),
-    PASSWORD("authEnumKeyfile"),
-    KEYFILE("authEnumPassword");
+    PASSWORD("authEnumPassword"),
+    KEYFILE("authEnumKeyfile");
 
     private final String auth;
 
