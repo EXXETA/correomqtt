@@ -21,6 +21,10 @@
             <MenuItem fx:id="aboutItem" mnemonicParsing="false" text="%mainViewAboutMenuItem" />
             <MenuItem fx:id="websiteItem" mnemonicParsing="false" text="%mainViewWebsiteMenuItem" />
         </Menu>
+        <Menu fx:id="pluginMenu" mnemonicParsing="false" text="%mainViewPluginMenu">
+            <MenuItem fx:id="pluginSettingsItem" mnemonicParsing="false" text="%mainViewPluginSettingsMenuItem" />
+            <MenuItem fx:id="pluginFolderItem" mnemonicParsing="false" text="%mainViewPluginFolderMenuItem" />
+        </Menu>
     </MenuBar>
     <TabPane fx:id="tabPane" layoutX="7.0" layoutY="36.0" prefHeight="364.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0">
         <Tab fx:id="addTab" styleClass="addConnectionTab">

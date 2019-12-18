@@ -309,20 +309,10 @@
                                              </VBox.margin>
                                           </HBox>
                                           <HBox alignment="CENTER_RIGHT">
-                                             <children>
-                                                <CheckBox fx:id="lwtMessageIdCheckBox" mnemonicParsing="false" onAction="#setCheckBoxes" text="%publishViewIdCheckbox">
-                                                   <HBox.margin>
-                                                      <Insets right="10.0" />
-                                                   </HBox.margin>
-                                                </CheckBox>
-                                                <CheckBox fx:id="lwtAnswerExpectedCheckBox" disable="true" mnemonicParsing="false" text="Answer Expected">
-                                                   <HBox.margin>
-                                                      <Insets right="10.0" />
-                                                   </HBox.margin>
-                                                </CheckBox>
-                                                <CheckBox fx:id="lwtRetainedCheckBox" alignment="CENTER_RIGHT" mnemonicParsing="false" text="Retained" />
-                                             </children>
-                                             <VBox.margin>
+                                             <HBox fx:id="lwtPluginControlBox">
+                                             </HBox>
+                                              <CheckBox fx:id="lwtRetainedCheckBox" alignment="CENTER_RIGHT" mnemonicParsing="false" text="Retained" />
+                                              <VBox.margin>
                                                 <Insets bottom="5.0" />
                                              </VBox.margin>
                                           </HBox>

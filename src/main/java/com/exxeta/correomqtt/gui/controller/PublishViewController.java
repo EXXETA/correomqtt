@@ -1,24 +1,11 @@
 package com.exxeta.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.business.dispatcher.ConfigDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.ConfigObserver;
-import com.exxeta.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
-import com.exxeta.correomqtt.business.dispatcher.ImportMessageDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.ImportMessageObserver;
-import com.exxeta.correomqtt.business.dispatcher.PersistPublishHistoryDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.PersistPublishHistoryObserver;
-import com.exxeta.correomqtt.business.dispatcher.PublishDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.PublishGlobalDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.PublishObserver;
-import com.exxeta.correomqtt.business.dispatcher.ShortcutDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.ShortcutObserver;
+import com.exxeta.correomqtt.business.dispatcher.*;
 import com.exxeta.correomqtt.business.exception.CorreoMqttException;
 import com.exxeta.correomqtt.business.model.MessageDTO;
 import com.exxeta.correomqtt.business.model.MessageType;
 import com.exxeta.correomqtt.business.model.PublishStatus;
 import com.exxeta.correomqtt.business.model.Qos;
-import com.exxeta.correomqtt.business.services.ConfigService;
 import com.exxeta.correomqtt.business.services.PersistPublishHistoryService;
 import com.exxeta.correomqtt.business.services.PersistPublishMessageHistoryService;
 import com.exxeta.correomqtt.gui.business.TaskFactory;
@@ -28,15 +15,21 @@ import com.exxeta.correomqtt.gui.helper.AlertHelper;
 import com.exxeta.correomqtt.gui.helper.CheckTopicHelper;
 import com.exxeta.correomqtt.gui.model.MessagePropertiesDTO;
 import com.exxeta.correomqtt.gui.transformer.MessageTransformer;
+import com.exxeta.correomqtt.plugin.manager.PluginSystem;
+import com.exxeta.correomqtt.plugin.model.MessageExtensionDTO;
+import com.exxeta.correomqtt.plugin.spi.MessageContextMenuHook;
+import com.exxeta.correomqtt.plugin.spi.PublishMenuHook;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -52,8 +45,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class PublishViewController extends BaseMessageBasedViewController implements ConnectionLifecycleObserver,
         PublishObserver,
@@ -65,6 +56,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishViewController.class);
     private static ResourceBundle resources;
     private final PublishViewDelegate delegate;
+    private final PluginSystem pluginSystem = PluginSystem.getInstance();
 
     @FXML
     public AnchorPane publishViewAnchor;
@@ -76,10 +68,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     public ComboBox<String> topicComboBox;
 
     @FXML
-    public CheckBox messageIdCheckBox;
-
-    @FXML
-    public CheckBox answerExpectedCheckBox;
+    public HBox pluginControlBox;
 
     @FXML
     public CheckBox retainedCheckBox;
@@ -92,10 +81,6 @@ public class PublishViewController extends BaseMessageBasedViewController implem
 
     @FXML
     private Pane codeAreaScrollPane;
-
-
-    //Pattern
-    private Pattern pattern = Pattern.compile("^([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12})([0-1]{1})", Pattern.CASE_INSENSITIVE);
 
     private LoadingViewController loadingViewController;
 
@@ -125,10 +110,12 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         qosComboBox.getSelectionModel().selectFirst();
         qosComboBox.setCellFactory(QosCell::new);
 
-        if (!ConfigService.getInstance().getSettings().isExtraFeatures()) {
-            messageIdCheckBox.setVisible(false);
-            answerExpectedCheckBox.setVisible(false);
-        }
+        pluginSystem.getExtensions(PublishMenuHook.class).forEach(p -> {
+            HBox pluginBox = new HBox();
+            pluginBox.setAlignment(Pos.CENTER_RIGHT);
+            pluginControlBox.getChildren().add(pluginBox);
+            p.onInstantiatePublishMenu(getConnectionId(), pluginBox);
+        });
 
         topicComboBox.getEditor().lengthProperty().addListener(((observable, oldValue, newValue) -> CheckTopicHelper.checkPublishTopic(topicComboBox, false)));
 
@@ -143,15 +130,6 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         List<String> topics = PersistPublishHistoryService.getInstance(getConnectionId()).getTopics(getConnectionId());
         topicComboBox.setItems(FXCollections.observableArrayList(topics));
         topicComboBox.setCellFactory(TopicCell::new);
-    }
-
-    public void setCheckBoxes() {
-        if (messageIdCheckBox.isSelected()) {
-            answerExpectedCheckBox.setDisable(false);
-        } else {
-            answerExpectedCheckBox.setDisable(true);
-            answerExpectedCheckBox.setSelected(false);
-        }
     }
 
     @FXML
@@ -176,28 +154,14 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         }
 
         MessagePropertiesDTO messagePropertiesDTO = MessagePropertiesDTO.builder()
-                                                                        .topic(topicComboBox.getValue())
-                                                                        .qos(qosComboBox.getSelectionModel().getSelectedItem())
-                                                                        .isRetained(retainedCheckBox.isSelected())
-                                                                        .payload(payloadCodeArea.getText())
-                                                                        .messageId(UUID.randomUUID().toString())
-                                                                        .messageType(MessageType.OUTGOING)
-                                                                        .dateTime(LocalDateTime.now())
-                                                                        .build();
-
-        if (ConfigService.getInstance().getSettings().isExtraFeatures() && messageIdCheckBox.isSelected()) {
-            if (answerExpectedCheckBox.isSelected()) {
-                messagePropertiesDTO.setPayload("1" + messagePropertiesDTO.getPayload());
-            } else {
-                messagePropertiesDTO.setPayload("0" + messagePropertiesDTO.getPayload());
-            }
-
-            String uuid = UUID.randomUUID().toString();
-            messagePropertiesDTO.setPayload(uuid + messagePropertiesDTO.getPayload());
-            messagePropertiesDTO.getSpecialMessageIdProperty().set(uuid);
-            messagePropertiesDTO.getAnswerExpectedProperty().set(answerExpectedCheckBox.isSelected());
-        }
-
+                .topic(topicComboBox.getValue())
+                .qos(qosComboBox.getSelectionModel().getSelectedItem())
+                .isRetained(retainedCheckBox.isSelected())
+                .payload(payloadCodeArea.getText())
+                .messageId(UUID.randomUUID().toString())
+                .messageType(MessageType.OUTGOING)
+                .dateTime(LocalDateTime.now())
+                .build();
 
         TaskFactory.publish(getConnectionId(), messagePropertiesDTO);
 
@@ -232,13 +196,11 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     public void onConnect() {
         topicComboBox.valueProperty().set(null);
         payloadCodeArea.replaceText("");
-        messageIdCheckBox.setSelected(false);
-        answerExpectedCheckBox.setSelected(false);
         retainedCheckBox.setSelected(false);
 
         // reverse order, because first message in history must be last one to add
         new LinkedList<>(PersistPublishMessageHistoryService.getInstance(getConnectionId())
-                                                            .getMessages(getConnectionId()))
+                .getMessages(getConnectionId()))
                 .descendingIterator()
                 .forEachRemaining(messageDTO -> messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO)));
     }
@@ -295,24 +257,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
 
     @Override
     public void setUpToForm(MessagePropertiesDTO messageDTO) {
-        String finalMessage = messageDTO.getPayload();
-
-        Matcher m = pattern.matcher(finalMessage);
-        if (m.find()) {
-            boolean answerExpected = "1".equals(m.group(2));
-            messageIdCheckBox.setSelected(true);
-            answerExpectedCheckBox.setDisable(false);
-            if (answerExpected) {
-                answerExpectedCheckBox.setSelected(true);
-            } else {
-                answerExpectedCheckBox.setSelected(false);
-            }
-            finalMessage = finalMessage.substring(37);
-        } else {
-            messageIdCheckBox.setSelected(false);
-            answerExpectedCheckBox.setDisable(true);
-            answerExpectedCheckBox.setSelected(false);
-        }
+        executeOnCopyMessageToFormExtensions(messageDTO);
 
         // Retained-Abfrage
         if (messageDTO.isRetained()) {
@@ -320,7 +265,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         } else {
             retainedCheckBox.setSelected(false);
         }
-        payloadCodeArea.replaceText(finalMessage);
+        payloadCodeArea.replaceText(messageDTO.getPayload());
         topicComboBox.setValue(messageDTO.getTopic());
 
         qosComboBox.setValue(messageDTO.getQos());
@@ -328,6 +273,11 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Message copied to form: {}", getConnectionId());
         }
+    }
+
+    private void executeOnCopyMessageToFormExtensions(MessagePropertiesDTO messageDTO) {
+        pluginSystem.getExtensions(MessageContextMenuHook.class)
+                .forEach(p -> p.onCopyMessageToPublishForm(getConnectionId(), new MessageExtensionDTO(messageDTO)));
     }
 
     @Override
@@ -372,15 +322,6 @@ public class PublishViewController extends BaseMessageBasedViewController implem
 
     @Override
     public void onSettingsUpdated() {
-        if (!ConfigService.getInstance().getSettings().isExtraFeatures()) {
-            messageIdCheckBox.setVisible(false);
-            messageIdCheckBox.setSelected(false);
-            answerExpectedCheckBox.setVisible(false);
-            answerExpectedCheckBox.setSelected(false);
-        } else {
-            messageIdCheckBox.setVisible(true);
-            answerExpectedCheckBox.setVisible(true);
-        }
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Updated settings in publish view controller: {}", getConnectionId());
@@ -459,9 +400,6 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         Platform.runLater(() -> {
             topicComboBox.setValue(messageDTO.getTopic());
             retainedCheckBox.setSelected(messageDTO.isRetained());
-            if (ConfigService.getInstance().getSettings().isExtraFeatures()) {
-                // TODO no extra features in MessageDTO yet
-            }
             qosComboBox.setValue(messageDTO.getQos());
             payloadCodeArea.replaceText(messageDTO.getPayload());
             if (loadingViewController != null) {
@@ -479,7 +417,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 loadingViewController = null;
             }
             AlertHelper.warn(resources.getString("publishViewControllerImportCancelledTitle"),
-                             resources.getString("publishViewControllerImportFileCancelledContent"));
+                    resources.getString("publishViewControllerImportFileCancelledContent"));
         });
 
     }
@@ -492,7 +430,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 loadingViewController = null;
             }
             AlertHelper.warn(resources.getString("publishViewControllerImportFileFailedTitle"),
-                              resources.getString("publishViewControllerImportFileFailedContent"));
+                    resources.getString("publishViewControllerImportFileFailedContent"));
         });
     }
 

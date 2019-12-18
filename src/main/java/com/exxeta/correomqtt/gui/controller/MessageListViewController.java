@@ -11,18 +11,16 @@ import com.exxeta.correomqtt.gui.contextmenu.MessageListContextMenuDelegate;
 import com.exxeta.correomqtt.gui.model.MessagePropertiesDTO;
 import com.exxeta.correomqtt.gui.transformer.MessageTransformer;
 import com.exxeta.correomqtt.gui.utils.MessageUtils;
+import com.exxeta.correomqtt.plugin.manager.PluginSystem;
+import com.exxeta.correomqtt.plugin.model.MessageExtensionDTO;
+import com.exxeta.correomqtt.plugin.spi.MessageIncomingHook;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -78,7 +76,7 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     public static LoaderResult<MessageListViewController> load(String connectionId, MessageListViewDelegate delegate) {
         return load(MessageListViewController.class, "messageListView.fxml",
-                    () -> new MessageListViewController(connectionId, delegate));
+                () -> new MessageListViewController(connectionId, delegate));
     }
 
     @FXML
@@ -235,7 +233,7 @@ public class MessageListViewController extends BaseConnectionController implemen
                     .findFirst()
                     .ifPresentOrElse(m -> {
                         m.setPublishStatus(PublishStatus.PUBLISEHD);
-                    },() -> {
+                    }, () -> {
                         addMessage(messageDTO);
                     });
             return;
@@ -245,7 +243,7 @@ public class MessageListViewController extends BaseConnectionController implemen
                     .findFirst()
                     .ifPresentOrElse(m -> {
                         m.setPublishStatus(PublishStatus.SUCCEEDED);
-                    },() -> {
+                    }, () -> {
                         addMessage(messageDTO);
                     });
             return;
@@ -255,7 +253,7 @@ public class MessageListViewController extends BaseConnectionController implemen
                     .findFirst()
                     .ifPresentOrElse(m -> {
                         m.setPublishStatus(PublishStatus.FAILED);
-                    },() -> {
+                    }, () -> {
                         addMessage(messageDTO);
                     });
             return;
@@ -267,11 +265,19 @@ public class MessageListViewController extends BaseConnectionController implemen
     }
 
     private void addMessage(MessagePropertiesDTO messageDTO) {
+        final MessagePropertiesDTO updatedMessageDTO = executeOnMessageIncomingExtensions(messageDTO);
         Platform.runLater(() -> {
-            messageDTO.setPayload(messageDTO.getPayload());
-            messages.add(0, messageDTO);
+            messages.add(0, updatedMessageDTO);
             clearMessagesButton.setDisable(false);
         });
+    }
+
+    private MessagePropertiesDTO executeOnMessageIncomingExtensions(MessagePropertiesDTO messageDTO) {
+        MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
+        for (MessageIncomingHook p : PluginSystem.getInstance().getExtensions(MessageIncomingHook.class)) {
+            messageExtensionDTO = p.onMessageIncoming(getConnectionId(), messageExtensionDTO);
+        }
+        return messageExtensionDTO.merge(messageDTO);
     }
 
     @FXML
@@ -318,15 +324,6 @@ public class MessageListViewController extends BaseConnectionController implemen
     @Override
     public void onConnect() {
         setUpShortcuts();
-        listView.getSelectionModel().selectedItemProperty().addListener(event -> {
-            if (detailViewController != null) {
-                detailViewController.setMessage(getSelectedMessage());
-                Platform.runLater(() -> {
-                    listView.requestFocus(); //TODO this is only needed because search bar is activeted
-                });
-
-            }
-        });
     }
 
 

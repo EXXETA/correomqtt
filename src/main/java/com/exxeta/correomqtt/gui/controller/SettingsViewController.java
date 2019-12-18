@@ -10,24 +10,15 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -36,8 +27,6 @@ import java.util.stream.Collectors;
 public class SettingsViewController extends BaseController {
 
     private static ResourceBundle resources;
-    @FXML
-    private CheckBox extraFeaturesCheckbox;
     @FXML
     private CheckBox unzipCheckBox;
     @FXML
@@ -100,7 +89,6 @@ public class SettingsViewController extends BaseController {
     }
 
     private void setupGUI() {
-        extraFeaturesCheckbox.setSelected(settings.isExtraFeatures());
         unzipCheckBox.setSelected(settings.isUnzippingPayload());
         base64CheckBox.setSelected(settings.isBase64DecodingPayload());
 
@@ -161,7 +149,6 @@ public class SettingsViewController extends BaseController {
     private void saveSettings() {
         LOGGER.debug("Saving settings");
 
-        settings.setExtraFeatures(extraFeaturesCheckbox.isSelected());
         settings.setUnzippingPayload(unzipCheckBox.isSelected());
         settings.setBase64DecodingPayload(base64CheckBox.isSelected());
         ThemeDTO selectedTheme = themeComboBox.getSelectionModel().getSelectedItem();

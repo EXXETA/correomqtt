@@ -1,16 +1,13 @@
 package com.exxeta.correomqtt.gui.business;
 
-import com.exxeta.correomqtt.business.services.ConnectService;
-import com.exxeta.correomqtt.business.services.DisconnectService;
-import com.exxeta.correomqtt.business.services.ExportMessageService;
-import com.exxeta.correomqtt.business.services.ImportMessageService;
-import com.exxeta.correomqtt.business.services.PublishService;
-import com.exxeta.correomqtt.business.services.SubscribeService;
-import com.exxeta.correomqtt.business.services.UnsubscribeService;
+import com.exxeta.correomqtt.business.services.*;
 import com.exxeta.correomqtt.gui.model.MessagePropertiesDTO;
 import com.exxeta.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import com.exxeta.correomqtt.gui.transformer.MessageTransformer;
 import com.exxeta.correomqtt.gui.transformer.SubscriptionTransformer;
+import com.exxeta.correomqtt.plugin.manager.PluginSystem;
+import com.exxeta.correomqtt.plugin.model.MessageExtensionDTO;
+import com.exxeta.correomqtt.plugin.spi.PublishMessageHook;
 
 import java.io.File;
 
@@ -21,9 +18,19 @@ public class TaskFactory {
     }
 
     public static void publish(String connectionId, MessagePropertiesDTO messagePropertiesDTO) {
+        messagePropertiesDTO = executeOnPublishMessageExtensions(connectionId, messagePropertiesDTO);
+
         new GuiService<>(new PublishService(connectionId,
                                             MessageTransformer.propsToDTO(messagePropertiesDTO)),
                          PublishService::publish).start();
+    }
+
+    private static MessagePropertiesDTO executeOnPublishMessageExtensions(String connectionId, MessagePropertiesDTO messagePropertiesDTO) {
+        MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messagePropertiesDTO);
+        for (PublishMessageHook p : PluginSystem.getInstance().getExtensions(PublishMessageHook.class)) {
+            messageExtensionDTO = p.onPublishMessage(connectionId, messageExtensionDTO);
+        }
+        return messageExtensionDTO.merge(messagePropertiesDTO);
     }
 
     public static void subscribe(String connectionId, SubscriptionPropertiesDTO subscriptionDTO) {

@@ -1,3 +1,7 @@
+.idea/
+correomqtt.iml
+correomqtt-logfile_IS_UNDEFINED*
+
 target/
 pom.xml.tag
 pom.xml.releaseBackup

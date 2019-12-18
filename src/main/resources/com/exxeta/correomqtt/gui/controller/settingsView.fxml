@@ -31,20 +31,8 @@
                <RowConstraints prefHeight="60.0" vgrow="SOMETIMES" />
            </rowConstraints>
             <children>
-               <VBox>
-                  <children>
-                       <Label styleClass="settingsLabel" text="Message ID / Answer Expected" />
-                     <Label text="%settingsViewSpecialFeaturesExplanationLabel" wrapText="true">
-                        <styleClass>
-                           <String fx:value="secondaryText" />
-                           <String fx:value="settingsDescription" />
-                        </styleClass>
-                     </Label>
-                  </children>
-               </VBox>
-                 <CheckBox fx:id="base64CheckBox" disable="true" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.valignment="CENTER" />
-                 <CheckBox fx:id="unzipCheckBox" disable="true" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
-                 <CheckBox fx:id="extraFeaturesCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.valignment="CENTER" />
+                 <CheckBox fx:id="base64CheckBox" disable="true" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.valignment="TOP" />
+                 <CheckBox fx:id="unzipCheckBox" disable="true" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.valignment="TOP" />
                <VBox GridPane.rowIndex="1">
                   <children>
                        <Label text="Unzipping Payload (coming soon)">

@@ -47,8 +47,6 @@ public class ConnectionConfigDTO {
     private Lwt lwt = Lwt.OFF;
     private String lwtTopic;
     private Qos lwtQoS;
-    private boolean lwtMessageId;
-    private boolean lwtAnswerExpected;
     private boolean lwtRetained;
     private String lwtPayload;
 

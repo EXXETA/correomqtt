@@ -34,6 +34,11 @@ public class ConfigService extends BaseUserFileService {
     private static final String EX_MSG_PREPARE_CONFIG = "Exception preparing config file.";
     private static final String EX_MSG_WRITE_CONFIG = "Exception writing config file.";
 
+    private static final String PLUGIN_FOLDER = "plugins";
+    private static final String PLUGIN_JAR_FOLDER = "jars";
+    private static final String PLUGIN_CONFIG_FOLDER = "config";
+    private static final String PROTOCOL_XML = "protocol.xml";
+
     private static ConfigService connectionInstance = null;
 
     private ConfigDTO configDTO;
@@ -140,7 +145,7 @@ public class ConfigService extends BaseUserFileService {
         if (configDTO.getThemesSettings().getActiveTheme() == null) {
             configDTO.getThemesSettings().getThemes().stream()
                     .findFirst()
-                    .ifPresent(t ->  {
+                    .ifPresent(t -> {
                         CSS_FILE_NAME = t.getFile();
                         configDTO.getThemesSettings().setActiveTheme(t);
                         ConfigService.getInstance().saveThemeSettings();
@@ -155,5 +160,30 @@ public class ConfigService extends BaseUserFileService {
 
     public String getLogPath() {
         return getTargetDirectoryPath() + File.separator;
+    }
+
+    public String getPluginRootPath() {
+        String pluginPath = getTargetDirectoryPath() + File.separator + PLUGIN_FOLDER;
+        File pluginFolder = new File(pluginPath);
+        if (!pluginFolder.exists() && !pluginFolder.mkdir()) return null;
+        return pluginPath;
+    }
+
+    public String getPluginJarPath() {
+        String pluginPath = getPluginRootPath() + File.separator + PLUGIN_JAR_FOLDER;
+        File pluginFolder = new File(pluginPath);
+        if (!pluginFolder.exists() && !pluginFolder.mkdir()) return null;
+        return pluginPath;
+    }
+
+    public String getPluginConfigPath(String pluginId) {
+        String pluginConfigFolderPath = getPluginRootPath() + File.separator + PLUGIN_CONFIG_FOLDER + File.separator + pluginId;
+        File pluginConfigFolder = new File(pluginConfigFolderPath);
+        if (!pluginConfigFolder.exists() && !pluginConfigFolder.mkdirs()) return null;
+        return pluginConfigFolderPath;
+    }
+
+    public String getPluginProtocol() {
+        return getPluginRootPath() + File.separator + PROTOCOL_XML;
     }
 }

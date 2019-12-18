@@ -44,9 +44,7 @@ public class ConnectionTransformer {
                 .lwt(dto.getLwt())
                 .lwtTopic(dto.getLwtTopic())
                 .lwtQoS(dto.getLwtQoS())
-                .lwtMessageId(dto.isLwtMessageId())
-                .lwtAnswerExpected(dto.isLwtAnswerExpected())
-                .lwtRetained(dto.isLwtAnswerExpected())
+                .lwtRetained(dto.isLwtRetained())
                 .lwtPayload(dto.getLwtPayload())
                 .dirty(false)
                 .unpersisted(false)
@@ -84,9 +82,7 @@ public class ConnectionTransformer {
                 .lwt(props.getLwt())
                 .lwtTopic(props.getLwtTopic())
                 .lwtQoS(props.getLwtQos())
-                .lwtMessageId(props.getLwtMessageId())
-                .lwtAnswerExpected(props.getLwtAnswerExpected())
-                .lwtRetained(props.getLwtRetained())
+                .lwtRetained(props.isLwtRetained())
                 .lwtPayload(props.getLwtPayload())
                 .build();
     }

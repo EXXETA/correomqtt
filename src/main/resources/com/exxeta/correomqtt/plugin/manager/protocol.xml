@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol>
+    <lists>
+        <PublishMessageHook>
+<!--        <plugin name="example-plugin"/>     -->
+<!--        ### more plugins ###                -->
+        </PublishMessageHook>
+
+        <MessageIncomingHook>
+<!--        ### more plugins ###                -->
+        </MessageIncomingHook>
+    </lists>
+
+    <tasks>
+        <DetailViewManipulatorHook>
+<!--    ### specify tasks to manipulate messages in the detail view ###    -->
+
+<!--        <task name="Example Manipulator Name">      -->
+<!--            <plugin name="example1.jar"/>           -->
+<!--            <plugin name="example2.jar"/>           -->
+<!--        </task>                                     -->
+
+<!--        ### add more tasks as you wish ###          -->
+        </DetailViewManipulatorHook>
+
+        <MessageValidatorHook>
+<!--    ### specify tasks to validate messages in specific topics ###    -->
+
+<!--        <task id="/com/+/example">-->
+<!--            <plugin name="xml-xsd-validator-plugin">    -->
+<!--                <schema>Example.xsd</schema>           -->
+<!--            </plugin>                                   -->
+<!--        </task>                                         -->
+
+<!--        ### add more tasks as you wish ###              -->
+        </MessageValidatorHook>
+    </tasks>
+</protocol>
