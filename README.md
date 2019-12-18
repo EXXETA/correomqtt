@@ -28,7 +28,7 @@ Installers must be built on their respective platform.
 To install a plugin copy the `.jar` into the `plugins/jars` directory. 
 This directory can be opened through a button in the plugins menu in the application.
 
-## Manage plugin Execution Order
+## Manage execution order
 Inside the `plugins` folder create a file called `protocol.xml`.
 
 It has the following structure:
@@ -52,6 +52,12 @@ For each extension point the order can be defined separately.
 
 E. g. it's pretty common to use one order of plugin execution for sending messages and
 reverse this order for incoming messages.
+
+##### Attention
+- If there is no plugin specified for an extension point,
+all available extensions will be executed in a random order.  
+- If two plugins implement extensions for the same extension point
+and only one is declared, the other one won't be executed.
 
 ## Create Tasks
 Some extension points will accept lists of extensions, called a task.
@@ -90,7 +96,7 @@ Tasks need to be defined inside the `protocol.xml` as well:
 The same extension may be used more than once in one task and multiple tasks can be defined.  
 
 ## Create a Plugin
-The easiest way to get started is to checkout the example plugin and replace the example values.
+The easiest way to get started is to checkout and modify the [example plugin](https://github.com/oemel09/CorreoMqttExamplePlugin).
 
 Plugins are instantiated only once (singletons) and each extension will be instantiated every time it's called.
 If an extension needs to keep reference to UI elements or needs to receive lifecycle-hooks it must implement a class extending `Plugin`.
