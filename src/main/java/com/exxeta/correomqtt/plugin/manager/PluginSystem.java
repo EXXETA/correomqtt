@@ -3,6 +3,7 @@ package com.exxeta.correomqtt.plugin.manager;
 import com.exxeta.correomqtt.business.services.ConfigService;
 import com.exxeta.correomqtt.plugin.spi.BaseExtensionPoint;
 import com.exxeta.correomqtt.plugin.spi.ExtensionId;
+import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.pf4j.*;
 import org.slf4j.Logger;
@@ -30,7 +31,7 @@ public class PluginSystem extends DefaultPluginManager {
         try {
             pluginProtocolParser = new PluginProtocolParser();
         } catch (IOException | JDOMException e) {
-            e.printStackTrace();
+            LOGGER.error("Cant't parse the protocol, please check the protocol.xml file.");
         }
     }
 
@@ -65,6 +66,8 @@ public class PluginSystem extends DefaultPluginManager {
 
     @Override
     public <T> List<T> getExtensions(Class<T> type) {
+        if (pluginProtocolParser == null) return super.getExtensions(type);
+
         List<ProtocolExtensionPoint<T>> declaredExtensionsForClass = pluginProtocolParser.getProtocolExtensionPoints(type);
         if (declaredExtensionsForClass.isEmpty()) return super.getExtensions(type);
 
@@ -72,12 +75,23 @@ public class PluginSystem extends DefaultPluginManager {
     }
 
     public <T> List<Task<T>> getTasks(Class<T> type) {
+        if (pluginProtocolParser == null) return Collections.emptyList();
+
         List<ProtocolTask<T>> declaredTasks = pluginProtocolParser.getDeclaredTasks(type);
         if (declaredTasks.isEmpty()) return Collections.emptyList();
 
         return declaredTasks
                 .stream()
-                .map(t -> new Task<>(t.getId(), createExtensions(type, t.getTasks())))
+                .map(t -> {
+                    List<T> extensions = createExtensions(type, t.getTasks());
+                    if (extensions.size() == t.getTasks().size()) {
+                        return new Task<>(t.getId(), extensions);
+                    } else {
+                        LOGGER.warn("Can't find all declared extensions for task {} in {}", t.getId(), type.getSimpleName());
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 

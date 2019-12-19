@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 
 class PluginProtocolParser {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluginProtocolParser.class);
+
     private static final String XML_TAG_LISTS = "lists";
     private static final String XML_TAG_TASKS = "tasks";
     private static final String XML_ATTR_NAME = "name";
@@ -52,7 +54,16 @@ class PluginProtocolParser {
     <T> List<ProtocolTask<T>> getDeclaredTasks(Class<T> type) {
         if (protocol == null) return Collections.emptyList();
 
-        return protocol.getChild(XML_TAG_TASKS).getChild(type.getSimpleName()).getChildren()
+        Element tasksRoot = protocol.getChild(XML_TAG_TASKS);
+        if (tasksRoot == null) {
+            LOGGER.warn("No tasks root specified in protocol. Please add <tasks></tasks>");
+            return Collections.emptyList();
+        }
+
+        Element tasksForType = tasksRoot.getChild(type.getSimpleName());
+        if (tasksForType == null) return Collections.emptyList();
+
+        return tasksForType.getChildren()
                 .stream()
                 .map(t -> new ProtocolTask<>(t.getAttributeValue(XML_ATTR_ID), getProtocolExtensionPoints(type, t)))
                 .collect(Collectors.toList());
