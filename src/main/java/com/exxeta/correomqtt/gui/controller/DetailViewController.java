@@ -16,8 +16,8 @@ import com.exxeta.correomqtt.gui.model.WindowType;
 import com.exxeta.correomqtt.gui.utils.MessageUtils;
 import com.exxeta.correomqtt.gui.utils.WindowHelper;
 import com.exxeta.correomqtt.plugin.manager.MessageValidator;
-import com.exxeta.correomqtt.plugin.manager.PluginProtocolTask;
 import com.exxeta.correomqtt.plugin.manager.PluginSystem;
+import com.exxeta.correomqtt.plugin.manager.Task;
 import com.exxeta.correomqtt.plugin.model.MessageExtensionDTO;
 import com.exxeta.correomqtt.plugin.spi.DetailViewFormatHook;
 import com.exxeta.correomqtt.plugin.spi.DetailViewHook;
@@ -130,7 +130,7 @@ public class DetailViewController extends BaseConnectionController implements
 
     private MessagePropertiesDTO messageDTO;
     private DetailContextMenu contextMenu;
-    private PluginProtocolTask<DetailViewManipulatorHook> lastManipulatorTask;
+    private Task<DetailViewManipulatorHook> lastManipulatorTask;
 
     private DetailViewController(String connectionId, DetailViewDelegate delegate, boolean isInlineView) {
         super(connectionId);
@@ -243,7 +243,7 @@ public class DetailViewController extends BaseConnectionController implements
         lastManipulatorTask = null;
         manipulateSelectionButton.setText("Manipulate");
 
-        List<PluginProtocolTask<DetailViewManipulatorHook>> tasks = PluginSystem.getInstance().getTasks(DetailViewManipulatorHook.class);
+        List<Task<DetailViewManipulatorHook>> tasks = PluginSystem.getInstance().getTasks(DetailViewManipulatorHook.class);
         tasks.forEach(p -> {
             TaskMenuItem<DetailViewManipulatorHook> menuItem = new TaskMenuItem<>(p);
             menuItem.setOnAction(this::onManipulateMessageSelected);
@@ -380,13 +380,13 @@ public class DetailViewController extends BaseConnectionController implements
     }
 
     private void onManipulateMessageSelected(ActionEvent actionEvent) {
-        PluginProtocolTask<DetailViewManipulatorHook> manipulatorTask = ((TaskMenuItem) actionEvent.getSource()).getTask();
+        Task<DetailViewManipulatorHook> manipulatorTask = ((TaskMenuItem) actionEvent.getSource()).getTask();
         manipulateMessage(manipulatorTask);
         manipulateSelectionButton.setText(manipulatorTask.getId());
         this.lastManipulatorTask = manipulatorTask;
     }
 
-    private void manipulateMessage(PluginProtocolTask<DetailViewManipulatorHook> manipulatorTask) {
+    private void manipulateMessage(Task<DetailViewManipulatorHook> manipulatorTask) {
         IndexRange range = getSelectionRange();
 
         byte[] selection = codeArea.getText(range).getBytes();

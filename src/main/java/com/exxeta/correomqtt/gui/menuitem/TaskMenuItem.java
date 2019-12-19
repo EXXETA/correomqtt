@@ -1,6 +1,6 @@
 package com.exxeta.correomqtt.gui.menuitem;
 
-import com.exxeta.correomqtt.plugin.manager.PluginProtocolTask;
+import com.exxeta.correomqtt.plugin.manager.Task;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
 import lombok.Getter;
@@ -8,9 +8,9 @@ import lombok.Getter;
 public class TaskMenuItem<T> extends CustomMenuItem {
 
     @Getter
-    private final PluginProtocolTask<T> task;
+    private final Task<T> task;
 
-    public TaskMenuItem(PluginProtocolTask<T> task) {
+    public TaskMenuItem(Task<T> task) {
         super(new Label(task.getId()));
         this.task = task;
     }

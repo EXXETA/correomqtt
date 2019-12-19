@@ -6,8 +6,9 @@ import org.jdom2.Element;
 
 @Getter
 @RequiredArgsConstructor
-class ProtocolExtensionPoint {
+class ProtocolExtensionPoint<T> {
 
+    private final Class<T> type;
     private final String pluginName;
     private final String extensionId;
     private final Element pluginConfig;

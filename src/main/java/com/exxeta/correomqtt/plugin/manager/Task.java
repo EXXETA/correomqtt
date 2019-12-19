@@ -7,7 +7,7 @@ import java.util.List;
 
 @Getter
 @RequiredArgsConstructor
-public class PluginProtocolTask<T> {
+public class Task<T> {
 
     private final String id;
     private final List<T> tasks;
