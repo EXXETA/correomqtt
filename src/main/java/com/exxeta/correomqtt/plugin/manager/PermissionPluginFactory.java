@@ -28,11 +28,12 @@ public class PermissionPluginFactory extends DefaultPluginFactory {
     }
 
     private void addPluginPermissions(String pluginId, Plugin plugin) {
-        String pluginConfigFolder = ConfigService.getInstance().getPluginConfigPath(pluginId);
-        pluginSecurityPolicy.addPluginPermission(pluginId, getPluginConfigFolderPermission(pluginConfigFolder));
-
         if (plugin instanceof PermissionPlugin) {
             PermissionPlugin permissionPlugin = (PermissionPlugin) plugin;
+
+            String pluginConfigFolder = ConfigService.getInstance().getPluginConfigPath(pluginId);
+            pluginSecurityPolicy.addPluginPermission(pluginId, getPluginConfigFolderPermission(pluginConfigFolder));
+
             permissionPlugin.setPluginConfigFolder(pluginConfigFolder);
             Permissions pluginPermissions = permissionPlugin.getPermissions();
             pluginSecurityPolicy.addPluginPermissions(pluginId, pluginPermissions);

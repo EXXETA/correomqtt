@@ -24,17 +24,17 @@ public class PluginSecurityPolicy extends Policy {
     void addPluginPermissions(String pluginName, Permissions permissions) {
         if (pluginPermissions.containsKey(pluginName)) {
             Permissions existingPermissions = pluginPermissions.get(pluginName);
-            Iterator<Permission> permissionIterator = cleanPermissions(pluginName, permissions).elements().asIterator();
+            Iterator<Permission> permissionIterator = removeForbiddenPermissions(pluginName, permissions).elements().asIterator();
             while (permissionIterator.hasNext()) {
                 Permission p = permissionIterator.next();
                 existingPermissions.add(p);
             }
         } else {
-            pluginPermissions.put(pluginName, cleanPermissions(pluginName, permissions));
+            pluginPermissions.put(pluginName, removeForbiddenPermissions(pluginName, permissions));
         }
     }
 
-    private Permissions cleanPermissions(String pluginName, Permissions permissions) {
+    private Permissions removeForbiddenPermissions(String pluginName, Permissions permissions) {
         Permissions cleanPermissions = new Permissions();
         Iterator<Permission> permissionIterator = permissions.elements().asIterator();
         while (permissionIterator.hasNext()) {

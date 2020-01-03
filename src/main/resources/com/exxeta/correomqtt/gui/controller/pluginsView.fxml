@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<AnchorPane fx:id="pluginRootPane" prefHeight="500.0" prefWidth="1000.0" styleClass="dialog"
-            stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/8.0.211"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.exxeta.correomqtt.gui.controller.PluginsViewController">
-    <VBox styleClass="pluginsHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-          AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+
+<AnchorPane fx:id="pluginRootPane" prefHeight="500.0" prefWidth="1000.0" styleClass="dialog" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.exxeta.correomqtt.gui.controller.PluginsViewController">
+    <VBox styleClass="pluginsHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <children>
-            <Label alignment="TOP_LEFT" styleClass="headline" text="%pluginsViewHeaderLabel"/>
+            <Label alignment="TOP_LEFT" styleClass="headline" text="%pluginsViewHeaderLabel" />
             <TableView fx:id="pluginsTableView">
                 <columns>
                     <TableColumn fx:id="isEnabledColumn" style="-fx-alignment: center" text="Enabled">
@@ -25,18 +22,14 @@
                     </TableColumn>
                 </columns>
             </TableView>
+            <Region VBox.vgrow="ALWAYS" />
             <HBox alignment="CENTER_RIGHT">
                 <children>
-                    <Button fx:id="settingsSaveButton" mnemonicParsing="false" onAction="#onSaveClicked"
-                            text="%commonSaveButton">
-                        <HBox.margin>
-                            <Insets top="5.0"/>
-                            <Insets left="5.0"/>
-                        </HBox.margin>
+                    <Button fx:id="settingsSaveButton" mnemonicParsing="false" onAction="#onSaveClicked" text="%commonSaveButton">
                     </Button>
                 </children>
                 <VBox.margin>
-                    <Insets/>
+                    <Insets />
                 </VBox.margin>
             </HBox>
         </children>
