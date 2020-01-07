@@ -98,8 +98,10 @@ The same extension may be used more than once in one task and multiple tasks can
 ## Create a Plugin
 The easiest way to get started is to checkout and modify the [example plugin](https://github.com/oemel09/CorreoMqttExamplePlugin).
 
-Plugins are instantiated only once (singletons) and each extension will be instantiated every time it's called.
-If an extension needs to keep reference to UI elements or needs to receive lifecycle-hooks it must implement a class extending `Plugin`.
+Plugins and each declared extension is instantiated only once (singletons).
+If a plugin needs to receive lifecycle-hooks it must implement a class extending `Plugin`.
+This plugin class could implement extension points directly, but there will be two different objects created,
+one for the plugin and another one for the extension. 
 
 ### Access Plugin from Extension
 To access the plugin object for an extension use this constructor

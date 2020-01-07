@@ -18,7 +18,6 @@ public class PermissionPlugin extends Plugin {
         super(wrapper);
     }
 
-    @SuppressWarnings("WeakerAccess") // needs to be protected for plugins being able to override it
     protected Permissions getPermissions() {
         return new Permissions();
     }

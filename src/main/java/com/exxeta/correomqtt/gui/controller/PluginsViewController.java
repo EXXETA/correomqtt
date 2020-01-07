@@ -84,7 +84,6 @@ public class PluginsViewController extends BaseController {
             checkBox.selectedProperty().addListener((observableValue, oldValue, newValue) -> {
                 if (newValue) {
                     pluginSystem.enablePlugin(cellData.getValue().getPluginId());
-                    pluginSystem.startPlugin(cellData.getValue().getPluginId());
                 } else {
                     pluginSystem.disablePlugin(cellData.getValue().getPluginId());
                 }
