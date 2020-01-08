@@ -65,26 +65,26 @@ class PluginProtocolParser {
 
         return tasksForType.getChildren()
                 .stream()
-                .map(t -> new ProtocolTask<>(t.getAttributeValue(XML_ATTR_ID), getProtocolExtensionPoints(type, t)))
+                .map(t -> new ProtocolTask<>(t.getAttributeValue(XML_ATTR_ID), getProtocolExtensions(type, t)))
                 .collect(Collectors.toList());
     }
 
-    <T> List<ProtocolExtensionPoint<T>> getProtocolExtensionPoints(Class<T> type) {
-        return getProtocolExtensionPoints(type, protocol.getChild(XML_TAG_LISTS).getChild(type.getSimpleName()));
+    <T> List<ProtocolExtension<T>> getProtocolExtensions(Class<T> type) {
+        return getProtocolExtensions(type, protocol.getChild(XML_TAG_LISTS).getChild(type.getSimpleName()));
     }
 
-    private <T> List<ProtocolExtensionPoint<T>> getProtocolExtensionPoints(Class<T> type, Element root) {
+    private <T> List<ProtocolExtension<T>> getProtocolExtensions(Class<T> type, Element root) {
         if (root == null) return Collections.emptyList();
 
         return root.getChildren()
                 .stream()
-                .map(e -> getProtocolExtensionPoint(type, e))
+                .map(e -> getProtocolExtension(type, e))
                 .collect(Collectors.toList());
     }
 
-    private <T> ProtocolExtensionPoint<T> getProtocolExtensionPoint(Class<T> type, Element pluginElement) {
+    private <T> ProtocolExtension<T> getProtocolExtension(Class<T> type, Element pluginElement) {
         String name = pluginElement.getAttributeValue(XML_ATTR_NAME);
         String extensionId = pluginElement.getAttributeValue(XML_ATTR_EXTENSION_ID);
-        return new ProtocolExtensionPoint<>(type, name, extensionId, pluginElement);
+        return new ProtocolExtension<>(type, name, extensionId, pluginElement);
     }
 }

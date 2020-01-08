@@ -10,6 +10,6 @@ import java.util.List;
 public class ProtocolTask<T> {
 
     private final String id;
-    private final List<ProtocolExtensionPoint<T>> tasks;
+    private final List<ProtocolExtension<T>> tasks;
 
 }

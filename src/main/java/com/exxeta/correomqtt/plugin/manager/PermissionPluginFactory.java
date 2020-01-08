@@ -22,22 +22,19 @@ public class PermissionPluginFactory extends DefaultPluginFactory {
     public Plugin create(PluginWrapper pluginWrapper) {
         Plugin plugin = super.create(pluginWrapper);
 
-        addPluginPermissions(pluginWrapper.getPluginId(), plugin);
+        if (plugin instanceof PermissionPlugin) {
+            addPluginPermissions(pluginWrapper.getPluginId(), (PermissionPlugin) plugin);
+        }
 
         return plugin;
     }
 
-    private void addPluginPermissions(String pluginId, Plugin plugin) {
-        if (plugin instanceof PermissionPlugin) {
-            PermissionPlugin permissionPlugin = (PermissionPlugin) plugin;
+    private void addPluginPermissions(String pluginId, PermissionPlugin permissionPlugin) {
+        String pluginConfigFolder = ConfigService.getInstance().getPluginConfigPath(pluginId);
+        pluginSecurityPolicy.addPluginPermission(pluginId, getPluginConfigFolderPermission(pluginConfigFolder));
+        permissionPlugin.setPluginConfigFolder(pluginConfigFolder);
 
-            String pluginConfigFolder = ConfigService.getInstance().getPluginConfigPath(pluginId);
-            pluginSecurityPolicy.addPluginPermission(pluginId, getPluginConfigFolderPermission(pluginConfigFolder));
-
-            permissionPlugin.setPluginConfigFolder(pluginConfigFolder);
-            Permissions pluginPermissions = permissionPlugin.getPermissions();
-            pluginSecurityPolicy.addPluginPermissions(pluginId, pluginPermissions);
-        }
+        pluginSecurityPolicy.addPluginPermissions(pluginId, permissionPlugin.getPermissions());
     }
 
     private FilePermission getPluginConfigFolderPermission(String pluginConfigFolder) {

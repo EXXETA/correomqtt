@@ -66,19 +66,21 @@ public class PluginSystem extends DefaultPluginManager {
     @Override
     public <T> List<T> getExtensions(Class<T> type) {
         if (!extensionsCache.containsKey(type.getSimpleName())) {
-            if (pluginProtocolParser == null) {
-                extensionsCache.put(type.getSimpleName(), super.getExtensions(type));
-            } else {
-                List<ProtocolExtensionPoint<T>> declaredExtensionsForClass = pluginProtocolParser.getProtocolExtensionPoints(type);
-                if (declaredExtensionsForClass.isEmpty()) {
-                    extensionsCache.put(type.getSimpleName(), super.getExtensions(type));
-                } else {
-                    extensionsCache.put(type.getSimpleName(), createExtensions(type, declaredExtensionsForClass));
-                }
-            }
+            extensionsCache.put(type.getSimpleName(), loadUserDefinedExtensions(type));
         }
 
         return extensionsCache.get(type.getSimpleName());
+    }
+
+    private <T> List<T> loadUserDefinedExtensions(Class<T> type) {
+        if (pluginProtocolParser == null) return super.getExtensions(type);
+
+        List<ProtocolExtension<T>> declaredExtensionsForClass = pluginProtocolParser.getProtocolExtensions(type);
+        if (declaredExtensionsForClass.isEmpty()) {
+            return super.getExtensions(type);
+        } else {
+            return createExtensions(type, declaredExtensionsForClass);
+        }
     }
 
     public <T> List<Task<T>> getTasks(Class<T> type) {
@@ -112,18 +114,18 @@ public class PluginSystem extends DefaultPluginManager {
         }
     }
 
-    private <T> List<T> createExtensions(Class<T> type, List<ProtocolExtensionPoint<T>> declaredExtensionsForClass) {
+    private <T> List<T> createExtensions(Class<T> type, List<ProtocolExtension<T>> declaredExtensionsForClass) {
         return declaredExtensionsForClass
                 .stream()
-                .map(pep -> createExtensionWithConfig(type, pep))
+                .map(pe -> createExtensionWithConfig(type, pe))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
-    private <T> T createExtensionWithConfig(Class<T> type, ProtocolExtensionPoint<T> pep) {
-        T baseExtensionPoint = getExtensionById(type, pep.getPluginName(), pep.getExtensionId());
+    private <T> T createExtensionWithConfig(Class<T> type, ProtocolExtension<T> pe) {
+        T baseExtensionPoint = getExtensionById(type, pe.getPluginName(), pe.getExtensionId());
         if (baseExtensionPoint != null) {
-            ((BaseExtensionPoint) baseExtensionPoint).onConfigReceived(pep.getPluginConfig());
+            ((BaseExtensionPoint) baseExtensionPoint).onConfigReceived(pe.getPluginConfig());
         }
         return baseExtensionPoint;
     }
