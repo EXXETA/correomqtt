@@ -18,7 +18,7 @@ public class PermissionPlugin extends Plugin {
         super(wrapper);
     }
 
-    protected Permissions getPermissions() {
+    public Permissions getPermissions() {
         return new Permissions();
     }
 }

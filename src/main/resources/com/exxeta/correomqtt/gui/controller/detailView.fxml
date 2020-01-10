@@ -52,6 +52,14 @@
                 <Insets right="5.0"/>
             </HBox.margin>
         </SplitMenuButton>
+        <Button fx:id="detailViewRevertManipulationButton" mnemonicParsing="false" styleClass="ban-solid">
+            <tooltip>
+                <Tooltip text="Revert manipulation" />
+            </tooltip>
+            <HBox.margin>
+                <Insets right="5.0" />
+            </HBox.margin>
+        </Button>
         <Pane HBox.hgrow="ALWAYS"/>
         <Button fx:id="detailViewSearchButton" mnemonicParsing="false" onAction="#toggleSearchBar"
                 styleClass="search-solid">

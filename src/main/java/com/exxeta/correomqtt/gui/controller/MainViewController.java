@@ -67,8 +67,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private Menu pluginMenu;
     @FXML
     private MenuItem pluginSettingsItem;
-    @FXML
-    private MenuItem pluginFolderItem;
 
     private SelectionModel<Tab> selectionModel;
     private ResourceBundle resources;
@@ -134,19 +132,10 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                     new Hyperlink("https://www.exxeta.com/de/startseite-exxeta/").getText());
         });
         pluginSettingsItem.setOnAction(event -> openPluginSettings());
-        pluginFolderItem.setOnAction(event -> openPluginFolder());
     }
 
     private void openPluginSettings() {
         PluginsViewController.showAsDialog();
-    }
-
-    private void openPluginFolder() {
-        try {
-            Desktop.getDesktop().open(new File(ConfigService.getInstance().getPluginRootPath()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public String getUUIDofSelectedTab() {

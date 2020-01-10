@@ -1,6 +1,9 @@
 package com.exxeta.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.business.dispatcher.*;
+import com.exxeta.correomqtt.business.dispatcher.ExportMessageDispatcher;
+import com.exxeta.correomqtt.business.dispatcher.ExportMessageObserver;
+import com.exxeta.correomqtt.business.dispatcher.ImportMessageDispatcher;
+import com.exxeta.correomqtt.business.dispatcher.ImportMessageObserver;
 import com.exxeta.correomqtt.business.model.MessageDTO;
 import com.exxeta.correomqtt.business.model.MessageType;
 import com.exxeta.correomqtt.business.services.ConfigService;
@@ -42,8 +45,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
-import org.pf4j.PluginState;
-import org.pf4j.PluginStateListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,8 +58,7 @@ import java.util.regex.PatternSyntaxException;
 public class DetailViewController extends BaseConnectionController implements
         DetailContextMenuDelegate,
         ImportMessageObserver,
-        ExportMessageObserver,
-        ApplicationLifecycleObserver {
+        ExportMessageObserver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DetailViewController.class);
 
@@ -71,6 +71,8 @@ public class DetailViewController extends BaseConnectionController implements
     private Button detailViewSaveButton;
     @FXML
     private SplitMenuButton manipulateSelectionButton;
+    @FXML
+    private Button detailViewRevertManipulationButton;
     @FXML
     private Label detailViewTopicLabel;
     @FXML
@@ -138,7 +140,6 @@ public class DetailViewController extends BaseConnectionController implements
         inlineViewProperty = new SimpleBooleanProperty(isInlineView);
         ExportMessageDispatcher.getInstance().addObserver(this);
         ImportMessageDispatcher.getInstance().addObserver(this);
-        ApplicationLifecycleDispatcher.getInstance().addObserver(this);
     }
 
     private static LoaderResult<DetailViewController> load(final String connectionId, DetailViewDelegate delegate, final boolean isInlineView) {
@@ -224,21 +225,10 @@ public class DetailViewController extends BaseConnectionController implements
             showSearchResult();
         });
 
-        initializeManipulateButton();
-        registerPluginStateListener();
+        initializeManipulation();
     }
 
-    private void registerPluginStateListener() {
-        PluginSystem.getInstance().addPluginStateListener(pluginStateListener);
-    }
-
-    private PluginStateListener pluginStateListener = event -> {
-        if (event.getPluginState().equals(PluginState.STOPPED) || event.getPluginState().equals(PluginState.STARTED)) {
-            initializeManipulateButton();
-        }
-    };
-
-    private void initializeManipulateButton() {
+    private void initializeManipulation() {
         manipulateSelectionButton.getItems().clear();
         lastManipulatorTask = null;
         manipulateSelectionButton.setText("Manipulate");
@@ -249,9 +239,11 @@ public class DetailViewController extends BaseConnectionController implements
             menuItem.setOnAction(this::onManipulateMessageSelected);
             manipulateSelectionButton.getItems().add(menuItem);
         });
-        manipulateSelectionButton.setOnAction(this::onManipulateMessageClicked);
+        manipulateSelectionButton.setOnMouseClicked(this::onManipulateMessageClicked);
         manipulateSelectionButton.setVisible(!tasks.isEmpty());
         manipulateSelectionButton.setManaged(!tasks.isEmpty());
+
+        detailViewRevertManipulationButton.setOnMouseClicked(e -> showMessage());
     }
 
     @FXML
@@ -307,6 +299,8 @@ public class DetailViewController extends BaseConnectionController implements
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Show message in DetailView: {}", getConnectionId());
         }
+
+        detailViewRevertManipulationButton.setDisable(true);
 
         emptyLabel.setVisible(false);
         emptyLabel.setManaged(false);
@@ -373,7 +367,7 @@ public class DetailViewController extends BaseConnectionController implements
         label.setTooltip(new Tooltip(tooltip));
     }
 
-    private void onManipulateMessageClicked(ActionEvent actionEvent) {
+    private void onManipulateMessageClicked(MouseEvent event) {
         if (lastManipulatorTask != null) {
             manipulateMessage(lastManipulatorTask);
         }
@@ -387,6 +381,8 @@ public class DetailViewController extends BaseConnectionController implements
     }
 
     private void manipulateMessage(Task<DetailViewManipulatorHook> manipulatorTask) {
+        detailViewRevertManipulationButton.setDisable(false);
+
         IndexRange range = getSelectionRange();
 
         byte[] selection = codeArea.getText(range).getBytes();
@@ -394,9 +390,7 @@ public class DetailViewController extends BaseConnectionController implements
             selection = hook.manipulate(selection);
         }
 
-        String manipulatedSelection = new String(selection);
-        codeArea.replaceText(range, manipulatedSelection);
-        codeArea.selectRange(range.getStart(), range.getStart() + manipulatedSelection.length());
+        codeArea.replaceText(range, new String(selection));
         detailViewFormatToggleButton.setSelected(false);
 
         if (messageDTO != null) {
@@ -729,10 +723,5 @@ public class DetailViewController extends BaseConnectionController implements
     @Override
     public void onImportFailed(File file, Throwable exception) {
         detailViewVBox.setDisable(false);
-    }
-
-    @Override
-    public void onShutdown() {
-        PluginSystem.getInstance().removePluginStateListener(pluginStateListener);
     }
 }
