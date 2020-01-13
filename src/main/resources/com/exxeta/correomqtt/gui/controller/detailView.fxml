@@ -52,7 +52,7 @@
                 <Insets right="5.0"/>
             </HBox.margin>
         </SplitMenuButton>
-        <Button fx:id="detailViewRevertManipulationButton" mnemonicParsing="false" styleClass="ban-solid">
+        <Button fx:id="detailViewRevertManipulationButton" mnemonicParsing="false" styleClass="ban-solid" disable="true">
             <tooltip>
                 <Tooltip text="Revert manipulation" />
             </tooltip>
