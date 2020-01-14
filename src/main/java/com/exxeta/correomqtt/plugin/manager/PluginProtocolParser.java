@@ -73,7 +73,7 @@ class PluginProtocolParser {
         return getProtocolExtensions(type, protocol.getChild(XML_TAG_LISTS).getChild(type.getSimpleName()));
     }
 
-    private <T> List<ProtocolExtension<T>> getProtocolExtensions(Class<T> type, Element root) {
+    <T> List<ProtocolExtension<T>> getProtocolExtensions(Class<T> type, Element root) {
         if (root == null) return Collections.emptyList();
 
         return root.getChildren()

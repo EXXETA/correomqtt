@@ -3,6 +3,8 @@ package com.exxeta.correomqtt.plugin.manager;
 import com.exxeta.correomqtt.business.services.ConfigService;
 import com.exxeta.correomqtt.plugin.spi.BaseExtensionPoint;
 import com.exxeta.correomqtt.plugin.spi.ExtensionId;
+import com.google.gson.internal.bind.util.ISO8601Utils;
+import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.pf4j.*;
 import org.slf4j.Logger;
@@ -70,6 +72,24 @@ public class PluginSystem extends DefaultPluginManager {
         }
 
         return extensionsCache.get(type.getSimpleName());
+    }
+
+    /**
+     * plugins can use this method to load other plugins
+     * @param type
+     * @param root root element inside which plugins may be nested
+     * @param <T>
+     * @return list of declared extensions or an empty list if none were found
+     */
+    public <T> List<T> getExtensions(Class<T> type, Element root) {
+        if (pluginProtocolParser == null) return super.getExtensions(type);
+
+        List<ProtocolExtension<T>> declaredExtensionsForClass = pluginProtocolParser.getProtocolExtensions(type, root);
+        if (declaredExtensionsForClass.isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            return createExtensions(type, declaredExtensionsForClass);
+        }
     }
 
     private <T> List<T> loadUserDefinedExtensions(Class<T> type) {
