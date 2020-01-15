@@ -3,6 +3,7 @@ package com.exxeta.correomqtt.plugin.manager;
 import org.slf4j.LoggerFactory;
 
 import java.io.FilePermission;
+import java.lang.reflect.ReflectPermission;
 import java.security.*;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,13 +11,16 @@ import java.util.Iterator;
 
 public class PluginSecurityPolicy extends Policy {
 
-    private static final String[] FORBIDDEN_PERMISSIONS = {
-            "createClassLoader",
-            "accessClassInPackage.sun",
-            "setSecurityManager",
-            "suppressAccessChecks",
-            "setPolicy",
-            "setProperty.package.access"
+    // see https://tersesystems.com/blog/2015/12/29/sandbox-experiment/
+    private static final Permission[] FORBIDDEN_PERMISSIONS = {
+            new RuntimePermission("createClassLoader"),
+            new RuntimePermission("accessClassInPackage.sun"),
+            new RuntimePermission("setSecurityManager"),
+            new ReflectPermission("suppressAccessChecks"),
+            // there is a known use case where a plugin needs to write anywhere into the filesystem
+            // new FilePermission("<<ALL FILES>>", "write, execute"),
+            new SecurityPermission("setPolicy"),
+            new SecurityPermission("setProperty.package.access")
     };
 
     private HashMap<String, Permissions> pluginPermissions = new HashMap<>();
@@ -34,7 +38,7 @@ public class PluginSecurityPolicy extends Policy {
         }
     }
 
-    private Permissions removeForbiddenPermissions(String pluginName, Permissions permissions) {
+    public static Permissions removeForbiddenPermissions(String pluginName, Permissions permissions) {
         Permissions cleanPermissions = new Permissions();
         Iterator<Permission> permissionIterator = permissions.elements().asIterator();
         while (permissionIterator.hasNext()) {
@@ -48,9 +52,10 @@ public class PluginSecurityPolicy extends Policy {
         return cleanPermissions;
     }
 
-    private boolean isPermissionAllowed(Permission permission) {
+    private static boolean isPermissionAllowed(Permission permission) {
         if (permission instanceof FilePermission && permission.getActions().contains("execute")) return false;
-        return !Arrays.asList(FORBIDDEN_PERMISSIONS).contains(permission.getName());
+        return Arrays.stream(FORBIDDEN_PERMISSIONS).noneMatch(p -> p.getClass().equals(permission.getClass())
+                && p.getName().equals(permission.getName()));
     }
 
     void addPluginPermission(String pluginName, Permission permission) {

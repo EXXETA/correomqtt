@@ -5,6 +5,7 @@ import com.exxeta.correomqtt.gui.model.WindowProperty;
 import com.exxeta.correomqtt.gui.model.WindowType;
 import com.exxeta.correomqtt.gui.utils.WindowHelper;
 import com.exxeta.correomqtt.plugin.manager.PermissionPlugin;
+import com.exxeta.correomqtt.plugin.manager.PluginSecurityPolicy;
 import com.exxeta.correomqtt.plugin.manager.PluginSystem;
 import javafx.animation.PauseTransition;
 import javafx.beans.property.SimpleObjectProperty;
@@ -28,6 +29,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.security.Permission;
+import java.security.Permissions;
 import java.util.*;
 
 public class PluginsViewController extends BaseController {
@@ -90,58 +92,68 @@ public class PluginsViewController extends BaseController {
         ArrayList<PluginWrapper> allPluginWrappers = new ArrayList<>(PluginSystem.getInstance().getPlugins());
         ObservableList<PluginWrapper> plugins = FXCollections.observableArrayList(allPluginWrappers);
         pluginsTableView.setItems(plugins);
-        isEnabledColumn.setCellValueFactory(cellData -> {
-            CheckBox checkBox = new CheckBox();
-            checkBox.selectedProperty().setValue(!cellData.getValue().getPluginState().equals(PluginState.DISABLED));
-            checkBox.selectedProperty().addListener((observableValue, oldValue, newValue) -> {
-                if (newValue) {
-                    pluginSystem.enablePlugin(cellData.getValue().getPluginId());
-                } else {
-                    pluginSystem.disablePlugin(cellData.getValue().getPluginId());
-                }
-                setStatusRestartRequired();
-            });
-            return new SimpleObjectProperty<>(checkBox);
-        });
+        isEnabledColumn.setCellValueFactory(this::getIsEnabledCellData);
         isEnabledColumn.setSortable(false);
-        nameVersionColumn.setCellValueFactory(cellData -> {
-            String name = cellData.getValue().getPluginId();
-            String version = cellData.getValue().getDescriptor().getVersion();
-            return new SimpleObjectProperty<>(name + " - " + version);
-        });
+        nameVersionColumn.setCellValueFactory(this::getPluginNameAndVersionCellData);
         descriptionColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getDescriptor().getPluginDescription()));
         providerColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getDescriptor().getProvider()));
-        permissionColumn.setCellValueFactory(cellData -> {
-            StringBuilder permissions = new StringBuilder();
-            Plugin plugin = cellData.getValue().getPlugin();
-            if (plugin instanceof PermissionPlugin) {
-                Iterator<Permission> it = ((PermissionPlugin) plugin).getPermissions().elements().asIterator();
-                while (it.hasNext()) {
-                    Permission p = it.next();
-                    permissions.append(p.getClass().getSimpleName())
-                            .append("(").append(p.getName());
-                    if (!p.getActions().isBlank()) {
-                        permissions.append(", ").append(p.getActions());
-                    }
-                    permissions.append("); ");
-                }
-            }
-            return new SimpleObjectProperty<>(permissions.toString());
-        });
+        permissionColumn.setCellValueFactory(this::getPermissionCellData);
         fileColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getPluginPath().toString()));
-        pluginsTableView.setRowFactory(tv -> {
-            TableRow<PluginWrapper> row = new TableRow<>();
-            row.setOnMouseClicked(event -> {
-                if (event.getClickCount() == 2 && (!row.isEmpty())) {
-                    PluginWrapper rowData = row.getItem();
-                    ClipboardContent content = new ClipboardContent();
-                    content.putString(rowData.getPluginId());
-                    Clipboard.getSystemClipboard().setContent(content);
-                    setStatusCopiedToClipboard(rowData.getPluginId());
-                }
-            });
-            return row;
+        pluginsTableView.setRowFactory(this::getRowFactory);
+    }
+
+    private SimpleObjectProperty<CheckBox> getIsEnabledCellData(TableColumn.CellDataFeatures<PluginWrapper, CheckBox> cellData) {
+        CheckBox checkBox = new CheckBox();
+        checkBox.selectedProperty().setValue(!cellData.getValue().getPluginState().equals(PluginState.DISABLED));
+        checkBox.selectedProperty().addListener((observableValue, oldValue, newValue) -> {
+            if (newValue) {
+                pluginSystem.enablePlugin(cellData.getValue().getPluginId());
+            } else {
+                pluginSystem.disablePlugin(cellData.getValue().getPluginId());
+            }
+            setStatusRestartRequired();
         });
+        return new SimpleObjectProperty<>(checkBox);
+    }
+
+    private SimpleObjectProperty<String> getPluginNameAndVersionCellData(TableColumn.CellDataFeatures<PluginWrapper, String> cellData) {
+        String name = cellData.getValue().getPluginId();
+        String version = cellData.getValue().getDescriptor().getVersion();
+        return new SimpleObjectProperty<>(name + " - " + version);
+    }
+
+    private SimpleObjectProperty<String> getPermissionCellData(TableColumn.CellDataFeatures<PluginWrapper, String> cellData) {
+        StringBuilder permissions = new StringBuilder();
+        Plugin plugin = cellData.getValue().getPlugin();
+        if (plugin instanceof PermissionPlugin) {
+            Permissions pluginPermissions = PluginSecurityPolicy.removeForbiddenPermissions(plugin.getWrapper().getPluginId(),
+                    ((PermissionPlugin) plugin).getPermissions());
+            Iterator<Permission> it = pluginPermissions.elements().asIterator();
+            while (it.hasNext()) {
+                Permission p = it.next();
+                permissions.append(p.getClass().getSimpleName())
+                        .append("(").append(p.getName());
+                if (!p.getActions().isBlank()) {
+                    permissions.append(", ").append(p.getActions());
+                }
+                permissions.append("); ");
+            }
+        }
+        return new SimpleObjectProperty<>(permissions.toString());
+    }
+
+    private TableRow<PluginWrapper> getRowFactory(TableView<PluginWrapper> tv) {
+        TableRow<PluginWrapper> row = new TableRow<>();
+        row.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                PluginWrapper rowData = row.getItem();
+                ClipboardContent content = new ClipboardContent();
+                content.putString(rowData.getPluginId());
+                Clipboard.getSystemClipboard().setContent(content);
+                setStatusCopiedToClipboard(rowData.getPluginId());
+            }
+        });
+        return row;
     }
 
     @FXML
