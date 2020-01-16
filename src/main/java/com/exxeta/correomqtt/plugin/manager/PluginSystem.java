@@ -3,7 +3,6 @@ package com.exxeta.correomqtt.plugin.manager;
 import com.exxeta.correomqtt.business.services.ConfigService;
 import com.exxeta.correomqtt.plugin.spi.BaseExtensionPoint;
 import com.exxeta.correomqtt.plugin.spi.ExtensionId;
-import com.google.gson.internal.bind.util.ISO8601Utils;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.pf4j.*;
@@ -76,6 +75,7 @@ public class PluginSystem extends DefaultPluginManager {
 
     /**
      * plugins can use this method to load other plugins
+     *
      * @param type
      * @param root root element inside which plugins may be nested
      * @param <T>
@@ -84,7 +84,7 @@ public class PluginSystem extends DefaultPluginManager {
     public <T> List<T> getExtensions(Class<T> type, Element root) {
         if (pluginProtocolParser == null) return super.getExtensions(type);
 
-        List<ProtocolExtension<T>> declaredExtensionsForClass = pluginProtocolParser.getProtocolExtensions(type, root);
+        List<ProtocolExtension> declaredExtensionsForClass = pluginProtocolParser.getProtocolExtensions(root);
         if (declaredExtensionsForClass.isEmpty()) {
             return Collections.emptyList();
         } else {
@@ -95,7 +95,7 @@ public class PluginSystem extends DefaultPluginManager {
     private <T> List<T> loadUserDefinedExtensions(Class<T> type) {
         if (pluginProtocolParser == null) return super.getExtensions(type);
 
-        List<ProtocolExtension<T>> declaredExtensionsForClass = pluginProtocolParser.getProtocolExtensions(type);
+        List<ProtocolExtension> declaredExtensionsForClass = pluginProtocolParser.getProtocolExtensions(type);
         if (declaredExtensionsForClass.isEmpty()) {
             return super.getExtensions(type);
         } else {
@@ -108,7 +108,7 @@ public class PluginSystem extends DefaultPluginManager {
             if (pluginProtocolParser == null) {
                 taskCache.put(type.getSimpleName(), Collections.emptyList());
             } else {
-                List<ProtocolTask<T>> declaredTasks = pluginProtocolParser.getDeclaredTasks(type);
+                List<ProtocolTask> declaredTasks = pluginProtocolParser.getDeclaredTasks(type);
                 if (declaredTasks.isEmpty()) {
                     taskCache.put(type.getSimpleName(), Collections.emptyList());
                 } else {
@@ -124,7 +124,7 @@ public class PluginSystem extends DefaultPluginManager {
         return taskCache.get(type.getSimpleName()).stream().map(t -> (Task<T>) t).collect(Collectors.toList());
     }
 
-    private <T> Task<T> createTask(Class<T> type, ProtocolTask<T> protocolTask) {
+    private <T> Task<T> createTask(Class<T> type, ProtocolTask protocolTask) {
         List<T> extensions = createExtensions(type, protocolTask.getTasks());
         if (extensions.size() == protocolTask.getTasks().size()) {
             return new Task<>(protocolTask.getId(), extensions);
@@ -134,7 +134,7 @@ public class PluginSystem extends DefaultPluginManager {
         }
     }
 
-    private <T> List<T> createExtensions(Class<T> type, List<ProtocolExtension<T>> declaredExtensionsForClass) {
+    private <T> List<T> createExtensions(Class<T> type, List<ProtocolExtension> declaredExtensionsForClass) {
         return declaredExtensionsForClass
                 .stream()
                 .map(pe -> createExtensionWithConfig(type, pe))
@@ -142,7 +142,7 @@ public class PluginSystem extends DefaultPluginManager {
                 .collect(Collectors.toList());
     }
 
-    private <T> T createExtensionWithConfig(Class<T> type, ProtocolExtension<T> pe) {
+    private <T> T createExtensionWithConfig(Class<T> type, ProtocolExtension pe) {
         T baseExtensionPoint = getExtensionById(type, pe.getPluginName(), pe.getExtensionId());
         if (baseExtensionPoint != null) {
             ((BaseExtensionPoint) baseExtensionPoint).onConfigReceived(pe.getPluginConfig());

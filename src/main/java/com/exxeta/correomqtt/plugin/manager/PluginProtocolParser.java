@@ -51,7 +51,7 @@ class PluginProtocolParser {
         }
     }
 
-    <T> List<ProtocolTask<T>> getDeclaredTasks(Class<T> type) {
+    <T> List<ProtocolTask> getDeclaredTasks(Class<T> type) {
         if (protocol == null) return Collections.emptyList();
 
         Element tasksRoot = protocol.getChild(XML_TAG_TASKS);
@@ -65,26 +65,26 @@ class PluginProtocolParser {
 
         return tasksForType.getChildren()
                 .stream()
-                .map(t -> new ProtocolTask<>(t.getAttributeValue(XML_ATTR_ID), getProtocolExtensions(type, t)))
+                .map(t -> new ProtocolTask(t.getAttributeValue(XML_ATTR_ID), getProtocolExtensions(t)))
                 .collect(Collectors.toList());
     }
 
-    <T> List<ProtocolExtension<T>> getProtocolExtensions(Class<T> type) {
-        return getProtocolExtensions(type, protocol.getChild(XML_TAG_LISTS).getChild(type.getSimpleName()));
+    <T> List<ProtocolExtension> getProtocolExtensions(Class<T> type) {
+        return getProtocolExtensions(protocol.getChild(XML_TAG_LISTS).getChild(type.getSimpleName()));
     }
 
-    <T> List<ProtocolExtension<T>> getProtocolExtensions(Class<T> type, Element root) {
+    List<ProtocolExtension> getProtocolExtensions(Element root) {
         if (root == null) return Collections.emptyList();
 
         return root.getChildren()
                 .stream()
-                .map(e -> getProtocolExtension(type, e))
+                .map(this::getProtocolExtension)
                 .collect(Collectors.toList());
     }
 
-    private <T> ProtocolExtension<T> getProtocolExtension(Class<T> type, Element pluginElement) {
+    private ProtocolExtension getProtocolExtension(Element pluginElement) {
         String name = pluginElement.getAttributeValue(XML_ATTR_NAME);
         String extensionId = pluginElement.getAttributeValue(XML_ATTR_EXTENSION_ID);
-        return new ProtocolExtension<>(type, name, extensionId, pluginElement);
+        return new ProtocolExtension(name, extensionId, pluginElement);
     }
 }

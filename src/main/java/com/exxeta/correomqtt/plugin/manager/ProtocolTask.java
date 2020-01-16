@@ -7,9 +7,9 @@ import java.util.List;
 
 @Getter
 @RequiredArgsConstructor
-public class ProtocolTask<T> {
+public class ProtocolTask {
 
     private final String id;
-    private final List<ProtocolExtension<T>> tasks;
+    private final List<ProtocolExtension> tasks;
 
 }
