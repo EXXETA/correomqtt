@@ -85,6 +85,6 @@ class PluginProtocolParser {
     private ProtocolExtension getProtocolExtension(Element pluginElement) {
         String name = pluginElement.getAttributeValue(XML_ATTR_NAME);
         String extensionId = pluginElement.getAttributeValue(XML_ATTR_EXTENSION_ID);
-        return new ProtocolExtension(name, extensionId, pluginElement);
+        return new ProtocolExtension(name, extensionId, pluginElement.clone());
     }
 }
