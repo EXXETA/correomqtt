@@ -4,13 +4,7 @@ import com.exxeta.correomqtt.business.dispatcher.ConfigDispatcher;
 import com.exxeta.correomqtt.business.dispatcher.ConfigObserver;
 import com.exxeta.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import com.exxeta.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
-import com.exxeta.correomqtt.business.model.Auth;
-import com.exxeta.correomqtt.business.model.ConnectionConfigDTO;
-import com.exxeta.correomqtt.business.model.CorreoMqttVersion;
-import com.exxeta.correomqtt.business.model.Lwt;
-import com.exxeta.correomqtt.business.model.Proxy;
-import com.exxeta.correomqtt.business.model.Qos;
-import com.exxeta.correomqtt.business.model.TlsSsl;
+import com.exxeta.correomqtt.business.model.*;
 import com.exxeta.correomqtt.business.mqtt.CorreoMqttClient;
 import com.exxeta.correomqtt.business.services.ConfigService;
 import com.exxeta.correomqtt.business.utils.ConnectionHolder;
@@ -24,33 +18,15 @@ import com.exxeta.correomqtt.gui.model.WindowProperty;
 import com.exxeta.correomqtt.gui.model.WindowType;
 import com.exxeta.correomqtt.gui.transformer.ConnectionTransformer;
 import com.exxeta.correomqtt.gui.utils.WindowHelper;
+import com.exxeta.correomqtt.plugin.manager.PluginSystem;
+import com.exxeta.correomqtt.plugin.model.LwtConnectionExtensionDTO;
+import com.exxeta.correomqtt.plugin.spi.LwtSettingsHook;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.DialogPane;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TabPane;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Tooltip;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.TransferMode;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.input.*;
+import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
@@ -60,16 +36,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConnectionSettingsViewController extends BaseController implements ConfigObserver, ConnectionLifecycleObserver {
+public class ConnectionSettingsViewController extends BaseController implements ConfigObserver, ConnectionLifecycleObserver,
+        LwtSettingsHook.OnSettingsChangedListener {
 
     private static final String TEXT_FIELD = "text-field";
     private static final String TEXT_INPUT = "text-input";
@@ -148,9 +120,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
     @FXML
     private ComboBox<Qos> lwtQoSComboBox;
     @FXML
-    private CheckBox lwtMessageIdCheckBox;
-    @FXML
-    private CheckBox lwtAnswerExpectedCheckBox;
+    private HBox lwtPluginControlBox;
     @FXML
     private CheckBox lwtRetainedCheckBox;
     @FXML
@@ -228,10 +198,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         lwtPayloadCodeArea.prefWidthProperty().bind(lwtPayloadPane.widthProperty());
         lwtPayloadCodeArea.prefHeightProperty().bind(lwtPayloadPane.heightProperty());
 
-        if (!ConfigService.getInstance().getSettings().isExtraFeatures()) {
-            lwtMessageIdCheckBox.setVisible(false);
-            lwtAnswerExpectedCheckBox.setVisible(false);
-        }
+        PluginSystem.getInstance().getExtensions(LwtSettingsHook.class).forEach(p -> p.onAddItemsToLwtSettingsBox(this, lwtPluginControlBox));
 
         connectionsListView.setCellFactory(this::createCell);
 
@@ -241,7 +208,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         upLabel.setDisable(true);
         downLabel.setDisable(true);
 
-        nameTextField.lengthProperty().addListener((observabyyle, oldValue, newValue) ->
+        nameTextField.lengthProperty().addListener((observable, oldValue, newValue) ->
                 checkName(nameTextField, false));
         urlTextField.lengthProperty().addListener(((observable, oldValue, newValue) ->
                 checkUrl(urlTextField, false)));
@@ -311,15 +278,13 @@ public class ConnectionSettingsViewController extends BaseController implements 
             CheckTopicHelper.checkPublishTopic(lwtTopicComboBox, false);
         }));
         lwtQoSComboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
-        lwtMessageIdCheckBox.selectedProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
-        lwtAnswerExpectedCheckBox.selectedProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
         lwtRetainedCheckBox.selectedProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
         lwtPayloadCodeArea.textProperty().addListener(((observable, oldValue, newValue) -> setDirty(true)));
 
         internalIdLabel.setText("");
     }
 
-    private <T extends GenericCellModel> StringConverter<T> getStringConverter(){
+    private <T extends GenericCellModel> StringConverter<T> getStringConverter() {
         return new StringConverter<T>() {
             @Override
             public String toString(T object) {
@@ -327,25 +292,17 @@ public class ConnectionSettingsViewController extends BaseController implements 
                     return null;
                 }
                 String translationKey = object.getLabelTranslationKey();
-                if(translationKey != null) {
+                if (translationKey != null) {
                     return resources.getString(translationKey);
                 }
                 return object.toString();
             }
+
             @Override
             public T fromString(String string) {
                 return null;
             }
         };
-    }
-
-    public void setCheckBoxes() {
-        if (lwtMessageIdCheckBox.isSelected()) {
-            lwtAnswerExpectedCheckBox.setDisable(false);
-        } else {
-            lwtAnswerExpectedCheckBox.setDisable(true);
-            lwtAnswerExpectedCheckBox.setSelected(false);
-        }
     }
 
     private ListCell<ConnectionPropertiesDTO> createCell(ListView<ConnectionPropertiesDTO> connectionListView) {
@@ -449,7 +406,26 @@ public class ConnectionSettingsViewController extends BaseController implements 
         ConnectionHolder.getInstance().getSortedConnections()
                 .forEach(c -> list.add(ConnectionTransformer.dtoToProps(c)));
         connectionsListView.setItems(list);
+        executeOnLoadSettingsExtensions();
         LOGGER.debug("Loading connection list from background");
+    }
+
+    private void executeOnLoadSettingsExtensions() {
+        connectionsListView.getItems().forEach(c -> {
+            decodeLwtPayload(c);
+            LwtConnectionExtensionDTO connectionExtensionDTO = new LwtConnectionExtensionDTO(c);
+            for (LwtSettingsHook p : PluginSystem.getInstance().getExtensions(LwtSettingsHook.class)) {
+                connectionExtensionDTO = p.onLoadConnection(connectionExtensionDTO);
+            }
+            connectionExtensionDTO.merge(c);
+        });
+    }
+
+    private void decodeLwtPayload(ConnectionPropertiesDTO connectionPropertiesDTO) {
+        String lwtPayload = connectionPropertiesDTO.getLwtPayload();
+        if (lwtPayload != null) {
+            connectionPropertiesDTO.getLwtPayloadProperty().set(new String(Base64.getDecoder().decode(lwtPayload)));
+        }
     }
 
     private boolean checkDirty() {
@@ -610,6 +586,8 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
         if (activeConnectionConfigDTO != null) {
 
+            executeOnShowConnectionExtensions();
+
             nameTextField.setText(activeConnectionConfigDTO.getName());
             urlTextField.setText(activeConnectionConfigDTO.getUrl());
             portTextField.setText(Integer.toString(activeConnectionConfigDTO.getPort()));
@@ -650,12 +628,9 @@ public class ConnectionSettingsViewController extends BaseController implements 
             lwtComboBox.getSelectionModel().select(activeConnectionConfigDTO.getLwt());
             lwtTopicComboBox.getEditor().setText(activeConnectionConfigDTO.getLwtTopic());
             lwtQoSComboBox.getSelectionModel().select(activeConnectionConfigDTO.getLwtQos());
-            lwtMessageIdCheckBox.setSelected(activeConnectionConfigDTO.getLwtMessageId());
-            lwtAnswerExpectedCheckBox.setSelected(activeConnectionConfigDTO.getLwtAnswerExpected());
-            lwtAnswerExpectedCheckBox.setDisable(!activeConnectionConfigDTO.getLwtMessageId());
-            lwtRetainedCheckBox.setSelected(activeConnectionConfigDTO.getLwtRetained());
+            lwtRetainedCheckBox.setSelected(activeConnectionConfigDTO.isLwtRetained());
             if (activeConnectionConfigDTO.getLwtPayload() != null) {
-                lwtPayloadCodeArea.replaceText(new String(Base64.getDecoder().decode(activeConnectionConfigDTO.getLwtPayload())));
+                lwtPayloadCodeArea.replaceText(activeConnectionConfigDTO.getLwtPayload());
             }
 
             internalIdLabel.setText(resources.getString("connectionSettingsViewInternalIdLabel") + ": " + activeConnectionConfigDTO.getId());
@@ -667,7 +642,16 @@ public class ConnectionSettingsViewController extends BaseController implements 
         dirtyCheckEnabled.set(true);
     }
 
-    private void setDirty(boolean dirty) {
+    private void executeOnShowConnectionExtensions() {
+        LwtConnectionExtensionDTO lwtConnectionExtensionDTO = new LwtConnectionExtensionDTO(activeConnectionConfigDTO);
+        for (LwtSettingsHook p : PluginSystem.getInstance().getExtensions(LwtSettingsHook.class)) {
+            lwtConnectionExtensionDTO = p.onShowConnection(lwtConnectionExtensionDTO);
+        }
+        activeConnectionConfigDTO = lwtConnectionExtensionDTO.merge(activeConnectionConfigDTO);
+    }
+
+    @Override
+    public void setDirty(boolean dirty) {
         if (dirtyCheckEnabled.get()) {
             activeConnectionConfigDTO.getDirtyProperty().set(dirty);
             applyButton.setDisable(!dirty);
@@ -725,7 +709,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
         Optional<ButtonType> result = alert.showAndWait();
 
-        if (!result.isPresent()) {
+        if (result.isEmpty()) {
             LOGGER.error("No result from confirm drop connection dialog.");
             return;
         }
@@ -832,22 +816,11 @@ public class ConnectionSettingsViewController extends BaseController implements 
             activeConnectionConfigDTO.getLwtProperty().setValue(lwtComboBox.getSelectionModel().getSelectedItem());
             activeConnectionConfigDTO.getLwtTopicProperty().set(lwtTopicComboBox.getEditor().getText());
             activeConnectionConfigDTO.getLwtQoSProperty().setValue(lwtQoSComboBox.getSelectionModel().getSelectedItem());
-            activeConnectionConfigDTO.getLwtMessageIdProperty().set(lwtMessageIdCheckBox.isSelected());
-            activeConnectionConfigDTO.getLwtAnswerExpectedProperty().set(lwtAnswerExpectedCheckBox.isSelected());
             activeConnectionConfigDTO.getLwtRetainedProperty().set(lwtRetainedCheckBox.isSelected());
-            activeConnectionConfigDTO.getLwtPayloadProperty().set(Base64.getEncoder().encodeToString(lwtPayloadCodeArea.getText().getBytes()));
+            activeConnectionConfigDTO.getLwtPayloadProperty().set(lwtPayloadCodeArea.getText());
 
-            if (ConfigService.getInstance().getSettings().isExtraFeatures() && lwtMessageIdCheckBox.isSelected()) {
-                if (lwtAnswerExpectedCheckBox.isSelected()) {
-                    activeConnectionConfigDTO.getLwtPayloadProperty().set("1" + activeConnectionConfigDTO.getLwtPayloadProperty());
-                } else {
-                    activeConnectionConfigDTO.getLwtPayloadProperty().set("0" + activeConnectionConfigDTO.getLwtPayloadProperty());
-                }
-
-                String uuid = UUID.randomUUID().toString();
-                activeConnectionConfigDTO.getLwtPayloadProperty().set(uuid + activeConnectionConfigDTO.getLwtPayloadProperty());
-            }
-
+            activeConnectionConfigDTO = executeOnSaveSettingsExtensions(activeConnectionConfigDTO);
+            executeOnUnloadSettingsExtensions();
 
             ConfigService.getInstance().saveConnections(
                     ConnectionTransformer.propsListToDtoList(connectionsListView.getItems())
@@ -862,10 +835,34 @@ public class ConnectionSettingsViewController extends BaseController implements 
             activeConnectionConfigDTO.getDirtyProperty().set(false);
             activeConnectionConfigDTO.getUnpersistedProperty().set(false);
 
+            executeOnLoadSettingsExtensions();
             return true;
         }
 
         return false;
+    }
+
+    private ConnectionPropertiesDTO executeOnSaveSettingsExtensions(ConnectionPropertiesDTO activeConnectionConfigDTO) {
+        LwtConnectionExtensionDTO activeExtensionConnectionConfigDTO = new LwtConnectionExtensionDTO(activeConnectionConfigDTO);
+        for (LwtSettingsHook p : PluginSystem.getInstance().getExtensions(LwtSettingsHook.class)) {
+            activeExtensionConnectionConfigDTO = p.onSaveConnection(activeExtensionConnectionConfigDTO);
+        }
+        return activeExtensionConnectionConfigDTO.merge(activeConnectionConfigDTO);
+    }
+
+    private void executeOnUnloadSettingsExtensions() {
+        connectionsListView.getItems().forEach(c -> {
+            LwtConnectionExtensionDTO activeExtensionConnectionConfigDTO = new LwtConnectionExtensionDTO(c);
+            for (LwtSettingsHook p : PluginSystem.getInstance().getExtensions(LwtSettingsHook.class)) {
+                activeExtensionConnectionConfigDTO = p.onUnloadConnection(activeExtensionConnectionConfigDTO);
+            }
+            activeExtensionConnectionConfigDTO.merge(c);
+            encodeLwtPayload(c);
+        });
+    }
+
+    private void encodeLwtPayload(ConnectionPropertiesDTO c) {
+        c.getLwtPayloadProperty().set(Base64.getEncoder().encodeToString(c.getLwtPayload().getBytes()));
     }
 
     private boolean checkName(TextField textField, boolean save) {
@@ -875,11 +872,11 @@ public class ConnectionSettingsViewController extends BaseController implements 
         }
 
         //check name collision
-        for (ConnectionPropertiesDTO ConnectionConfigDTO : connectionsListView.getItems()) {
-            if (ConnectionConfigDTO == activeConnectionConfigDTO) { // I do not want to check myself.
+        for (ConnectionPropertiesDTO connectionConfigDTO : connectionsListView.getItems()) {
+            if (connectionConfigDTO == activeConnectionConfigDTO) { // I do not want to check myself.
                 continue;
             }
-            if (ConnectionConfigDTO.getName().equals(nameTextField.getText())) {
+            if (connectionConfigDTO.getName().equals(nameTextField.getText())) {
                 setError(textField, save, resources.getString("validationNameAlreadyUsed"));
                 return false;
             }
@@ -1073,15 +1070,6 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
     @Override
     public void onSettingsUpdated() {
-        if (!ConfigService.getInstance().getSettings().isExtraFeatures()) {
-            lwtMessageIdCheckBox.setVisible(false);
-            lwtMessageIdCheckBox.setSelected(false);
-            lwtAnswerExpectedCheckBox.setVisible(false);
-            lwtAnswerExpectedCheckBox.setSelected(false);
-        } else {
-            lwtMessageIdCheckBox.setVisible(true);
-            lwtAnswerExpectedCheckBox.setVisible(true);
-        }
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Updated settings in connection settings view controller");

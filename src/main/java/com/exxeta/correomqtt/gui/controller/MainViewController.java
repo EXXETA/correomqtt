@@ -15,18 +15,18 @@ import com.exxeta.correomqtt.gui.utils.HostServicesHolder;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SelectionModel;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
@@ -63,6 +63,10 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private MenuItem aboutItem;
     @FXML
     private MenuItem websiteItem;
+    @FXML
+    private Menu pluginMenu;
+    @FXML
+    private MenuItem pluginSettingsItem;
 
     private SelectionModel<Tab> selectionModel;
     private ResourceBundle resources;
@@ -95,7 +99,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             }
         });
 
-        tabPane.widthProperty().addListener((a,b,c) -> calcTabWidth());
+        tabPane.widthProperty().addListener((a, b, c) -> calcTabWidth());
     }
 
     private void setupAddTab() {
@@ -127,6 +131,11 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             HostServicesHolder.getInstance().getHostServices().showDocument(
                     new Hyperlink("https://www.exxeta.com/de/startseite-exxeta/").getText());
         });
+        pluginSettingsItem.setOnAction(event -> openPluginSettings());
+    }
+
+    private void openPluginSettings() {
+        PluginsViewController.showAsDialog();
     }
 
     public String getUUIDofSelectedTab() {
@@ -137,9 +146,9 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     @Override
     public void setTabName(String tabId, String name) {
         tabPane.getTabs().stream()
-               .filter(t -> t.getId().equals(tabId))
-               .findFirst()
-               .ifPresent(t -> t.setText(name));
+                .filter(t -> t.getId().equals(tabId))
+                .findFirst()
+                .ifPresent(t -> t.setText(name));
         calcTabWidth();
     }
 
@@ -217,7 +226,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                 .filter(t -> t.getId().equals(tabId))
                 .findFirst()
                 .ifPresent(t -> {
-                    t.getStyleClass().removeAll("connected","connecting","disconnecting","graceful","ungraceful");
+                    t.getStyleClass().removeAll("connected", "connecting", "disconnecting", "graceful", "ungraceful");
                     t.getStyleClass().add(state.getCssClass());
                 });
     }
@@ -284,6 +293,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                 .ifPresent(t -> {
                     tabPane.getTabs().remove(t);
                 });
-       LOGGER.info("Closing tab for connection: " + connectionName);
+        LOGGER.info("Closing tab for connection: " + connectionName);
     }
 }

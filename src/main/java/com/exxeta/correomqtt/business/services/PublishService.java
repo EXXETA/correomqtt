@@ -24,7 +24,7 @@ public class PublishService extends BaseService {
     @Override
     public void onSucceeded() {
         LOGGER.info(getConnectionMarker(), "Publish to {} succeeded.", messageDTO.getTopic());
-        PublishDispatcher.getInstance().onPublishSuceeded(connectionId, messageDTO);
+        PublishDispatcher.getInstance().onPublishSucceeded(connectionId, messageDTO);
     }
 
     @Override

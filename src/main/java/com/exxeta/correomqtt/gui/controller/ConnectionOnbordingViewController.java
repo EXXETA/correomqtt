@@ -9,11 +9,7 @@ import com.exxeta.correomqtt.gui.transformer.ConnectionTransformer;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -147,9 +143,7 @@ public class ConnectionOnbordingViewController extends BaseController implements
                 connectionToUpdate.getLwtProperty().setValue(connection.getLwt());
                 connectionToUpdate.getLwtTopicProperty().setValue(connection.getLwtTopic());
                 connectionToUpdate.getLwtQoSProperty().setValue(connection.getLwtQos());
-                connectionToUpdate.getLwtMessageIdProperty().setValue(connection.getLwtMessageId());
-                connectionToUpdate.getLwtAnswerExpectedProperty().setValue(connection.getLwtAnswerExpected());
-                connectionToUpdate.getLwtRetainedProperty().setValue(connection.getLwtRetained());
+                connectionToUpdate.getLwtRetainedProperty().setValue(connection.isLwtRetained());
                 connectionToUpdate.getLwtPayloadProperty().setValue(connection.getLwtPayload());
             } else {
                 resultList.add(connection);

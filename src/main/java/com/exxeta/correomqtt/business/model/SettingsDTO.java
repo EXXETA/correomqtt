@@ -2,11 +2,7 @@ package com.exxeta.correomqtt.business.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Locale;
 
@@ -18,21 +14,12 @@ import java.util.Locale;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SettingsDTO {
-    private boolean extraFeatures;
     private boolean unzippingPayload;
     private boolean base64DecodingPayload;
     private boolean useRegexForSearch;
     private boolean useIgnoreCase;
     private Locale savedLocale = null;
     private Locale currentLocale = null;
-
-    public boolean isExtraFeatures() {
-        return extraFeatures;
-    }
-
-    public void setExtraFeatures(boolean messageID) {
-        this.extraFeatures = messageID;
-    }
 
     public boolean isUnzippingPayload() {
         return unzippingPayload;

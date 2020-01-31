@@ -13,7 +13,7 @@ public class PublishDispatcher extends BaseConnectionDispatcher<PublishObserver>
         return instance;
     }
 
-    public void onPublishSuceeded(String connectionId, MessageDTO messageDTO) {
+    public void onPublishSucceeded(String connectionId, MessageDTO messageDTO) {
         triggerFiltered(connectionId, o -> o.onPublishSucceeded(messageDTO));
         PublishGlobalDispatcher.getInstance().onPublishSuceeded(connectionId,messageDTO);
     }

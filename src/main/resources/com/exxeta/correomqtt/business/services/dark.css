@@ -108,6 +108,14 @@
     -fx-background-color: #999999;
 }
 
+.tag.valid {
+    -fx-background-color: #59a950;
+}
+
+.tag.invalid {
+    -fx-background-color: #a9423f;
+}
+
 .secondaryText {
     -fx-text-fill: #666666;
 }

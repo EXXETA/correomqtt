@@ -12,6 +12,7 @@ import com.exxeta.correomqtt.business.utils.VersionUtils;
 import com.exxeta.correomqtt.gui.controller.AlertController;
 import com.exxeta.correomqtt.gui.controller.MainViewController;
 import com.exxeta.correomqtt.gui.utils.HostServicesHolder;
+import com.exxeta.correomqtt.plugin.manager.PluginSystem;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -40,6 +41,9 @@ public class CorreoMqtt extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        PluginSystem pluginSystem = PluginSystem.getInstance();
+        pluginSystem.loadPlugins();
+        pluginSystem.startPlugins();
 
         LOGGER.info("Application started.");
         LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
@@ -98,6 +102,8 @@ public class CorreoMqtt extends Application {
             LOGGER.info("Main window closed. Initialize shutdown.");
             LOGGER.info("Shutting down connections.");
             ApplicationLifecycleDispatcher.getInstance().onShutdown();
+            LOGGER.info("Shutting down plugins.");
+            PluginSystem.getInstance().stopPlugins();
             LOGGER.info("Shutting down application. Bye.");
             Platform.exit();
             System.exit(0);

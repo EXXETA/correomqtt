@@ -57,16 +57,8 @@
                     </styleClass>
                 </HBox>
                 <HBox alignment="CENTER_RIGHT" maxHeight="40.0" minHeight="40.0">
-                    <CheckBox fx:id="messageIdCheckBox" mnemonicParsing="false" onMouseClicked="#setCheckBoxes" text="%publishViewIdCheckbox">
-                        <HBox.margin>
-                            <Insets right="10.0" />
-                        </HBox.margin>
-                    </CheckBox>
-                    <CheckBox fx:id="answerExpectedCheckBox" disable="true" mnemonicParsing="false" text="Answer Expected">
-                        <HBox.margin>
-                            <Insets right="10.0" />
-                        </HBox.margin>
-                    </CheckBox>
+                    <HBox fx:id="pluginControlBox" alignment="CENTER_RIGHT" maxHeight="40.0" minHeight="40.0">
+                    </HBox>
                     <CheckBox fx:id="retainedCheckBox" alignment="CENTER_RIGHT" mnemonicParsing="false" text="Retained">
                     </CheckBox>
                     <styleClass>

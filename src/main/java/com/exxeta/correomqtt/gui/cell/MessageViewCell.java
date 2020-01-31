@@ -2,12 +2,15 @@ package com.exxeta.correomqtt.gui.cell;
 
 import com.exxeta.correomqtt.business.services.ConfigService;
 import com.exxeta.correomqtt.gui.model.MessagePropertiesDTO;
+import com.exxeta.correomqtt.plugin.manager.MessageValidator;
+import com.exxeta.correomqtt.plugin.manager.PluginSystem;
+import com.exxeta.correomqtt.plugin.model.MessageExtensionDTO;
+import com.exxeta.correomqtt.plugin.spi.MessageListHook;
+import com.exxeta.correomqtt.plugin.spi.MessageValidatorHook;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +34,15 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
 
     @SuppressWarnings("unused")
     @FXML
-    private Label answerExpectedLabel;
+    private HBox labelBox;
+
+    @SuppressWarnings("unused")
+    @FXML
+    private Label validLabel;
+
+    @SuppressWarnings("unused")
+    @FXML
+    private Label invalidLabel;
 
     @SuppressWarnings("unused")
     @FXML
@@ -108,6 +119,10 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
             }
         }
 
+        executeOnCreateMessageEntryExtensions(messageDTO);
+
+        validateMessage(messageDTO);
+
         subscriptionLabel.setVisible(false);
         subscriptionLabel.setManaged(false);
 
@@ -128,13 +143,30 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
                 .replace("\n", " ")
                 .replace("\r", " "
                 ).trim());
+    }
 
-        if (ConfigService.getInstance().getSettings().isExtraFeatures()) {
-            answerExpectedLabel.setVisible(messageDTO.isAnswerExpected());
-            answerExpectedLabel.setManaged(messageDTO.isAnswerExpected());
-        } else {
-            answerExpectedLabel.setVisible(false);
-            answerExpectedLabel.setManaged(false);
+    private void executeOnCreateMessageEntryExtensions(MessagePropertiesDTO messageDTO) {
+        labelBox.getChildren().clear();
+        PluginSystem.getInstance().getExtensions(MessageListHook.class)
+                .forEach(p -> p.onCreateEntry(new MessageExtensionDTO(messageDTO), labelBox));
+    }
+
+    private void validateMessage(MessagePropertiesDTO messageDTO) {
+        validLabel.setVisible(false);
+        validLabel.setManaged(false);
+        invalidLabel.setVisible(false);
+        invalidLabel.setManaged(false);
+
+        MessageValidatorHook.Validation validation = MessageValidator.validateMessage(messageDTO.getTopic(), messageDTO.getPayload());
+        if (validation != null) {
+            updateValidatorLabel(validLabel, validation.isValid(), validation.getTooltip());
+            updateValidatorLabel(invalidLabel, !validation.isValid(), validation.getTooltip());
         }
+    }
+
+    private void updateValidatorLabel(Label label, boolean isVisible, String tooltip) {
+        label.setVisible(isVisible);
+        label.setManaged(isVisible);
+        label.setTooltip(new Tooltip(tooltip));
     }
 }

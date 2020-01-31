@@ -49,6 +49,14 @@
     -fx-graphic: url('../icons/times-solid-white.png');
 }
 
+.black .ban-solid {
+    -fx-graphic: url('../icons/ban-solid-black.png');
+}
+
+.white .ban-solid {
+    -fx-graphic: url('../icons/ban-solid-white.png');
+}
+
 .emptyPayloadLabel{
     -fx-content-display: center;
     -fx-alignment: center;

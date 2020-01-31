@@ -16,6 +16,7 @@
 <?import javafx.scene.text.Font?>
 <?import org.fxmisc.richtext.CodeArea?>
 
+<?import javafx.scene.control.SplitMenuButton?>
 <VBox fx:id="detailViewVBox" minHeight="200.0" minWidth="400" prefHeight="400.0" prefWidth="600.0" stylesheets="@../css/detailView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.exxeta.correomqtt.gui.controller.DetailViewController">
     <styleClass>
         <String fx:value="noBorder" />
@@ -38,9 +39,30 @@
             <tooltip>
                 <Tooltip text="%detailViewAutoFormatToggleButtonTooltip" />
             </tooltip>
+            <HBox.margin>
+                <Insets right="5.0"/>
+            </HBox.margin>
         </ToggleButton>
-        <Pane HBox.hgrow="ALWAYS" />
-        <Button fx:id="detailViewSearchButton" mnemonicParsing="false" onAction="#toggleSearchBar" styleClass="search-solid">
+        <SplitMenuButton fx:id="manipulateSelectionButton" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="120.0"
+                         text="Manipulate">
+            <tooltip>
+                <Tooltip text="Manipulate the selected text with plugin tasks"/>
+            </tooltip>
+            <HBox.margin>
+                <Insets right="5.0"/>
+            </HBox.margin>
+        </SplitMenuButton>
+        <Button fx:id="detailViewRevertManipulationButton" mnemonicParsing="false" styleClass="ban-solid" disable="true">
+            <tooltip>
+                <Tooltip text="Revert manipulation" />
+            </tooltip>
+            <HBox.margin>
+                <Insets right="5.0" />
+            </HBox.margin>
+        </Button>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Button fx:id="detailViewSearchButton" mnemonicParsing="false" onAction="#toggleSearchBar"
+                styleClass="search-solid">
             <tooltip>
                 <Tooltip text="%detailViewSearchButtonTooltip" />
             </tooltip>
@@ -111,22 +133,26 @@
                 </Label>
             </HBox>
             <HBox alignment="CENTER_LEFT" minHeight="20.0" VBox.vgrow="NEVER">
-                <Label fx:id="detailViewUuid" maxWidth="1.7976931348623157E308" style="-fx-text-fill: dimgrey;" text="12312313-123124-123123-124123124124213" HBox.hgrow="ALWAYS">
-                    <font>
-                        <Font size="9.0" />
-                    </font>
-                    <HBox.margin>
-                        <Insets />
-                    </HBox.margin>
-                </Label>
-                <Pane HBox.hgrow="ALWAYS" />
-                <Label id="detailViewAnswerExpected" fx:id="detailViewAnswerExpected" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" text="Answer Expected" HBox.hgrow="NEVER">
+                <HBox fx:id="detailViewNodeBox" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+                </HBox>
+                <Label id="detailViewValid" fx:id="detailViewValid" alignment="CENTER" maxWidth="-Infinity"
+                       minWidth="-Infinity" styleClass="tag, valid" text="OK" HBox.hgrow="ALWAYS">
                     <HBox.margin>
                         <Insets />
                     </HBox.margin>
                     <styleClass>
-                        <String fx:value="tag" />
-                        <String fx:value="special" />
+                        <String fx:value="tag"/>
+                        <String fx:value="valid"/>
+                    </styleClass>
+                </Label>
+                <Label id="detailViewInvalid" fx:id="detailViewInvalid" alignment="CENTER" maxWidth="-Infinity"
+                       minWidth="-Infinity" text="X" HBox.hgrow="ALWAYS">
+                    <HBox.margin>
+                        <Insets/>
+                    </HBox.margin>
+                    <styleClass>
+                        <String fx:value="tag"/>
+                        <String fx:value="invalid"/>
                     </styleClass>
                 </Label>
                 <Label id="detailViewRetained" fx:id="detailViewRetained" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" styleClass="tag" text="Retained" HBox.hgrow="ALWAYS">

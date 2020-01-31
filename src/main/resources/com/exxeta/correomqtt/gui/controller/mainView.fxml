@@ -16,6 +16,7 @@
         <Menu fx:id="toolsMenu" mnemonicParsing="false" text="%mainViewToolsMenu">
             <MenuItem fx:id="connectionsItem" mnemonicParsing="false" text="%mainViewConnectionsMenuItem" />
             <MenuItem fx:id="settingsItem" mnemonicParsing="false" text="%mainViewSettingsMenuItem" />
+            <MenuItem fx:id="pluginSettingsItem" mnemonicParsing="false" text="%mainViewPluginSettingsMenuItem" />
         </Menu>
         <Menu fx:id="helpMenu" mnemonicParsing="false" text="%mainViewHelpMenu">
             <MenuItem fx:id="aboutItem" mnemonicParsing="false" text="%mainViewAboutMenuItem" />
