@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol>
+    <lists>
+        <PublishMessageHook>
+            <plugin name="prepend-id-plugin"/>
+            <plugin name="base64-plugin"/>
+            <plugin name="example-plugin">
+                <color>blue</color>
+            </plugin>
+        </PublishMessageHook>
+
+        <MessageIncomingHook>
+            <plugin name="base64-plugin"/>
+            <plugin name="prepend-id-plugin"/>
+        </MessageIncomingHook>
+    </lists>
+
+    <tasks>
+        <DetailViewManipulatorHook>
+            <task id="Decode Base64">
+                <plugin name="base64-plugin" extensionId="decode"/>
+            </task>
+            <task id="Double Decode Base64">
+                <plugin name="base64-plugin" extensionId="decode"/>
+                <plugin name="base64-plugin" extensionId="decode"/>
+            </task>
+            <task id="Decode + unzip + save">
+                <plugin name="base64-plugin" extensionId="decode"/>
+                <plugin name="zip-manipulator-plugin" extensionId="unzip"/>
+                <plugin name="save-manipulator-plugin" extensionId="save"/>
+            </task>
+        </DetailViewManipulatorHook>
+
+        <MessageValidatorHook>
+            <task id="/com/+/example">
+                <plugin name="xml-xsd-validator-plugin">
+                    <schema>example.xsd</schema>
+                </plugin>
+            </task>
+            <task id="/test">
+                <plugin name="contains-string-validator-plugin" extensionId="ignoreCase">
+                    <string>test</string>
+                </plugin>
+                <plugin name="contains-string-validator-plugin" extensionId="ignoreCase">
+                    <string>another</string>
+                </plugin>
+                <plugin name="contains-string-validator-plugin" extensionId="caseSensitive">
+                    <string>okay</string>
+                </plugin>
+            </task>
+        </MessageValidatorHook>
+    </tasks>
+</protocol>
