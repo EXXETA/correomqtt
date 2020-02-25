@@ -1,6 +1,16 @@
 # CorreoMQTT
 A modern graphical MQTT client using the HiveMQ client library.
 
+
+## Binary Downloads
+
+* MacOS: https://github.com/EXXETA/correomqtt/releases/download/v0.9/CorreoMQTT-0.9.dmg
+* Windows: https://github.com/EXXETA/correomqtt/releases/download/v0.9/CorreoMQTT-0.9.msi
+* Linux (deb): https://github.com/EXXETA/correomqtt/releases/download/v0.9/correomqtt_0.9_amd64.deb
+* Linux (rpm): https://github.com/EXXETA/correomqtt/releases/download/v0.9/correomqtt-0.9.x86_64.rpm 
+
+## Screenshot
+
 ![CorreoMQTT Connection View](screenshot.png)
 
 ## Prerequisites
