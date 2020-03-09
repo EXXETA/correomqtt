@@ -862,7 +862,10 @@ public class ConnectionSettingsViewController extends BaseController implements 
     }
 
     private void encodeLwtPayload(ConnectionPropertiesDTO c) {
-        c.getLwtPayloadProperty().set(Base64.getEncoder().encodeToString(c.getLwtPayload().getBytes()));
+        String lwtPayload = c.getLwtPayload();
+        if (lwtPayload != null) {
+            c.getLwtPayloadProperty().set(Base64.getEncoder().encodeToString(lwtPayload.getBytes()));
+        }
     }
 
     private boolean checkName(TextField textField, boolean save) {
