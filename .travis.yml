@@ -16,7 +16,7 @@ before_script:
   - if [ ! -z $TRAVIS_TAG ]; then
     echo "tag set -> set version to tag version";
     export CORREO_VERSION=`echo $TRAVIS_TAG | cut -d "v" -f 2`;
-    else export CORREO_VERSION=1.0-SNAPSHOT;
+    else export CORREO_VERSION=99.99.99;
     fi
   - echo "CORREO_VERSION is $CORREO_VERSION"
   - export PLUGIN_VERSION_JSON_FORMAT=v0.1
