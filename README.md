@@ -23,16 +23,7 @@ A modern graphical MQTT client using the HiveMQ client library.
 
 ## Run jars
 
-`java -jar target/shade/correomqtt.jar`
-
-## Build Installers
-
-Installers must be built on their respective platform.
-
-* `./build_mac.sh`
-* `./build_win.sh`
-* `./build_linux.sh`
-
+`java -jar target/shade/correomqtt-{version}-runnable.jar`
 
 ## Plugins
 To install a plugin copy the `.jar` into the `plugins/jars` directory. 
