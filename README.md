@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/exxeta/correomqtt.svg?branch=develop)](https://travis-ci.com/exxeta/correomqtt) 
+[![Build Status](https://travis-ci.org/exxeta/correomqtt.svg?branch=develop)](https://travis-ci.org/exxeta/correomqtt) 
 [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/exxeta/correomqtt?include_prereleases)](https://github.com/exxeta/correomqtt/releases/latest) 
 [![GitHub All Releases](https://img.shields.io/github/downloads/exxeta/correomqtt/total)](https://github.com/exxeta/correomqtt/releases/latest) 
 [![GitHub](https://img.shields.io/github/license/exxeta/correomqtt)](https://github.com/exxeta/correomqtt/blob/develop/LICENSE) 
