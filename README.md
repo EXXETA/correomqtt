@@ -1,10 +1,18 @@
+[![Build Status](https://travis-ci.com/exxeta/correomqtt.svg?branch=develop)](https://travis-ci.com/exxeta/correomqtt) 
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/exxeta/correomqtt?include_prereleases)](https://github.com/exxeta/correomqtt/releases/latest) 
+[![GitHub All Releases](https://img.shields.io/github/downloads/exxeta/correomqtt/total)](https://github.com/exxeta/correomqtt/releases/latest) 
+[![GitHub](https://img.shields.io/github/license/exxeta/correomqtt)](https://github.com/exxeta/correomqtt/blob/develop/LICENSE) 
+
 # CorreoMQTT
 A modern graphical MQTT client using the HiveMQ client library.
 
 
 ## Binary Downloads
 
-* Releases: https://github.com/EXXETA/correomqtt/releases/tag/latest
+* MacOS: https://github.com/EXXETA/correomqtt/releases/download/v0.9/CorreoMQTT-0.9.dmg
+* Windows: https://github.com/EXXETA/correomqtt/releases/download/v0.9/CorreoMQTT-0.9.msi
+* Linux (deb): https://github.com/EXXETA/correomqtt/releases/download/v0.9/correomqtt_0.9_amd64.deb
+* Linux (rpm): https://github.com/EXXETA/correomqtt/releases/download/v0.9/correomqtt-0.9.x86_64.rpm 
 
 ## Screenshot
 
@@ -20,7 +28,16 @@ A modern graphical MQTT client using the HiveMQ client library.
 
 ## Run jars
 
-`java -jar target/shade/correomqtt-{version}-runnable.jar`
+`java -jar target/shade/correomqtt.jar`
+
+## Build Installers
+
+Installers must be built on their respective platform.
+
+* `./build_mac.sh`
+* `./build_win.sh`
+* `./build_linux.sh`
+
 
 ## Plugins
 To install a plugin copy the `.jar` into the `plugins/jars` directory. 
