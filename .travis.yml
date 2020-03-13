@@ -1,0 +1,160 @@
+language: minimal
+
+addons:
+  apt:
+      packages:
+      - fakeroot
+      - maven
+      - rpm
+
+os:
+  - linux
+  - osx
+  - windows
+
+before_script:
+  - if [ ! -z $TRAVIS_TAG ]; then
+    echo "tag set -> set version to tag version";
+    export CORREO_VERSION=`echo $TRAVIS_TAG | cut -d "v" -f 2`;
+    else export CORREO_VERSION=99.99.99;
+    fi
+  - echo "CORREO_VERSION is $CORREO_VERSION"
+  - export PLUGIN_VERSION_JSON_FORMAT=v0.1
+  - export PLUGIN_VERSION_STRING_VALIDATOR=v0.1
+  - export PLUGIN_VERSION_ZIP=v0.1
+  - export PLUGIN_VERSION_XML_XSD=v0.1
+  - export PLUGIN_VERSION_XML_FORMAT=v0.1
+  - export PLUGIN_VERSION_SAVE=v0.1
+  - export PLUGIN_VERSION_BASE64=v0.1
+  - export PLUGIN_VERSION_ADVANCED_VALIDATOR=v0.1
+
+jobs:
+  allow_failures:
+    - os: windows
+  include:
+    - stage: build
+      os: linux
+      script: 
+        #setup
+        - wget https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz && tar zxvf zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz
+        - export JAVA_HOME=$TRAVIS_BUILD_DIR/zulu13.29.9-ca-jdk13.0.2-linux_x64
+        - echo $JAVA_HOME
+        - export PATH=$JAVA_HOME/bin:$PATH
+        - echo $PATH
+        - java -version
+        - wget https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_linux-x64_bin.tar.gz && tar zxvf openjdk-14_linux-x64_bin.tar.gz
+        #build
+        - mvn versions:set -DnewVersion=$CORREO_VERSION
+        - echo $CORREO_VERSION > ./src/main/resources/com/exxeta/correomqtt/business/utils/version.txt
+        - mvn install -DskipTests=true
+        #build plugins
+        - git clone https://github.com/EXXETA/correomqtt-plugin-json-format.git --branch $PLUGIN_VERSION_JSON_FORMAT --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-contains-string-validator.git --branch $PLUGIN_VERSION_STRING_VALIDATOR --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-zip.git --branch $PLUGIN_VERSION_ZIP --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-xml-xsd-validator.git --branch $PLUGIN_VERSION_XML_XSD --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-xml-format.git --branch $PLUGIN_VERSION_XML_FORMAT --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-save.git --branch $PLUGIN_VERSION_SAVE --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-base64.git --branch $PLUGIN_VERSION_BASE64 --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-advanced-validator.git --branch $PLUGIN_VERSION_ADVANCED_VALIDATOR --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        #package
+        - ./jdk-14/bin/jpackage --type deb -d target -i target/shade -n CorreoMQTT --main-jar correomqtt-$CORREO_VERSION-runnable.jar --app-version $CORREO_VERSION --icon ./src/main/deploy/package/Icon.png
+        - ./jdk-14/bin/jpackage --type rpm -d target -i target/shade -n CorreoMQTT --main-jar correomqtt-$CORREO_VERSION-runnable.jar --app-version $CORREO_VERSION --icon ./src/main/deploy/package/Icon.png
+      before_deploy:
+        - cd target
+      deploy:
+        provider: releases
+        api_key: '$GITHUB_API_KEY'
+        file_glob: true
+        file: 
+          - "*.deb"
+          - "*.rpm"
+        skip_cleanup: true
+        on:
+          tags: true  
+    - stage: build
+      os: osx
+      script:
+        #setup
+        - wget https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz && tar zxvf zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz
+        - export JAVA_HOME=$TRAVIS_BUILD_DIR/zulu13.29.9-ca-jdk13.0.2-macosx_x64
+        - echo $JAVA_HOME
+        - export PATH=$JAVA_HOME/bin:$PATH
+        - echo $PATH
+        - java -version
+        - wget https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_osx-x64_bin.tar.gz && tar zxvf openjdk-14_osx-x64_bin.tar.gz
+        #build
+        - mvn versions:set -DnewVersion=$CORREO_VERSION
+        - echo $CORREO_VERSION > ./src/main/resources/com/exxeta/correomqtt/business/utils/version.txt
+        - mvn install -DskipTests=true
+        #build plugins
+        - git clone https://github.com/EXXETA/correomqtt-plugin-json-format.git --branch $PLUGIN_VERSION_JSON_FORMAT --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-contains-string-validator.git --branch $PLUGIN_VERSION_STRING_VALIDATOR --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-zip.git --branch $PLUGIN_VERSION_ZIP --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-xml-xsd-validator.git --branch $PLUGIN_VERSION_XML_XSD --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-xml-format.git --branch $PLUGIN_VERSION_XML_FORMAT --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-save.git --branch $PLUGIN_VERSION_SAVE --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-base64.git --branch $PLUGIN_VERSION_BASE64 --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-advanced-validator.git --branch $PLUGIN_VERSION_ADVANCED_VALIDATOR --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        #package
+        - ./jdk-14.jdk/Contents/Home/bin/jpackage --type dmg -d target -i target/shade -n CorreoMQTT --main-jar correomqtt-$CORREO_VERSION-runnable.jar --app-version $CORREO_VERSION --icon ./src/main/deploy/package/Icon.icns
+      before_deploy:
+        - cd target
+      deploy:
+        provider: releases
+        api_key: '$GITHUB_API_KEY'
+        file_glob: true
+        file: 
+          - "*.dmg"
+        skip_cleanup: true
+        on:
+          tags: true
+    - stage: build
+      os: windows
+      script:
+        #setup
+        - wget --no-check-certificate https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-win_x64.zip
+        - wget http://stahlworks.com/dev/unzip.exe
+        - unzip zulu13.29.9-ca-jdk13.0.2-win_x64.zip
+        - mv zulu13.29.9-ca-jdk13.0.2-win_x64 zulu13
+        - wget --no-check-certificate https://mirror.dkd.de/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip
+        - unzip apache-maven-3.6.3-bin.zip
+        - mv apache-maven-3.6.3 maven
+        - wget --no-check-certificate https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip
+        - unzip wix311-binaries.zip
+        - mv wix311-binaries wix
+        - ls -l
+        - export JAVA_HOME=$TRAVIS_BUILD_DIR/zulu13
+        - echo $JAVA_HOME
+        - export PATH=$JAVA_HOME/bin:$PATH
+        - export M2_HOME=$TRAVIS_BUILD_DIR/maven
+        - export MAVEN_HOME=$TRAVIS_BUILD_DIR/maven
+        - export PATH=$M2_HOME/bin:$PATH
+        - export PATH=$TRAVIS_BUILD_DIR/wix:$PATH
+        - echo $PATH
+        - java -version
+        - mvn -version
+        - wget https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_windows-x64_bin.zip && unzip openjdk-14_windows-x64_bin.zip
+        #build
+        - mvn versions:set -DnewVersion=$CORREO_VERSION
+        - echo $CORREO_VERSION > ./src/main/resources/com/exxeta/correomqtt/business/utils/version.txt
+        - mvn install -DskipTests=true
+        #build plugins
+        - git clone https://github.com/EXXETA/correomqtt-plugin-json-format.git --branch $PLUGIN_VERSION_JSON_FORMAT --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-contains-string-validator.git --branch $PLUGIN_VERSION_STRING_VALIDATOR --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-zip.git --branch $PLUGIN_VERSION_ZIP --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-xml-xsd-validator.git --branch $PLUGIN_VERSION_XML_XSD --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-xml-format.git --branch $PLUGIN_VERSION_XML_FORMAT --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-save.git --branch $PLUGIN_VERSION_SAVE --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-base64.git --branch $PLUGIN_VERSION_BASE64 --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        - git clone https://github.com/EXXETA/correomqtt-plugin-advanced-validator.git --branch $PLUGIN_VERSION_ADVANCED_VALIDATOR --single-branch  && cd correomqtt-plugin-json-format && mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt && mvn clean package && cp ./target/*.jar $TRAVIS_BUILD_DIR/target/shade/plugins && cd $TRAVIS_BUILD_DIR
+        #package
+        - ./jdk-14/bin/jpackage --type msi -d target -i target/shade -n CorreoMQTT --main-jar correomqtt-$CORREO_VERSION-runnable.jar --app-version $CORREO_VERSION --icon ./src/main/deploy/package/Icon.ico --win-dir-chooser --win-menu --win-menu-group CorreoMqtt --win-shortcut --vendor "EXXETA AG"
+        #check if release and deploy manually to github because deploy in windows not working
+        - echo $TRAVIS_TAG
+        - if [ ! -z $TRAVIS_TAG ]; then
+          echo "tag set -> deploy release to github";
+          cd ./target;
+          gem install dpl --pre;
+          dpl releases --token $GITHUB_API_KEY --file_glob --file *.msi;
+          else echo "no tag set";
+          fi
