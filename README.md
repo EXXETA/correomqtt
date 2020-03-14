@@ -11,6 +11,9 @@ A modern graphical MQTT client using the HiveMQ client library.
 
 * Release: https://github.com/EXXETA/correomqtt/releases/latest
 
+Due to gatekeeper it is required to allow CorreoMQTT. This can be done like this:
+`xattr -d com.apple.quarantine /Applications/CorreoMQTT.app`
+
 ## Screenshot
 
 ![CorreoMQTT Connection View](screenshot.png)
