@@ -12,14 +12,6 @@ os:
   - osx
   - windows
 
-before_script:
-  - if [ ! -z $TRAVIS_TAG ]; then
-    echo "tag set -> set version to tag version";
-    export CORREO_VERSION=`echo $TRAVIS_TAG | cut -d "v" -f 2`;
-    else export CORREO_VERSION=99.99.99;
-    fi
-  - echo "CORREO_VERSION is $CORREO_VERSION"
-
 jobs:
   allow_failures:
     - os: windows
@@ -27,9 +19,7 @@ jobs:
     - stage: build
       os: linux
       script:
-        - .travis/setup_linux.bash
-        - .travis/build.bash
-        - .travis/package_linux.bash
+        - .travis/build.bash linux
       before_deploy:
         - cd target
       deploy:
@@ -45,9 +35,7 @@ jobs:
     - stage: build
       os: osx
       script:
-        - .travis/setup_osx.bash
-        - .travis/build.bash
-        - .travis/package_osx.bash
+        - .travis/build.bash osx
       before_deploy:
         - cd target
       deploy:
@@ -62,6 +50,4 @@ jobs:
     - stage: build
       os: windows
       script:
-        - .travis/setup_windows.bash
-        - .travis/build.bash
-        - .travis/package_windows.bash
+        - .travis/build.bash windows
