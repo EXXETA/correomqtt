@@ -115,7 +115,7 @@ function build_plugin() {
   cd "$REPO_NAME" || exit 1
   mvn versions:use-dep-version -DdepVersion="$CORREO_VERSION" -Dincludes=com.exxeta:correomqtt
   mvn clean package
-  JAR_NAME=$(echo -n "$(ls target | grep "$PLUGIN_VERSION".jar)")
+  JAR_NAME=$(echo -n "$(ls target | grep "$PLUGIN_VERSION"-all.jar)")
   cp ./target/"$JAR_NAME" "$TRAVIS_BUILD_DIR"/target/shade/plugins
   cd "$TRAVIS_BUILD_DIR" || exit 1
   echo "$PLUGIN_JSON_TEMPLATE" | sed "s/PLUGIN_JAR/$JAR_NAME/g" | sed "s/PLUGIN_ID/$PLUGIN_ID/g" | sed "s/PLUGIN_VERSION/$PLUGIN_VERSION/g" >> plugins.json

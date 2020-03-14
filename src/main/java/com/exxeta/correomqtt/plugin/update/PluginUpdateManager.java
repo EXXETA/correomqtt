@@ -29,10 +29,10 @@ public class PluginUpdateManager {
 
         LOGGER.info("Start Plugin Update");
 
-        String path = PluginUpdateManager.class.getProtectionDomain().getCodeSource().getLocation().getPath() + File.pathSeparator + "plugins";
+        String jarFilePath = PluginUpdateManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        String path =  new File(jarFilePath).getParentFile().getPath() + File.separator + "plugins";
         String decodedPath = URLDecoder.decode(path, StandardCharsets.UTF_8);
-
-        if (new File(decodedPath + File.pathSeparator + "plugins.json").exists()) {
+        if (new File(decodedPath + File.separator + "plugins.json").exists()) {
             List<UpdateRepository> repos = Collections.singletonList(new DefaultUpdateRepository("bundled", new File(decodedPath).toURI().toURL()));
             UpdateManager updateManager = new UpdateManager(pluginSystem, repos);
             updateExisitingPlugins(updateManager);
