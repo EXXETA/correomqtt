@@ -68,7 +68,7 @@ elif [ "$1" = "windows" ]; then
   wget -q --no-check-certificate https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip
   echo " done"
   echo -n "Extracting WIX ..."
-  unzip -q wix311-binaries.zip
+  unzip -q wix311-binaries.zip wix311-binaries
   echo " done"
   mv wix311-binaries wix
   ls -l
@@ -93,15 +93,15 @@ java -version
 echo "MVN_VERSION"
 mvn -version
 
-PLUGIN_UPDATE_DATE=`date +"%Y-%m-%d"`
-PLUGIN_JSON_TEMPLATE="{\"id\": \"PLUGIN_ID\",\"releases\": [{\"PLUGIN_VERSION\": \"PLUGIN_VERSION\",\"date\": \"$PLUGIN_UPDATE_DATE\", \"url\": \"PLUGIN_JAR\"}]}"
-
 echo "==== SET CORREO VERSION ===="
 mvn versions:set -DnewVersion="$CORREO_VERSION"
 echo "$CORREO_VERSION" > ./src/main/resources/com/exxeta/correomqtt/business/utils/version.txt
 
-echo "==== PREBUILD CORREO ===="
+echo "==== BUILD CORREO ===="
 mvn clean install -DskipTests=true
+
+PLUGIN_UPDATE_DATE=`date +"%Y-%m-%d"`
+PLUGIN_JSON_TEMPLATE="{\"id\": \"PLUGIN_ID\",\"releases\": [{\"PLUGIN_VERSION\": \"PLUGIN_VERSION\",\"date\": \"$PLUGIN_UPDATE_DATE\", \"url\": \"PLUGIN_JAR\"}]}"
 
 function build_plugin() {
   local PLUGIN_VERSION=$1 && shift
@@ -114,10 +114,12 @@ function build_plugin() {
   mvn versions:use-dep-version -DdepVersion="$CORREO_VERSION" -Dincludes=com.exxeta:correomqtt
   mvn clean package
   JAR_NAME=$(echo -n "$(ls target | grep "$PLUGIN_VERSION".jar)")
-  cp ./target/"$JAR_NAME" "$TRAVIS_BUILD_DIR"/src/main/resources/com/exxeta/correomqtt/plugin/update/
+  cp ./target/"$JAR_NAME" "$TRAVIS_BUILD_DIR"/target/shade/plugins
   cd "$TRAVIS_BUILD_DIR" || exit 1
   echo "$PLUGIN_JSON_TEMPLATE" | sed "s/PLUGIN_JAR/$JAR_NAME/g" | sed "s/PLUGIN_ID/$PLUGIN_ID/g" | sed "s/PLUGIN_VERSION/$PLUGIN_VERSION/g" >> plugins.json
 }
+
+mkdir -p target/shade/plugins
 
 echo "[" >> plugins.json
 build_plugin 0.0.1 correomqtt-plugin-json-format json-format-plugin
@@ -137,11 +139,7 @@ echo "," >> plugins.json
 build_plugin 0.0.1 correomqtt-plugin-advanced-validator advanced-validator-plugin
 echo "]" >> plugins.json
 
-mv plugins.json src/main/resources/com/exxeta/correomqtt/plugin/update/
-
-echo "==== BUILD CORREO ===="
-#build again with plugins
-mvn clean install -DskipTests=true
+mv plugins.json mkdir -p target/shade/plugins/
 
 echo "==== PACKAGE CORREO ===="
 if [ "$1" = "osx" ]; then
