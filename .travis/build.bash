@@ -139,7 +139,7 @@ echo "," >> plugins.json
 build_plugin 0.0.1 correomqtt-plugin-advanced-validator advanced-validator-plugin
 echo "]" >> plugins.json
 
-mv plugins.json mkdir -p target/shade/plugins/
+mv plugins.json target/shade/plugins/
 
 echo "==== PACKAGE CORREO ===="
 if [ "$1" = "osx" ]; then
