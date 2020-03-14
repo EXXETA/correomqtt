@@ -13,6 +13,7 @@ import com.exxeta.correomqtt.gui.controller.AlertController;
 import com.exxeta.correomqtt.gui.controller.MainViewController;
 import com.exxeta.correomqtt.gui.utils.HostServicesHolder;
 import com.exxeta.correomqtt.plugin.manager.PluginSystem;
+import com.exxeta.correomqtt.plugin.update.PluginUpdateManager;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -41,13 +42,15 @@ public class CorreoMqtt extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        PluginSystem pluginSystem = PluginSystem.getInstance();
-        pluginSystem.loadPlugins();
-        pluginSystem.startPlugins();
 
         LOGGER.info("Application started.");
         LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
         LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
+
+        PluginSystem pluginSystem = PluginSystem.getInstance();
+        pluginSystem.loadPlugins();
+        new PluginUpdateManager(pluginSystem).updateSystem();
+        pluginSystem.startPlugins();
 
         SettingsDTO settings = ConfigService.getInstance().getSettings();
 
@@ -63,10 +66,7 @@ public class CorreoMqtt extends Application {
         settings.setCurrentLocale(settings.getSavedLocale());
         ConfigService.getInstance().saveSettings();
 
-        LOGGER.info("Locale is: " + settings.getSavedLocale());
-
-        // Hack needed for Java 8
-        //ToolTipDefaultsFixer.setTooltipTimers(500, 5000, 200);
+        LOGGER.info("Locale is: {}", settings.getSavedLocale());
 
         HostServicesHolder.getInstance().setHostServices(getHostServices());
 
@@ -83,7 +83,7 @@ public class CorreoMqtt extends Application {
         String cssPath = ConfigService.getInstance().getCssPath();
 
         FXMLLoader loader = new FXMLLoader(MainViewController.class.getResource("mainView.fxml"),
-                ResourceBundle.getBundle("com.exxeta.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
+                                           ResourceBundle.getBundle("com.exxeta.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
         Parent root = loader.load();
 
         mainViewController = loader.getController();
@@ -115,24 +115,24 @@ public class CorreoMqtt extends Application {
     private void setupShortcut() {
         scene.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
 
-                    if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && !event.isShiftDown()) {
-                        ShortcutDispatcher.getInstance().onSubscriptionShortcutPressed(mainViewController.getUUIDofSelectedTab());
-                        event.consume();
-                    }
-                    if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && event.isShiftDown()) {
-                        ShortcutDispatcher.getInstance().onClearIncomingShortcutPressed(mainViewController.getUUIDofSelectedTab());
-                        event.consume();
-                    }
-                    if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && !event.isShiftDown()) {
-                        ShortcutDispatcher.getInstance().onPublishShortcutPressed(mainViewController.getUUIDofSelectedTab());
-                        event.consume();
-                    }
-                    if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && event.isShiftDown()) {
-                        ShortcutDispatcher.getInstance().onClearOutgoingShortcutPressed(mainViewController.getUUIDofSelectedTab());
-                        event.consume();
-                    }
-                    //TODO rest
-                }
+                                  if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && !event.isShiftDown()) {
+                                      ShortcutDispatcher.getInstance().onSubscriptionShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                                      event.consume();
+                                  }
+                                  if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && event.isShiftDown()) {
+                                      ShortcutDispatcher.getInstance().onClearIncomingShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                                      event.consume();
+                                  }
+                                  if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && !event.isShiftDown()) {
+                                      ShortcutDispatcher.getInstance().onPublishShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                                      event.consume();
+                                  }
+                                  if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && event.isShiftDown()) {
+                                      ShortcutDispatcher.getInstance().onClearOutgoingShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                                      event.consume();
+                                  }
+                                  //TODO rest
+                              }
         );
     }
 

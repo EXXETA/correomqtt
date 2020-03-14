@@ -14,7 +14,7 @@
 
     <groupId>com.exxeta</groupId>
     <artifactId>correomqtt</artifactId>
-    <version>0.9</version>
+    <version>0.10.0</version>
 
     <packaging>jar</packaging>
 
@@ -133,6 +133,11 @@
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
             <version>3.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.pf4j</groupId>
+            <artifactId>pf4j-update</artifactId>
+            <version>2.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.jdom</groupId>

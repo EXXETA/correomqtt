@@ -1,5 +1,5 @@
 .idea/
-correomqtt.iml
+*.iml
 correomqtt-logfile_IS_UNDEFINED*
 
 target/
