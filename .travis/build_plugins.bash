@@ -13,7 +13,7 @@ function build_plugin() {
 
   git clone https://github.com/EXXETA/"$REPO_NAME".git --branch "v$PLUGIN_VERSION" --single-branch
   cd "$REPO_NAME" || exit 1
-  mvn PLUGIN_VERSIONs:use-latest-releases -Dincludes=com.exxeta:correomqtt
+  mvn versions:use-latest-releases -Dincludes=com.exxeta:correomqtt
   mvn clean package
   JAR_NAME=$(echo -n "$(ls target | grep "$PLUGIN_VERSION".jar)")
   cp ./target/"$JAR_NAME" "$TRAVIS_BUILD_DIR"/src/main/resources/com/exxeta/correomqtt/plugin/update/
