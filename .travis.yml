@@ -62,6 +62,6 @@ jobs:
     - stage: build
       os: windows
       script:
-        - .travis/setup_window.bash
+        - .travis/setup_windows.bash
         - .travis/build.bash
         - .travis/package_windows.bash
