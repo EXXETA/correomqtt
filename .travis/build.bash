@@ -114,8 +114,8 @@ function build_plugin() {
   git clone https://github.com/EXXETA/"$REPO_NAME".git --branch "v$PLUGIN_VERSION" --single-branch
   cd "$REPO_NAME" || exit 1
   mvn versions:use-dep-version -DdepVersion="$CORREO_VERSION" -Dincludes=com.exxeta:correomqtt
-  mvn clean package
-  JAR_NAME=$(echo -n "$(ls target | grep "$PLUGIN_VERSION"-all.jar)")
+  mvn clean install
+  JAR_NAME=$(echo -n "$(ls target | grep "$PLUGIN_VERSION".jar)")
   cp ./target/"$JAR_NAME" "$TRAVIS_BUILD_DIR"/target/shade/plugins
   cd "$TRAVIS_BUILD_DIR" || exit 1
   echo "$PLUGIN_JSON_TEMPLATE" | sed "s/PLUGIN_JAR/$JAR_NAME/g" | sed "s/PLUGIN_ID/$PLUGIN_ID/g" | sed "s/PLUGIN_VERSION/$PLUGIN_VERSION/g" >> plugins.json
