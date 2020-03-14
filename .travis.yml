@@ -49,12 +49,12 @@ jobs:
       os: windows
       script:
         - .travis/build.bash windows
-      deploy:
-        provider: releases
-        api_key: '$GITHUB_API_KEY'
-        file_glob: true
-        file:
-          - "*.msi"
-        skip_cleanup: true
-        on:
-          tags: true
+      #deploy:
+      #  provider: releases
+      #  api_key: '$GITHUB_API_KEY'
+      #  file_glob: true
+      #  file:
+      #    - "*.msi"
+      #  skip_cleanup: true
+      #  on:
+      #    tags: true
