@@ -129,7 +129,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         websiteItem.setOnAction(event -> {
             //TODO: Replace with github page
             HostServicesHolder.getInstance().getHostServices().showDocument(
-                    new Hyperlink("https://www.exxeta.com/de/startseite-exxeta/").getText());
+                    new Hyperlink("https://github.com/EXXETA/correomqtt").getText());
         });
         pluginSettingsItem.setOnAction(event -> openPluginSettings());
     }
