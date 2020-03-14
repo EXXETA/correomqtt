@@ -16,27 +16,35 @@ echo "CORREO_VERSION is $CORREO_VERSION"
 echo "==== INSTALL DEPENDENCIES ===="
 
 if [ "$1" = "osx" ]; then
+  echo "Downloading Java 13"
   wget -q https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz
   tar zxvf zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz >/dev/null 2>&1
   export JAVA_HOME=$TRAVIS_BUILD_DIR/zulu13.29.9-ca-jdk13.0.2-macosx_x64
   export PATH=$JAVA_HOME/bin:$PATH
+  echo "Downloading Java 14"
   wget -q https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_osx-x64_bin.tar.gz
   tar zxvf openjdk-14_osx-x64_bin.tar.gz >/dev/null 2>&1
 elif [ "$1" = "linux" ]; then
+  echo "Downloading Java 13"
   wget -q https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz
   tar zxvf zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz >/dev/null 2>&1
   export JAVA_HOME=$TRAVIS_BUILD_DIR/zulu13.29.9-ca-jdk13.0.2-linux_x64
   export PATH=$JAVA_HOME/bin:$PATH
+  echo "Downloading Java 14"
   wget -q https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_linux-x64_bin.tar.gz
   tar zxvf openjdk-14_linux-x64_bin.tar.gz >/dev/null 2>&1
 elif [ "$1" = "windows" ]; then
-  wget -q --no-check-certificate https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-win_x64.zip
+  echo "Downloading Unzip"
   wget -q http://stahlworks.com/dev/unzip.exe
+  echo "Downloading Java 13"
+  wget -q --no-check-certificate https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-win_x64.zip
   unzip -q zulu13.29.9-ca-jdk13.0.2-win_x64.zip
   mv zulu13.29.9-ca-jdk13.0.2-win_x64 zulu13
+  echo "Downloading Maven"
   wget -q --no-check-certificate https://mirror.dkd.de/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip
   unzip -q apache-maven-3.6.3-bin.zip
   mv apache-maven-3.6.3 maven
+  echo "Downloading WIX"
   wget -q --no-check-certificate https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip
   unzip -q wix311-binaries.zip
   mv wix311-binaries wix
@@ -47,6 +55,7 @@ elif [ "$1" = "windows" ]; then
   export MAVEN_HOME=$TRAVIS_BUILD_DIR/maven
   export PATH=$M2_HOME/bin:$PATH
   export PATH=$TRAVIS_BUILD_DIR/wix:$PATH
+  echo "Downloading Java 14"
   wget -q https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_windows-x64_bin.zip
   unzip -q openjdk-14_windows-x64_bin.zip
 fi
@@ -59,19 +68,21 @@ echo "MVN_VERSION="`mvn -version`
 PLUGIN_UPDATE_DATE=`date +"%Y-%m-%d"`
 PLUGIN_JSON_TEMPLATE="{\"id\": \"PLUGIN_ID\",\"releases\": [{\"PLUGIN_VERSION\": \"PLUGIN_VERSION\",\"date\": \"$PLUGIN_UPDATE_DATE\", \"url\": \"PLUGIN_JAR\"}]}"
 
-echo "==== PREBUILD CORREO ===="
 
+echo "==== SET CORREO VERSION ===="
 mvn versions:set -DnewVersion="$CORREO_VERSION"
 echo "$CORREO_VERSION" > ./src/main/resources/com/exxeta/correomqtt/business/utils/version.txt
-mvn clean install -DskipTests=true
 
-echo "==== PREBUILD PLUGINS ===="
+echo "==== PREBUILD CORREO ===="
+mvn clean install -DskipTests=true
 
 function build_plugin() {
 
   local PLUGIN_VERSION=$1 && shift
   local REPO_NAME=$1 && shift
   local PLUGIN_ID=$1 && shift
+
+  echo "==== BUILD PLUGIN: $PLUGIN_ID:$PLUGIN_VERSION ===="
 
   git clone https://github.com/EXXETA/"$REPO_NAME".git --branch "v$PLUGIN_VERSION" --single-branch
   cd "$REPO_NAME" || exit 1
@@ -80,7 +91,7 @@ function build_plugin() {
   JAR_NAME=$(echo -n "$(ls target | grep "$PLUGIN_VERSION".jar)")
   cp ./target/"$JAR_NAME" "$TRAVIS_BUILD_DIR"/src/main/resources/com/exxeta/correomqtt/plugin/update/
   cd "$TRAVIS_BUILD_DIR" || exit 1
-  sed "s/PLUGIN_JAR/$JAR_NAME/g" <<< sed "s/PLUGIN_ID/$PLUGIN_ID/g" <<< sed "s/PLUGIN_VERSION/$PLUGIN_VERSION/g" <<< "$PLUGIN_JSON_TEMPLATE" >> plugins.json
+  echo "$PLUGIN_JSON_TEMPLATE" | sed "s/PLUGIN_JAR/$JAR_NAME/g" | sed "s/PLUGIN_ID/$PLUGIN_ID/g" | sed "s/PLUGIN_VERSION/$PLUGIN_VERSION/g" >> plugins.json
 }
 
 echo "[" >> plugins.json
@@ -103,7 +114,7 @@ echo "]" >> plugins.json
 
 mv plugins.json src/main/resources/com/exxeta/correomqtt/plugin/update/
 
-echo "==== PREBUILD CORREO ===="
+echo "==== BUILD CORREO ===="
 
 #build again with plugins
 mvn clean install -DskipTests=true
