@@ -28,6 +28,7 @@ jobs:
       os: linux
       script:
         - .travis/setup_linux.bash
+        - .travis/build_correo.bash
         - .travis/build_plugins.bash
         - .travis/build_correo.bash
         - .travis/package_linux.bash
@@ -47,6 +48,7 @@ jobs:
       os: osx
       script:
         - .travis/setup_osx.bash
+        - .travis/build_correo.bash
         - .travis/build_plugins.bash
         - .travis/build_correo.bash
         - .travis/package_osx.bash
@@ -65,6 +67,7 @@ jobs:
       os: windows
       script:
         - .travis/setup_window.bash
+        - .travis/build_correo.bash
         - .travis/build_plugins.bash
         - .travis/build_correo.bash
         - .travis/package_windows.bash
