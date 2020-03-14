@@ -11,7 +11,7 @@ A modern graphical MQTT client using the HiveMQ client library.
 
 * Release: https://github.com/EXXETA/correomqtt/releases/latest
 
-Due to gatekeeper it is required to allow CorreoMQTT. This can be done like this:
+**Note for OSX**: Due to gatekeeper it is required to allow CorreoMQTT. This can be done like this:
 `xattr -d com.apple.quarantine /Applications/CorreoMQTT.app`
 
 ## Screenshot
@@ -29,15 +29,6 @@ Due to gatekeeper it is required to allow CorreoMQTT. This can be done like this
 ## Run jars
 
 `java -jar target/shade/correomqtt.jar`
-
-## Build Installers
-
-Installers must be built on their respective platform.
-
-* `./build_mac.sh`
-* `./build_win.sh`
-* `./build_linux.sh`
-
 
 ## Plugins
 To install a plugin copy the `.jar` into the `plugins/jars` directory. 
