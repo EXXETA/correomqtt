@@ -13,8 +13,6 @@ os:
   - windows
 
 jobs:
-  allow_failures:
-    - os: windows
   include:
     - stage: build
       os: linux
