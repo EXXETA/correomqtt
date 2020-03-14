@@ -145,6 +145,7 @@ mvn clean install -DskipTests=true
 
 echo "==== PACKAGE CORREO ===="
 if [ "$1" = "osx" ]; then
+  echo -n "Package DMG ..."
   ./jdk-14.jdk/Contents/Home/bin/jpackage \
     --type dmg \
     -d target \
@@ -153,7 +154,9 @@ if [ "$1" = "osx" ]; then
     --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.icns
+    echo " done"
 elif [ "$1" = "linux" ]; then
+  echo -n "Package DEB ..."
   ./jdk-14/bin/jpackage \
     --type deb \
     -d target \
@@ -162,6 +165,8 @@ elif [ "$1" = "linux" ]; then
     --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.png
+    echo " done"
+    echo -n "Package RPM ..."
   ./jdk-14/bin/jpackage \
     --type rpm \
     -d target \
@@ -170,7 +175,9 @@ elif [ "$1" = "linux" ]; then
     --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.png
+    echo " done"
 elif [ "$1" = "windows" ]; then
+  echo -n "Package MSI ..."
   ./jdk-14/bin/jpackage \
     --type msi \
     -d target \
@@ -184,6 +191,7 @@ elif [ "$1" = "windows" ]; then
     --win-menu-group CorreoMqtt \
     --win-shortcut \
     --vendor "EXXETA AG"
+    echo " done"
 
   #check if release and deploy manually to github because deploy in windows not working
   echo "==== DEPLOY ===="
