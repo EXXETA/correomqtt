@@ -192,4 +192,16 @@ elif [ "$1" = "windows" ]; then
     --win-shortcut \
     --vendor "EXXETA AG"
     echo " done"
+
+  check if release and deploy manually to github because deploy in windows not working
+  echo "==== DEPLOY ===="
+  echo "$TRAVIS_TAG"
+  if [ -n "$TRAVIS_TAG" ]; then
+    echo "tag set -> deploy release to github";
+    cd ./target || exit 1;
+    gem install dpl --pre;
+    dpl releases --token "$GITHUB_API_KEY" --file_glob --file *.msi;
+  else
+    echo "no tag set";
+  fi
 fi
