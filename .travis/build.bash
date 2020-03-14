@@ -103,7 +103,7 @@ echo "==== BUILD CORREO ===="
 mvn clean install -DskipTests=true
 
 PLUGIN_UPDATE_DATE=`date +"%Y-%m-%d"`
-PLUGIN_JSON_TEMPLATE="{\"id\": \"PLUGIN_ID\",\"releases\": [{\"PLUGIN_VERSION\": \"PLUGIN_VERSION\",\"date\": \"$PLUGIN_UPDATE_DATE\", \"url\": \"PLUGIN_JAR\"}]}"
+PLUGIN_JSON_TEMPLATE="{\"id\": \"PLUGIN_ID\",\"releases\": [{\"version\": \"PLUGIN_VERSION\",\"date\": \"$PLUGIN_UPDATE_DATE\", \"url\": \"PLUGIN_JAR\"}]}"
 
 function build_plugin() {
   local PLUGIN_VERSION=$1 && shift
