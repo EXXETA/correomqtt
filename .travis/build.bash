@@ -64,13 +64,15 @@ elif [ "$1" = "windows" ]; then
   unzip -q apache-maven-3.6.3-bin.zip
   echo " done"
   mv apache-maven-3.6.3 maven
+  mkdir wix
+  cd wix || exit 1
   echo "Downloading WIX"
   wget -q --no-check-certificate https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip
   echo " done"
   echo -n "Extracting WIX ..."
-  unzip -q wix311-binaries.zip wix311-binaries
+  unzip wix311-binaries.zip
   echo " done"
-  mv wix311-binaries wix
+  cd ..
   ls -l
   export JAVA_HOME=$TRAVIS_BUILD_DIR/zulu13
   export PATH=$JAVA_HOME/bin:$PATH
@@ -192,14 +194,14 @@ elif [ "$1" = "windows" ]; then
     echo " done"
 
   #check if release and deploy manually to github because deploy in windows not working
-  echo "==== DEPLOY ===="
-  echo "$TRAVIS_TAG"
-  if [ -n "$TRAVIS_TAG" ]; then
-    echo "tag set -> deploy release to github";
-    cd ./target || exit 1;
-    gem install dpl --pre;
-    dpl releases --token "$GITHUB_API_KEY" --file_glob --file *.msi;
-  else
-    echo "no tag set";
-  fi
+  #echo "==== DEPLOY ===="
+  #echo "$TRAVIS_TAG"
+  #if [ -n "$TRAVIS_TAG" ]; then
+  #  echo "tag set -> deploy release to github";
+  #  cd ./target || exit 1;
+  #  gem install dpl --pre;
+  #  dpl releases --token "$GITHUB_API_KEY" --file_glob --file *.msi;
+  #else
+  #  echo "no tag set";
+  #fi
 fi
