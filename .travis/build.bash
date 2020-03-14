@@ -13,20 +13,22 @@ fi
 
 echo "CORREO_VERSION is $CORREO_VERSION"
 
+echo "==== INSTALL DEPENDENCIES ===="
+
 if [ "$1" = "osx" ]; then
   wget -q https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz
-  tar zxvf zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz >/dev/null 2>&1t
+  tar zxvf zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz >/dev/null 2>&1
   export JAVA_HOME=$TRAVIS_BUILD_DIR/zulu13.29.9-ca-jdk13.0.2-macosx_x64
   export PATH=$JAVA_HOME/bin:$PATH
   wget -q https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_osx-x64_bin.tar.gz
-  tar zxvf openjdk-14_osx-x64_bin.tar.gz >/dev/null 2>&1t
+  tar zxvf openjdk-14_osx-x64_bin.tar.gz >/dev/null 2>&1
 elif [ "$1" = "linux" ]; then
   wget -q https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz
-  tar zxvf zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz >/dev/null 2>&1t
+  tar zxvf zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz >/dev/null 2>&1
   export JAVA_HOME=$TRAVIS_BUILD_DIR/zulu13.29.9-ca-jdk13.0.2-linux_x64
   export PATH=$JAVA_HOME/bin:$PATH
   wget -q https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_linux-x64_bin.tar.gz
-  tar zxvf openjdk-14_linux-x64_bin.tar.gz >/dev/null 2>&1t
+  tar zxvf openjdk-14_linux-x64_bin.tar.gz >/dev/null 2>&1
 elif [ "$1" = "windows" ]; then
   wget -q --no-check-certificate https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-win_x64.zip
   wget -q http://stahlworks.com/dev/unzip.exe
@@ -51,15 +53,19 @@ fi
 
 echo "JAVA_HOME=$JAVA_HOME"
 echo "PATH=$PATH"
-echo "JAVA_VERSION=$(java -version)"
-echo "MVN_VERSION=$(mvn -version)"
+echo "JAVA_VERSION="`java -version`
+echo "MVN_VERSION="`mvn -version`
 
 PLUGIN_UPDATE_DATE=`date +"%Y-%m-%d"`
 PLUGIN_JSON_TEMPLATE="{\"id\": \"PLUGIN_ID\",\"releases\": [{\"PLUGIN_VERSION\": \"PLUGIN_VERSION\",\"date\": \"$PLUGIN_UPDATE_DATE\", \"url\": \"PLUGIN_JAR\"}]}"
 
+echo "==== PREBUILD CORREO ===="
+
 mvn versions:set -DnewVersion="$CORREO_VERSION"
 echo "$CORREO_VERSION" > ./src/main/resources/com/exxeta/correomqtt/business/utils/version.txt
 mvn clean install -DskipTests=true
+
+echo "==== PREBUILD PLUGINS ===="
 
 function build_plugin() {
 
@@ -97,8 +103,13 @@ echo "]" >> plugins.json
 
 mv plugins.json src/main/resources/com/exxeta/correomqtt/plugin/update/
 
+echo "==== PREBUILD CORREO ===="
+
 #build again with plugins
 mvn clean install -DskipTests=true
+
+
+echo "==== PACKAGE CORREO ===="
 
 if [ "$1" = "osx" ]; then
   ./jdk-14.jdk/Contents/Home/bin/jpackage \
