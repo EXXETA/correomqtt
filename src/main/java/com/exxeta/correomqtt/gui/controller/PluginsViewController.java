@@ -3,6 +3,7 @@ package com.exxeta.correomqtt.gui.controller;
 import com.exxeta.correomqtt.business.services.ConfigService;
 import com.exxeta.correomqtt.gui.model.WindowProperty;
 import com.exxeta.correomqtt.gui.model.WindowType;
+import com.exxeta.correomqtt.gui.utils.HostServicesHolder;
 import com.exxeta.correomqtt.gui.utils.WindowHelper;
 import com.exxeta.correomqtt.plugin.manager.PermissionPlugin;
 import com.exxeta.correomqtt.plugin.manager.PluginSecurityPolicy;
@@ -158,11 +159,7 @@ public class PluginsViewController extends BaseController {
 
     @FXML
     public void onOpenPluginFolder() {
-        try {
-            Desktop.getDesktop().open(new File(ConfigService.getInstance().getPluginRootPath()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        HostServicesHolder.getInstance().getHostServices().showDocument(new File(ConfigService.getInstance().getPluginRootPath()).toString());
     }
 
     private void setStatusRestartRequired() {
