@@ -97,7 +97,7 @@ mvn -version
 
 echo "==== SET CORREO VERSION ===="
 mvn versions:set -DnewVersion="$CORREO_VERSION"
-echo "$CORREO_VERSION" > ./src/main/resources/com/exxeta/correomqtt/business/utils/version.txt
+echo -n "$CORREO_VERSION" > ./src/main/resources/com/exxeta/correomqtt/business/utils/version.txt
 
 echo "==== BUILD CORREO ===="
 mvn clean install -DskipTests=true
