@@ -53,10 +53,10 @@ public class VersionUtils {
                 new InputStreamReader(inputStream, "UTF-8"));
 
         if (!jsonObject.get("tag_name").toString().contains(getVersion())) {
-            System.out.println("There is a new release available on github!");
+            LOGGER.info("There is a new release available on github!");
             return new Pair(true, jsonObject.get("tag_name"));
         } else {
-            System.out.println("Version is up to date!");
+            LOGGER.info("Version is up to date!");
             return new Pair(false, null);
         }
     }
