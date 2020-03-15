@@ -190,7 +190,8 @@ elif [ "$1" = "windows" ]; then
     --win-menu \
     --win-menu-group CorreoMqtt \
     --win-shortcut \
-    --vendor "EXXETA AG"
+    --vendor "EXXETA AG" \
+	--win-upgrade-uuid "146a4ea7-af22-4e1e-a9ea-7945ce0190fd"
     echo " done"
 
   check if release and deploy manually to github because deploy in windows not working
