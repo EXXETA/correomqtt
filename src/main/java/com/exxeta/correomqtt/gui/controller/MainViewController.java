@@ -11,6 +11,7 @@ import com.exxeta.correomqtt.gui.helper.AlertHelper;
 import com.exxeta.correomqtt.gui.model.ConnectionPropertiesDTO;
 import com.exxeta.correomqtt.gui.model.ConnectionState;
 import com.exxeta.correomqtt.gui.transformer.ConnectionTransformer;
+import com.exxeta.correomqtt.gui.utils.CheckNewVersionUtils;
 import com.exxeta.correomqtt.gui.utils.HostServicesHolder;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -21,6 +22,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +63,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private Menu helpMenu;
     @FXML
     private MenuItem aboutItem;
+    @FXML
+    private MenuItem updateItem;
     @FXML
     private MenuItem websiteItem;
     @FXML
@@ -126,6 +130,15 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this));
         settingsItem.setOnAction(event -> SettingsViewController.showAsDialog());
         aboutItem.setOnAction(event -> AboutViewController.showAsDialog());
+        updateItem.setOnAction(event -> {
+            try {
+                CheckNewVersionUtils.checkNewVersion(true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        });
         websiteItem.setOnAction(event -> {
             //TODO: Replace with github page
             HostServicesHolder.getInstance().getHostServices().showDocument(

@@ -11,6 +11,8 @@ import com.exxeta.correomqtt.business.services.ConfigService;
 import com.exxeta.correomqtt.business.utils.VersionUtils;
 import com.exxeta.correomqtt.gui.controller.AlertController;
 import com.exxeta.correomqtt.gui.controller.MainViewController;
+import com.exxeta.correomqtt.gui.helper.AlertHelper;
+import com.exxeta.correomqtt.gui.utils.CheckNewVersionUtils;
 import com.exxeta.correomqtt.gui.utils.HostServicesHolder;
 import com.exxeta.correomqtt.plugin.manager.PluginSystem;
 import com.exxeta.correomqtt.plugin.update.PluginUpdateManager;
@@ -19,14 +21,20 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
+import javafx.util.Pair;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 public class CorreoMqtt extends Application {
@@ -76,9 +84,10 @@ public class CorreoMqtt extends Application {
 
         loadPrimaryStage(primaryStage);
 
+        CheckNewVersionUtils.checkNewVersion(false);
     }
 
-    private void loadPrimaryStage(Stage primaryStage) throws IOException {
+    private void loadPrimaryStage(Stage primaryStage) throws IOException, ParseException {
         ConfigService.getInstance().setCssFileName();
         String cssPath = ConfigService.getInstance().getCssPath();
 

@@ -11,6 +11,7 @@ import com.exxeta.correomqtt.business.utils.ConnectionHolder;
 import com.exxeta.correomqtt.gui.business.TaskFactory;
 import com.exxeta.correomqtt.gui.cell.ConnectionCell;
 import com.exxeta.correomqtt.gui.cell.GenericCell;
+import com.exxeta.correomqtt.gui.helper.AlertHelper;
 import com.exxeta.correomqtt.gui.helper.CheckTopicHelper;
 import com.exxeta.correomqtt.gui.model.ConnectionPropertiesDTO;
 import com.exxeta.correomqtt.gui.model.GenericCellModel;
@@ -692,31 +693,17 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
         ConnectionPropertiesDTO selectedItem = connectionsListView.getSelectionModel().getSelectedItem();
 
-        //TODO extract to helper
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        DialogPane dialogPane = alert.getDialogPane();
-        String cssPath = ConfigService.getInstance().getCssPath();
-        if (cssPath != null) {
-            dialogPane.getStylesheets().add(cssPath);
-        }
-        alert.setTitle(resources.getString("connectionSettingsViewControllerDeleteTitle"));
-        alert.setHeaderText(resources.getString("connectionSettingsViewControllerDeleteHeader") + "? (" + selectedItem + ")");
-
-        ButtonType no = new ButtonType(resources.getString("commonNoButton"));
-        ButtonType yes = new ButtonType(resources.getString("commonYesButton"));
-
-        alert.getButtonTypes().setAll(yes, no);
-
-        Optional<ButtonType> result = alert.showAndWait();
-
-        if (result.isEmpty()) {
-            LOGGER.error("No result from confirm drop connection dialog.");
-            return;
-        }
+        boolean confirmed = AlertHelper.confirm(
+                resources.getString("connectionSettingsViewControllerDeleteTitle"),
+                resources.getString("connectionSettingsViewControllerDeleteHeader") + "? (" + selectedItem + ")",
+                null,
+                resources.getString("commonNoButton"),
+                resources.getString("commonYesButton")
+        );
 
         int selectedIndex = connectionsListView.getSelectionModel().getSelectedIndex();
 
-        if (result.get().equals(yes)) {
+        if (confirmed) {
 
             LOGGER.info("Disconnect connection selected");
 
@@ -724,25 +711,15 @@ public class ConnectionSettingsViewController extends BaseController implements 
             if (client != null) {
                 LOGGER.info("Connection is still connected");
 
-                //TODO extract to helper
-                Alert disconnectAlert = new Alert(Alert.AlertType.CONFIRMATION);
-                DialogPane disconnectDialogPane = disconnectAlert.getDialogPane();
-                if (cssPath != null) {
-                    disconnectDialogPane.getStylesheets().add(cssPath);
-                }
-                disconnectAlert.setTitle(resources.getString("connectionSettingsViewControllerStillInUseTitle"));
-                disconnectAlert.setHeaderText(resources.getString("connectionSettingsViewControllerStillInUseHeader"));
+                confirmed = AlertHelper.confirm(
+                        resources.getString("connectionSettingsViewControllerStillInUseTitle"),
+                        resources.getString("connectionSettingsViewControllerStillInUseHeader"),
+                        null,
+                        resources.getString("commonNoButton"),
+                        resources.getString("commonYesButton")
+                );
 
-                disconnectAlert.getButtonTypes().setAll(yes, no);
-
-                Optional<ButtonType> disconnectResult = disconnectAlert.showAndWait();
-
-                if (!disconnectResult.isPresent()) {
-                    LOGGER.info("No result from confirm disconnect connection dialog.");
-                    return;
-                }
-
-                if (disconnectResult.get().equals(yes)) {
+                if (confirmed) {
                     LOGGER.info("Disconnect");
                     TaskFactory.disconnect(selectedItem.getId());
 
@@ -969,28 +946,15 @@ public class ConnectionSettingsViewController extends BaseController implements 
     }
 
     private boolean confirmUnsavedConnectionSync() {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        DialogPane dialogPane = alert.getDialogPane();
-        String cssPath = ConfigService.getInstance().getCssPath();
-        if (cssPath != null) {
-            dialogPane.getStylesheets().add(cssPath);
-        }
-        alert.setTitle(resources.getString("connectionSettingsViewControllerUnsavedTitle"));
-        alert.setHeaderText(resources.getString("connectionSettingsViewControllerUnsavedHeader"));
-        alert.setContentText(resources.getString("connectionSettingsViewControllerUnsavedContent"));
+        boolean confirmed = AlertHelper.confirm(
+                resources.getString("connectionSettingsViewControllerUnsavedTitle"),
+                resources.getString("connectionSettingsViewControllerUnsavedHeader"),
+                resources.getString("connectionSettingsViewControllerUnsavedContent"),
+                resources.getString("commonSaveButton"),
+                resources.getString("commonDiscardButton")
+        );
 
-        ButtonType save = new ButtonType(resources.getString("commonSaveButton"));
-        ButtonType discard = new ButtonType(resources.getString("commonDiscardButton"));
-
-        alert.getButtonTypes().setAll(save, discard);
-
-        Optional<ButtonType> result = alert.showAndWait();
-        if (!result.isPresent()) {
-            LOGGER.error("No result from confirm unsaved connections dialog.");
-            return false;
-        }
-
-        return result.get().equals(save);
+        return confirmed;
     }
 
     @FXML
