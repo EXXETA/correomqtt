@@ -18,6 +18,10 @@ A modern graphical MQTT client using the HiveMQ client library.
 
 ![CorreoMQTT Connection View](screenshot.png)
 
+## Developement
+
+Feel free to contribute. Check out our project board with open issues here: https://github.com/orgs/EXXETA/projects/2
+
 ## Prerequisites
 
 * Install Java 13 e.g. from here https://www.azul.com/downloads/zulu-community/ (Note: No JavaFX is required, as it is handled via maven)
