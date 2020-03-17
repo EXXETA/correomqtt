@@ -4,7 +4,7 @@
 [![GitHub](https://img.shields.io/github/license/exxeta/correomqtt)](https://github.com/exxeta/correomqtt/blob/develop/LICENSE) 
 
 # CorreoMQTT
-A modern graphical MQTT client using the [HiveMQ client library](https://hivemq.github.io/hivemq-mqtt-client/).
+A modern graphical MQTT client using the [HiveMQ client library](https://github.com/hivemq/hivemq-mqtt-client).
 
 
 ## Binary Downloads
