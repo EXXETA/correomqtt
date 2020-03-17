@@ -6,7 +6,7 @@
 
     <groupId>org.correomqtt</groupId>
     <artifactId>correomqtt</artifactId>
-    <version>0.10.0</version>
+    <version>0.9</version>
 
     <name>CorreoMQTT</name>
     <description>A modern graphical MQTT client using the HiveMQ client library.</description>

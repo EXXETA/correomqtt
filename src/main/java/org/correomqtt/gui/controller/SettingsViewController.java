@@ -131,7 +131,7 @@ public class SettingsViewController extends BaseController {
         Set<Locale> availableLocales = new HashSet<>();
         for (Locale locale : Locale.getAvailableLocales()) {
             if (SettingsViewController.class.getResource(
-                    "/com/exxeta/correomqtt/i18n_" + locale.getLanguage() + "_" + locale.getCountry() + ".properties") != null
+                    "/org/correomqtt/i18n_" + locale.getLanguage() + "_" + locale.getCountry() + ".properties") != null
             ) {
                 availableLocales.add(locale);
             }
