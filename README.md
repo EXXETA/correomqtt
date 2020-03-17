@@ -20,8 +20,9 @@ A modern graphical MQTT client using the HiveMQ client library.
 
 ## Developement
 
-Feel free to contribute. Check out our project board with open issues here: https://github.com/orgs/EXXETA/projects/2
+Feel free to contribute. 
 
+* [Check out our project board with open issues here](https://github.com/orgs/EXXETA/projects/2)
 * [Learn how to build correo](https://github.com/EXXETA/correomqtt/wiki/Build-Correo)
 ## Plugins
 
