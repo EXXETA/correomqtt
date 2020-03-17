@@ -19,7 +19,7 @@
          <MenuItem fx:id="websiteItem" mnemonicParsing="false" text="%mainViewWebsiteMenuItem" />
         </Menu>
     </MenuBar>
-    <TabPane fx:id="tabPane" layoutX="7.0" layoutY="36.0" prefHeight="364.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="25.0">
+    <TabPane fx:id="tabPane" layoutX="7.0" layoutY="36.0" prefHeight="364.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="29.0">
         <Tab fx:id="addTab" styleClass="addConnectionTab">
             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
             <tooltip>
