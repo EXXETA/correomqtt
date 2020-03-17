@@ -5,7 +5,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane maxHeight="517.0" prefWidth="450.0" styleClass="dialog" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.exxeta.correomqtt.gui.controller.SettingsViewController">
+<AnchorPane prefWidth="450.0" styleClass="dialog" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.exxeta.correomqtt.gui.controller.SettingsViewController">
    <VBox styleClass="settingsHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
       <children>
          <Label alignment="TOP_LEFT" styleClass="headline" text="%settingsViewHeaderLabel" />
@@ -20,7 +20,7 @@
              <RowConstraints vgrow="SOMETIMES" />
                <RowConstraints vgrow="SOMETIMES" />
                <RowConstraints prefHeight="60.0" vgrow="SOMETIMES" />
-               <RowConstraints minHeight="10.0" prefHeight="60.0" vgrow="SOMETIMES" />
+               <RowConstraints vgrow="SOMETIMES" />
            </rowConstraints>
             <children>
                  <CheckBox fx:id="base64CheckBox" disable="true" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.valignment="TOP">
@@ -89,7 +89,7 @@
                   </children>
                </VBox>
                <ComboBox fx:id="languageComboBox" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-               <VBox layoutX="10.0" layoutY="195.0" GridPane.rowIndex="5" GridPane.vgrow="ALWAYS">
+               <VBox GridPane.rowIndex="5">
                   <children>
                      <Label styleClass="settingsLabel" text="%settingsViewUpdateLabel" />
                      <Label text="%settingsViewUpdatesExplanationLabel" wrapText="true">
@@ -107,7 +107,6 @@
                </CheckBox>
             </children>
          </GridPane>
-         <Region VBox.vgrow="ALWAYS" />
          <HBox alignment="CENTER_RIGHT">
             <children>
                 <Button fx:id="settingsCancelButton" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">
