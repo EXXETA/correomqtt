@@ -1,6 +1,6 @@
 package org.correomqtt.plugin.spi;
 
-import com.exxeta.correomqtt.plugin.model.LwtConnectionExtensionDTO;
+import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
 import javafx.scene.layout.HBox;
 
 public interface LwtSettingsHook extends BaseExtensionPoint {

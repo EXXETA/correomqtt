@@ -1,11 +1,11 @@
 package org.correomqtt.business.services;
 
-import com.exxeta.correomqtt.business.dispatcher.ConfigDispatcher;
-import com.exxeta.correomqtt.business.model.ConfigDTO;
-import com.exxeta.correomqtt.business.model.ConnectionConfigDTO;
-import com.exxeta.correomqtt.business.model.SettingsDTO;
-import com.exxeta.correomqtt.business.model.ThemeSettingsDTO;
-import com.exxeta.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.model.ConfigDTO;
+import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.SettingsDTO;
+import org.correomqtt.business.model.ThemeSettingsDTO;
+import org.correomqtt.business.utils.ConnectionHolder;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

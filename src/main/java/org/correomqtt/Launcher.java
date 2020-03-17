@@ -1,6 +1,6 @@
 package org.correomqtt;
 
-import com.exxeta.correomqtt.plugin.manager.PluginSecurityPolicy;
+import org.correomqtt.plugin.manager.PluginSecurityPolicy;
 
 import java.security.Policy;
 

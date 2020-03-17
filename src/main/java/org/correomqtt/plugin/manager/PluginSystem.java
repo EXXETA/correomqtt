@@ -1,8 +1,8 @@
 package org.correomqtt.plugin.manager;
 
-import com.exxeta.correomqtt.business.services.ConfigService;
-import com.exxeta.correomqtt.plugin.spi.BaseExtensionPoint;
-import com.exxeta.correomqtt.plugin.spi.ExtensionId;
+import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.plugin.spi.BaseExtensionPoint;
+import org.correomqtt.plugin.spi.ExtensionId;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.pf4j.*;

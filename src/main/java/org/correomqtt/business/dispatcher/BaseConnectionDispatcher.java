@@ -1,6 +1,6 @@
-package com.exxeta.correomqtt.business.dispatcher;
+package org.correomqtt.business.dispatcher;
 
-import com.exxeta.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.business.utils.ConnectionHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;

@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt.business.dispatcher;
+package org.correomqtt.business.dispatcher;
 
 public class ConfigDispatcher extends BaseDispatcher<ConfigObserver> {
 

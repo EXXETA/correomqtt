@@ -1,11 +1,11 @@
 package org.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.business.dispatcher.ConfigDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.ConfigObserver;
-import com.exxeta.correomqtt.business.dispatcher.PersistPublishHistoryObserver;
-import com.exxeta.correomqtt.business.dispatcher.PersistSubscriptionHistoryObserver;
-import com.exxeta.correomqtt.business.services.ConfigService;
-import com.exxeta.correomqtt.gui.helper.AlertHelper;
+import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.dispatcher.ConfigObserver;
+import org.correomqtt.business.dispatcher.PersistPublishHistoryObserver;
+import org.correomqtt.business.dispatcher.PersistSubscriptionHistoryObserver;
+import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.gui.helper.AlertHelper;
 
 import java.util.ResourceBundle;
 
@@ -14,7 +14,7 @@ public class AlertController extends BaseController implements
         PersistPublishHistoryObserver,
         PersistSubscriptionHistoryObserver {
 
-    private ResourceBundle resources = ResourceBundle.getBundle("com.exxeta.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
     private static AlertController instance;
 
     private AlertController() {

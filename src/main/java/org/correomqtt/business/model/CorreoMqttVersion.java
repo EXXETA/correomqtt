@@ -1,6 +1,6 @@
-package com.exxeta.correomqtt.business.model;
+package org.correomqtt.business.model;
 
-import com.exxeta.correomqtt.gui.model.GenericCellModel;
+import org.correomqtt.gui.model.GenericCellModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.hivemq.client.mqtt.MqttVersion;

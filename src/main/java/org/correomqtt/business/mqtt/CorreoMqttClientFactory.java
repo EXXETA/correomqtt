@@ -1,7 +1,7 @@
 package org.correomqtt.business.mqtt;
 
-import com.exxeta.correomqtt.business.exception.CorreoMqttUnsupportedMqttVersionException;
-import com.exxeta.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.exception.CorreoMqttUnsupportedMqttVersionException;
+import org.correomqtt.business.model.ConnectionConfigDTO;
 
 public class CorreoMqttClientFactory {
 

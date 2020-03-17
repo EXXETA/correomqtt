@@ -1,13 +1,13 @@
 package org.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.business.services.ConfigService;
-import com.exxeta.correomqtt.gui.model.WindowProperty;
-import com.exxeta.correomqtt.gui.model.WindowType;
-import com.exxeta.correomqtt.gui.utils.HostServicesHolder;
-import com.exxeta.correomqtt.gui.utils.WindowHelper;
-import com.exxeta.correomqtt.plugin.manager.PermissionPlugin;
-import com.exxeta.correomqtt.plugin.manager.PluginSecurityPolicy;
-import com.exxeta.correomqtt.plugin.manager.PluginSystem;
+import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.gui.model.WindowProperty;
+import org.correomqtt.gui.model.WindowType;
+import org.correomqtt.gui.utils.HostServicesHolder;
+import org.correomqtt.gui.utils.WindowHelper;
+import org.correomqtt.plugin.manager.PermissionPlugin;
+import org.correomqtt.plugin.manager.PluginSecurityPolicy;
+import org.correomqtt.plugin.manager.PluginSystem;
 import javafx.animation.PauseTransition;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;

@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt.business.dispatcher;
+package org.correomqtt.business.dispatcher;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

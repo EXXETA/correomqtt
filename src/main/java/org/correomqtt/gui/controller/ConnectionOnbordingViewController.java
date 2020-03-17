@@ -1,11 +1,11 @@
 package org.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.business.dispatcher.ConfigDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.ConfigObserver;
-import com.exxeta.correomqtt.business.utils.ConnectionHolder;
-import com.exxeta.correomqtt.gui.cell.ConnectionCell;
-import com.exxeta.correomqtt.gui.model.ConnectionPropertiesDTO;
-import com.exxeta.correomqtt.gui.transformer.ConnectionTransformer;
+import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.dispatcher.ConfigObserver;
+import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.gui.cell.ConnectionCell;
+import org.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.transformer.ConnectionTransformer;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

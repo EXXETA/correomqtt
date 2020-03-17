@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt.business.model;
+package org.correomqtt.business.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;

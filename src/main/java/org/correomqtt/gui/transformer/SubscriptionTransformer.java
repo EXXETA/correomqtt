@@ -1,7 +1,7 @@
-package com.exxeta.correomqtt.gui.transformer;
+package org.correomqtt.gui.transformer;
 
 import org.correomqtt.business.model.SubscriptionDTO;
-import com.exxeta.correomqtt.gui.model.SubscriptionPropertiesDTO;
+import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 
 public class SubscriptionTransformer {
 

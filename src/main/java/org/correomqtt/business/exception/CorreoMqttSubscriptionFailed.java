@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt.business.exception;
+package org.correomqtt.business.exception;
 
 public abstract class CorreoMqttSubscriptionFailed extends CorreoMqttException {
 

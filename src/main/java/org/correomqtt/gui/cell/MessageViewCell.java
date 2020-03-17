@@ -1,12 +1,12 @@
-package com.exxeta.correomqtt.gui.cell;
+package org.correomqtt.gui.cell;
 
-import com.exxeta.correomqtt.business.services.ConfigService;
-import com.exxeta.correomqtt.gui.model.MessagePropertiesDTO;
-import com.exxeta.correomqtt.plugin.manager.MessageValidator;
-import com.exxeta.correomqtt.plugin.manager.PluginSystem;
-import com.exxeta.correomqtt.plugin.model.MessageExtensionDTO;
-import com.exxeta.correomqtt.plugin.spi.MessageListHook;
-import com.exxeta.correomqtt.plugin.spi.MessageValidatorHook;
+import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.plugin.manager.MessageValidator;
+import org.correomqtt.plugin.manager.PluginSystem;
+import org.correomqtt.plugin.model.MessageExtensionDTO;
+import org.correomqtt.plugin.spi.MessageListHook;
+import org.correomqtt.plugin.spi.MessageValidatorHook;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
@@ -83,7 +83,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(MessageViewCell.class.getResource("messageView.fxml"),
-                            ResourceBundle.getBundle("com.exxeta.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

@@ -1,8 +1,8 @@
 package org.correomqtt.business.services;
 
-import com.exxeta.correomqtt.business.dispatcher.ImportMessageDispatcher;
-import com.exxeta.correomqtt.business.exception.CorreoMqttExportMessageException;
-import com.exxeta.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.dispatcher.ImportMessageDispatcher;
+import org.correomqtt.business.exception.CorreoMqttExportMessageException;
+import org.correomqtt.business.model.MessageDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

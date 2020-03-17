@@ -1,7 +1,7 @@
 package org.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.business.dispatcher.LogDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.LogObserver;
+import org.correomqtt.business.dispatcher.LogDispatcher;
+import org.correomqtt.business.dispatcher.LogObserver;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;

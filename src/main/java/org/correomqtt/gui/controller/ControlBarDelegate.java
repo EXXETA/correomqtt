@@ -1,6 +1,6 @@
 package org.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.gui.model.ConnectionState;
+import org.correomqtt.gui.model.ConnectionState;
 
 public interface ControlBarDelegate {
     void setConnectionState(ConnectionState state);

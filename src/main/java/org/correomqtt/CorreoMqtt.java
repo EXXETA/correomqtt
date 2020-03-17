@@ -4,38 +4,32 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.util.ContextInitializer;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
-import com.exxeta.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.ShortcutDispatcher;
-import com.exxeta.correomqtt.business.model.SettingsDTO;
-import com.exxeta.correomqtt.business.services.ConfigService;
-import com.exxeta.correomqtt.business.utils.VersionUtils;
-import com.exxeta.correomqtt.gui.controller.AlertController;
-import com.exxeta.correomqtt.gui.controller.MainViewController;
-import com.exxeta.correomqtt.gui.helper.AlertHelper;
-import com.exxeta.correomqtt.gui.utils.CheckNewVersionUtils;
-import com.exxeta.correomqtt.gui.utils.HostServicesHolder;
-import com.exxeta.correomqtt.plugin.manager.PluginSystem;
-import com.exxeta.correomqtt.plugin.update.PluginUpdateManager;
+import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
+import org.correomqtt.business.dispatcher.ShortcutDispatcher;
+import org.correomqtt.business.model.SettingsDTO;
+import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.utils.VersionUtils;
+import org.correomqtt.gui.controller.AlertController;
+import org.correomqtt.gui.controller.MainViewController;
+import org.correomqtt.gui.helper.AlertHelper;
+import org.correomqtt.gui.utils.CheckNewVersionUtils;
+import org.correomqtt.gui.utils.HostServicesHolder;
+import org.correomqtt.plugin.manager.PluginSystem;
+import org.correomqtt.plugin.update.PluginUpdateManager;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.DialogPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
-import javafx.util.Pair;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.ResourceBundle;
 
 public class CorreoMqtt extends Application {
@@ -70,7 +64,7 @@ public class CorreoMqtt extends Application {
         settings.setCurrentLocale(settings.getSavedLocale());
         ConfigService.getInstance().saveSettings();
 
-        resources = ResourceBundle.getBundle("com.exxeta.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
 
         LOGGER.info("Locale is: {}", settings.getSavedLocale());
 
@@ -124,7 +118,7 @@ public class CorreoMqtt extends Application {
         String cssPath = ConfigService.getInstance().getCssPath();
 
         FXMLLoader loader = new FXMLLoader(MainViewController.class.getResource("mainView.fxml"),
-                                           ResourceBundle.getBundle("com.exxeta.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
+                                           ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
         Parent root = loader.load();
 
         mainViewController = loader.getController();

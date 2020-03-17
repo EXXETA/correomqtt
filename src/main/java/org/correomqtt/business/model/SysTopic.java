@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt.business.model;
+package org.correomqtt.business.model;
 
 import java.util.Arrays;
 import java.util.HashMap;

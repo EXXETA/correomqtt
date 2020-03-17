@@ -1,7 +1,7 @@
 package org.correomqtt.gui.model;
 
-import com.exxeta.correomqtt.business.model.SysTopic;
-import com.exxeta.correomqtt.business.utils.MessageDateTimeFormatter;
+import org.correomqtt.business.model.SysTopic;
+import org.correomqtt.business.utils.MessageDateTimeFormatter;
 import javafx.beans.Observable;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;

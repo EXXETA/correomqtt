@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt.business.dispatcher;
+package org.correomqtt.business.dispatcher;
 
 public interface PersistPublishHistoryObserver extends BaseConnectionObserver {
     void errorReadingPublishHistory(Throwable exception);

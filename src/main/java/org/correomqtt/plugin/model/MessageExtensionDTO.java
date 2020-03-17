@@ -1,9 +1,9 @@
 package org.correomqtt.plugin.model;
 
-import com.exxeta.correomqtt.business.model.MessageType;
-import com.exxeta.correomqtt.business.model.PublishStatus;
-import com.exxeta.correomqtt.business.model.Qos;
-import com.exxeta.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.business.model.MessageType;
+import org.correomqtt.business.model.PublishStatus;
+import org.correomqtt.business.model.Qos;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
 import com.sun.javafx.collections.ObservableMapWrapper;
 import lombok.Getter;
 import lombok.Setter;

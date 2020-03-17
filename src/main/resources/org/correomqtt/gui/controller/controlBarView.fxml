@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane fx:id="mainViewHBoxAnchorPane" minWidth="500.0" prefHeight="32.0" prefWidth="663.0" stylesheets="@../css/controlBarView.css" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.exxeta.correomqtt.gui.controller.ControlBarController">
+<AnchorPane fx:id="mainViewHBoxAnchorPane" minWidth="500.0" prefHeight="32.0" prefWidth="663.0" stylesheets="@../css/controlBarView.css" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ControlBarController">
     <HBox fx:id="controllViewButtonHBox" alignment="CENTER_LEFT" prefHeight="32.0" prefWidth="270.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <ToggleButton fx:id="controlViewPButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onClickP" styleClass="columns-solid-left" textAlignment="CENTER">
             <tooltip>

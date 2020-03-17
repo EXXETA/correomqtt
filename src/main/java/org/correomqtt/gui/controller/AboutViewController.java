@@ -1,10 +1,10 @@
 package org.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.business.utils.VersionUtils;
-import com.exxeta.correomqtt.gui.model.WindowProperty;
-import com.exxeta.correomqtt.gui.model.WindowType;
-import com.exxeta.correomqtt.gui.utils.HostServicesHolder;
-import com.exxeta.correomqtt.gui.utils.WindowHelper;
+import org.correomqtt.business.utils.VersionUtils;
+import org.correomqtt.gui.model.WindowProperty;
+import org.correomqtt.gui.model.WindowType;
+import org.correomqtt.gui.utils.HostServicesHolder;
+import org.correomqtt.gui.utils.WindowHelper;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;

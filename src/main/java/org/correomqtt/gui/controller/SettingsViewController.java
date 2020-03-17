@@ -1,11 +1,11 @@
 package org.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.business.model.SettingsDTO;
-import com.exxeta.correomqtt.business.model.ThemeDTO;
-import com.exxeta.correomqtt.business.model.ThemeSettingsDTO;
-import com.exxeta.correomqtt.business.services.ConfigService;
-import com.exxeta.correomqtt.gui.model.WindowProperty;
-import com.exxeta.correomqtt.gui.model.WindowType;
+import org.correomqtt.business.model.SettingsDTO;
+import org.correomqtt.business.model.ThemeDTO;
+import org.correomqtt.business.model.ThemeSettingsDTO;
+import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.gui.model.WindowProperty;
+import org.correomqtt.gui.model.WindowType;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;

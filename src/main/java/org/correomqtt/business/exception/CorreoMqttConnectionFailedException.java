@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt.business.exception;
+package org.correomqtt.business.exception;
 
 import com.hivemq.client.mqtt.mqtt3.message.connect.connack.Mqtt3ConnAckReturnCode;
 import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAckReasonCode;

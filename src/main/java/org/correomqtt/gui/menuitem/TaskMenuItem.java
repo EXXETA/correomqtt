@@ -1,6 +1,6 @@
-package com.exxeta.correomqtt.gui.menuitem;
+package org.correomqtt.gui.menuitem;
 
-import com.exxeta.correomqtt.plugin.manager.Task;
+import org.correomqtt.plugin.manager.Task;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
 import lombok.Getter;

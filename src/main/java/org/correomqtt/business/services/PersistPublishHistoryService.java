@@ -1,14 +1,14 @@
 package org.correomqtt.business.services;
 
-import com.exxeta.correomqtt.business.dispatcher.ConfigDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.ConfigObserver;
-import com.exxeta.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
-import com.exxeta.correomqtt.business.dispatcher.PersistPublishHistoryDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.PublishGlobalDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.PublishGlobalObserver;
-import com.exxeta.correomqtt.business.model.MessageDTO;
-import com.exxeta.correomqtt.business.model.PublishHistoryListDTO;
+import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.dispatcher.ConfigObserver;
+import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
+import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import org.correomqtt.business.dispatcher.PersistPublishHistoryDispatcher;
+import org.correomqtt.business.dispatcher.PublishGlobalDispatcher;
+import org.correomqtt.business.dispatcher.PublishGlobalObserver;
+import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.model.PublishHistoryListDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

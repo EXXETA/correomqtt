@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt;
+package org.correomqtt;
 
 import javafx.stage.Stage;
 import org.junit.Before;

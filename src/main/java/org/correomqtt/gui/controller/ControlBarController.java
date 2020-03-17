@@ -1,12 +1,12 @@
 package org.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import com.exxeta.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
-import com.exxeta.correomqtt.business.exception.CorreoMqttException;
-import com.exxeta.correomqtt.business.model.ConnectionConfigDTO;
-import com.exxeta.correomqtt.business.utils.ConnectionHolder;
-import com.exxeta.correomqtt.gui.business.TaskFactory;
-import com.exxeta.correomqtt.gui.model.ConnectionState;
+import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
+import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import org.correomqtt.business.exception.CorreoMqttException;
+import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.model.ConnectionState;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

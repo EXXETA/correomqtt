@@ -1,9 +1,9 @@
 package org.correomqtt.gui.model;
 
-import com.exxeta.correomqtt.business.model.MessageType;
-import com.exxeta.correomqtt.business.model.PublishStatus;
-import com.exxeta.correomqtt.business.model.Qos;
-import com.exxeta.correomqtt.business.utils.MessageDateTimeFormatter;
+import org.correomqtt.business.model.MessageType;
+import org.correomqtt.business.model.PublishStatus;
+import org.correomqtt.business.model.Qos;
+import org.correomqtt.business.utils.MessageDateTimeFormatter;
 import javafx.beans.Observable;
 import javafx.beans.property.*;
 import javafx.util.Callback;

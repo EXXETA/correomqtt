@@ -5,7 +5,7 @@
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="mainPane" xmlns="http://javafx.com/javafx/8.0.191" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.exxeta.correomqtt.gui.controller.LoadingViewController">
+<VBox fx:id="mainPane" xmlns="http://javafx.com/javafx/8.0.191" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.LoadingViewController">
     <Label fx:id="progressLabel" prefWidth="350.0" text="Label" wrapText="true" VBox.vgrow="ALWAYS">
         <VBox.margin>
             <Insets left="10.0" right="10.0" top="10.0" />

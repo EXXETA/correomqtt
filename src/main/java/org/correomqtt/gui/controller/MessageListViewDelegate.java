@@ -1,7 +1,7 @@
 package org.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.business.model.MessageDTO;
-import com.exxeta.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
 
 public interface MessageListViewDelegate {
 

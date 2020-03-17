@@ -1,7 +1,7 @@
-package com.exxeta.correomqtt.business.model;
+package org.correomqtt.business.model;
 
-import com.exxeta.correomqtt.business.utils.CorreoCharsetDecoder;
-import com.exxeta.correomqtt.business.utils.MessageDateTimeFormatter;
+import org.correomqtt.business.utils.CorreoCharsetDecoder;
+import org.correomqtt.business.utils.MessageDateTimeFormatter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hivemq.client.mqtt.mqtt3.message.publish.Mqtt3Publish;

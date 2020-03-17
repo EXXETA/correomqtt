@@ -1,6 +1,6 @@
 package org.correomqtt.plugin.manager;
 
-import com.exxeta.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.ConfigService;
 import org.pf4j.DefaultPluginFactory;
 import org.pf4j.Plugin;
 import org.pf4j.PluginWrapper;

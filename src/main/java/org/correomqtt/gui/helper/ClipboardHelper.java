@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt.gui.helper;
+package org.correomqtt.gui.helper;
 
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;

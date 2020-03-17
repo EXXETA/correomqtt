@@ -1,7 +1,7 @@
 package org.correomqtt.business.services;
 
-import com.exxeta.correomqtt.business.dispatcher.PublishDispatcher;
-import com.exxeta.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.dispatcher.PublishDispatcher;
+import org.correomqtt.business.model.MessageDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

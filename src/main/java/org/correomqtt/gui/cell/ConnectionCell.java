@@ -1,11 +1,11 @@
-package com.exxeta.correomqtt.gui.cell;
+package org.correomqtt.gui.cell;
 
 import org.correomqtt.business.model.CorreoMqttVersion;
 import org.correomqtt.business.model.Lwt;
 import org.correomqtt.business.model.Proxy;
 import org.correomqtt.business.model.TlsSsl;
-import com.exxeta.correomqtt.business.services.ConfigService;
-import com.exxeta.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -66,7 +66,7 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(SubscriptionViewCell.class.getResource("connectionView.fxml"),
-                            ResourceBundle.getBundle("com.exxeta.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

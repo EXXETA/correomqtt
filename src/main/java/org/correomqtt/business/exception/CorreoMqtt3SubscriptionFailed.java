@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt.business.exception;
+package org.correomqtt.business.exception;
 
 import com.hivemq.client.mqtt.mqtt3.message.subscribe.suback.Mqtt3SubAckReturnCode;
 

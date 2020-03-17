@@ -1,6 +1,6 @@
-package com.exxeta.correomqtt.business.dispatcher;
+package org.correomqtt.business.dispatcher;
 
-import com.exxeta.correomqtt.business.model.SubscriptionDTO;
+import org.correomqtt.business.model.SubscriptionDTO;
 
 public interface SubscribeGlobalObserver extends BaseConnectionObserver {
     void onSubscribedSucceeded(String connectionId, SubscriptionDTO subscriptionDTO);

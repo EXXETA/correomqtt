@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane fx:id="mainPane" minHeight="250.0" styleClass="noBorder" stylesheets="@../css/messageListView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.exxeta.correomqtt.gui.controller.MessageListViewController">
+<AnchorPane fx:id="mainPane" minHeight="250.0" styleClass="noBorder" stylesheets="@../css/messageListView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.MessageListViewController">
     <SplitPane fx:id="splitPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <VBox fx:id="messagesVBox" minWidth="250.0" styleClass="noBorder">
             <HBox maxHeight="40.0" minHeight="40.0">

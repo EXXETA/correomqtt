@@ -1,7 +1,7 @@
 package org.correomqtt.business.utils;
 
-import com.exxeta.correomqtt.business.model.ConnectionConfigDTO;
-import com.exxeta.correomqtt.business.mqtt.CorreoMqttClient;
+import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.mqtt.CorreoMqttClient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

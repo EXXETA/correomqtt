@@ -1,6 +1,6 @@
-package com.exxeta.correomqtt.business.dispatcher;
+package org.correomqtt.business.dispatcher;
 
-import com.exxeta.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.model.MessageDTO;
 
 import java.io.File;
 

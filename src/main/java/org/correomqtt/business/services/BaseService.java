@@ -1,11 +1,11 @@
-package com.exxeta.correomqtt.business.services;
+package org.correomqtt.business.services;
 
 import org.correomqtt.business.exception.CorreoMqttDisconnectException;
 import org.correomqtt.business.exception.CorreoMqttExecutionException;
 import org.correomqtt.business.model.ConnectionConfigDTO;
-import com.exxeta.correomqtt.business.mqtt.CorreoMqttClient;
-import com.exxeta.correomqtt.business.utils.ConnectionHolder;
-import com.exxeta.correomqtt.business.utils.CorreoMqttConnection;
+import org.correomqtt.business.mqtt.CorreoMqttClient;
+import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.business.utils.CorreoMqttConnection;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 

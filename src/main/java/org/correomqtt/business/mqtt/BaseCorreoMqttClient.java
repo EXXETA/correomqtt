@@ -1,14 +1,14 @@
-package com.exxeta.correomqtt.business.mqtt;
+package org.correomqtt.business.mqtt;
 
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.exception.CorreoMqttAlreadySubscribedException;
 import org.correomqtt.business.exception.CorreoMqttNoRetriesLeftException;
 import org.correomqtt.business.exception.CorreoMqttSshFailedException;
-import com.exxeta.correomqtt.business.model.Auth;
-import com.exxeta.correomqtt.business.model.ConnectionConfigDTO;
-import com.exxeta.correomqtt.business.model.MessageDTO;
-import com.exxeta.correomqtt.business.model.Proxy;
-import com.exxeta.correomqtt.business.model.SubscriptionDTO;
+import org.correomqtt.business.model.Auth;
+import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.model.Proxy;
+import org.correomqtt.business.model.SubscriptionDTO;
 import com.hivemq.client.mqtt.lifecycle.MqttClientConnectedContext;
 import com.hivemq.client.mqtt.lifecycle.MqttClientConnectedListener;
 import com.hivemq.client.mqtt.lifecycle.MqttClientDisconnectedContext;

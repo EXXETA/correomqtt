@@ -1,6 +1,6 @@
-package com.exxeta.correomqtt;
+package org.correomqtt;
 
-import com.exxeta.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

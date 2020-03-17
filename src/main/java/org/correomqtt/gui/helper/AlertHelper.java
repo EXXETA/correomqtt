@@ -1,6 +1,6 @@
-package com.exxeta.correomqtt.gui.helper;
+package org.correomqtt.gui.helper;
 
-import com.exxeta.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.ConfigService;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;

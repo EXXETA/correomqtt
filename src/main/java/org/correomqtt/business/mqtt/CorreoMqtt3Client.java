@@ -1,13 +1,13 @@
-package com.exxeta.correomqtt.business.mqtt;
+package org.correomqtt.business.mqtt;
 
 import org.correomqtt.business.exception.CorreoMqtt3SubscriptionFailed;
 import org.correomqtt.business.exception.CorreoMqttConnectionFailedException;
 import org.correomqtt.business.exception.CorreoMqttNotConnectedException;
-import com.exxeta.correomqtt.business.model.ConnectionConfigDTO;
-import com.exxeta.correomqtt.business.model.Lwt;
-import com.exxeta.correomqtt.business.model.MessageDTO;
-import com.exxeta.correomqtt.business.model.SubscriptionDTO;
-import com.exxeta.correomqtt.business.model.TlsSsl;
+import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.Lwt;
+import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.model.SubscriptionDTO;
+import org.correomqtt.business.model.TlsSsl;
 import com.hivemq.client.mqtt.MqttClient;
 import com.hivemq.client.mqtt.lifecycle.MqttClientDisconnectedContext;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;

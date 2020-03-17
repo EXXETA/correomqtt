@@ -1,6 +1,6 @@
 package org.correomqtt.plugin.spi;
 
-import com.exxeta.correomqtt.plugin.model.MessageExtensionDTO;
+import org.correomqtt.plugin.model.MessageExtensionDTO;
 
 public interface MessageContextMenuHook extends BaseExtensionPoint {
 

@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt.business.dispatcher;
+package org.correomqtt.business.dispatcher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

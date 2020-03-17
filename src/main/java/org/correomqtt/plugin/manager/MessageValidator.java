@@ -1,6 +1,6 @@
 package org.correomqtt.plugin.manager;
 
-import com.exxeta.correomqtt.plugin.spi.MessageValidatorHook;
+import org.correomqtt.plugin.spi.MessageValidatorHook;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
 

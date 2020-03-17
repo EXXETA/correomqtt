@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt;
+package org.correomqtt;
 
 import org.junit.Test;
 import org.testfx.matcher.base.NodeMatchers;

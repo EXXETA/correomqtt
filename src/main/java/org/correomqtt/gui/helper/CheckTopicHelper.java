@@ -1,4 +1,4 @@
-package com.exxeta.correomqtt.gui.helper;
+package org.correomqtt.gui.helper;
 
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
 import javafx.scene.control.ComboBox;

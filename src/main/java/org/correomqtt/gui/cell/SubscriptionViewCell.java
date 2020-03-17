@@ -1,7 +1,7 @@
-package com.exxeta.correomqtt.gui.cell;
+package org.correomqtt.gui.cell;
 
-import com.exxeta.correomqtt.business.services.ConfigService;
-import com.exxeta.correomqtt.gui.model.SubscriptionPropertiesDTO;
+import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -57,7 +57,7 @@ public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(SubscriptionViewCell.class.getResource("subscriptionView.fxml"),
-                            ResourceBundle.getBundle("com.exxeta.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

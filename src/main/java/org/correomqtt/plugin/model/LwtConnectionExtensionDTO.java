@@ -1,8 +1,8 @@
 package org.correomqtt.plugin.model;
 
-import com.exxeta.correomqtt.business.model.Lwt;
-import com.exxeta.correomqtt.business.model.Qos;
-import com.exxeta.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.business.model.Lwt;
+import org.correomqtt.business.model.Qos;
+import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import com.sun.javafx.collections.ObservableMapWrapper;
 import lombok.Getter;
 import lombok.Setter;

@@ -1,6 +1,6 @@
 package org.correomqtt.gui.model;
 
-import com.exxeta.correomqtt.business.model.Qos;
+import org.correomqtt.business.model.Qos;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;

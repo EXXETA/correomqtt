@@ -1,10 +1,10 @@
 package org.correomqtt.business.services;
 
-import com.exxeta.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import com.exxeta.correomqtt.business.mqtt.CorreoMqttClient;
-import com.exxeta.correomqtt.business.mqtt.CorreoMqttClientFactory;
-import com.exxeta.correomqtt.business.utils.ConnectionHolder;
-import com.exxeta.correomqtt.business.utils.CorreoMqttConnection;
+import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
+import org.correomqtt.business.mqtt.CorreoMqttClient;
+import org.correomqtt.business.mqtt.CorreoMqttClientFactory;
+import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.business.utils.CorreoMqttConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

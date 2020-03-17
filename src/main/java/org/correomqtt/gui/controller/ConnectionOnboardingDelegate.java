@@ -1,6 +1,6 @@
 package org.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 
 public interface ConnectionOnboardingDelegate {
     void onConnect(ConnectionPropertiesDTO config);

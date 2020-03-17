@@ -1,8 +1,8 @@
 package org.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.gui.model.WindowProperty;
-import com.exxeta.correomqtt.gui.model.WindowType;
-import com.exxeta.correomqtt.gui.utils.WindowHelper;
+import org.correomqtt.gui.model.WindowProperty;
+import org.correomqtt.gui.model.WindowType;
+import org.correomqtt.gui.utils.WindowHelper;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;

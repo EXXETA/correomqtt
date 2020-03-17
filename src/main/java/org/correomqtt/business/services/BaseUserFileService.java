@@ -1,6 +1,6 @@
 package org.correomqtt.business.services;
 
-import com.exxeta.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

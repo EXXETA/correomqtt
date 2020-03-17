@@ -1,6 +1,6 @@
-package com.exxeta.correomqtt.gui.business;
+package org.correomqtt.gui.business;
 
-import com.exxeta.correomqtt.business.services.BusinessService;
+import org.correomqtt.business.services.BusinessService;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 

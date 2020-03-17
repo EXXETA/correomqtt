@@ -1,13 +1,13 @@
-package com.exxeta.correomqtt.gui.business;
+package org.correomqtt.gui.business;
 
-import com.exxeta.correomqtt.business.services.*;
-import com.exxeta.correomqtt.gui.model.MessagePropertiesDTO;
-import com.exxeta.correomqtt.gui.model.SubscriptionPropertiesDTO;
-import com.exxeta.correomqtt.gui.transformer.MessageTransformer;
-import com.exxeta.correomqtt.gui.transformer.SubscriptionTransformer;
-import com.exxeta.correomqtt.plugin.manager.PluginSystem;
-import com.exxeta.correomqtt.plugin.model.MessageExtensionDTO;
-import com.exxeta.correomqtt.plugin.spi.PublishMessageHook;
+import org.correomqtt.business.services.*;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
+import org.correomqtt.gui.transformer.MessageTransformer;
+import org.correomqtt.gui.transformer.SubscriptionTransformer;
+import org.correomqtt.plugin.manager.PluginSystem;
+import org.correomqtt.plugin.model.MessageExtensionDTO;
+import org.correomqtt.plugin.spi.PublishMessageHook;
 
 import java.io.File;
 

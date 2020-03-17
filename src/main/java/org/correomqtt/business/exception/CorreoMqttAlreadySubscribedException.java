@@ -1,6 +1,6 @@
-package com.exxeta.correomqtt.business.exception;
+package org.correomqtt.business.exception;
 
-import com.exxeta.correomqtt.business.model.SubscriptionDTO;
+import org.correomqtt.business.model.SubscriptionDTO;
 
 public class CorreoMqttAlreadySubscribedException extends CorreoMqttException {
 

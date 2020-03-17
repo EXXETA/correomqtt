@@ -7,7 +7,7 @@
 <AnchorPane fx:id="pluginRootPane" prefHeight="500.0" prefWidth="1000.0" styleClass="dialog"
             stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/10.0.2-internal"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.exxeta.correomqtt.gui.controller.PluginsViewController">
+            fx:controller="org.correomqtt.gui.controller.PluginsViewController">
     <VBox styleClass="pluginsHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
           AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <children>

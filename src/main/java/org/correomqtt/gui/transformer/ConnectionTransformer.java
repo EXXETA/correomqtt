@@ -1,7 +1,7 @@
-package com.exxeta.correomqtt.gui.transformer;
+package org.correomqtt.gui.transformer;
 
 import org.correomqtt.business.model.ConnectionConfigDTO;
-import com.exxeta.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import javafx.collections.ObservableList;
 
 import java.util.List;

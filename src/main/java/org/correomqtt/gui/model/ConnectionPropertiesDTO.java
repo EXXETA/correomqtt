@@ -1,6 +1,5 @@
 package org.correomqtt.gui.model;
 
-import com.exxeta.correomqtt.business.model.*;
 import javafx.beans.Observable;
 import javafx.beans.property.*;
 import javafx.util.Callback;
@@ -8,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.correomqtt.business.model.*;
 
 import java.util.HashMap;
 

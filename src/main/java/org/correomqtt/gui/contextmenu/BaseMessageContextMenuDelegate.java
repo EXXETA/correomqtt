@@ -1,6 +1,6 @@
 package org.correomqtt.gui.contextmenu;
 
-import com.exxeta.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
 
 public interface BaseMessageContextMenuDelegate extends BaseObjectContextMenuDelegate {
     void showDetailsInSeparateWindow(MessagePropertiesDTO messageDTO);

@@ -17,7 +17,7 @@
 <?import org.fxmisc.richtext.CodeArea?>
 
 <?import javafx.scene.control.SplitMenuButton?>
-<VBox fx:id="detailViewVBox" minHeight="200.0" minWidth="400" prefHeight="400.0" prefWidth="600.0" stylesheets="@../css/detailView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.exxeta.correomqtt.gui.controller.DetailViewController">
+<VBox fx:id="detailViewVBox" minHeight="200.0" minWidth="400" prefHeight="400.0" prefWidth="600.0" stylesheets="@../css/detailView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.DetailViewController">
     <styleClass>
         <String fx:value="noBorder" />
         <String fx:value="detailView" />

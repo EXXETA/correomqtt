@@ -1,8 +1,8 @@
-package com.exxeta.correomqtt.gui.transformer;
+package org.correomqtt.gui.transformer;
 
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.SysTopic;
-import com.exxeta.correomqtt.gui.model.SysTopicPropertiesDTO;
+import org.correomqtt.gui.model.SysTopicPropertiesDTO;
 
 public class SysTopicTransformer {
 

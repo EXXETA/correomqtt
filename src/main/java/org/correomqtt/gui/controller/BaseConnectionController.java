@@ -1,6 +1,6 @@
 package org.correomqtt.gui.controller;
 
-import com.exxeta.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.business.utils.ConnectionHolder;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 

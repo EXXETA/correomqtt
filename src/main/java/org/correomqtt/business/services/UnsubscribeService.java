@@ -1,7 +1,7 @@
 package org.correomqtt.business.services;
 
-import com.exxeta.correomqtt.business.dispatcher.UnsubscribeDispatcher;
-import com.exxeta.correomqtt.business.model.SubscriptionDTO;
+import org.correomqtt.business.dispatcher.UnsubscribeDispatcher;
+import org.correomqtt.business.model.SubscriptionDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

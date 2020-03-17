@@ -129,7 +129,7 @@ To add new permissions override the `Permissions getPermissions() {}` method.
 
 ## Extensions
 To provide a simple extension leave the `<plugin.class />` tag empty and create a new class
-which implements your desired hook from the package `com.exxeta.correomqtt.plugin.spi`.
+which implements your desired hook from the package `org.correomqtt.plugin.spi`.
 
 Annotate the class with the `@Extension` annotation from `PF4J` and that's it.
 

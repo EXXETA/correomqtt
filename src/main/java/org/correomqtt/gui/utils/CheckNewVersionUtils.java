@@ -1,8 +1,8 @@
-package com.exxeta.correomqtt.gui.utils;
+package org.correomqtt.gui.utils;
 
-import com.exxeta.correomqtt.business.services.ConfigService;
-import com.exxeta.correomqtt.business.utils.VersionUtils;
-import com.exxeta.correomqtt.gui.helper.AlertHelper;
+import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.utils.VersionUtils;
+import org.correomqtt.gui.helper.AlertHelper;
 import javafx.util.Pair;
 import org.json.simple.parser.ParseException;
 
@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.ResourceBundle;
 
 public class CheckNewVersionUtils {
-    private static ResourceBundle resources = ResourceBundle.getBundle("com.exxeta.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
+    private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
 
     private CheckNewVersionUtils() {
         // nothing to do

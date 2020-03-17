@@ -1,7 +1,7 @@
 package org.correomqtt.business.mqtt;
 
-import com.exxeta.correomqtt.business.model.MessageDTO;
-import com.exxeta.correomqtt.business.model.SubscriptionDTO;
+import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.model.SubscriptionDTO;
 import javax.net.ssl.SSLException;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;

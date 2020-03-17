@@ -1,7 +1,7 @@
-package com.exxeta.correomqtt.gui.transformer;
+package org.correomqtt.gui.transformer;
 
 import org.correomqtt.business.model.MessageDTO;
-import com.exxeta.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
 
 public class MessageTransformer {
 

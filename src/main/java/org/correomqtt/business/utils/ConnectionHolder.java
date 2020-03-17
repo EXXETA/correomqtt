@@ -1,10 +1,10 @@
 package org.correomqtt.business.utils;
 
-import com.exxeta.correomqtt.business.dispatcher.ApplicationLifecycleObserver;
-import com.exxeta.correomqtt.business.model.ConnectionConfigDTO;
-import com.exxeta.correomqtt.business.mqtt.CorreoMqttClient;
-import com.exxeta.correomqtt.business.services.ConfigService;
-import com.exxeta.correomqtt.business.services.DisconnectService;
+import org.correomqtt.business.dispatcher.ApplicationLifecycleObserver;
+import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.mqtt.CorreoMqttClient;
+import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.DisconnectService;
 
 import java.util.Comparator;
 import java.util.HashSet;
