@@ -36,7 +36,7 @@ Feel free to contribute. Check out our project board with open issues here: http
 
 ## Plugins
 
-[![Learn how to use plugins]https://github.com/EXXETA/correomqtt/wiki/Using-Plugins)]
+[![Learn how to use plugins](https://github.com/EXXETA/correomqtt/wiki/Using-Plugins)]
 [![Learn how to create plugins](https://github.com/EXXETA/correomqtt/wiki/Create-a-Plugin)]
 
 ## Licence 
