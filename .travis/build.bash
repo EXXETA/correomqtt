@@ -102,46 +102,17 @@ echo -n "$CORREO_VERSION" > ./src/main/resources/com/exxeta/correomqtt/business/
 echo "==== BUILD CORREO ===="
 mvn clean install -DskipTests=true
 
-PLUGIN_UPDATE_DATE=`date +"%Y-%m-%d"`
-PLUGIN_JSON_TEMPLATE="{\"id\": \"PLUGIN_ID\",\"releases\": [{\"version\": \"PLUGIN_VERSION\",\"date\": \"$PLUGIN_UPDATE_DATE\", \"url\": \"PLUGIN_JAR\"}]}"
-
-function build_plugin() {
-  local PLUGIN_VERSION=$1 && shift
-  local REPO_NAME=$1 && shift
-  local PLUGIN_ID=$1 && shift
-
-  echo "==== BUILD PLUGIN: $PLUGIN_ID:$PLUGIN_VERSION ===="
-  git clone https://github.com/EXXETA/"$REPO_NAME".git --branch "v$PLUGIN_VERSION" --single-branch
-  cd "$REPO_NAME" || exit 1
-  mvn versions:use-dep-version -DdepVersion="$CORREO_VERSION" -Dincludes=com.exxeta:correomqtt
-  mvn clean install
-  JAR_NAME=$(echo -n "$(ls target | grep "$PLUGIN_VERSION".jar)")
-  cp ./target/"$JAR_NAME" "$TRAVIS_BUILD_DIR"/target/shade/plugins
-  cd "$TRAVIS_BUILD_DIR" || exit 1
-  echo "$PLUGIN_JSON_TEMPLATE" | sed "s/PLUGIN_JAR/$JAR_NAME/g" | sed "s/PLUGIN_ID/$PLUGIN_ID/g" | sed "s/PLUGIN_VERSION/$PLUGIN_VERSION/g" >> plugins.json
-}
-
-mkdir -p target/shade/plugins
-
-echo "[" >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-json-format json-format-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-contains-string-validator contains-string-validator-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-zip zip-manipulator-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-xml-xsd-validator xml-xsd-validator-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-xml-format xml-format-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-save save-manipulator-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-base64 base64-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-advanced-validator advanced-validator-plugin
-echo "]" >> plugins.json
-
-mv plugins.json target/shade/plugins/
+echo "==== DEPLOY TO MAVEN CENTRAL ===="
+elif [ "$1" = "linux" ]; then
+  if [ -n "$TRAVIS_TAG" ]; then
+    gpg --fast-import .travis/gpg.asc
+    echo "tag set -> deploy release to maven central only on linux";
+    mvn --settings "${TRAVIS_BUILD_DIR}/.travis/mvn-settings.xml" org.codehaus.mojo:versions-maven-plugin:2.1:set -DnewVersion=$CORREO_VERSION 1>/dev/null 2>/dev/null
+    mvn deploy -P publish -DskipTests=true --settings "${TRAVIS_BUILD_DIR}/.travis/mvn-settings.xml"
+  else
+    echo "no tag set -> no deploy";
+  fi
+fi
 
 echo "==== PACKAGE CORREO ===="
 if [ "$1" = "osx" ]; then
