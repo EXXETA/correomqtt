@@ -22,18 +22,7 @@ A modern graphical MQTT client using the HiveMQ client library.
 
 Feel free to contribute. Check out our project board with open issues here: https://github.com/orgs/EXXETA/projects/2
 
-## Prerequisites
-
-* Install Java 13 e.g. from here https://www.azul.com/downloads/zulu-community/ (Note: No JavaFX is required, as it is handled via maven)
-* Install Jpackage, if you want to build native installers: https://jdk.java.net/jpackage/
-
-## Build app
-`mvn clean package`
-
-## Run jars
-
-`java -jar target/shade/correomqtt.jar`
-
+* [Learn how to build correo](https://github.com/EXXETA/correomqtt/wiki/Build-Correo)
 ## Plugins
 
 * [Learn how to use plugins](https://github.com/EXXETA/correomqtt/wiki/Using-Plugins)
