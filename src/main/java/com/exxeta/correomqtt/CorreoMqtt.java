@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -40,7 +41,7 @@ import java.util.ResourceBundle;
 public class CorreoMqtt extends Application {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CorreoMqtt.class);
-
+    private ResourceBundle resources;
     private MainViewController mainViewController;
     private Scene scene;
 
@@ -54,11 +55,6 @@ public class CorreoMqtt extends Application {
         LOGGER.info("Application started.");
         LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
         LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
-
-        PluginSystem pluginSystem = PluginSystem.getInstance();
-        pluginSystem.loadPlugins();
-        new PluginUpdateManager(pluginSystem).updateSystem();
-        pluginSystem.startPlugins();
 
         SettingsDTO settings = ConfigService.getInstance().getSettings();
 
@@ -74,15 +70,51 @@ public class CorreoMqtt extends Application {
         settings.setCurrentLocale(settings.getSavedLocale());
         ConfigService.getInstance().saveSettings();
 
+        resources = ResourceBundle.getBundle("com.exxeta.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
+
         LOGGER.info("Locale is: {}", settings.getSavedLocale());
 
         HostServicesHolder.getInstance().setHostServices(getHostServices());
 
         setLoggerFilePath();
 
-        AlertController.activate();
-
         loadPrimaryStage(primaryStage);
+
+        settings = ConfigService.getInstance().getSettings();
+
+        if (settings.isFirstStart()) {
+            boolean checkForUpdates = AlertHelper.confirm(
+                    resources.getString("settingsViewUpdateLabel"),
+                    resources.getString("firstStartCheckForUpdatesTitle"),
+                    "",
+                    resources.getString("commonNoButton"),
+                    resources.getString("commonYesButton")
+            );
+
+            settings.setFirstStart(false);
+
+            if (checkForUpdates) {
+                settings.setSearchUpdates(true);
+            } else {
+                settings.setSearchUpdates(false);
+            }
+            ConfigService.getInstance().saveSettings();
+        }
+
+        settings = ConfigService.getInstance().getSettings();
+
+        if (settings.isSearchUpdates()) {
+            checkForUpdates();
+        }
+
+        AlertController.activate();
+    }
+
+    private void checkForUpdates() throws IOException, ParseException {
+        PluginSystem pluginSystem = PluginSystem.getInstance();
+        pluginSystem.loadPlugins();
+        new PluginUpdateManager(pluginSystem).updateSystem();
+        pluginSystem.startPlugins();
 
         CheckNewVersionUtils.checkNewVersion(false);
     }

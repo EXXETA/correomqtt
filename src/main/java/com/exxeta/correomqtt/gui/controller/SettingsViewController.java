@@ -35,6 +35,8 @@ public class SettingsViewController extends BaseController {
     private ComboBox<ThemeDTO> themeComboBox;
     @FXML
     private ComboBox<Locale> languageComboBox;
+    @FXML
+    private CheckBox searchUpdatesCheckbox;
 
     private SettingsDTO settings;
     private ThemeSettingsDTO themeSettings;
@@ -91,6 +93,7 @@ public class SettingsViewController extends BaseController {
     private void setupGUI() {
         unzipCheckBox.setSelected(settings.isUnzippingPayload());
         base64CheckBox.setSelected(settings.isBase64DecodingPayload());
+        searchUpdatesCheckbox.setSelected(settings.isSearchUpdates());
 
         List<ThemeDTO> themes = new ArrayList<>();
         themeSettings.getThemes().forEach(t -> themes.add(t));
@@ -151,6 +154,7 @@ public class SettingsViewController extends BaseController {
 
         settings.setUnzippingPayload(unzipCheckBox.isSelected());
         settings.setBase64DecodingPayload(base64CheckBox.isSelected());
+        settings.setSearchUpdates(searchUpdatesCheckbox.isSelected());
         ThemeDTO selectedTheme = themeComboBox.getSelectionModel().getSelectedItem();
         settings.setSavedLocale(languageComboBox.getSelectionModel().getSelectedItem());
         ConfigService.getInstance().saveSettings();

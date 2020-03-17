@@ -49,7 +49,9 @@
     "base64DecodingPayload": true,
     "unzippingPayload": true,
     "useRegexForSearch": true,
-    "useIgnoreCase": true
+    "useIgnoreCase": true,
+    "searchUpdates": false,
+    "firstStart": true
   }
 }
 

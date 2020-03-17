@@ -20,6 +20,8 @@ public class SettingsDTO {
     private boolean useIgnoreCase;
     private Locale savedLocale = null;
     private Locale currentLocale = null;
+    private boolean searchUpdates;
+    private boolean firstStart;
 
     public boolean isUnzippingPayload() {
         return unzippingPayload;
@@ -60,4 +62,12 @@ public class SettingsDTO {
     public void setSavedLocale(Locale savedLocale) {
         this.savedLocale = savedLocale;
     }
+
+    public boolean isSearchUpdates() { return searchUpdates; }
+
+    public void setSearchUpdates(boolean searchUpdates) { this.searchUpdates = searchUpdates; }
+
+    public boolean isFirstStart() { return firstStart; }
+
+    public void setFirstStart(boolean firstStart) { this.firstStart = firstStart; }
 }
