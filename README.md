@@ -5,7 +5,7 @@
 
 # CorreoMQTT
 
-[![CorreoMQTT](https://github.com/EXXETA/correomqtt/blob/develop/icon/ico/Icon_128x128.png)]
+![CorreoMQTT](https://github.com/EXXETA/correomqtt/blob/develop/icon/ico/Icon_128x128.png)
 
 A modern graphical MQTT client using the [HiveMQ client library](https://github.com/hivemq/hivemq-mqtt-client).
 
