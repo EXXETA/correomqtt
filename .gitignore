@@ -1,6 +1,10 @@
 .idea/
 *.iml
 correomqtt-logfile_IS_UNDEFINED*
+.classpath
+.factorypath
+.project
+.settings/
 
 target/
 pom.xml.tag

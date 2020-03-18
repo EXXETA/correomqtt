@@ -2,5 +2,5 @@
 
 echo "set version to $1"
 mvn versions:set -DnewVersion="$1"
-echo -n "$1" > ./src/main/resources/com/exxeta/correomqtt/business/utils/version.txt
-echo version.txt: $(cat ./src/main/resources/com/exxeta/correomqtt/business/utils/version.txt)
+echo -n "$1" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+echo version.txt: $(cat ./src/main/resources/org/correomqtt/business/utils/version.txt)
