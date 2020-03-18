@@ -120,7 +120,7 @@ if [ "$1" = "osx" ]; then
     -d target \
     -i target/shade \
     -n CorreoMQTT \
-    --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
+    --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.icns
   echo " done"
@@ -131,7 +131,7 @@ elif [ "$1" = "linux" ]; then
     -d target \
     -i target/shade \
     -n CorreoMQTT \
-    --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
+    --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.png
   echo " done"
@@ -141,7 +141,7 @@ elif [ "$1" = "linux" ]; then
     -d target \
     -i target/shade \
     -n CorreoMQTT \
-    --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
+    --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.png
   echo " done"
@@ -152,7 +152,7 @@ elif [ "$1" = "windows" ]; then
     -d target \
     -i target/shade \
     -n CorreoMQTT \
-    --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
+    --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.ico \
     --win-dir-chooser \
