@@ -6,7 +6,7 @@
 
     <groupId>org.correomqtt</groupId>
     <artifactId>correomqtt-client</artifactId>
-    <version>0.10.0</version>
+    <version>0.10.1</version>
 
     <name>CorreoMQTT</name>
     <description>A modern graphical MQTT client using the HiveMQ client library.</description>
@@ -26,6 +26,14 @@
     </scm>
 
     <packaging>jar</packaging>
+
+    <developers>
+        <developer>
+            <name>Frieder Reinhold</name>
+            <email>frieder.reinhold@exxeta.com</email>
+            <organizationUrl>http://www.exxeta.com</organizationUrl>
+        </developer>
+    </developers>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -261,7 +269,7 @@
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>
-                            <nexusurl>https://oss.sonatype.org/</nexusurl>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                             <autoreleaseafterclose>true</autoreleaseafterclose>
                         </configuration>
                     </plugin>
@@ -282,7 +290,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.10.4</version>
+                        <version>3.1.1</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>

@@ -97,21 +97,19 @@ mvn -version
 
 echo "==== SET CORREO VERSION ===="
 mvn versions:set -DnewVersion="$CORREO_VERSION"
-echo -n "$CORREO_VERSION" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+echo -n "$CORREO_VERSION" >./src/main/resources/org/correomqtt/business/utils/version.txt
 
 echo "==== BUILD CORREO ===="
 mvn clean install -DskipTests=true
 
 echo "==== DEPLOY TO MAVEN CENTRAL ===="
-elif [ "$1" = "linux" ]; then
-  if [ -n "$TRAVIS_TAG" ]; then
-    gpg --fast-import .travis/gpg.asc
-    echo "tag set -> deploy release to maven central only on linux";
-    mvn --settings "${TRAVIS_BUILD_DIR}/.travis/mvn-settings.xml" org.codehaus.mojo:versions-maven-plugin:2.1:set -DnewVersion=$CORREO_VERSION 1>/dev/null 2>/dev/null
-    mvn deploy -P publish -DskipTests=true --settings "${TRAVIS_BUILD_DIR}/.travis/mvn-settings.xml"
-  else
-    echo "no tag set -> no deploy";
-  fi
+if [ "$1" = "linux" ] && [ -n "$TRAVIS_TAG" ] && [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+  echo "$GPG_SECRET_KEYS" | base64 --decode | $GPG_EXECUTABLE --import
+  echo "$GPG_OWNERTRUST" | base64 --decode | $GPG_EXECUTABLE --import-ownertrust
+  echo "tag set -> deploy release to maven central only on linux"
+  mvn deploy -P release -DskipTests=true --settings "${TRAVIS_BUILD_DIR}/.travis/mvn-deploy.xml"
+else
+  echo "no tag set -> no deploy"
 fi
 
 echo "==== PACKAGE CORREO ===="
@@ -125,7 +123,7 @@ if [ "$1" = "osx" ]; then
     --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.icns
-    echo " done"
+  echo " done"
 elif [ "$1" = "linux" ]; then
   echo -n "Package DEB ..."
   ./jdk-14/bin/jpackage \
@@ -136,8 +134,8 @@ elif [ "$1" = "linux" ]; then
     --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.png
-    echo " done"
-    echo -n "Package RPM ..."
+  echo " done"
+  echo -n "Package RPM ..."
   ./jdk-14/bin/jpackage \
     --type rpm \
     -d target \
@@ -146,7 +144,7 @@ elif [ "$1" = "linux" ]; then
     --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.png
-    echo " done"
+  echo " done"
 elif [ "$1" = "windows" ]; then
   echo -n "Package MSI ..."
   ./jdk-14/bin/jpackage \
@@ -163,17 +161,17 @@ elif [ "$1" = "windows" ]; then
     --win-shortcut \
     --vendor "EXXETA AG" \
     --win-upgrade-uuid "146a4ea7-af22-4e1e-a9ea-7945ce0190fd"
-    echo " done"
+  echo " done"
 
   check if release and deploy manually to github because deploy in windows not working
   echo "==== DEPLOY ===="
   echo "$TRAVIS_TAG"
   if [ -n "$TRAVIS_TAG" ]; then
-    echo "tag set -> deploy release to github";
-    cd ./target || exit 1;
-    gem install dpl --pre;
-    dpl releases --token "$GITHUB_API_KEY" --file_glob --file *.msi;
+    echo "tag set -> deploy release to github"
+    cd ./target || exit 1
+    gem install dpl --pre
+    dpl releases --token "$GITHUB_API_KEY" --file_glob --file *.msi
   else
-    echo "no tag set";
+    echo "no tag set"
   fi
 fi
