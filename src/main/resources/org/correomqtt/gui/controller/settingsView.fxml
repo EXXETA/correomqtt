@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefWidth="450.0" styleClass="dialog" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.SettingsViewController">
+   <VBox styleClass="settingsHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <children>
+         <Label alignment="TOP_LEFT" styleClass="headline" text="%settingsViewHeaderLabel" />
+         <GridPane styleClass="settingsGrid" VBox.vgrow="ALWAYS">
+           <columnConstraints>
+             <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="100.0" />
+             <ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES" />
+           </columnConstraints>
+           <rowConstraints>
+             <RowConstraints vgrow="SOMETIMES" />
+             <RowConstraints vgrow="SOMETIMES" />
+             <RowConstraints vgrow="SOMETIMES" />
+               <RowConstraints vgrow="SOMETIMES" />
+               <RowConstraints prefHeight="60.0" vgrow="SOMETIMES" />
+               <RowConstraints vgrow="SOMETIMES" />
+           </rowConstraints>
+            <children>
+                 <CheckBox fx:id="base64CheckBox" disable="true" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2" GridPane.valignment="TOP">
+                  <padding>
+                     <Insets top="7.0" />
+                  </padding></CheckBox>
+                 <CheckBox fx:id="unzipCheckBox" disable="true" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.valignment="TOP">
+                  <padding>
+                     <Insets top="7.0" />
+                  </padding></CheckBox>
+               <VBox GridPane.rowIndex="1">
+                  <children>
+                       <Label text="Unzipping Payload (coming soon)">
+                        <styleClass>
+                           <String fx:value="settingsLabel" />
+                           <String fx:value="disabled" />
+                        </styleClass></Label>
+                     <Label text="%settingsViewUnzipExplanationLabel" wrapText="true">
+                        <styleClass>
+                           <String fx:value="secondaryText" />
+                           <String fx:value="settingsDescription" />
+                        </styleClass>
+                     </Label>
+                  </children>
+               </VBox>
+               <VBox GridPane.rowIndex="3">
+                  <children>
+                       <Label styleClass="settingsLabel" text="%settingsViewThemeLabel" />
+                     <Label text="%settingsViewThemeExplanationLabel" wrapText="true">
+                        <styleClass>
+                           <String fx:value="secondaryText" />
+                           <String fx:value="settingsDescription" />
+                        </styleClass>
+                     </Label>
+                  </children>
+               </VBox>
+               <VBox alignment="TOP_RIGHT" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.valignment="TOP">
+                  <children>
+                       <ComboBox fx:id="themeComboBox" onAction="#onThemeChanged" styleClass="themeCheckbox" />
+                  </children>
+               </VBox>
+               <VBox GridPane.rowIndex="2">
+                  <children>
+                       <Label text="Base64 Decoding Payload (coming soon)">
+                        <styleClass>
+                           <String fx:value="settingsLabel" />
+                           <String fx:value="disabled" />
+                        </styleClass></Label>
+                     <Label text="%settingsViewBase64ExplanationLabel" wrapText="true">
+                        <styleClass>
+                           <String fx:value="secondaryText" />
+                           <String fx:value="settingsDescription" />
+                        </styleClass>
+                     </Label>
+                  </children>
+               </VBox>
+               <VBox prefHeight="200.0" prefWidth="294.0" GridPane.rowIndex="4">
+                  <children>
+                     <Label styleClass="settingsLabel" text="%settingsViewLanguageLabel" />
+                     <Label text="%settingsViewLangularExplanationLabel" wrapText="true">
+                        <styleClass>
+                           <String fx:value="secondaryText" />
+                           <String fx:value="settingsDescription" />
+                        </styleClass>
+                     </Label>
+                  </children>
+               </VBox>
+               <ComboBox fx:id="languageComboBox" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+               <VBox GridPane.rowIndex="5">
+                  <children>
+                     <Label styleClass="settingsLabel" text="%settingsViewUpdateLabel" />
+                     <Label text="%settingsViewUpdatesExplanationLabel" wrapText="true">
+                        <styleClass>
+                           <String fx:value="secondaryText" />
+                           <String fx:value="settingsDescription" />
+                        </styleClass>
+                     </Label>
+                  </children>
+               </VBox>
+               <CheckBox fx:id="searchUpdatesCheckbox" layoutX="422.0" layoutY="10.0" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="5" GridPane.valignment="TOP">
+                  <padding>
+                     <Insets top="7.0" />
+                  </padding>
+               </CheckBox>
+            </children>
+         </GridPane>
+         <HBox alignment="CENTER_RIGHT">
+            <children>
+                <Button fx:id="settingsCancelButton" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">
+                  <HBox.margin>
+                     <Insets left="5.0" />
+                  </HBox.margin>
+               </Button>
+                <Button fx:id="settingsSaveButton" mnemonicParsing="false" onAction="#onSaveClicked" text="%commonSaveButton">
+                  <HBox.margin>
+                     <Insets left="5.0" />
+                  </HBox.margin>
+               </Button>
+            </children>
+            <VBox.margin>
+               <Insets />
+            </VBox.margin>
+         </HBox>
+      </children>
+   </VBox>
+</AnchorPane>

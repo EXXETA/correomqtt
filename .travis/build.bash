@@ -97,51 +97,20 @@ mvn -version
 
 echo "==== SET CORREO VERSION ===="
 mvn versions:set -DnewVersion="$CORREO_VERSION"
-echo -n "$CORREO_VERSION" > ./src/main/resources/com/exxeta/correomqtt/business/utils/version.txt
+echo -n "$CORREO_VERSION" >./src/main/resources/org/correomqtt/business/utils/version.txt
 
 echo "==== BUILD CORREO ===="
 mvn clean install -DskipTests=true
 
-PLUGIN_UPDATE_DATE=`date +"%Y-%m-%d"`
-PLUGIN_JSON_TEMPLATE="{\"id\": \"PLUGIN_ID\",\"releases\": [{\"version\": \"PLUGIN_VERSION\",\"date\": \"$PLUGIN_UPDATE_DATE\", \"url\": \"PLUGIN_JAR\"}]}"
-
-function build_plugin() {
-  local PLUGIN_VERSION=$1 && shift
-  local REPO_NAME=$1 && shift
-  local PLUGIN_ID=$1 && shift
-
-  echo "==== BUILD PLUGIN: $PLUGIN_ID:$PLUGIN_VERSION ===="
-  git clone https://github.com/EXXETA/"$REPO_NAME".git --branch "v$PLUGIN_VERSION" --single-branch
-  cd "$REPO_NAME" || exit 1
-  mvn versions:use-dep-version -DdepVersion="$CORREO_VERSION" -Dincludes=com.exxeta:correomqtt
-  mvn clean install
-  JAR_NAME=$(echo -n "$(ls target | grep "$PLUGIN_VERSION".jar)")
-  cp ./target/"$JAR_NAME" "$TRAVIS_BUILD_DIR"/target/shade/plugins
-  cd "$TRAVIS_BUILD_DIR" || exit 1
-  echo "$PLUGIN_JSON_TEMPLATE" | sed "s/PLUGIN_JAR/$JAR_NAME/g" | sed "s/PLUGIN_ID/$PLUGIN_ID/g" | sed "s/PLUGIN_VERSION/$PLUGIN_VERSION/g" >> plugins.json
-}
-
-mkdir -p target/shade/plugins
-
-echo "[" >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-json-format json-format-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-contains-string-validator contains-string-validator-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-zip zip-manipulator-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-xml-xsd-validator xml-xsd-validator-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-xml-format xml-format-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-save save-manipulator-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-base64 base64-plugin
-echo "," >> plugins.json
-build_plugin 0.0.1 correomqtt-plugin-advanced-validator advanced-validator-plugin
-echo "]" >> plugins.json
-
-mv plugins.json target/shade/plugins/
+echo "==== DEPLOY TO MAVEN CENTRAL ===="
+if [ "$1" = "linux" ] && [ -n "$TRAVIS_TAG" ] && [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+  echo "$GPG_SECRET_KEYS" | base64 --decode | $GPG_EXECUTABLE --import
+  echo "$GPG_OWNERTRUST" | base64 --decode | $GPG_EXECUTABLE --import-ownertrust
+  echo "tag set -> deploy release to maven central only on linux"
+  mvn deploy -P release -DskipTests=true --settings "${TRAVIS_BUILD_DIR}/.travis/mvn-deploy.xml"
+else
+  echo "no tag set -> no deploy"
+fi
 
 echo "==== PACKAGE CORREO ===="
 if [ "$1" = "osx" ]; then
@@ -154,7 +123,7 @@ if [ "$1" = "osx" ]; then
     --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.icns
-    echo " done"
+  echo " done"
 elif [ "$1" = "linux" ]; then
   echo -n "Package DEB ..."
   ./jdk-14/bin/jpackage \
@@ -165,8 +134,8 @@ elif [ "$1" = "linux" ]; then
     --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.png
-    echo " done"
-    echo -n "Package RPM ..."
+  echo " done"
+  echo -n "Package RPM ..."
   ./jdk-14/bin/jpackage \
     --type rpm \
     -d target \
@@ -175,7 +144,7 @@ elif [ "$1" = "linux" ]; then
     --main-jar correomqtt-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.png
-    echo " done"
+  echo " done"
 elif [ "$1" = "windows" ]; then
   echo -n "Package MSI ..."
   ./jdk-14/bin/jpackage \
@@ -192,17 +161,17 @@ elif [ "$1" = "windows" ]; then
     --win-shortcut \
     --vendor "EXXETA AG" \
     --win-upgrade-uuid "146a4ea7-af22-4e1e-a9ea-7945ce0190fd"
-    echo " done"
+  echo " done"
 
   check if release and deploy manually to github because deploy in windows not working
   echo "==== DEPLOY ===="
   echo "$TRAVIS_TAG"
   if [ -n "$TRAVIS_TAG" ]; then
-    echo "tag set -> deploy release to github";
-    cd ./target || exit 1;
-    gem install dpl --pre;
-    dpl releases --token "$GITHUB_API_KEY" --file_glob --file *.msi;
+    echo "tag set -> deploy release to github"
+    cd ./target || exit 1
+    gem install dpl --pre
+    dpl releases --token "$GITHUB_API_KEY" --file_glob --file *.msi
   else
-    echo "no tag set";
+    echo "no tag set"
   fi
 fi
