@@ -21,7 +21,7 @@ public class SettingsDTO {
     private Locale savedLocale = null;
     private Locale currentLocale = null;
     private boolean searchUpdates;
-    private boolean firstStart;
+    private boolean firstStart = true;
 
     public boolean isUnzippingPayload() {
         return unzippingPayload;
