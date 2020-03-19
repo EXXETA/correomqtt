@@ -72,15 +72,13 @@ public class CorreoMqtt extends Application {
 
         setLoggerFilePath();
 
-        loadPrimaryStage(primaryStage);
-
         settings = ConfigService.getInstance().getSettings();
 
         if (settings.isFirstStart()) {
             boolean checkForUpdates = AlertHelper.confirm(
                     resources.getString("settingsViewUpdateLabel"),
+                    null,
                     resources.getString("firstStartCheckForUpdatesTitle"),
-                    "",
                     resources.getString("commonNoButton"),
                     resources.getString("commonYesButton")
             );
@@ -101,6 +99,8 @@ public class CorreoMqtt extends Application {
             checkForUpdates();
         }
 
+        loadPrimaryStage(primaryStage);
+
         AlertController.activate();
     }
 
@@ -113,7 +113,7 @@ public class CorreoMqtt extends Application {
         CheckNewVersionUtils.checkNewVersion(false);
     }
 
-    private void loadPrimaryStage(Stage primaryStage) throws IOException, ParseException {
+    private void loadPrimaryStage(Stage primaryStage) throws IOException {
         ConfigService.getInstance().setCssFileName();
         String cssPath = ConfigService.getInstance().getCssPath();
 
