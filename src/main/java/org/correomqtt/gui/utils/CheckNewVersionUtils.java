@@ -8,6 +8,7 @@ import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.util.ResourceBundle;
+import java.util.concurrent.CountDownLatch;
 
 public class CheckNewVersionUtils {
     private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
@@ -16,7 +17,7 @@ public class CheckNewVersionUtils {
         // nothing to do
     }
 
-    public static void checkNewVersion(boolean showHintIfUpToDate) throws IOException, ParseException {
+    public static void checkNewVersion(boolean showHintIfUpToDate, CountDownLatch countDownLatch) throws IOException, ParseException {
         Pair pair = VersionUtils.isNewVersionAvailable();
         if (Boolean.TRUE.equals(pair.getKey())) {
             boolean confirmed = AlertHelper.confirm(
@@ -30,11 +31,15 @@ public class CheckNewVersionUtils {
             if (confirmed) {
                 HostServicesHolder.getInstance().getHostServices().showDocument("https://github.com/EXXETA/correomqtt/releases/latest");
             }
+            if ( countDownLatch!= null ) {
+                countDownLatch.countDown();
+            }
         } else if (showHintIfUpToDate) {
             AlertHelper.info(
                     resources.getString("versionUpToDateTitle"),
                     resources.getString("versionUpToDateContent")
             );
+            countDownLatch.countDown();
         }
     }
 }

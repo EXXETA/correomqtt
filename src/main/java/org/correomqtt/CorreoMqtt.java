@@ -4,6 +4,8 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.util.ContextInitializer;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
+import com.sun.javafx.application.LauncherImpl;
+import javafx.application.Preloader;
 import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ShortcutDispatcher;
 import org.correomqtt.business.model.SettingsDTO;
@@ -31,6 +33,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.FutureTask;
 
 public class CorreoMqtt extends Application {
 
@@ -44,12 +49,7 @@ public class CorreoMqtt extends Application {
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
-
-        LOGGER.info("Application started.");
-        LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
-        LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
-
+    public void init() throws IOException, ParseException, InterruptedException {
         SettingsDTO settings = ConfigService.getInstance().getSettings();
 
         if (settings.getSavedLocale() == null) {
@@ -64,6 +64,8 @@ public class CorreoMqtt extends Application {
         settings.setCurrentLocale(settings.getSavedLocale());
         ConfigService.getInstance().saveSettings();
 
+        LauncherImpl.notifyPreloader(this, new Preloader.ProgressNotification(0));
+
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
 
         LOGGER.info("Locale is: {}", settings.getSavedLocale());
@@ -72,45 +74,71 @@ public class CorreoMqtt extends Application {
 
         setLoggerFilePath();
 
-        settings = ConfigService.getInstance().getSettings();
+        SettingsDTO settings1 = ConfigService.getInstance().getSettings();
 
-        if (settings.isFirstStart()) {
-            boolean checkForUpdates = AlertHelper.confirm(
-                    resources.getString("settingsViewUpdateLabel"),
-                    null,
-                    resources.getString("firstStartCheckForUpdatesTitle"),
-                    resources.getString("commonNoButton"),
-                    resources.getString("commonYesButton")
-            );
+        if (settings1.isFirstStart()) {
 
-            settings.setFirstStart(false);
+            CountDownLatch countDownLatch = new CountDownLatch(1);
+            Platform.runLater(() -> {
+                boolean checkForUpdates = AlertHelper.confirm(
+                        resources.getString("settingsViewUpdateLabel"),
+                        null,
+                        resources.getString("firstStartCheckForUpdatesTitle"),
+                        resources.getString("commonNoButton"),
+                        resources.getString("commonYesButton")
+                );
 
-            if (checkForUpdates) {
-                settings.setSearchUpdates(true);
-            } else {
-                settings.setSearchUpdates(false);
-            }
-            ConfigService.getInstance().saveSettings();
+                settings1.setFirstStart(false);
+
+                if (checkForUpdates) {
+                    settings1.setSearchUpdates(true);
+                } else {
+                    settings1.setSearchUpdates(false);
+                }
+                ConfigService.getInstance().saveSettings();
+                countDownLatch.countDown();
+            });
+
+            countDownLatch.await();
         }
 
-        settings = ConfigService.getInstance().getSettings();
-
         if (settings.isSearchUpdates()) {
+            LauncherImpl.notifyPreloader(this, new Preloader.ProgressNotification(10));
             checkForUpdates();
         }
 
-        loadPrimaryStage(primaryStage);
-
-        AlertController.activate();
+        LauncherImpl.notifyPreloader(this, new Preloader.ProgressNotification(20));
     }
 
-    private void checkForUpdates() throws IOException, ParseException {
+    private void checkForUpdates() throws IOException, InterruptedException {
         PluginSystem pluginSystem = PluginSystem.getInstance();
         pluginSystem.loadPlugins();
         new PluginUpdateManager(pluginSystem).updateSystem();
         pluginSystem.startPlugins();
 
-        CheckNewVersionUtils.checkNewVersion(false);
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        Platform.runLater(() -> {
+            try {
+                CheckNewVersionUtils.checkNewVersion(false, countDownLatch);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        });
+        countDownLatch.await();
+    }
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+
+        LOGGER.info("Application started.");
+        LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
+        LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
+
+        loadPrimaryStage(primaryStage);
+
+        AlertController.activate();
     }
 
     private void loadPrimaryStage(Stage primaryStage) throws IOException {
@@ -118,7 +146,7 @@ public class CorreoMqtt extends Application {
         String cssPath = ConfigService.getInstance().getCssPath();
 
         FXMLLoader loader = new FXMLLoader(MainViewController.class.getResource("mainView.fxml"),
-                                           ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
+                ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
         Parent root = loader.load();
 
         mainViewController = loader.getController();
@@ -150,24 +178,24 @@ public class CorreoMqtt extends Application {
     private void setupShortcut() {
         scene.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
 
-                                  if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && !event.isShiftDown()) {
-                                      ShortcutDispatcher.getInstance().onSubscriptionShortcutPressed(mainViewController.getUUIDofSelectedTab());
-                                      event.consume();
-                                  }
-                                  if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && event.isShiftDown()) {
-                                      ShortcutDispatcher.getInstance().onClearIncomingShortcutPressed(mainViewController.getUUIDofSelectedTab());
-                                      event.consume();
-                                  }
-                                  if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && !event.isShiftDown()) {
-                                      ShortcutDispatcher.getInstance().onPublishShortcutPressed(mainViewController.getUUIDofSelectedTab());
-                                      event.consume();
-                                  }
-                                  if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && event.isShiftDown()) {
-                                      ShortcutDispatcher.getInstance().onClearOutgoingShortcutPressed(mainViewController.getUUIDofSelectedTab());
-                                      event.consume();
-                                  }
-                                  //TODO rest
-                              }
+                    if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && !event.isShiftDown()) {
+                        ShortcutDispatcher.getInstance().onSubscriptionShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        event.consume();
+                    }
+                    if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && event.isShiftDown()) {
+                        ShortcutDispatcher.getInstance().onClearIncomingShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        event.consume();
+                    }
+                    if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && !event.isShiftDown()) {
+                        ShortcutDispatcher.getInstance().onPublishShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        event.consume();
+                    }
+                    if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && event.isShiftDown()) {
+                        ShortcutDispatcher.getInstance().onClearOutgoingShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        event.consume();
+                    }
+                    //TODO rest
+                }
         );
     }
 

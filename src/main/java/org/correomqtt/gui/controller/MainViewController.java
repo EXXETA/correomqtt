@@ -130,7 +130,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         aboutItem.setOnAction(event -> AboutViewController.showAsDialog());
         updateItem.setOnAction(event -> {
             try {
-                CheckNewVersionUtils.checkNewVersion(true);
+                CheckNewVersionUtils.checkNewVersion(true, null);
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ParseException e) {

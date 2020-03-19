@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefHeight="400.0" prefWidth="500.0" stylesheets="@../css/preloaderView.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.PreloaderViewController">
+   <children>
+      <VBox alignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <Label fx:id="helloViewLabel" alignment="CENTER" maxHeight="128.0" minHeight="150.0" styleClass="appIcon">
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+            </Label>
+            <Label styleClass="appName" text="CorreoMQTT" />
+            <Label fx:id="preloaderStepLabel" />
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>
