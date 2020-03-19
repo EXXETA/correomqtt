@@ -1,6 +1,11 @@
 package org.correomqtt.plugin.update;
 
+import junit.framework.Assert;
+import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.manager.PluginSystem;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.pf4j.update.DefaultUpdateRepository;
 import org.pf4j.update.PluginInfo;
 import org.pf4j.update.UpdateManager;
@@ -8,12 +13,12 @@ import org.pf4j.update.UpdateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
+import java.io.*;
+import java.net.*;
 import java.util.Collections;
 import java.util.List;
+
+import static org.correomqtt.business.utils.VendorConstants.PLUGIN_REPO_URL;
 
 public class PluginUpdateManager {
 
@@ -25,15 +30,15 @@ public class PluginUpdateManager {
         this.pluginSystem = pluginSystem;
     }
 
-    public void updateSystem() throws MalformedURLException {
+    public void updateSystem() throws IOException {
 
         LOGGER.info("Start Plugin Update");
 
-        String jarFilePath = PluginUpdateManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-        String path =  new File(jarFilePath).getParentFile().getPath() + File.separator + "plugins";
-        String decodedPath = URLDecoder.decode(path, StandardCharsets.UTF_8);
-        if (new File(decodedPath + File.separator + "plugins.json").exists()) {
-            List<UpdateRepository> repos = Collections.singletonList(new DefaultUpdateRepository("bundled", new File(decodedPath).toURI().toURL()));
+        URL versionRepo = new URL(PLUGIN_REPO_URL);
+        HttpURLConnection connection = (HttpURLConnection) versionRepo.openConnection();
+
+        if (connection.getResponseCode() == 200) {
+            List<UpdateRepository> repos = Collections.singletonList(new DefaultUpdateRepository("bundled", versionRepo, "plugins-" + VersionUtils.getVersion() + ".json"));
             UpdateManager updateManager = new UpdateManager(pluginSystem, repos);
             updateExisitingPlugins(updateManager);
             installNewPlugins(updateManager);

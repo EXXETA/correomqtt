@@ -1,0 +1,12 @@
+@import "global.css";
+
+.appIcon {
+    -fx-graphic: url("../icons/app-icon/Icon_128x128.png");
+    -fx-padding: 20;
+}
+
+.appName {
+    -fx-font-family: "sans-serif";
+    -fx-font-size: 40;
+    -fx-padding: 0 20 0 20;
+}
