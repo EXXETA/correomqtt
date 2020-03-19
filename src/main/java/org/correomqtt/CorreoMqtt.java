@@ -50,6 +50,10 @@ public class CorreoMqtt extends Application {
 
     @Override
     public void init() throws IOException, ParseException, InterruptedException {
+        LOGGER.info("Application started.");
+        LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
+        LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
+
         SettingsDTO settings = ConfigService.getInstance().getSettings();
 
         if (settings.getSavedLocale() == null) {
@@ -131,11 +135,6 @@ public class CorreoMqtt extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-
-        LOGGER.info("Application started.");
-        LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
-        LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
-
         loadPrimaryStage(primaryStage);
 
         AlertController.activate();

@@ -1,5 +1,6 @@
 package org.correomqtt.plugin.update;
 
+import junit.framework.Assert;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.manager.PluginSystem;
 import org.json.simple.JSONArray;
@@ -32,8 +33,9 @@ public class PluginUpdateManager {
         LOGGER.info("Start Plugin Update");
 
         URL versionRepo = new URL("https://raw.githubusercontent.com/raujonas/correomqtt-pluginrepo/master/plugins-" + VersionUtils.getVersion() + ".json");
+        HttpURLConnection connection = (HttpURLConnection) versionRepo.openConnection();
 
-        if (versionRepo != null) {
+        if (connection.getResponseCode() == 200) {
             List<UpdateRepository> repos = Collections.singletonList(new DefaultUpdateRepository("bundled", versionRepo, "plugins-" + VersionUtils.getVersion() + ".json"));
             UpdateManager updateManager = new UpdateManager(pluginSystem, repos);
             updateExisitingPlugins(updateManager);

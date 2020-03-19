@@ -2,6 +2,7 @@ package org.correomqtt.business.utils;
 
 import javafx.util.Pair;
 import org.apache.commons.io.IOUtils;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -38,7 +39,7 @@ public class VersionUtils {
         return version;
     }
 
-    public static Pair<Boolean, String> isNewVersionAvailable() throws IOException, ParseException {
+    public static Pair<Boolean, String> isNewerVersionAvailable() throws IOException, ParseException {
 
         URL url = new URL("https://api.github.com/repos/exxeta/correomqtt/releases/latest");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -52,11 +53,14 @@ public class VersionUtils {
         JSONObject jsonObject = (JSONObject)jsonParser.parse(
                 new InputStreamReader(inputStream, "UTF-8"));
 
-        if (!jsonObject.get("tag_name").toString().contains(getVersion())) {
+        ComparableVersion latestGithubVersion = new ComparableVersion(jsonObject.get("tag_name").toString());
+        ComparableVersion currentLocalVersion = new ComparableVersion(getVersion());
+
+        if (latestGithubVersion.compareTo(currentLocalVersion) == 1) {
             LOGGER.info("There is a new release available on github!");
             return new Pair(true, jsonObject.get("tag_name"));
         } else {
-            LOGGER.info("Version is up to date!");
+            LOGGER.info("Version is up to date or newer!");
             return new Pair(false, null);
         }
     }

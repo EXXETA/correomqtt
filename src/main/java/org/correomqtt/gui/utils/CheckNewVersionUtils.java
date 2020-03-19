@@ -18,7 +18,7 @@ public class CheckNewVersionUtils {
     }
 
     public static void checkNewVersion(boolean showHintIfUpToDate, CountDownLatch countDownLatch) throws IOException, ParseException {
-        Pair pair = VersionUtils.isNewVersionAvailable();
+        Pair pair = VersionUtils.isNewerVersionAvailable();
         if (Boolean.TRUE.equals(pair.getKey())) {
             boolean confirmed = AlertHelper.confirm(
                     resources.getString("correoMqttNewVersionTitle"),
@@ -39,6 +39,8 @@ public class CheckNewVersionUtils {
                     resources.getString("versionUpToDateTitle"),
                     resources.getString("versionUpToDateContent")
             );
+            countDownLatch.countDown();
+        } else {
             countDownLatch.countDown();
         }
     }
