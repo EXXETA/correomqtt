@@ -16,6 +16,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+import static org.correomqtt.business.utils.VendorConstants.GITHUB_API_LATEST;
+
 public class VersionUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VersionUtils.class);
@@ -41,7 +43,7 @@ public class VersionUtils {
 
     public static Pair<Boolean, String> isNewerVersionAvailable() throws IOException, ParseException {
 
-        URL url = new URL("https://api.github.com/repos/exxeta/correomqtt/releases/latest");
+        URL url = new URL(GITHUB_API_LATEST);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", "application/json");
@@ -51,7 +53,7 @@ public class VersionUtils {
         InputStream inputStream = connection.getInputStream();
         JSONParser jsonParser = new JSONParser();
         JSONObject jsonObject = (JSONObject)jsonParser.parse(
-                new InputStreamReader(inputStream, "UTF-8"));
+                new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
         ComparableVersion latestGithubVersion = new ComparableVersion(jsonObject.get("tag_name").toString());
         ComparableVersion currentLocalVersion = new ComparableVersion(getVersion());

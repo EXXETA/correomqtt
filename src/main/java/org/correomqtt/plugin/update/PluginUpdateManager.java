@@ -18,6 +18,8 @@ import java.net.*;
 import java.util.Collections;
 import java.util.List;
 
+import static org.correomqtt.business.utils.VendorConstants.PLUGIN_REPO_URL;
+
 public class PluginUpdateManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginUpdateManager.class);
@@ -32,7 +34,7 @@ public class PluginUpdateManager {
 
         LOGGER.info("Start Plugin Update");
 
-        URL versionRepo = new URL("https://raw.githubusercontent.com/raujonas/correomqtt-pluginrepo/master/plugins-" + VersionUtils.getVersion() + ".json");
+        URL versionRepo = new URL(PLUGIN_REPO_URL);
         HttpURLConnection connection = (HttpURLConnection) versionRepo.openConnection();
 
         if (connection.getResponseCode() == 200) {

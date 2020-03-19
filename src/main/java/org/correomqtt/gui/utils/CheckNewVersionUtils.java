@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.ResourceBundle;
 import java.util.concurrent.CountDownLatch;
 
+import static org.correomqtt.business.utils.VendorConstants.GITHUB_LATEST;
+
 public class CheckNewVersionUtils {
     private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
 
@@ -17,7 +19,9 @@ public class CheckNewVersionUtils {
         // nothing to do
     }
 
-    public static void checkNewVersion(boolean showHintIfUpToDate, CountDownLatch countDownLatch) throws IOException, ParseException {
+    public static void checkNewVersion(boolean showHintIfUpToDate) throws IOException, ParseException {
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+
         Pair pair = VersionUtils.isNewerVersionAvailable();
         if (Boolean.TRUE.equals(pair.getKey())) {
             boolean confirmed = AlertHelper.confirm(
@@ -29,19 +33,14 @@ public class CheckNewVersionUtils {
             );
 
             if (confirmed) {
-                HostServicesHolder.getInstance().getHostServices().showDocument("https://github.com/EXXETA/correomqtt/releases/latest");
-            }
-            if ( countDownLatch!= null ) {
-                countDownLatch.countDown();
+                HostServicesHolder.getInstance().getHostServices().showDocument(GITHUB_LATEST);
             }
         } else if (showHintIfUpToDate) {
             AlertHelper.info(
                     resources.getString("versionUpToDateTitle"),
                     resources.getString("versionUpToDateContent")
             );
-            countDownLatch.countDown();
-        } else {
-            countDownLatch.countDown();
         }
+        countDownLatch.countDown();
     }
 }

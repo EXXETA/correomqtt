@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import org.correomqtt.business.services.ConfigService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.PreloaderViewController;
@@ -24,14 +25,15 @@ public class CorreoPreloader extends Preloader {
         Parent root = loader.load();
 
         preloaderViewController = loader.getController();
-        scene = new Scene(root, 500, 400);
+        preloaderViewController.getVersionLabel().setText("v" + VersionUtils.getVersion());
+        scene = new Scene(root, 500, 300);
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         this.preloaderStage = primaryStage;
         preloaderStage.setScene(scene);
-        preloaderStage.setTitle("CorreoMQTT v" + VersionUtils.getVersion());
+        preloaderStage.initStyle(StageStyle.UNDECORATED);
         preloaderStage.show();
     }
 

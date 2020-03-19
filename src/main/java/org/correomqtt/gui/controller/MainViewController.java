@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
+import static org.correomqtt.business.utils.VendorConstants.WEBSITE;
+
 public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainViewController.class);
@@ -130,7 +132,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         aboutItem.setOnAction(event -> AboutViewController.showAsDialog());
         updateItem.setOnAction(event -> {
             try {
-                CheckNewVersionUtils.checkNewVersion(true, null);
+                CheckNewVersionUtils.checkNewVersion(true);
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ParseException e) {
@@ -138,9 +140,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             }
         });
         websiteItem.setOnAction(event -> {
-            //TODO: Replace with github page
             HostServicesHolder.getInstance().getHostServices().showDocument(
-                    new Hyperlink("https://github.com/EXXETA/correomqtt").getText());
+                    new Hyperlink(WEBSITE).getText());
         });
         pluginSettingsItem.setOnAction(event -> openPluginSettings());
     }

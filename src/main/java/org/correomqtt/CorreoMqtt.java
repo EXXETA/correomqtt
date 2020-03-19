@@ -54,56 +54,15 @@ public class CorreoMqtt extends Application {
         LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
         LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
 
-        SettingsDTO settings = ConfigService.getInstance().getSettings();
+        final SettingsDTO settings = ConfigService.getInstance().getSettings();
 
-        if (settings.getSavedLocale() == null) {
-            if (Locale.getDefault().getLanguage().equals("de") &&
-                    Locale.getDefault().getCountry().equals("DE")) {
-                settings.setSavedLocale(new Locale("de", "DE"));
-            } else {
-                settings.setSavedLocale(new Locale("en", "US"));
-            }
-        }
-
-        settings.setCurrentLocale(settings.getSavedLocale());
-        ConfigService.getInstance().saveSettings();
-
+        setLocale(settings);
+        HostServicesHolder.getInstance().setHostServices(getHostServices());
+        setLoggerFilePath();
         LauncherImpl.notifyPreloader(this, new Preloader.ProgressNotification(0));
 
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
-
-        LOGGER.info("Locale is: {}", settings.getSavedLocale());
-
-        HostServicesHolder.getInstance().setHostServices(getHostServices());
-
-        setLoggerFilePath();
-
-        SettingsDTO settings1 = ConfigService.getInstance().getSettings();
-
-        if (settings1.isFirstStart()) {
-
-            CountDownLatch countDownLatch = new CountDownLatch(1);
-            Platform.runLater(() -> {
-                boolean checkForUpdates = AlertHelper.confirm(
-                        resources.getString("settingsViewUpdateLabel"),
-                        null,
-                        resources.getString("firstStartCheckForUpdatesTitle"),
-                        resources.getString("commonNoButton"),
-                        resources.getString("commonYesButton")
-                );
-
-                settings1.setFirstStart(false);
-
-                if (checkForUpdates) {
-                    settings1.setSearchUpdates(true);
-                } else {
-                    settings1.setSearchUpdates(false);
-                }
-                ConfigService.getInstance().saveSettings();
-                countDownLatch.countDown();
-            });
-
-            countDownLatch.await();
+        if (settings.isFirstStart()) {
+            checkFirstStart(settings);
         }
 
         if (settings.isSearchUpdates()) {
@@ -112,6 +71,45 @@ public class CorreoMqtt extends Application {
         }
 
         LauncherImpl.notifyPreloader(this, new Preloader.ProgressNotification(20));
+    }
+
+    private void checkFirstStart(SettingsDTO settings) throws InterruptedException {
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        Platform.runLater(() -> {
+            boolean checkForUpdates = AlertHelper.confirm(
+                    resources.getString("settingsViewUpdateLabel"),
+                    null,
+                    resources.getString("firstStartCheckForUpdatesTitle"),
+                    resources.getString("commonNoButton"),
+                    resources.getString("commonYesButton")
+            );
+
+            settings.setFirstStart(false);
+
+            if (checkForUpdates) {
+                settings.setSearchUpdates(true);
+            } else {
+                settings.setSearchUpdates(false);
+            }
+            ConfigService.getInstance().saveSettings();
+            countDownLatch.countDown();
+        });
+
+        countDownLatch.await();
+    }
+
+    private void setLocale(SettingsDTO settings) {
+        if (settings.getSavedLocale() == null) {
+            if (Locale.getDefault().getLanguage().equals("de") &&
+                    Locale.getDefault().getCountry().equals("DE")) {
+                settings.setSavedLocale(new Locale("de", "DE"));
+            } else {
+                settings.setSavedLocale(new Locale("en", "US"));
+            }
+        }
+        settings.setCurrentLocale(settings.getSavedLocale());
+        LOGGER.info("Locale is: {}", settings.getSavedLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
     }
 
     private void checkForUpdates() throws IOException, InterruptedException {
@@ -123,11 +121,13 @@ public class CorreoMqtt extends Application {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         Platform.runLater(() -> {
             try {
-                CheckNewVersionUtils.checkNewVersion(false, countDownLatch);
+                CheckNewVersionUtils.checkNewVersion(false);
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ParseException e) {
                 e.printStackTrace();
+            } finally {
+                countDownLatch.countDown();
             }
         });
         countDownLatch.await();
