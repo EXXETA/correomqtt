@@ -32,6 +32,7 @@ Feel free to contribute.
 
 ## Plugins
 
+* [List of available plugins](https://github.com/EXXETA/correomqtt/wiki/List-of-available-plugins)
 * [Learn how to use plugins](https://github.com/EXXETA/correomqtt/wiki/Using-Plugins)
 * [Learn how to create plugins](https://github.com/EXXETA/correomqtt/wiki/Create-a-Plugin)
 
