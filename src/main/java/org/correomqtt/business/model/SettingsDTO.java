@@ -3,6 +3,7 @@ package org.correomqtt.business.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 
 import java.util.Locale;
 
@@ -22,6 +23,8 @@ public class SettingsDTO {
     private Locale currentLocale = null;
     private boolean searchUpdates;
     private boolean firstStart = true;
+    @Builder.Default
+    private String configCreatedWithCorreoVersion = null;
 
     public boolean isUnzippingPayload() {
         return unzippingPayload;
@@ -62,12 +65,4 @@ public class SettingsDTO {
     public void setSavedLocale(Locale savedLocale) {
         this.savedLocale = savedLocale;
     }
-
-    public boolean isSearchUpdates() { return searchUpdates; }
-
-    public void setSearchUpdates(boolean searchUpdates) { this.searchUpdates = searchUpdates; }
-
-    public boolean isFirstStart() { return firstStart; }
-
-    public void setFirstStart(boolean firstStart) { this.firstStart = firstStart; }
 }

@@ -4,6 +4,7 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.util.ContextInitializer;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.dispatcher.ShortcutDispatcher;
@@ -53,6 +54,8 @@ public class CorreoMqtt extends Application {
 
         final SettingsDTO settings = ConfigService.getInstance().getSettings();
 
+        handleVersionMismatch(settings);
+
         setLocale(settings);
         HostServicesHolder.getInstance().setHostServices(getHostServices());
         setLoggerFilePath();
@@ -66,7 +69,20 @@ public class CorreoMqtt extends Application {
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderSearchingUpdates"));
             checkForUpdates();
         }
+
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderReady"));
+        ConfigService.getInstance().saveSettings();
+    }
+
+    private void handleVersionMismatch(SettingsDTO settings) {
+        if (settings.getConfigCreatedWithCorreoVersion() == null) {
+            LOGGER.info("Setting initial correo version in settings: " + VersionUtils.getVersion());
+            settings.setConfigCreatedWithCorreoVersion(VersionUtils.getVersion());
+        } else if (new ComparableVersion(VersionUtils.getVersion())
+                .compareTo(new ComparableVersion(settings.getConfigCreatedWithCorreoVersion())) == 1) {
+            LOGGER.info("Installed version is newer than version which created the config file");
+            //TODO handle issues if new version needs some changes
+        }
     }
 
     private void initUpdatesOnFirstStart(SettingsDTO settings) throws InterruptedException {
@@ -87,7 +103,6 @@ public class CorreoMqtt extends Application {
             } else {
                 settings.setSearchUpdates(false);
             }
-            ConfigService.getInstance().saveSettings();
             countDownLatch.countDown();
         });
 
