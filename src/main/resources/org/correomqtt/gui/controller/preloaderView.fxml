@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane stylesheets="@../css/preloaderView.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.PreloaderViewController">
+<AnchorPane fx:id="preloaderAnchorPane" stylesheets="@../css/preloaderView.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.PreloaderViewController">
    <children>
       <VBox alignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
@@ -19,7 +19,7 @@
       </VBox>
       <HBox AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0">
          <children>
-            <Label fx:id="preloaderProgressLabel" />
+            <Label fx:id="preloaderProgressLabel" styleClass="preloaderProgressLabel" />
             <Label fx:id="preloaderStepLabel">
                <HBox.margin>
                   <Insets left="7.0" />
@@ -27,6 +27,6 @@
             </Label>
          </children>
       </HBox>
-      <Label fx:id="versionLabel" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0" />
+      <Label fx:id="preloaderVersionLabel" styleClass="preloader" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0" />
    </children>
 </AnchorPane>

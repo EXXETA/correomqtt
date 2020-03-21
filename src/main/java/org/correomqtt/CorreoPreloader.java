@@ -14,6 +14,7 @@ import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.dispatcher.PreloadingObserver;
+import org.correomqtt.business.services.ConfigService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.PreloaderViewController;
 import java.io.IOException;
@@ -32,12 +33,19 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
 
     @Override
     public void init() throws IOException {
+        ConfigService.getInstance().setCssFileName();
+        String cssPath = ConfigService.getInstance().getCssPath();
+
         FXMLLoader loader = new FXMLLoader(PreloaderViewController.class.getResource("preloaderView.fxml"));
         Parent root = loader.load();
 
         preloaderViewController = loader.getController();
-        preloaderViewController.getVersionLabel().setText("v" + VersionUtils.getVersion());
+        preloaderViewController.getPreloaderVersionLabel().setText("v" + VersionUtils.getVersion());
         scene = new Scene(root, 500, 300);
+
+        if (cssPath != null) {
+            scene.getStylesheets().add(cssPath);
+        }
     }
 
     @Override
