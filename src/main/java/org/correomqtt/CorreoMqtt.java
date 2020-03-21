@@ -4,11 +4,13 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.util.ContextInitializer;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.dispatcher.ShortcutDispatcher;
 import org.correomqtt.business.model.SettingsDTO;
+import org.correomqtt.business.services.BaseUserFileService;
 import org.correomqtt.business.services.ConfigService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.AlertController;
@@ -30,7 +32,10 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.concurrent.CountDownLatch;
@@ -41,6 +46,8 @@ public class CorreoMqtt extends Application {
     private ResourceBundle resources;
     private MainViewController mainViewController;
     private Scene scene;
+    private int existingPluginFolderCounter = 0;
+    BaseUserFileService bufs = new BaseUserFileService();
 
     public static void main(String[] args) {
         launch(args);
@@ -124,13 +131,7 @@ public class CorreoMqtt extends Application {
     }
 
     private void checkForUpdates() throws IOException, InterruptedException {
-        PluginSystem pluginSystem = PluginSystem.getInstance();
-        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLoadPlugins"));
-        pluginSystem.loadPlugins();
-        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderUpdatePlugins"));
-        new PluginUpdateManager(pluginSystem).updateSystem();
-        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderStartPlugins"));
-        pluginSystem.startPlugins();
+        initializePlugins();
 
         CountDownLatch countDownLatch = new CountDownLatch(1);
         Platform.runLater(() -> {
@@ -146,6 +147,49 @@ public class CorreoMqtt extends Application {
         });
         countDownLatch.await();
     }
+
+    private void initializePlugins() throws IOException, InterruptedException {
+        PluginSystem pluginSystem = PluginSystem.getInstance();
+
+        try {
+            PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLoadPlugins"));
+            pluginSystem.loadPlugins();
+            PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderUpdatePlugins"));
+            new PluginUpdateManager(pluginSystem).updateSystem();
+            PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderStartPlugins"));
+            pluginSystem.startPlugins();
+        } catch (Throwable t) {
+            LOGGER.warn(t.getMessage() + ": Error while updating plugins -> moving all plugins to backup folder");
+            determineNextFreeFolderName();
+            for (File file : new File(bufs.getTargetDirectoryPath() + File.separator + "plugins" + File.separator + "jars").listFiles()) {
+                FileUtils.moveFileToDirectory(file,
+                        new File(bufs.getTargetDirectoryPath() + File.separator + "plugins.disabled." +
+                                existingPluginFolderCounter + File.separator + "jars"), true);
+            }
+            CountDownLatch countDownLatch = new CountDownLatch(1);
+            Platform.runLater(() -> {
+                boolean closed = AlertHelper.confirm(
+                        resources.getString("pluginUpdateErrorTitle"),
+                        null,
+                        resources.getString("pluginUpdateErrorContent") + " (" + bufs.getTargetDirectoryPath() +
+                                File.separator + "plugins.disabled." + existingPluginFolderCounter + File.separator + "jars)",
+                        null,
+                        "OK");
+                countDownLatch.countDown();
+            });
+            countDownLatch.await();
+            pluginSystem.createNewInstance();
+            initializePlugins();
+        }
+    }
+
+    private void determineNextFreeFolderName() throws IOException {
+        if (Files.exists(Path.of(bufs.getTargetDirectoryPath() + File.separator + "plugins.disabled." + existingPluginFolderCounter))) {
+            existingPluginFolderCounter += 1;
+            determineNextFreeFolderName();
+        }
+    }
+
 
     @Override
     public void start(Stage primaryStage) throws Exception {

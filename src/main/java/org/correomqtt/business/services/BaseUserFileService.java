@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-abstract class BaseUserFileService {
+public class BaseUserFileService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseUserFileService.class);
 
@@ -81,7 +81,7 @@ abstract class BaseUserFileService {
                 || OPERATING_SYSTEM.contains("unix");
     }
 
-    protected String getTargetDirectoryPath() {
+    public String getTargetDirectoryPath() {
 
         if (targetDirectoryPathCache != null) {
             return targetDirectoryPathCache;
