@@ -10,3 +10,13 @@
     -fx-font-size: 40;
     -fx-padding: 0 20 0 20;
 }
+
+#preloaderProgressLabel {
+    -fx-background-image: url('../icons/oval.png');
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+    -fx-min-height: 16;
+    -fx-max-height: 16;
+    -fx-min-width: 16;
+    -fx-max-width: 16;
+}

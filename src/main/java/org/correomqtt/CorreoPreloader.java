@@ -1,11 +1,16 @@
 package org.correomqtt;
 
+import javafx.animation.Animation;
+import javafx.animation.Interpolator;
+import javafx.animation.RotateTransition;
 import javafx.application.Preloader;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.util.Duration;
 import org.correomqtt.business.services.ConfigService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.PreloaderViewController;
@@ -34,6 +39,16 @@ public class CorreoPreloader extends Preloader {
         this.preloaderStage = primaryStage;
         preloaderStage.setScene(scene);
         preloaderStage.initStyle(StageStyle.UNDECORATED);
+
+        RotateTransition rotateTransition = new RotateTransition();
+        rotateTransition.setAxis(Rotate.Z_AXIS);
+        rotateTransition.setByAngle(360);
+        rotateTransition.setCycleCount(Animation.INDEFINITE);
+        rotateTransition.setDuration(Duration.millis(1000));
+        rotateTransition.setNode(preloaderViewController.getPreloaderProgressLabel());
+        rotateTransition.setInterpolator(Interpolator.LINEAR);
+        rotateTransition.play();
+
         preloaderStage.show();
     }
 

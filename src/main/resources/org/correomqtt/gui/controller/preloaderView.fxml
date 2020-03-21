@@ -17,7 +17,16 @@
             <HBox />
          </children>
       </VBox>
-      <Label fx:id="preloaderStepLabel" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" />
+      <HBox AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0">
+         <children>
+            <Label fx:id="preloaderProgressLabel" />
+            <Label fx:id="preloaderStepLabel">
+               <HBox.margin>
+                  <Insets left="7.0" />
+               </HBox.margin>
+            </Label>
+         </children>
+      </HBox>
       <Label fx:id="versionLabel" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0" />
    </children>
 </AnchorPane>
