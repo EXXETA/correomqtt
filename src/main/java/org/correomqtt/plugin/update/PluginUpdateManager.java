@@ -1,6 +1,8 @@
 package org.correomqtt.plugin.update;
 
 import junit.framework.Assert;
+import org.correomqtt.business.dispatcher.PreloadingDispatcher;
+import org.correomqtt.business.services.ConfigService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.manager.PluginSystem;
 import org.json.simple.JSONArray;
@@ -17,6 +19,7 @@ import java.io.*;
 import java.net.*;
 import java.util.Collections;
 import java.util.List;
+import java.util.ResourceBundle;
 
 import static org.correomqtt.business.utils.VendorConstants.PLUGIN_REPO_URL;
 
@@ -25,6 +28,7 @@ public class PluginUpdateManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginUpdateManager.class);
 
     private final PluginSystem pluginSystem;
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
 
     public PluginUpdateManager(PluginSystem pluginSystem) {
         this.pluginSystem = pluginSystem;
@@ -60,6 +64,7 @@ public class PluginUpdateManager {
                 boolean installed = updateManager.installPlugin(plugin.id, lastVersion);
                 if (installed) {
                     LOGGER.info("Installed plugin '{}'", plugin.id);
+                    PreloadingDispatcher.getInstance().onProgress(resources.getString("pluginUpdateManagerInstalled") + " " + plugin.id);
                 } else {
                     LOGGER.error("Cannot install plugin '{}'", plugin.id);
                 }
@@ -83,6 +88,7 @@ public class PluginUpdateManager {
                 boolean updated = updateManager.updatePlugin(plugin.id, lastVersion);
                 if (updated) {
                     LOGGER.info("Updated plugin '{}'", plugin.id);
+                    PreloadingDispatcher.getInstance().onProgress(resources.getString("pluginUpdateManagerUpdated") + " " + plugin.id);
                 } else {
                     LOGGER.error("Cannot update plugin '{}'", plugin.id);
                 }

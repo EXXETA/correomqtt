@@ -4,9 +4,8 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.util.ContextInitializer;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
-import com.sun.javafx.application.LauncherImpl;
-import javafx.application.Preloader;
 import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
+import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.dispatcher.ShortcutDispatcher;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.services.ConfigService;
@@ -33,9 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.FutureTask;
 
 public class CorreoMqtt extends Application {
 
@@ -49,7 +46,7 @@ public class CorreoMqtt extends Application {
     }
 
     @Override
-    public void init() throws IOException, ParseException, InterruptedException {
+    public void init() throws IOException, InterruptedException {
         LOGGER.info("Application started.");
         LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
         LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
@@ -59,21 +56,20 @@ public class CorreoMqtt extends Application {
         setLocale(settings);
         HostServicesHolder.getInstance().setHostServices(getHostServices());
         setLoggerFilePath();
-        LauncherImpl.notifyPreloader(this, new Preloader.ProgressNotification(0));
+        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLanguageSet"));
 
         if (settings.isFirstStart()) {
-            checkFirstStart(settings);
+            initUpdatesOnFirstStart(settings);
         }
 
         if (settings.isSearchUpdates()) {
-            LauncherImpl.notifyPreloader(this, new Preloader.ProgressNotification(10));
+            PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderSearchingUpdates"));
             checkForUpdates();
         }
-
-        LauncherImpl.notifyPreloader(this, new Preloader.ProgressNotification(20));
+        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderReady"));
     }
 
-    private void checkFirstStart(SettingsDTO settings) throws InterruptedException {
+    private void initUpdatesOnFirstStart(SettingsDTO settings) throws InterruptedException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         Platform.runLater(() -> {
             boolean checkForUpdates = AlertHelper.confirm(
@@ -114,8 +110,11 @@ public class CorreoMqtt extends Application {
 
     private void checkForUpdates() throws IOException, InterruptedException {
         PluginSystem pluginSystem = PluginSystem.getInstance();
+        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLoadPlugins"));
         pluginSystem.loadPlugins();
+        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderUpdatePlugins"));
         new PluginUpdateManager(pluginSystem).updateSystem();
+        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderStartPlugins"));
         pluginSystem.startPlugins();
 
         CountDownLatch countDownLatch = new CountDownLatch(1);
