@@ -14,15 +14,10 @@
                </VBox.margin>
             </Label>
             <Label styleClass="appName" text="CorreoMQTT" />
-            <Label fx:id="versionLabel">
-               <VBox.margin>
-                  <Insets bottom="30.0" />
-               </VBox.margin></Label>
-            <Label fx:id="preloaderStepLabel">
-               <padding>
-                  <Insets bottom="10.0" />
-               </padding></Label>
+            <HBox />
          </children>
       </VBox>
+      <Label fx:id="preloaderStepLabel" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" />
+      <Label fx:id="versionLabel" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0" />
    </children>
 </AnchorPane>
