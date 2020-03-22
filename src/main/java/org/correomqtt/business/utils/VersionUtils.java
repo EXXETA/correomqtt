@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
 import static org.correomqtt.business.utils.VendorConstants.GITHUB_API_LATEST;
@@ -48,21 +49,25 @@ public class VersionUtils {
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setRequestProperty("charset", "utf-8");
-        connection.connect();
+        try {
+            connection.connect();
+            InputStream inputStream = connection.getInputStream();
+            JSONParser jsonParser = new JSONParser();
+            JSONObject jsonObject = (JSONObject)jsonParser.parse(
+                    new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
-        InputStream inputStream = connection.getInputStream();
-        JSONParser jsonParser = new JSONParser();
-        JSONObject jsonObject = (JSONObject)jsonParser.parse(
-                new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            ComparableVersion latestGithubVersion = new ComparableVersion(jsonObject.get("tag_name").toString());
+            ComparableVersion currentLocalVersion = new ComparableVersion(getVersion());
 
-        ComparableVersion latestGithubVersion = new ComparableVersion(jsonObject.get("tag_name").toString());
-        ComparableVersion currentLocalVersion = new ComparableVersion(getVersion());
-
-        if (latestGithubVersion.compareTo(currentLocalVersion) == 1) {
-            LOGGER.info("There is a new release available on github!");
-            return new Pair(true, jsonObject.get("tag_name"));
-        } else {
-            LOGGER.info("Version is up to date or newer!");
+            if (latestGithubVersion.compareTo(currentLocalVersion) == 1) {
+                LOGGER.info("There is a new release available on github!");
+                return new Pair(true, jsonObject.get("tag_name"));
+            } else {
+                LOGGER.info("Version is up to date or newer!");
+                return new Pair(false, null);
+            }
+        } catch (UnknownHostException uhe) {
+            LOGGER.error("No internet connection for checking latest version");
             return new Pair(false, null);
         }
     }

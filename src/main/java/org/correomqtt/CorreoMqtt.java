@@ -18,6 +18,7 @@ import org.correomqtt.gui.controller.MainViewController;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
+import org.correomqtt.plugin.exception.CorreoMqttPluginUpdateException;
 import org.correomqtt.plugin.manager.PluginSystem;
 import org.correomqtt.plugin.update.PluginUpdateManager;
 import javafx.application.Application;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
@@ -47,7 +49,8 @@ public class CorreoMqtt extends Application {
     private MainViewController mainViewController;
     private Scene scene;
     private int existingPluginFolderCounter = 0;
-    BaseUserFileService bufs = new BaseUserFileService();
+    private boolean errorWithPlugins = false;
+    private BaseUserFileService bufs = new BaseUserFileService();
 
     public static void main(String[] args) {
         launch(args);
@@ -131,7 +134,23 @@ public class CorreoMqtt extends Application {
     }
 
     private void checkForUpdates() throws IOException, InterruptedException {
+        determineNextFreeFolderName();
         initializePlugins();
+
+        if (errorWithPlugins) {
+            CountDownLatch countDownLatch = new CountDownLatch(1);
+            Platform.runLater(() -> {
+                boolean closed = AlertHelper.confirm(
+                        resources.getString("pluginUpdateErrorTitle"),
+                        null,
+                        resources.getString("pluginUpdateErrorContent") + " (" + bufs.getTargetDirectoryPath() +
+                                File.separator + "plugins.disabled." + existingPluginFolderCounter + File.separator + "jars)",
+                        null,
+                        "OK");
+                countDownLatch.countDown();
+            });
+            countDownLatch.await();
+        }
 
         CountDownLatch countDownLatch = new CountDownLatch(1);
         Platform.runLater(() -> {
@@ -158,28 +177,21 @@ public class CorreoMqtt extends Application {
             new PluginUpdateManager(pluginSystem).updateSystem();
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderStartPlugins"));
             pluginSystem.startPlugins();
-        } catch (Throwable t) {
-            LOGGER.warn(t.getMessage() + ": Error while updating plugins -> moving all plugins to backup folder");
-            determineNextFreeFolderName();
-            for (File file : new File(bufs.getTargetDirectoryPath() + File.separator + "plugins" + File.separator + "jars").listFiles()) {
-                FileUtils.moveFileToDirectory(file,
-                        new File(bufs.getTargetDirectoryPath() + File.separator + "plugins.disabled." +
-                                existingPluginFolderCounter + File.separator + "jars"), true);
-            }
-            CountDownLatch countDownLatch = new CountDownLatch(1);
-            Platform.runLater(() -> {
-                boolean closed = AlertHelper.confirm(
-                        resources.getString("pluginUpdateErrorTitle"),
-                        null,
-                        resources.getString("pluginUpdateErrorContent") + " (" + bufs.getTargetDirectoryPath() +
-                                File.separator + "plugins.disabled." + existingPluginFolderCounter + File.separator + "jars)",
-                        null,
-                        "OK");
-                countDownLatch.countDown();
-            });
-            countDownLatch.await();
+        } catch (UnknownHostException ue) {
+            LOGGER.error("No internet connection for updating plugins");
+        } catch (CorreoMqttPluginUpdateException t) {
+            LOGGER.info(t.getMessage() + ": Moving to backup folder");
+            Path pluginPathToMove = pluginSystem.getPlugin(t.getMessage()).getPluginPath();
+            String pluginFileName = pluginPathToMove.toString().substring(pluginPathToMove.toString().lastIndexOf("/") + 1);
+
+            FileUtils.moveFile(pluginPathToMove.toFile(),
+                    new File(bufs.getTargetDirectoryPath() + File.separator + "plugins.disabled." +
+                            existingPluginFolderCounter + File.separator + "jars" + File.separator + pluginFileName));
+            errorWithPlugins = true;
             pluginSystem.createNewInstance();
             initializePlugins();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -189,7 +201,6 @@ public class CorreoMqtt extends Application {
             determineNextFreeFolderName();
         }
     }
-
 
     @Override
     public void start(Stage primaryStage) throws Exception {
