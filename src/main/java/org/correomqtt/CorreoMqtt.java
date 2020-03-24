@@ -181,12 +181,12 @@ public class CorreoMqtt extends Application {
             LOGGER.error("No internet connection for updating plugins");
         } catch (CorreoMqttPluginUpdateException t) {
             LOGGER.info(t.getMessage() + ": Moving to backup folder");
-            Path pluginPathToMove = pluginSystem.getPlugin(t.getMessage()).getPluginPath();
-            String pluginFileName = pluginPathToMove.toString().substring(pluginPathToMove.toString().lastIndexOf("/") + 1);
-
-            FileUtils.moveFile(pluginPathToMove.toFile(),
+            String pluginPathToMove = pluginSystem.getPlugin(t.getMessage()).getPluginPath().toString();
+            
+            FileUtils.moveFileToDirectory(new File(pluginPathToMove),
                     new File(bufs.getTargetDirectoryPath() + File.separator + "plugins.disabled." +
-                            existingPluginFolderCounter + File.separator + "jars" + File.separator + pluginFileName));
+                            existingPluginFolderCounter + File.separator + "jars"), true);
+
             errorWithPlugins = true;
             pluginSystem.createNewInstance();
             initializePlugins();
