@@ -51,7 +51,8 @@
     "useRegexForSearch": true,
     "useIgnoreCase": true,
     "searchUpdates": false,
-    "firstStart": true
+    "firstStart": true,
+    "configCreatedWithCorreoVersion": null
   }
 }
 

@@ -64,6 +64,10 @@ public class PluginSystem extends DefaultPluginManager {
         return instance;
     }
 
+    public static PluginSystem createNewInstance() {
+        return instance = new PluginSystem();
+    }
+
     @Override
     public <T> List<T> getExtensions(Class<T> type) {
         if (!extensionsCache.containsKey(type.getSimpleName())) {

@@ -1,11 +1,15 @@
 package org.correomqtt.plugin.update;
 
 import junit.framework.Assert;
+import org.correomqtt.business.dispatcher.PreloadingDispatcher;
+import org.correomqtt.business.services.ConfigService;
 import org.correomqtt.business.utils.VersionUtils;
+import org.correomqtt.plugin.exception.CorreoMqttPluginUpdateException;
 import org.correomqtt.plugin.manager.PluginSystem;
 import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.pf4j.PluginWrapper;
 import org.pf4j.update.DefaultUpdateRepository;
 import org.pf4j.update.PluginInfo;
 import org.pf4j.update.UpdateManager;
@@ -17,6 +21,7 @@ import java.io.*;
 import java.net.*;
 import java.util.Collections;
 import java.util.List;
+import java.util.ResourceBundle;
 
 import static org.correomqtt.business.utils.VendorConstants.PLUGIN_REPO_URL;
 
@@ -25,12 +30,13 @@ public class PluginUpdateManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginUpdateManager.class);
 
     private final PluginSystem pluginSystem;
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
 
     public PluginUpdateManager(PluginSystem pluginSystem) {
         this.pluginSystem = pluginSystem;
     }
 
-    public void updateSystem() throws IOException {
+    public void updateSystem() throws Exception {
 
         LOGGER.info("Start Plugin Update");
 
@@ -60,6 +66,7 @@ public class PluginUpdateManager {
                 boolean installed = updateManager.installPlugin(plugin.id, lastVersion);
                 if (installed) {
                     LOGGER.info("Installed plugin '{}'", plugin.id);
+                    PreloadingDispatcher.getInstance().onProgress(resources.getString("pluginUpdateManagerInstalled") + " " + plugin.id);
                 } else {
                     LOGGER.error("Cannot install plugin '{}'", plugin.id);
                 }
@@ -69,7 +76,7 @@ public class PluginUpdateManager {
         }
     }
 
-    private void updateExisitingPlugins(UpdateManager updateManager){
+    private void updateExisitingPlugins(UpdateManager updateManager) throws Exception {
         // check for updates
         if (updateManager.hasUpdates()) {
             List<PluginInfo> updates = updateManager.getUpdates();
@@ -80,11 +87,18 @@ public class PluginUpdateManager {
                 String lastVersion = lastRelease.version;
                 String installedVersion = pluginSystem.getPlugin(plugin.id).getDescriptor().getVersion();
                 LOGGER.info("Update plugin '{}' from version {} to version {}", plugin.id, installedVersion, lastVersion);
-                boolean updated = updateManager.updatePlugin(plugin.id, lastVersion);
+                boolean updated;
+                try {
+                    updated = updateManager.updatePlugin(plugin.id, lastVersion);
+                } catch (Throwable t) {
+                    updated = false;
+                }
                 if (updated) {
                     LOGGER.info("Updated plugin '{}'", plugin.id);
+                    PreloadingDispatcher.getInstance().onProgress(resources.getString("pluginUpdateManagerUpdated") + " " + plugin.id);
                 } else {
                     LOGGER.error("Cannot update plugin '{}'", plugin.id);
+                    throw new CorreoMqttPluginUpdateException(plugin.id);
                 }
             }
         } else {

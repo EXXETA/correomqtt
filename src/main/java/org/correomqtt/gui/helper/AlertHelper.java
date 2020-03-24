@@ -46,7 +46,11 @@ public class AlertHelper {
         ButtonType no = new ButtonType(noButton);
         ButtonType yes = new ButtonType(yesButton);
 
-        alert.getButtonTypes().setAll(yes, no);
+        if (noButton != null) {
+            alert.getButtonTypes().setAll(yes, no);
+        } else {
+            alert.getButtonTypes().setAll(yes);
+        }
 
         return alert.showAndWait().get().equals(yes);
     }

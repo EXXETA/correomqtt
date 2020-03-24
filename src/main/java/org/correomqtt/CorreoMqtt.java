@@ -4,11 +4,13 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.util.ContextInitializer;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
-import com.sun.javafx.application.LauncherImpl;
-import javafx.application.Preloader;
+import org.apache.commons.io.FileUtils;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
+import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.dispatcher.ShortcutDispatcher;
 import org.correomqtt.business.model.SettingsDTO;
+import org.correomqtt.business.services.BaseUserFileService;
 import org.correomqtt.business.services.ConfigService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.AlertController;
@@ -16,6 +18,7 @@ import org.correomqtt.gui.controller.MainViewController;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
+import org.correomqtt.plugin.exception.CorreoMqttPluginUpdateException;
 import org.correomqtt.plugin.manager.PluginSystem;
 import org.correomqtt.plugin.update.PluginUpdateManager;
 import javafx.application.Application;
@@ -30,12 +33,14 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.FutureTask;
 
 public class CorreoMqtt extends Application {
 
@@ -43,37 +48,54 @@ public class CorreoMqtt extends Application {
     private ResourceBundle resources;
     private MainViewController mainViewController;
     private Scene scene;
+    private int existingPluginFolderCounter = 0;
+    private boolean errorWithPlugins = false;
+    private BaseUserFileService bufs = new BaseUserFileService();
 
     public static void main(String[] args) {
         launch(args);
     }
 
     @Override
-    public void init() throws IOException, ParseException, InterruptedException {
+    public void init() throws IOException, InterruptedException {
         LOGGER.info("Application started.");
         LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
         LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
 
         final SettingsDTO settings = ConfigService.getInstance().getSettings();
 
+        handleVersionMismatch(settings);
+
         setLocale(settings);
         HostServicesHolder.getInstance().setHostServices(getHostServices());
         setLoggerFilePath();
-        LauncherImpl.notifyPreloader(this, new Preloader.ProgressNotification(0));
+        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLanguageSet"));
 
         if (settings.isFirstStart()) {
-            checkFirstStart(settings);
+            initUpdatesOnFirstStart(settings);
         }
 
         if (settings.isSearchUpdates()) {
-            LauncherImpl.notifyPreloader(this, new Preloader.ProgressNotification(10));
+            PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderSearchingUpdates"));
             checkForUpdates();
         }
 
-        LauncherImpl.notifyPreloader(this, new Preloader.ProgressNotification(20));
+        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderReady"));
+        ConfigService.getInstance().saveSettings();
     }
 
-    private void checkFirstStart(SettingsDTO settings) throws InterruptedException {
+    private void handleVersionMismatch(SettingsDTO settings) {
+        if (settings.getConfigCreatedWithCorreoVersion() == null) {
+            LOGGER.info("Setting initial correo version in settings: " + VersionUtils.getVersion());
+            settings.setConfigCreatedWithCorreoVersion(VersionUtils.getVersion());
+        } else if (new ComparableVersion(VersionUtils.getVersion())
+                .compareTo(new ComparableVersion(settings.getConfigCreatedWithCorreoVersion())) == 1) {
+            LOGGER.info("Installed version is newer than version which created the config file");
+            //TODO handle issues if new version needs some changes
+        }
+    }
+
+    private void initUpdatesOnFirstStart(SettingsDTO settings) throws InterruptedException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         Platform.runLater(() -> {
             boolean checkForUpdates = AlertHelper.confirm(
@@ -91,7 +113,6 @@ public class CorreoMqtt extends Application {
             } else {
                 settings.setSearchUpdates(false);
             }
-            ConfigService.getInstance().saveSettings();
             countDownLatch.countDown();
         });
 
@@ -113,10 +134,23 @@ public class CorreoMqtt extends Application {
     }
 
     private void checkForUpdates() throws IOException, InterruptedException {
-        PluginSystem pluginSystem = PluginSystem.getInstance();
-        pluginSystem.loadPlugins();
-        new PluginUpdateManager(pluginSystem).updateSystem();
-        pluginSystem.startPlugins();
+        determineNextFreeFolderName();
+        initializePlugins();
+
+        if (errorWithPlugins) {
+            CountDownLatch countDownLatch = new CountDownLatch(1);
+            Platform.runLater(() -> {
+                boolean closed = AlertHelper.confirm(
+                        resources.getString("pluginUpdateErrorTitle"),
+                        null,
+                        resources.getString("pluginUpdateErrorContent") + " (" + bufs.getTargetDirectoryPath() +
+                                File.separator + "plugins.disabled." + existingPluginFolderCounter + File.separator + "jars)",
+                        null,
+                        "OK");
+                countDownLatch.countDown();
+            });
+            countDownLatch.await();
+        }
 
         CountDownLatch countDownLatch = new CountDownLatch(1);
         Platform.runLater(() -> {
@@ -131,6 +165,41 @@ public class CorreoMqtt extends Application {
             }
         });
         countDownLatch.await();
+    }
+
+    private void initializePlugins() throws IOException, InterruptedException {
+        PluginSystem pluginSystem = PluginSystem.getInstance();
+
+        try {
+            PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLoadPlugins"));
+            pluginSystem.loadPlugins();
+            PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderUpdatePlugins"));
+            new PluginUpdateManager(pluginSystem).updateSystem();
+            PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderStartPlugins"));
+            pluginSystem.startPlugins();
+        } catch (UnknownHostException ue) {
+            LOGGER.error("No internet connection for updating plugins");
+        } catch (CorreoMqttPluginUpdateException t) {
+            LOGGER.info(t.getMessage() + ": Moving to backup folder");
+            String pluginPathToMove = pluginSystem.getPlugin(t.getMessage()).getPluginPath().toString();
+            
+            FileUtils.moveFileToDirectory(new File(pluginPathToMove),
+                    new File(bufs.getTargetDirectoryPath() + File.separator + "plugins.disabled." +
+                            existingPluginFolderCounter + File.separator + "jars"), true);
+
+            errorWithPlugins = true;
+            pluginSystem.createNewInstance();
+            initializePlugins();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void determineNextFreeFolderName() throws IOException {
+        if (Files.exists(Path.of(bufs.getTargetDirectoryPath() + File.separator + "plugins.disabled." + existingPluginFolderCounter))) {
+            existingPluginFolderCounter += 1;
+            determineNextFreeFolderName();
+        }
     }
 
     @Override
