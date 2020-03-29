@@ -64,15 +64,15 @@ public class BaseUserFileService {
         prepareFile(null, configFileName);
     }
 
-    private boolean isMacOS() {
+    public boolean isMacOS() {
         return OPERATING_SYSTEM.contains("mac os");
     }
 
-    private boolean isWindows() {
+    public boolean isWindows() {
         return OPERATING_SYSTEM.startsWith("windows");
     }
 
-    private boolean isLinux() {
+    public boolean isLinux() {
         return OPERATING_SYSTEM.contains("linux")
                 || OPERATING_SYSTEM.contains("mpe/ix")
                 || OPERATING_SYSTEM.contains("freebsd")

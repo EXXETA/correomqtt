@@ -147,11 +147,11 @@
 
 .toolbar.top {
     -fx-padding: 6 8 0 8;
-    -fx-background-color: derive(-fx-base, 30%);
+    -fx-background-color: derive(-fx-base, 10%);
 }
 
 .toolbar.bottom {
-    -fx-background-color: linear-gradient(to bottom, derive(-fx-base, 30%) 40%, derive(-fx-base, -5%) 95%); /*, derive(-fx-base, 0%));*/
+    -fx-background-color: linear-gradient(to bottom, derive(-fx-base, 10%) 40%, derive(-fx-base, -5%) 95%); /*, derive(-fx-base, 0%));*/
     -fx-border-width: 0 0 1 0;
     -fx-border-style: solid;
     -fx-border-color: transparent transparent derive(-fx-base, -35%) transparent;

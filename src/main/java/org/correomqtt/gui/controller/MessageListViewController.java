@@ -11,7 +11,7 @@ import org.correomqtt.gui.contextmenu.MessageListContextMenuDelegate;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.utils.MessageUtils;
-import org.correomqtt.plugin.manager.PluginSystem;
+import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
 import org.correomqtt.plugin.spi.MessageIncomingHook;
 import javafx.application.Platform;
@@ -274,7 +274,7 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     private MessagePropertiesDTO executeOnMessageIncomingExtensions(MessagePropertiesDTO messageDTO) {
         MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
-        for (MessageIncomingHook p : PluginSystem.getInstance().getExtensions(MessageIncomingHook.class)) {
+        for (MessageIncomingHook p : PluginManager.getInstance().getExtensions(MessageIncomingHook.class)) {
             messageExtensionDTO = p.onMessageIncoming(getConnectionId(), messageExtensionDTO);
         }
         return messageExtensionDTO.merge(messageDTO);

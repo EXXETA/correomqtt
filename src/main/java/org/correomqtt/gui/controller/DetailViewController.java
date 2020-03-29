@@ -19,7 +19,7 @@ import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.MessageUtils;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.plugin.manager.MessageValidator;
-import org.correomqtt.plugin.manager.PluginSystem;
+import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.manager.Task;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
 import org.correomqtt.plugin.spi.DetailViewFormatHook;
@@ -233,7 +233,7 @@ public class DetailViewController extends BaseConnectionController implements
         lastManipulatorTask = null;
         manipulateSelectionButton.setText("Manipulate");
 
-        List<Task<DetailViewManipulatorHook>> tasks = PluginSystem.getInstance().getTasks(DetailViewManipulatorHook.class);
+        List<Task<DetailViewManipulatorHook>> tasks = PluginManager.getInstance().getTasks(DetailViewManipulatorHook.class);
         tasks.forEach(p -> {
             TaskMenuItem<DetailViewManipulatorHook> menuItem = new TaskMenuItem<>(p);
             menuItem.setOnAction(this::onManipulateMessageSelected);
@@ -339,7 +339,7 @@ public class DetailViewController extends BaseConnectionController implements
 
     private void executeOnOpenDetailViewExtensions() {
         detailViewNodeBox.getChildren().clear();
-        PluginSystem.getInstance().getExtensions(DetailViewHook.class).forEach(p -> {
+        PluginManager.getInstance().getExtensions(DetailViewHook.class).forEach(p -> {
             HBox pluginBox = new HBox();
             pluginBox.setAlignment(Pos.CENTER_RIGHT);
             HBox.setHgrow(pluginBox, Priority.ALWAYS);
@@ -482,7 +482,7 @@ public class DetailViewController extends BaseConnectionController implements
         Format foundFormat;
         if (doFormatting) {
             // Find the first format that is valid.
-            ArrayList<Format> availableFormats = new ArrayList<>(PluginSystem.getInstance().getExtensions(DetailViewFormatHook.class));
+            ArrayList<Format> availableFormats = new ArrayList<>(PluginManager.getInstance().getExtensions(DetailViewFormatHook.class));
             availableFormats.add(new Plain());
             foundFormat = availableFormats.stream()
                     .filter(Objects::nonNull)

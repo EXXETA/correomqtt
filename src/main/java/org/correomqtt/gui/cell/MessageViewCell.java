@@ -3,7 +3,7 @@ package org.correomqtt.gui.cell;
 import org.correomqtt.business.services.ConfigService;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.plugin.manager.MessageValidator;
-import org.correomqtt.plugin.manager.PluginSystem;
+import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
 import org.correomqtt.plugin.spi.MessageListHook;
 import org.correomqtt.plugin.spi.MessageValidatorHook;
@@ -147,8 +147,8 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
 
     private void executeOnCreateMessageEntryExtensions(MessagePropertiesDTO messageDTO) {
         labelBox.getChildren().clear();
-        PluginSystem.getInstance().getExtensions(MessageListHook.class)
-                .forEach(p -> p.onCreateEntry(new MessageExtensionDTO(messageDTO), labelBox));
+        PluginManager.getInstance().getExtensions(MessageListHook.class)
+                     .forEach(p -> p.onCreateEntry(new MessageExtensionDTO(messageDTO), labelBox));
     }
 
     private void validateMessage(MessagePropertiesDTO messageDTO) {

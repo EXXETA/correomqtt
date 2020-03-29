@@ -9,11 +9,11 @@ import java.util.Optional;
 public class MessageValidator {
 
     public static MessageValidatorHook.Validation validateMessage(String topic, String payload) {
-        Optional<Task<MessageValidatorHook>> validatorTaskOptional = PluginSystem.getInstance()
-                .getTasks(MessageValidatorHook.class)
-                .stream()
-                .filter(t -> MqttTopicFilter.of(t.getId()).matches(MqttTopic.of(topic)))
-                .findFirst();
+        Optional<Task<MessageValidatorHook>> validatorTaskOptional = PluginManager.getInstance()
+                                                                                  .getTasks(MessageValidatorHook.class)
+                                                                                  .stream()
+                                                                                  .filter(t -> MqttTopicFilter.of(t.getId()).matches(MqttTopic.of(topic)))
+                                                                                  .findFirst();
         if (validatorTaskOptional.isEmpty()) return null;
 
         MessageValidatorHook.Validation validation = null;

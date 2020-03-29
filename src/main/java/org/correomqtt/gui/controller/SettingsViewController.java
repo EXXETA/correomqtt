@@ -27,10 +27,7 @@ import java.util.stream.Collectors;
 public class SettingsViewController extends BaseController {
 
     private static ResourceBundle resources;
-    @FXML
-    private CheckBox unzipCheckBox;
-    @FXML
-    private CheckBox base64CheckBox;
+
     @FXML
     private ComboBox<ThemeDTO> themeComboBox;
     @FXML
@@ -40,7 +37,7 @@ public class SettingsViewController extends BaseController {
 
     private SettingsDTO settings;
     private ThemeSettingsDTO themeSettings;
-    private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionViewController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SettingsViewController.class);
 
     public static LoaderResult<SettingsViewController> load() {
         return load(SettingsViewController.class, "settingsView.fxml");
@@ -91,8 +88,6 @@ public class SettingsViewController extends BaseController {
     }
 
     private void setupGUI() {
-        unzipCheckBox.setSelected(settings.isUnzippingPayload());
-        base64CheckBox.setSelected(settings.isBase64DecodingPayload());
         searchUpdatesCheckbox.setSelected(settings.isSearchUpdates());
 
         List<ThemeDTO> themes = new ArrayList<>();
@@ -152,8 +147,6 @@ public class SettingsViewController extends BaseController {
     private void saveSettings() {
         LOGGER.debug("Saving settings");
 
-        settings.setUnzippingPayload(unzipCheckBox.isSelected());
-        settings.setBase64DecodingPayload(base64CheckBox.isSelected());
         settings.setSearchUpdates(searchUpdatesCheckbox.isSelected());
         ThemeDTO selectedTheme = themeComboBox.getSelectionModel().getSelectedItem();
         settings.setSavedLocale(languageComboBox.getSelectionModel().getSelectedItem());

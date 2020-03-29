@@ -17,19 +17,18 @@ import org.correomqtt.business.dispatcher.PreloadingObserver;
 import org.correomqtt.business.services.ConfigService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.PreloaderViewController;
+
 import java.io.IOException;
-import java.util.ResourceBundle;
 
 public class CorreoPreloader extends Preloader implements PreloadingObserver {
-
-    public CorreoPreloader() {
-        PreloadingDispatcher.getInstance().addObserver(this);
-    }
 
     PreloaderViewController preloaderViewController;
     private Scene scene;
     private Stage preloaderStage;
-    private ResourceBundle resources;
+
+    public CorreoPreloader() {
+        PreloadingDispatcher.getInstance().addObserver(this);
+    }
 
     @Override
     public void init() throws IOException {
@@ -79,4 +78,5 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
             preloaderViewController.getPreloaderStepLabel().setText(message);
         });
     }
+
 }

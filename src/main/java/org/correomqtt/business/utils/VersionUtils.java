@@ -42,7 +42,12 @@ public class VersionUtils {
         return version;
     }
 
-    public static Pair<Boolean, String> isNewerVersionAvailable() throws IOException, ParseException {
+    /**
+     * Check if a new version is available.
+     *
+     * @return The name of the tag on github if a new version exists, null otherwise.
+     */
+    public static String isNewerVersionAvailable() throws IOException, ParseException {
 
         URL url = new URL(GITHUB_API_LATEST);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -61,14 +66,14 @@ public class VersionUtils {
 
             if (latestGithubVersion.compareTo(currentLocalVersion) == 1) {
                 LOGGER.info("There is a new release available on github!");
-                return new Pair(true, jsonObject.get("tag_name"));
+                return jsonObject.get("tag_name").toString();
             } else {
                 LOGGER.info("Version is up to date or newer!");
-                return new Pair(false, null);
+                return null;
             }
         } catch (UnknownHostException uhe) {
             LOGGER.error("No internet connection for checking latest version");
-            return new Pair(false, null);
+            return null;
         }
     }
 }

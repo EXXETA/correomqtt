@@ -13,7 +13,7 @@ public class PluginExtensionFactory extends DefaultExtensionFactory {
         try {
             try {
                 Constructor<T> constructor = extensionClass.getConstructor(Plugin.class);
-                Plugin plugin = PluginSystem.getInstance().whichPlugin(extensionClass).getPlugin();
+                Plugin plugin = PluginManager.getInstance().whichPlugin(extensionClass).getPlugin();
                 return constructor.newInstance(plugin);
             } catch (Exception e) {
                 return super.create(extensionClass);
