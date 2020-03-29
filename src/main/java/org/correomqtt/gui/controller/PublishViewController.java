@@ -14,7 +14,7 @@ import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.helper.CheckTopicHelper;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
-import org.correomqtt.plugin.manager.PluginSystem;
+import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
 import org.correomqtt.plugin.spi.MessageContextMenuHook;
 import org.correomqtt.plugin.spi.PublishMenuHook;
@@ -56,7 +56,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishViewController.class);
     private static ResourceBundle resources;
     private final PublishViewDelegate delegate;
-    private final PluginSystem pluginSystem = PluginSystem.getInstance();
+    private final PluginManager pluginSystem = PluginManager.getInstance();
 
     @FXML
     public AnchorPane publishViewAnchor;

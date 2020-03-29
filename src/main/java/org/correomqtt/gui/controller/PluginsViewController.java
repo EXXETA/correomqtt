@@ -7,7 +7,7 @@ import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.plugin.manager.PermissionPlugin;
 import org.correomqtt.plugin.manager.PluginSecurityPolicy;
-import org.correomqtt.plugin.manager.PluginSystem;
+import org.correomqtt.plugin.manager.PluginManager;
 import javafx.animation.PauseTransition;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -26,9 +26,7 @@ import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.*;
 import java.io.File;
-import java.io.IOException;
 import java.security.Permission;
 import java.security.Permissions;
 import java.util.*;
@@ -68,7 +66,7 @@ public class PluginsViewController extends BaseController {
 
     private static ResourceBundle resources;
 
-    private PluginSystem pluginSystem;
+    private PluginManager pluginSystem;
 
     public static void showAsDialog() {
         Map<Object, Object> properties = new HashMap<>();
@@ -85,12 +83,12 @@ public class PluginsViewController extends BaseController {
 
     @FXML
     public void initialize() {
-        this.pluginSystem = PluginSystem.getInstance();
+        this.pluginSystem = PluginManager.getInstance();
         setUpTable();
     }
 
     private void setUpTable() {
-        ArrayList<PluginWrapper> allPluginWrappers = new ArrayList<>(PluginSystem.getInstance().getPlugins());
+        ArrayList<PluginWrapper> allPluginWrappers = new ArrayList<>(PluginManager.getInstance().getPlugins());
         ObservableList<PluginWrapper> plugins = FXCollections.observableArrayList(allPluginWrappers);
         pluginsTableView.setItems(plugins);
         isEnabledColumn.setCellValueFactory(this::getIsEnabledCellData);
@@ -159,7 +157,7 @@ public class PluginsViewController extends BaseController {
 
     @FXML
     public void onOpenPluginFolder() {
-        HostServicesHolder.getInstance().getHostServices().showDocument(new File(ConfigService.getInstance().getPluginRootPath()).toString());
+        HostServicesHolder.getInstance().getHostServices().showDocument(new File(ConfigService.getInstance().getPluginRootPath()).toURI().toString());
     }
 
     private void setStatusRestartRequired() {

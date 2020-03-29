@@ -18,4 +18,5 @@ public class PreloadingDispatcher extends BaseDispatcher<PreloadingObserver> {
     public void onProgress(String message) {
         trigger(o -> o.onProgress(null, message));
     }
+
 }

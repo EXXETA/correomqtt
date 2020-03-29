@@ -3,12 +3,10 @@ package org.correomqtt.gui.utils;
 import org.correomqtt.business.services.ConfigService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.helper.AlertHelper;
-import javafx.util.Pair;
 import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.util.ResourceBundle;
-import java.util.concurrent.CountDownLatch;
 
 import static org.correomqtt.business.utils.VendorConstants.GITHUB_LATEST;
 
@@ -20,13 +18,12 @@ public class CheckNewVersionUtils {
     }
 
     public static void checkNewVersion(boolean showHintIfUpToDate) throws IOException, ParseException {
-        CountDownLatch countDownLatch = new CountDownLatch(1);
 
-        Pair pair = VersionUtils.isNewerVersionAvailable();
-        if (Boolean.TRUE.equals(pair.getKey())) {
+        String newVersion = VersionUtils.isNewerVersionAvailable();
+        if (newVersion != null) {
             boolean confirmed = AlertHelper.confirm(
                     resources.getString("correoMqttNewVersionTitle"),
-                    pair.getValue() + " " + resources.getString("correoMqttNewVersionHeader"),
+                    newVersion + " " + resources.getString("correoMqttNewVersionHeader"),
                     resources.getString("correoMqttNewVersionContent"),
                     resources.getString("commonNoButton"),
                     resources.getString("commonYesButton")
@@ -41,6 +38,5 @@ public class CheckNewVersionUtils {
                     resources.getString("versionUpToDateContent")
             );
         }
-        countDownLatch.countDown();
     }
 }

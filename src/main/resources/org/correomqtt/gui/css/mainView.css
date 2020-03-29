@@ -5,6 +5,10 @@
     -fx-border-color: #7c0004;
 }*/
 
+.tab:selected {
+    -fx-background-color: derive(-fx-base, 10%);
+}
+
 .tab .tab-label {
     -fx-padding: 0 10 0 2;
 }

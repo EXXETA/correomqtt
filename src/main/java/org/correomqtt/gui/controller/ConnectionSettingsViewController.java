@@ -18,7 +18,7 @@ import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.WindowHelper;
-import org.correomqtt.plugin.manager.PluginSystem;
+import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
 import org.correomqtt.plugin.spi.LwtSettingsHook;
 import javafx.collections.FXCollections;
@@ -199,7 +199,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         lwtPayloadCodeArea.prefWidthProperty().bind(lwtPayloadPane.widthProperty());
         lwtPayloadCodeArea.prefHeightProperty().bind(lwtPayloadPane.heightProperty());
 
-        PluginSystem.getInstance().getExtensions(LwtSettingsHook.class).forEach(p -> p.onAddItemsToLwtSettingsBox(this, lwtPluginControlBox));
+        PluginManager.getInstance().getExtensions(LwtSettingsHook.class).forEach(p -> p.onAddItemsToLwtSettingsBox(this, lwtPluginControlBox));
 
         connectionsListView.setCellFactory(this::createCell);
 
@@ -415,7 +415,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         connectionsListView.getItems().forEach(c -> {
             decodeLwtPayload(c);
             LwtConnectionExtensionDTO connectionExtensionDTO = new LwtConnectionExtensionDTO(c);
-            for (LwtSettingsHook p : PluginSystem.getInstance().getExtensions(LwtSettingsHook.class)) {
+            for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
                 connectionExtensionDTO = p.onLoadConnection(connectionExtensionDTO);
             }
             connectionExtensionDTO.merge(c);
@@ -645,7 +645,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
     private void executeOnShowConnectionExtensions() {
         LwtConnectionExtensionDTO lwtConnectionExtensionDTO = new LwtConnectionExtensionDTO(activeConnectionConfigDTO);
-        for (LwtSettingsHook p : PluginSystem.getInstance().getExtensions(LwtSettingsHook.class)) {
+        for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
             lwtConnectionExtensionDTO = p.onShowConnection(lwtConnectionExtensionDTO);
         }
         activeConnectionConfigDTO = lwtConnectionExtensionDTO.merge(activeConnectionConfigDTO);
@@ -821,7 +821,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
     private ConnectionPropertiesDTO executeOnSaveSettingsExtensions(ConnectionPropertiesDTO activeConnectionConfigDTO) {
         LwtConnectionExtensionDTO activeExtensionConnectionConfigDTO = new LwtConnectionExtensionDTO(activeConnectionConfigDTO);
-        for (LwtSettingsHook p : PluginSystem.getInstance().getExtensions(LwtSettingsHook.class)) {
+        for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
             activeExtensionConnectionConfigDTO = p.onSaveConnection(activeExtensionConnectionConfigDTO);
         }
         return activeExtensionConnectionConfigDTO.merge(activeConnectionConfigDTO);
@@ -830,7 +830,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
     private void executeOnUnloadSettingsExtensions() {
         connectionsListView.getItems().forEach(c -> {
             LwtConnectionExtensionDTO activeExtensionConnectionConfigDTO = new LwtConnectionExtensionDTO(c);
-            for (LwtSettingsHook p : PluginSystem.getInstance().getExtensions(LwtSettingsHook.class)) {
+            for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
                 activeExtensionConnectionConfigDTO = p.onUnloadConnection(activeExtensionConnectionConfigDTO);
             }
             activeExtensionConnectionConfigDTO.merge(c);
