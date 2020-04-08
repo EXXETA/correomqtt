@@ -133,7 +133,8 @@ elif [ "$1" = "linux" ]; then
     -n CorreoMQTT \
     --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
-    --icon ./src/main/deploy/package/Icon.png
+    --icon ./src/main/deploy/package/Icon.png \
+    --linux-package-deps libpng16
   echo " done"
   echo -n "Package RPM ..."
   ./jdk-14/bin/jpackage \
