@@ -18,3 +18,11 @@ buildNumber.properties
 
 # Avoid ignoring Maven wrapper jar file (.jar files are usually ignored)
 !/.mvn/wrapper/maven-wrapper.jar
+
+bin/
+jdk-14/
+lib/
+openjdk-14*
+share/
+zulu13*
+wix
