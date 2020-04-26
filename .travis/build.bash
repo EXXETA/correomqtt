@@ -27,7 +27,7 @@ if [ "$1" = "osx" ]; then
   else
     echo "Skip downloading Java 13, because directory zulu13.29.9-ca-jdk13.0.2-linux_x64 already exists."
   fi
-  if [ ! -d "jdk-14" ]; then
+  if [ ! -d "jdk-14.jdk" ]; then
     echo -n "Downloading Java 14 ..."
     wget -q https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_osx-x64_bin.tar.gz
     echo " done"
