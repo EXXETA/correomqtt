@@ -6,6 +6,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.gui.utils.PlatformUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,7 @@ public class AlertHelper {
 
     private static void showDialog(AlertType type, String title, String content, boolean block, ButtonType buttonType) {
         final CountDownLatch countDownLatch = block ? new CountDownLatch(1) : null;
-        Platform.runLater(() -> {
+        PlatformUtils.runLaterIfNotInFxThread(() -> {
             Alert alert = new Alert(type);
             DialogPane dialogPane = alert.getDialogPane();
             String cssPath = ConfigService.getInstance().getCssPath(false);
@@ -57,7 +58,7 @@ public class AlertHelper {
     private static boolean showConfirmationDialog(String title, String header, String content, String noButton, String yesButton) {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         AtomicBoolean result = new AtomicBoolean();
-        Platform.runLater(() -> {
+        PlatformUtils.runLaterIfNotInFxThread(() -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             DialogPane dialogPane = alert.getDialogPane();
             String cssPath = ConfigService.getInstance().getCssPath();
