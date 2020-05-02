@@ -380,7 +380,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
 
     @Override
     public void onDisconnect() {
-        // nothing to do
+        subscriptionListView.getItems().clear();
     }
 
     @Override
