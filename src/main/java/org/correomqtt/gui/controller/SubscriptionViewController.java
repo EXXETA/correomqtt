@@ -145,10 +145,10 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         cell.itemProperty().addListener((observable, oldValue, newValue) -> {
             contextMenu.setObject(cell.getItem());
         });
-        cell.setOnMouseClicked(event -> onSubscriptionListClicked(event, cell.getItem()));
+       //cell.setOnMouseClicked(event -> onSubscriptionListClicked(event, cell.getItem()));
         cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue) {
-
+                onSubscriptionSelected(cell.getItem());
             }
         });
         return cell;
@@ -266,7 +266,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     @FXML
-    public void onSubscriptionListClicked(@SuppressWarnings("unused") MouseEvent event, SubscriptionPropertiesDTO subscriptionDTO) {
+    public void onSubscriptionSelected(SubscriptionPropertiesDTO subscriptionDTO) {
         unsubscribeButton.setDisable(subscriptionDTO == null);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Subscription selected '{}': {}", subscriptionDTO == null ? "N/A" : subscriptionDTO.getTopic(), getConnectionId());
