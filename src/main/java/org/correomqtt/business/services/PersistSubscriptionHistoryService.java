@@ -14,9 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class PersistSubscriptionHistoryService extends BasePersistHistoryService<SubscriptionHistoryListDTO>
@@ -69,6 +67,9 @@ public class PersistSubscriptionHistoryService extends BasePersistHistoryService
     }
 
     public List<String> getTopics(String connectionId) {
+        if(historyDTOs.get(connectionId) == null){
+            setDTO(connectionId, new SubscriptionHistoryListDTO(new ArrayList<>()));
+        }
         return historyDTOs.get(connectionId).getTopics();
     }
 
