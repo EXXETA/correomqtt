@@ -1,7 +1,7 @@
 package org.correomqtt.gui.cell;
 
 import org.correomqtt.business.model.SysTopic;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.gui.model.SysTopicPropertiesDTO;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -61,7 +61,7 @@ public class SysTopicCell extends ListCell<SysTopicPropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(SysTopicCell.class.getResource("sysTopicCell.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

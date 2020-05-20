@@ -1,11 +1,10 @@
 package org.correomqtt.gui.helper;
 
-import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.gui.utils.PlatformUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +28,7 @@ public class AlertHelper {
         PlatformUtils.runLaterIfNotInFxThread(() -> {
             Alert alert = new Alert(type);
             DialogPane dialogPane = alert.getDialogPane();
-            String cssPath = ConfigService.getInstance().getCssPath(false);
+            String cssPath = SettingsService.getInstance().getCssPath();
             if (cssPath != null) {
                 dialogPane.getStylesheets().add(cssPath);
             }
@@ -61,7 +60,7 @@ public class AlertHelper {
         PlatformUtils.runLaterIfNotInFxThread(() -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             DialogPane dialogPane = alert.getDialogPane();
-            String cssPath = ConfigService.getInstance().getCssPath();
+            String cssPath = SettingsService.getInstance().getCssPath();
             if (cssPath != null) {
                 dialogPane.getStylesheets().add(cssPath);
             }

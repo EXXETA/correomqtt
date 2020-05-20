@@ -4,7 +4,7 @@ import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.PersistPublishHistoryObserver;
 import org.correomqtt.business.dispatcher.PersistSubscriptionHistoryObserver;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.gui.helper.AlertHelper;
 
 import java.util.ResourceBundle;
@@ -14,7 +14,7 @@ public class AlertController extends BaseController implements
         PersistPublishHistoryObserver,
         PersistSubscriptionHistoryObserver {
 
-    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
     private static AlertController instance;
 
     private AlertController() {

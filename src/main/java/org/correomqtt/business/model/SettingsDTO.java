@@ -25,6 +25,7 @@ public class SettingsDTO {
     private Locale currentLocale = null;
     private boolean searchUpdates;
     private boolean firstStart = true;
+
     @Builder.Default
     private String configCreatedWithCorreoVersion = null;
 

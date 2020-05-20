@@ -21,7 +21,7 @@ import org.correomqtt.business.dispatcher.ShortcutDispatcher;
 import org.correomqtt.business.dispatcher.StartupDispatcher;
 import org.correomqtt.business.dispatcher.StartupObserver;
 import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.AlertController;
 import org.correomqtt.gui.controller.MainViewController;
@@ -57,7 +57,7 @@ public class CorreoMqtt extends Application implements StartupObserver {
 
         StartupDispatcher.getInstance().addObserver(this);
 
-        final SettingsDTO settings = ConfigService.getInstance().getSettings();
+        final SettingsDTO settings = SettingsService.getInstance().getSettings();
 
         handleVersionMismatch(settings);
 
@@ -77,7 +77,8 @@ public class CorreoMqtt extends Application implements StartupObserver {
         }
 
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderReady"));
-        ConfigService.getInstance().saveSettings();
+        SettingsService.getInstance().saveSettings();
+
     }
 
     private void handleVersionMismatch(SettingsDTO settings) {
@@ -115,7 +116,7 @@ public class CorreoMqtt extends Application implements StartupObserver {
         }
         settings.setCurrentLocale(settings.getSavedLocale());
         LOGGER.info("Locale is: {}", settings.getSavedLocale());
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
     }
 
     private void checkForUpdates() {
@@ -136,11 +137,10 @@ public class CorreoMqtt extends Application implements StartupObserver {
     }
 
     private void loadPrimaryStage(Stage primaryStage) throws IOException {
-        ConfigService.getInstance().setCssFileName();
-        String cssPath = ConfigService.getInstance().getCssPath();
+        String cssPath = SettingsService.getInstance().getCssPath();
 
         FXMLLoader loader = new FXMLLoader(MainViewController.class.getResource("mainView.fxml"),
-                                           ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
+                                           ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale()));
         Parent root = loader.load();
 
         mainViewController = loader.getController();
@@ -196,7 +196,7 @@ public class CorreoMqtt extends Application implements StartupObserver {
     private void setLoggerFilePath() {
 
         // Set the path for file logging to user directory.
-        System.setProperty("correomqtt-logfile", ConfigService.getInstance().getLogPath());
+        System.setProperty("correomqtt-logfile", SettingsService.getInstance().getLogPath());
 
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         ContextInitializer ci = new ContextInitializer(lc);

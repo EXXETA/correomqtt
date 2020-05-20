@@ -1,6 +1,7 @@
 package org.correomqtt.gui.controller;
 
 import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.HostServicesHolder;

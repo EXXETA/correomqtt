@@ -31,21 +31,13 @@
     }
   ],
   "themesSettings": {
-    "activeTheme": null,
-    "themes": [
-      {
-        "name": "Light",
-        "file": "light.css",
-        "iconMode": "black"
-      },
-      {
-        "name": "Dark",
-        "file": "dark.css",
-        "iconMode": "white"
-      }
-    ]
+    "activeTheme": {
+      "name": "Light",
+      "iconMode": "BLACK"
+    }
   },
   "settings": {
+    "activeTheme": true,
     "base64DecodingPayload": true,
     "unzippingPayload": true,
     "useRegexForSearch": true,

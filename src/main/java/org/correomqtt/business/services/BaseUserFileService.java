@@ -4,11 +4,7 @@ import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 public class BaseUserFileService {
 
@@ -47,7 +43,7 @@ public class BaseUserFileService {
         }
 
         if (!targetFile.exists()) {
-            try (InputStream inputStream = ConfigService.class.getResourceAsStream(filename)) {
+            try (InputStream inputStream = SettingsService.class.getResourceAsStream(filename)) {
                 byte[] buffer = new byte[inputStream.available()];
                 inputStream.read(buffer);
 
@@ -62,6 +58,20 @@ public class BaseUserFileService {
 
     void prepareFile(String configFileName) throws IOException {
         prepareFile(null, configFileName);
+    }
+
+    void saveToUserDirectory(String filename, String content) {
+
+        String targetDirectoryPath = getTargetDirectoryPath();
+        if (!new File(targetDirectoryPath).exists() && !new File(targetDirectoryPath).mkdir()) {
+            ConfigDispatcher.getInstance().onConfigDirectoryEmpty();
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(targetDirectoryPath + File.separator + filename))) {
+            writer.write(content);
+        } catch (IOException e) {
+            e.printStackTrace();//TODO
+        }
     }
 
     public boolean isMacOS() {

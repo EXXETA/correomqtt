@@ -4,7 +4,7 @@ import org.correomqtt.business.model.CorreoMqttVersion;
 import org.correomqtt.business.model.Lwt;
 import org.correomqtt.business.model.Proxy;
 import org.correomqtt.business.model.TlsSsl;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -47,7 +47,7 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
 
     @FXML
     public void initialize() {
-        mainNode.getStyleClass().add(ConfigService.getInstance().getThemeSettings().getActiveTheme().getIconMode());
+        mainNode.getStyleClass().add(SettingsService.getInstance().getIconModeCssClass());
     }
 
     public ConnectionCell(ListView<ConnectionPropertiesDTO> listView) {
@@ -66,7 +66,7 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(SubscriptionViewCell.class.getResource("connectionView.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

@@ -66,10 +66,6 @@ public class ControlBarController extends BaseConnectionController implements Co
     @FXML
     public void initialize() {
         controlViewPSButton.setSelected(true);
-        //TODO extract to CSS
-        controlViewSButton.setStyle("-fx-background-radius: 0 3 3 0;");
-        controlViewPButton.setStyle("-fx-background-radius: 3 0 0 3;");
-        controlViewPSButton.setStyle("-fx-background-radius: 0;");
         brokerInfo.setText("");
         disconnectBtn.setVisible(false);
         disconnectBtn.setManaged(false);

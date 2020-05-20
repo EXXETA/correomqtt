@@ -1,6 +1,7 @@
 package org.correomqtt.plugin.manager;
 
 import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;

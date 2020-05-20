@@ -1,6 +1,6 @@
 package org.correomqtt.gui.cell;
 
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -42,7 +42,7 @@ public class TopicCell extends ListCell<String> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(TopicCell.class.getResource("topicCell.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

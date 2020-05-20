@@ -2,7 +2,7 @@ package org.correomqtt.gui.controller;
 
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.business.services.PersistPublishHistoryService;
 import org.correomqtt.business.services.PersistPublishMessageHistoryService;
 import org.correomqtt.business.services.PersistSubscriptionHistoryService;
@@ -81,7 +81,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     @FXML
     public void initialize() {
-        tabPaneAnchorPane.getStyleClass().add(ConfigService.getInstance().getThemeSettings().getActiveTheme().getIconMode());
+        tabPaneAnchorPane.getStyleClass().add(SettingsService.getInstance().getIconModeCssClass());
 
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
         setupAddTab();

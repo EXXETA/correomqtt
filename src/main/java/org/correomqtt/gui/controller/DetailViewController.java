@@ -6,7 +6,7 @@ import org.correomqtt.business.dispatcher.ImportMessageDispatcher;
 import org.correomqtt.business.dispatcher.ImportMessageObserver;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.MessageType;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.gui.contextmenu.DetailContextMenu;
 import org.correomqtt.gui.contextmenu.DetailContextMenuDelegate;
 import org.correomqtt.gui.formats.Format;
@@ -191,7 +191,7 @@ public class DetailViewController extends BaseConnectionController implements
 
     @FXML
     private void initialize() {
-        detailViewVBox.getStyleClass().add(ConfigService.getInstance().getThemeSettings().getActiveTheme().getIconMode());
+        detailViewVBox.getStyleClass().add(SettingsService.getInstance().getIconModeCssClass());
         searchTextField.textProperty().addListener((observable, oldValue, newValue) -> performSearch(newValue));
         searchTextField.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
             if (KeyCode.ESCAPE == event.getCode()) {
@@ -252,10 +252,10 @@ public class DetailViewController extends BaseConnectionController implements
             LOGGER.debug("Clicked on changeIgnoreCase: {}", getConnectionId());
         }
 
-        ConfigService.getInstance().getSettings().setUseIgnoreCase(!ConfigService.getInstance().getSettings().isUseIgnoreCase());
-        ConfigService.getInstance().saveSettings();
+        SettingsService.getInstance().getSettings().setUseIgnoreCase(!SettingsService.getInstance().getSettings().isUseIgnoreCase());
+        SettingsService.getInstance().saveSettings();
         this.searchMenuButton.getItems().remove(ignoreCaseMenuItem);
-        if (ConfigService.getInstance().getSettings().isUseIgnoreCase()) {
+        if (SettingsService.getInstance().getSettings().isUseIgnoreCase()) {
             ignoreCaseMenuItem.getStyleClass().add(CHECK_SOLID_CLASS);
         } else {
             ignoreCaseMenuItem.getStyleClass().remove(CHECK_SOLID_CLASS);
@@ -272,10 +272,10 @@ public class DetailViewController extends BaseConnectionController implements
             LOGGER.debug("Clicked on changeRegex: {}", getConnectionId());
         }
 
-        ConfigService.getInstance().getSettings().setUseRegexForSearch(!ConfigService.getInstance().getSettings().isUseRegexForSearch());
-        ConfigService.getInstance().saveSettings();
+        SettingsService.getInstance().getSettings().setUseRegexForSearch(!SettingsService.getInstance().getSettings().isUseRegexForSearch());
+        SettingsService.getInstance().saveSettings();
         this.searchMenuButton.getItems().remove(regexMenuItem);
-        if (ConfigService.getInstance().getSettings().isUseRegexForSearch()) {
+        if (SettingsService.getInstance().getSettings().isUseRegexForSearch()) {
             regexMenuItem.getStyleClass().add(CHECK_SOLID_CLASS);
         } else {
             regexMenuItem.getStyleClass().remove(CHECK_SOLID_CLASS);
@@ -321,10 +321,10 @@ public class DetailViewController extends BaseConnectionController implements
 
         detailViewQos.setText(messageDTO.getQos().toString());
 
-        if (ConfigService.getInstance().getSettings().isUseIgnoreCase()) {
+        if (SettingsService.getInstance().getSettings().isUseIgnoreCase()) {
             ignoreCaseMenuItem.getStyleClass().add(CHECK_SOLID_CLASS);
         }
-        if (ConfigService.getInstance().getSettings().isUseRegexForSearch()) {
+        if (SettingsService.getInstance().getSettings().isUseRegexForSearch()) {
             regexMenuItem.getStyleClass().add(CHECK_SOLID_CLASS);
         }
 
@@ -513,8 +513,8 @@ public class DetailViewController extends BaseConnectionController implements
         if (!currentSearchString.isEmpty()) {
             codeAreaText = codeArea.getText();
 
-            boolean ignoreCase = ConfigService.getInstance().getSettings().isUseIgnoreCase();
-            boolean regex = ConfigService.getInstance().getSettings().isUseRegexForSearch();
+            boolean ignoreCase = SettingsService.getInstance().getSettings().isUseIgnoreCase();
+            boolean regex = SettingsService.getInstance().getSettings().isUseRegexForSearch();
 
             String finalSearchString;
             if (regex) {

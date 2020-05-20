@@ -19,5 +19,4 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ThemeSettingsDTO {
     private ThemeDTO activeTheme;
-    private List<ThemeDTO> themes;
 }

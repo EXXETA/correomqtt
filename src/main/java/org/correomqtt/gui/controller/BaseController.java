@@ -1,6 +1,6 @@
 package org.correomqtt.gui.controller;
 
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -20,7 +20,7 @@ import java.util.ResourceBundle;
 abstract class BaseController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseController.class);
-    private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
+    private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
 
     static <C extends BaseController, Z extends Class<C>> LoaderResult<C> load(Z controllerClazz, String fxml) {
         return load(controllerClazz,
@@ -33,7 +33,7 @@ abstract class BaseController {
                                                                                final ConstructorMethod<C> constructorMethod) {
 
         FXMLLoader loader = new FXMLLoader(controllerClazz.getResource(fxml),
-                ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
+                ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale()));
 
         loader.setControllerFactory(param -> {
             try {
@@ -68,7 +68,7 @@ abstract class BaseController {
                                                         final EventHandler<KeyEvent> keyHandler) {
 
         Scene scene = new Scene(result.getMainPane());
-        String cssPath = ConfigService.getInstance().getCssPath();
+        String cssPath = SettingsService.getInstance().getCssPath();
         if (cssPath != null) {
             scene.getStylesheets().add(cssPath);
         }

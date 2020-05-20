@@ -1,6 +1,6 @@
 package org.correomqtt.gui.contextmenu;
 
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import javafx.event.ActionEvent;
 import javafx.scene.control.MenuItem;
@@ -31,7 +31,7 @@ public class SubscriptionListMessageContextMenu extends BaseObjectContextMenu<Su
 
     @Override
     protected void initializeItems() {
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
 
         super.initializeItems();
 
