@@ -1,5 +1,6 @@
 package org.correomqtt.business.mqtt;
 
+import net.schmizz.sshj.connection.channel.direct.Parameters;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.exception.CorreoMqttAlreadySubscribedException;
 import org.correomqtt.business.exception.CorreoMqttNoRetriesLeftException;
@@ -100,10 +101,9 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
                     configDTO.getAuthKeyfile());
         }
 
-        final LocalPortForwarder.Parameters parameters
-                = new LocalPortForwarder.Parameters("localhost", configDTO.getLocalPort(), configDTO.getUrl(), configDTO.getPort());
-
-        CompletableFuture.runAsync(() -> {
+        final Parameters parameters
+                = new Parameters("localhost", configDTO.getLocalPort(), configDTO.getUrl(), configDTO.getPort());
+        Thread thread = new Thread(() -> {
             try (ServerSocket serverSocket = new ServerSocket()) {
                 serverSocket.setReuseAddress(true);
                 serverSocket.bind(new InetSocketAddress(parameters.getLocalHost(), parameters.getLocalPort()));
@@ -113,12 +113,10 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
                 getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "SSH socket to {}:{} failed.", configDTO.getSshHost(), configDTO.getPort());
                 throw new CorreoMqttSshFailedException(e);
             }
-        }).whenCompleteAsync((res, th) -> {
-            if (th != null) {
-                getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "SSH tunnel broke. Connection to broker disconnected by system. ", th);
-                disconnect(false);
-            }
         });
+
+        thread.start();
+
 
         int sshRetries = 0;
         while (!sshClient.isConnected()) {
@@ -157,6 +155,7 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
                 reconnect(context);
             } else if (context.getSource() == MqttDisconnectSource.USER) {
                 try {
+                    localPortforwarder.close();
                     sshClient.disconnect();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -252,21 +251,9 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
             getLogger().info("Disconnecting client was not possible, cause was not connected.");
         }
 
-        if (localPortforwarder != null) {
-            getLogger().debug(MarkerFactory.getMarker(configDTO.getName()), "Disconnecting SSH socket for {}:{}.", configDTO.getSshHost(), configDTO.getPort());
-            try {
-                localPortforwarder.close();
-                getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "SSH socket for {}:{} closed", configDTO.getSshHost(), configDTO.getPort());
-            } catch (IOException e) {
-                getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "Disconnecting SSH socket for {}:{} failed", configDTO.getSshHost(), configDTO.getPort());
-            }
-            localPortforwarder = null;
-        }
-
         if (sshClient != null && sshClient.isConnected()) {
             getLogger().debug(MarkerFactory.getMarker(configDTO.getName()), "Disconnecting SSH tunnel for {}:{}.", configDTO.getSshHost(), configDTO.getPort());
             try {
-                sshClient.disconnect();
                 sshClient.close();
                 getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "SSH tunnel for {}:{} closed", configDTO.getSshHost(), configDTO.getPort());
             } catch (IOException e) {
