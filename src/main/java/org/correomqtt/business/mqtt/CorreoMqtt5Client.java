@@ -158,7 +158,10 @@ class CorreoMqtt5Client extends BaseCorreoMqttClient {
 
     @Override
     boolean isConnected() {
-        return getCheckedClient().getState().isConnected();
+        if (mqtt5BlockingClient == null) {
+            return false;
+        }
+        return mqtt5BlockingClient.getState().isConnected();
     }
 
     private Mqtt5AsyncClient getCheckedAsyncClient() {
