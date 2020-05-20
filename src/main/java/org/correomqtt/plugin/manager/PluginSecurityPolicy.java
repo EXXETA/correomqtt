@@ -1,7 +1,5 @@
 package org.correomqtt.plugin.manager;
 
-import org.slf4j.LoggerFactory;
-
 import java.io.FilePermission;
 import java.lang.reflect.ReflectPermission;
 import java.security.*;
@@ -45,8 +43,6 @@ public class PluginSecurityPolicy extends Policy {
             Permission p = permissionIterator.next();
             if (isPermissionAllowed(p)) {
                 cleanPermissions.add(p);
-            } else {
-                LoggerFactory.getLogger(PluginSecurityPolicy.class).warn("{} tried to add forbidden permission: {}", pluginName, p);
             }
         }
         return cleanPermissions;

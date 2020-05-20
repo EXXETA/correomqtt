@@ -1,9 +1,5 @@
 package org.correomqtt;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.util.ContextInitializer;
-import ch.qos.logback.core.joran.spi.JoranException;
-import ch.qos.logback.core.util.StatusPrinter;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -15,11 +11,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import org.apache.maven.artifact.versioning.ComparableVersion;
-import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
-import org.correomqtt.business.dispatcher.PreloadingDispatcher;
-import org.correomqtt.business.dispatcher.ShortcutDispatcher;
-import org.correomqtt.business.dispatcher.StartupDispatcher;
-import org.correomqtt.business.dispatcher.StartupObserver;
+import org.correomqtt.business.dispatcher.*;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.services.ConfigService;
 import org.correomqtt.business.utils.VersionUtils;
@@ -60,10 +52,9 @@ public class CorreoMqtt extends Application implements StartupObserver {
         final SettingsDTO settings = ConfigService.getInstance().getSettings();
 
         handleVersionMismatch(settings);
-
         setLocale(settings);
         HostServicesHolder.getInstance().setHostServices(getHostServices());
-        setLoggerFilePath();
+
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLanguageSet"));
 
         if (settings.isFirstStart()) {
@@ -192,25 +183,6 @@ public class CorreoMqtt extends Application implements StartupObserver {
                               }
         );
     }
-
-    private void setLoggerFilePath() {
-
-        // Set the path for file logging to user directory.
-        System.setProperty("correomqtt-logfile", ConfigService.getInstance().getLogPath());
-
-        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
-        ContextInitializer ci = new ContextInitializer(lc);
-        lc.reset();
-        try {
-            //I prefer autoConfig() over JoranConfigurator.doConfigure() so I wouldn't need to find the file myself.
-            ci.autoConfig();
-        } catch (JoranException e) {
-            // StatusPrinter will try to log this
-            e.printStackTrace(); //TODO
-        }
-        StatusPrinter.printInCaseOfErrorsOrWarnings(lc);
-    }
-
 
     @Override
     public void onPluginUpdateFailed(String disabledPath) {
