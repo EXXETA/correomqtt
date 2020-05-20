@@ -4,7 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.dispatcher.StartupDispatcher;
 import org.correomqtt.business.services.BaseUserFileService;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.pf4j.update.DefaultUpdateRepository;
@@ -32,7 +32,7 @@ public class PluginSystem {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginSystem.class);
 
-    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
     private String pluginsDisabledPath = new BaseUserFileService().getTargetDirectoryPath() + File.separator + "plugins.disabled.";
 
     public void start() throws IOException {

@@ -18,7 +18,7 @@ import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.dispatcher.PreloadingObserver;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.PreloaderViewController;
 import org.slf4j.LoggerFactory;
@@ -39,8 +39,7 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
     public void init() throws IOException {
         setLoggerFilePath();
 
-        ConfigService.getInstance().setCssFileName();
-        String cssPath = ConfigService.getInstance().getCssPath();
+        String cssPath = SettingsService.getInstance().getCssPath();
 
         FXMLLoader loader = new FXMLLoader(PreloaderViewController.class.getResource("preloaderView.fxml"));
         Parent root = loader.load();
@@ -56,7 +55,7 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
 
     private void setLoggerFilePath() {
         // Set the path for file logging to user directory.
-        System.setProperty("correomqtt-logfile", ConfigService.getInstance().getLogPath());
+        System.setProperty("correomqtt-logfile", SettingsService.getInstance().getLogPath());
         System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, CorreoMqtt.class.getResource("logger-config.xml").getPath());
 
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();

@@ -47,3 +47,18 @@
 .brokerStatus {
     -fx-font-size: 10;
 }
+
+.toggle-button.columns-solid-right{
+  -fx-background-radius: 0 3 3 0;
+  -fx-border-radius: 0 3 3 0;
+}
+
+.toggle-button.columns-solid {
+  -fx-background-radius: 0;
+  -fx-border-radius: 0;
+}
+
+.toggle-button.columns-solid-left {
+  -fx-background-radius: 3 0 0 3;
+  -fx-border-radius: 3 0 0 3;
+}

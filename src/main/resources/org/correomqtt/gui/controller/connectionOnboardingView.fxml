@@ -40,9 +40,6 @@
             <children>
                 <Button fx:id="helloViewConnectButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false"
                         onAction="#onClickConnect" text="%commonConnectButton">
-                    <font>
-                        <Font name="System Bold" size="12.0"/>
-                    </font>
                     <tooltip>
                         <Tooltip text="%commonConnectTooltip"/>
                     </tooltip>
@@ -50,9 +47,6 @@
                 <Pane HBox.hgrow="ALWAYS"/>
                 <Button fx:id="editConnectionsButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false"
                         onAction="#openSettings" text="%connectionOnboardingViewEditButton">
-                    <font>
-                        <Font name="System Bold" size="12.0"/>
-                    </font>
                 </Button>
             </children>
             <VBox.margin>

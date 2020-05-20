@@ -46,7 +46,7 @@ abstract class BasePersistHistoryService<D> extends BaseUserFileService {
     protected abstract void readingError(Exception e);
 
     protected void removeFileIfConnectionDeleted() {
-        ConfigService.getInstance().getConnectionConfigs().stream()
+        SettingsService.getInstance().getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
                 .ifPresentOrElse(c -> {

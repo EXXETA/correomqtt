@@ -5,7 +5,7 @@ import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.cell.ConnectionCell;
@@ -167,8 +167,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
     @FXML
     public void initialize() {
 
-        containerAnchorPane.getStyleClass().add(ConfigService.getInstance().getThemeSettings().getActiveTheme().getIconMode());
-
+        containerAnchorPane.getStyleClass().add(SettingsService.getInstance().getIconModeCssClass());
 
         connectionConfigTabPane.setDisable(true);
         loadConnectionListFromBackground();
@@ -737,7 +736,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         connectionsListView.getItems().remove(selectedItem);
 
         //TODO check result in background
-        ConfigService.getInstance().saveConnections(
+        SettingsService.getInstance().saveConnections(
                 ConnectionTransformer.propsListToDtoList(connectionsListView.getItems())
         );
 
@@ -799,7 +798,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
             activeConnectionConfigDTO = executeOnSaveSettingsExtensions(activeConnectionConfigDTO);
             executeOnUnloadSettingsExtensions();
 
-            ConfigService.getInstance().saveConnections(
+            SettingsService.getInstance().saveConnections(
                     ConnectionTransformer.propsListToDtoList(connectionsListView.getItems())
             );
 

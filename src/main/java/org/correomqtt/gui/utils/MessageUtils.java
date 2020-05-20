@@ -1,6 +1,6 @@
 package org.correomqtt.gui.utils;
 
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import javafx.stage.FileChooser;
@@ -17,7 +17,7 @@ public class MessageUtils {
     }
 
     public static void saveMessage(String connectionId, MessagePropertiesDTO messageDTO, Stage stage) {
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
 
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(resources.getString("messageUtilsTitle"));

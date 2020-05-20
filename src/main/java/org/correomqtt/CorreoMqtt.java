@@ -1,5 +1,9 @@
 package org.correomqtt;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.util.ContextInitializer;
+import ch.qos.logback.core.joran.spi.JoranException;
+import ch.qos.logback.core.util.StatusPrinter;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -13,7 +17,7 @@ import javafx.stage.Stage;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.business.dispatcher.*;
 import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.AlertController;
 import org.correomqtt.gui.controller.MainViewController;
@@ -49,7 +53,7 @@ public class CorreoMqtt extends Application implements StartupObserver {
 
         StartupDispatcher.getInstance().addObserver(this);
 
-        final SettingsDTO settings = ConfigService.getInstance().getSettings();
+        final SettingsDTO settings = SettingsService.getInstance().getSettings();
 
         handleVersionMismatch(settings);
         setLocale(settings);
@@ -68,7 +72,8 @@ public class CorreoMqtt extends Application implements StartupObserver {
         }
 
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderReady"));
-        ConfigService.getInstance().saveSettings();
+        SettingsService.getInstance().saveSettings();
+
     }
 
     private void handleVersionMismatch(SettingsDTO settings) {
@@ -106,7 +111,7 @@ public class CorreoMqtt extends Application implements StartupObserver {
         }
         settings.setCurrentLocale(settings.getSavedLocale());
         LOGGER.info("Locale is: {}", settings.getSavedLocale());
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
     }
 
     private void checkForUpdates() {
@@ -127,11 +132,10 @@ public class CorreoMqtt extends Application implements StartupObserver {
     }
 
     private void loadPrimaryStage(Stage primaryStage) throws IOException {
-        ConfigService.getInstance().setCssFileName();
-        String cssPath = ConfigService.getInstance().getCssPath();
+        String cssPath = SettingsService.getInstance().getCssPath();
 
         FXMLLoader loader = new FXMLLoader(MainViewController.class.getResource("mainView.fxml"),
-                                           ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale()));
+                                           ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale()));
         Parent root = loader.load();
 
         mainViewController = loader.getController();
@@ -182,6 +186,24 @@ public class CorreoMqtt extends Application implements StartupObserver {
                                   //TODO rest
                               }
         );
+    }
+
+    private void setLoggerFilePath() {
+
+        // Set the path for file logging to user directory.
+        System.setProperty("correomqtt-logfile", SettingsService.getInstance().getLogPath());
+
+        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+        ContextInitializer ci = new ContextInitializer(lc);
+        lc.reset();
+        try {
+            //I prefer autoConfig() over JoranConfigurator.doConfigure() so I wouldn't need to find the file myself.
+            ci.autoConfig();
+        } catch (JoranException e) {
+            // StatusPrinter will try to log this
+            e.printStackTrace(); //TODO
+        }
+        StatusPrinter.printInCaseOfErrorsOrWarnings(lc);
     }
 
     @Override

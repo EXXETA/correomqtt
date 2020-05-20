@@ -1,13 +1,13 @@
 package org.correomqtt.plugin.manager;
 
 import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.pf4j.DefaultPluginFactory;
 import org.pf4j.Plugin;
 import org.pf4j.PluginWrapper;
 
 import java.io.File;
 import java.io.FilePermission;
-import java.security.Permissions;
 import java.security.Policy;
 
 public class PermissionPluginFactory extends DefaultPluginFactory {

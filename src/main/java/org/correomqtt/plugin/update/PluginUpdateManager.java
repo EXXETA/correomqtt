@@ -1,15 +1,10 @@
 package org.correomqtt.plugin.update;
 
-import junit.framework.Assert;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.exception.CorreoMqttPluginUpdateException;
 import org.correomqtt.plugin.manager.PluginSystem;
-import org.json.simple.JSONArray;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import org.pf4j.PluginWrapper;
 import org.pf4j.update.DefaultUpdateRepository;
 import org.pf4j.update.PluginInfo;
 import org.pf4j.update.UpdateManager;
@@ -17,7 +12,6 @@ import org.pf4j.update.UpdateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
 import java.net.*;
 import java.util.Collections;
 import java.util.List;
@@ -30,7 +24,7 @@ public class PluginUpdateManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginUpdateManager.class);
 
     private final PluginSystem pluginSystem;
-    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", ConfigService.getInstance().getSettings().getCurrentLocale());
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
 
     public PluginUpdateManager(PluginSystem pluginSystem) {
         this.pluginSystem = pluginSystem;

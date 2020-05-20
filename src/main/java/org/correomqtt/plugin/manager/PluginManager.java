@@ -1,6 +1,7 @@
 package org.correomqtt.plugin.manager;
 
 import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.plugin.spi.BaseExtensionPoint;
 import org.correomqtt.plugin.spi.ExtensionId;
 import org.jdom2.Element;

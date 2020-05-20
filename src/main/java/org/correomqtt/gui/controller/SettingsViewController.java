@@ -2,8 +2,9 @@ package org.correomqtt.gui.controller;
 
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.model.ThemeDTO;
-import org.correomqtt.business.model.ThemeSettingsDTO;
-import org.correomqtt.business.services.ConfigService;
+import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.gui.cell.GenericCell;
+import org.correomqtt.gui.model.LanguageModel;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import javafx.collections.FXCollections;
@@ -14,7 +15,10 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import org.apache.commons.lang3.StringUtils;
+import org.correomqtt.gui.theme.ThemeProvider;
+import org.correomqtt.gui.theme.light.LightThemeProvider;
+import org.correomqtt.plugin.manager.PluginManager;
+import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,14 +33,13 @@ public class SettingsViewController extends BaseController {
     private static ResourceBundle resources;
 
     @FXML
-    private ComboBox<ThemeDTO> themeComboBox;
+    private ComboBox<ThemeProvider> themeComboBox;
     @FXML
-    private ComboBox<Locale> languageComboBox;
+    private ComboBox<LanguageModel> languageComboBox;
     @FXML
     private CheckBox searchUpdatesCheckbox;
 
     private SettingsDTO settings;
-    private ThemeSettingsDTO themeSettings;
     private static final Logger LOGGER = LoggerFactory.getLogger(SettingsViewController.class);
 
     public static LoaderResult<SettingsViewController> load() {
@@ -56,8 +59,7 @@ public class SettingsViewController extends BaseController {
 
     @FXML
     public void initialize() {
-        settings = ConfigService.getInstance().getSettings();
-        themeSettings = ConfigService.getInstance().getThemeSettings();
+        settings = SettingsService.getInstance().getSettings();
         setupGUI();
 
         // Unfortunately @FXML Handler does not work with Combobox, so the action must be bound manually.
@@ -90,14 +92,15 @@ public class SettingsViewController extends BaseController {
     private void setupGUI() {
         searchUpdatesCheckbox.setSelected(settings.isSearchUpdates());
 
-        List<ThemeDTO> themes = new ArrayList<>();
-        themeSettings.getThemes().forEach(t -> themes.add(t));
+        ArrayList<ThemeProvider> themes = new ArrayList<>(PluginManager.getInstance().getExtensions(ThemeProviderHook.class));
+        LOGGER.info(themes.stream().map(ThemeProvider::getName).collect(Collectors.joining(",")));
 
         themeComboBox.setOnAction(null);
         themeComboBox.setItems(FXCollections.observableArrayList(themes));
-        themeComboBox.setConverter(new StringConverter<ThemeDTO>() {
+        themeComboBox.setCellFactory(GenericCell::new);
+        themeComboBox.setConverter(new StringConverter<>() {
             @Override
-            public String toString(ThemeDTO object) {
+            public String toString(ThemeProvider object) {
                 if (object == null) {
                     return null;
                 }
@@ -105,20 +108,26 @@ public class SettingsViewController extends BaseController {
             }
 
             @Override
-            public ThemeDTO fromString(String string) {
+            public ThemeProvider fromString(String string) {
                 return null;
             }
         });
-        themeComboBox.getSelectionModel().select(themeSettings.getActiveTheme());
 
+        themeComboBox.getSelectionModel().select(themes.
+                stream()
+                .filter(t -> t.getName().equals(SettingsService.getInstance().getThemeSettings().getActiveTheme().getName()))
+                .findFirst()
+                .orElse(new LightThemeProvider()));
+
+        languageComboBox.setCellFactory(GenericCell::new);
         languageComboBox.setConverter(new StringConverter<>() {
             @Override
-            public String toString(Locale object) {
-                return StringUtils.capitalize(object.getDisplayLanguage(object));
+            public String toString(LanguageModel language) {
+                return language.getLabelTranslationKey();
             }
 
             @Override
-            public Locale fromString(String string) {
+            public LanguageModel fromString(String string) {
                 return null;
             }
         });
@@ -135,8 +144,9 @@ public class SettingsViewController extends BaseController {
         languageComboBox.setItems(FXCollections.observableArrayList(
                 availableLocales.stream()
                         .filter(distinctByKey(l -> l.getLanguage() + "_" + l.getCountry()))
+                        .map(LanguageModel::new)
                         .collect(Collectors.toList())));
-        languageComboBox.getSelectionModel().select(settings.getSavedLocale());
+        languageComboBox.getSelectionModel().select(new LanguageModel(settings.getSavedLocale()));
     }
 
     private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
@@ -148,11 +158,10 @@ public class SettingsViewController extends BaseController {
         LOGGER.debug("Saving settings");
 
         settings.setSearchUpdates(searchUpdatesCheckbox.isSelected());
-        ThemeDTO selectedTheme = themeComboBox.getSelectionModel().getSelectedItem();
-        settings.setSavedLocale(languageComboBox.getSelectionModel().getSelectedItem());
-        ConfigService.getInstance().saveSettings();
-        themeSettings.setActiveTheme(selectedTheme);
-        ConfigService.getInstance().saveThemeSettings();
+        ThemeProvider selectedTheme = themeComboBox.getSelectionModel().getSelectedItem();
+        settings.setSavedLocale(languageComboBox.getSelectionModel().getSelectedItem().getLocale());
+        SettingsService.getInstance().getThemeSettings().setActiveTheme(new ThemeDTO(selectedTheme.getName(),selectedTheme.getIconMode()));
+        SettingsService.getInstance().saveSettings();
     }
 
     private void closeDialog() {
