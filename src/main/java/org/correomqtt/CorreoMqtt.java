@@ -15,11 +15,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import org.apache.maven.artifact.versioning.ComparableVersion;
-import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
-import org.correomqtt.business.dispatcher.PreloadingDispatcher;
-import org.correomqtt.business.dispatcher.ShortcutDispatcher;
-import org.correomqtt.business.dispatcher.StartupDispatcher;
-import org.correomqtt.business.dispatcher.StartupObserver;
+import org.correomqtt.business.dispatcher.*;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.business.utils.VersionUtils;
@@ -60,10 +56,9 @@ public class CorreoMqtt extends Application implements StartupObserver {
         final SettingsDTO settings = SettingsService.getInstance().getSettings();
 
         handleVersionMismatch(settings);
-
         setLocale(settings);
         HostServicesHolder.getInstance().setHostServices(getHostServices());
-        setLoggerFilePath();
+
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLanguageSet"));
 
         if (settings.isFirstStart()) {
@@ -210,7 +205,6 @@ public class CorreoMqtt extends Application implements StartupObserver {
         }
         StatusPrinter.printInCaseOfErrorsOrWarnings(lc);
     }
-
 
     @Override
     public void onPluginUpdateFailed(String disabledPath) {

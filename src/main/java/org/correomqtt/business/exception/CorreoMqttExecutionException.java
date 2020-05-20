@@ -22,11 +22,7 @@ public class CorreoMqttExecutionException extends CorreoMqttException {
         if (cause instanceof CorreoMqttException) {
             return ((CorreoMqttException) cause).getInfo();
         } else {
-            String msg = cause.getMessage();
-            if(msg == null){
-                msg = cause.getClass().getSimpleName();
-            }
-            return msg;
+            return cause.getClass().getSimpleName() + ": " + cause.getMessage();
         }
     }
 }

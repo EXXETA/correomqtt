@@ -1,5 +1,9 @@
 package org.correomqtt;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.util.ContextInitializer;
+import ch.qos.logback.core.joran.spi.JoranException;
+import ch.qos.logback.core.util.StatusPrinter;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
@@ -17,6 +21,7 @@ import org.correomqtt.business.dispatcher.PreloadingObserver;
 import org.correomqtt.business.services.SettingsService;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.PreloaderViewController;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -32,6 +37,8 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
 
     @Override
     public void init() throws IOException {
+        setLoggerFilePath();
+
         String cssPath = SettingsService.getInstance().getCssPath();
 
         FXMLLoader loader = new FXMLLoader(PreloaderViewController.class.getResource("preloaderView.fxml"));
@@ -44,6 +51,24 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
         if (cssPath != null) {
             scene.getStylesheets().add(cssPath);
         }
+    }
+
+    private void setLoggerFilePath() {
+        // Set the path for file logging to user directory.
+        System.setProperty("correomqtt-logfile", SettingsService.getInstance().getLogPath());
+        System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, CorreoMqtt.class.getResource("logger-config.xml").getPath());
+
+        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+        ContextInitializer ci = new ContextInitializer(lc);
+        lc.reset();
+        try {
+            //I prefer autoConfig() over JoranConfigurator.doConfigure() so I wouldn't need to find the file myself.
+            ci.autoConfig();
+        } catch (JoranException e) {
+            // StatusPrinter will try to log this
+            e.printStackTrace(); //TODO
+        }
+        StatusPrinter.printInCaseOfErrorsOrWarnings(lc);
     }
 
     @Override
