@@ -56,7 +56,7 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
     private void setLoggerFilePath() {
         // Set the path for file logging to user directory.
         System.setProperty("correomqtt-logfile", SettingsService.getInstance().getLogPath());
-        System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, CorreoMqtt.class.getResource("logger-config.xml").getPath());
+        System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, "logger-config.xml");
 
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         ContextInitializer ci = new ContextInitializer(lc);
