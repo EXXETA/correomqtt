@@ -62,9 +62,13 @@ public class VersionUtils {
                     new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
             ComparableVersion latestGithubVersion = new ComparableVersion(jsonObject.get("tag_name").toString());
-            ComparableVersion currentLocalVersion = new ComparableVersion(getVersion());
+            String localVersion = getVersion();
+            if (!localVersion.startsWith("v")) {
+                localVersion = "v" + localVersion;
+            }
+            ComparableVersion currentLocalVersion = new ComparableVersion(localVersion);
 
-            if (latestGithubVersion.compareTo(currentLocalVersion) == 1) {
+            if (latestGithubVersion.compareTo(currentLocalVersion) > 0) {
                 LOGGER.info("There is a new release available on github!");
                 return jsonObject.get("tag_name").toString();
             } else {
