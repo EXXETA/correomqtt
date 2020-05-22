@@ -67,9 +67,13 @@
     -fx-border-color: gray;
 }
 
-.codeAreaPayload {
+.codeArea {
     -fx-background-color: #111111;
-    -fx-text-fill: #FFFFFF;
+        -fx-text-fill: #FFFFFF;
+}
+
+.emptyPayloadLabel{
+    -fx-text-fill: grey;
 }
 
 /*controlBarView.css*/
@@ -81,14 +85,22 @@
     -fx-text-fill: #666666;
 }
 
-/*detailView.css*/
-.codeArea {
-    -fx-background-color: #8a8a8a;
+
+.code-area .text{
+  -fx-background-color: #111111;
+  -fx-fill: #ffffff;
 }
 
-.emptyPayloadLabel{
-    -fx-text-fill: grey;
+.styled-text-area{
+  -fx-fill: #ffffff;
+  -fx-background-color: #111111;
+ }
+
+.code-area .text .caret,
+.styled-text-area .caret {
+     -fx-stroke: #ffffff;
 }
+
 
 /*global.css*/
 .tag {
@@ -217,7 +229,7 @@
 }
 
 *:disabled .styled-text-area{
-    -fx-background-color: #f5f5f5;
+    -fx-background-color: #111111;
 }
 
 /*mainView.css*/
@@ -241,47 +253,75 @@
 /*.publishBody.css*/
 
 /*richtextfx.css*/
-.commentXML {
-    -fx-fill: #939393;
+
+.styled-text-area .commentXML {
+    -fx-fill: #107e00;
 }
 
-.tagmarkXML {
-    -fx-fill: #273e7a;
+.styled-text-area .tagmarkXML {
+    -fx-fill: #436dd5;
 
 }
 
-.anytagXML {
-    -fx-fill: #273e7a;
+.styled-text-area .anytagXML {
+    -fx-fill: #4b79ec;
 }
 
-.attributeXML {
-    -fx-fill: #a52c2f;
+.styled-text-area .attributeXML {
+    -fx-fill: #e33c42;
 }
 
-.avalueXML {
-    -fx-fill: #1a611a;
+.styled-text-area .avalueXML {
+    -fx-fill: #3bde3b;
 }
 
-.braceJSON, .bracketJSON {
-    -fx-fill: #273e7a;
+.styled-text-area .braceJSON,
+.styled-text-area .bracketJSON {
+    -fx-fill: #4b7aee;
 }
 
-.keyJSON {
-    -fx-fill: #273e7a;
+.styled-text-area .keyJSON {
+    -fx-fill: #4b7aee
 }
 
-.valueJSON {
-    -fx-fill: #1a611a;
+.styled-text-area .valueJSON {
+    -fx-fill: #3bdf3b;
 }
 
-.numberJSON {
-    -fx-fill: #a52c2f;
+.styled-text-area .numberJSON {
+    -fx-fill: #df3b41;
 }
 
-.booleanJSON {
-    -fx-fill: #a56c00;
+.styled-text-area .booleanJSON {
+    -fx-fill: #f09c00;
 }
 
-.nullJSON {
-    -fx-fill: #505050;
+.styled-text-area .nullJSON {
+    -fx-fill: #c6c6c6;
 }
+
+
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+}
+
+.tab-pane .tab:selected
+{
+  -fx-background-color: #262626, #343434 ;
+   -fx-background-insets: 0 0 1 0,  1 1 -1 1;
+}
+
+.onBoardingHolder {
+  -fx-background-color: #343434;
+}
+
+
+.menu-bar {
+    -fx-background-color: #343434;
+     -fx-effect: null;
+     -fx-drop-shadow: null;
+ }
+.menu { /* The File menu item */ }
+.menu:showing { /* menu when it's being shown (activated) */ }
+.menu .label { /* Styles the text on a menu item */ }
+.menu:showing .label { /* Styles the text on a menu item when activated */ }

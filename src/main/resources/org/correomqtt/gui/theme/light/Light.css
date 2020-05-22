@@ -241,3 +241,17 @@
 .nullJSON {
     -fx-fill: #505050;
 }
+
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+}
+
+.tab-pane .tab:selected
+{
+  -fx-background-color: #b5b5b5, #efefef ;
+   -fx-background-insets: 0 0 1 0,  1 1 -1 1;
+}
+
+.onBoardingHolder {
+  -fx-background-color: #efefef;
+}
