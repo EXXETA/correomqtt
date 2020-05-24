@@ -1,6 +1,6 @@
 package org.correomqtt.gui.utils;
 
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.json.simple.parser.ParseException;
@@ -11,7 +11,7 @@ import java.util.ResourceBundle;
 import static org.correomqtt.business.utils.VendorConstants.GITHUB_LATEST;
 
 public class CheckNewVersionUtils {
-    private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
+    private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
     private CheckNewVersionUtils() {
         // nothing to do

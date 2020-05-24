@@ -1,7 +1,6 @@
 package org.correomqtt.plugin.manager;
 
-import org.correomqtt.business.services.ConfigService;
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.ConfigProvider;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
@@ -31,7 +30,7 @@ class PluginProtocolParser {
     }
 
     private Element parsePluginProtocol() throws IOException, JDOMException {
-        File protocolFile = new File(ConfigService.getInstance().getPluginProtocol());
+        File protocolFile = new File(ConfigProvider.getInstance().getPluginProtocol());
         if (!protocolFile.exists()) {
             createDefaultProtocolFile(protocolFile);
         }

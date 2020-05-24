@@ -1,21 +1,21 @@
 package org.correomqtt.business.exception;
 
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.SettingsProvider;
 
 import java.util.ResourceBundle;
 
 public abstract class CorreoMqttException extends RuntimeException {
     static ResourceBundle resources;
 
-    CorreoMqttException(){
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
+    protected CorreoMqttException(){
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
     }
 
-    CorreoMqttException(String message){
+    protected CorreoMqttException(String message){
         super(message);
     }
 
-    CorreoMqttException(Throwable cause) {
+    protected CorreoMqttException(Throwable cause) {
         super(cause);
     }
 

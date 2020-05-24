@@ -1,4 +1,4 @@
-package org.correomqtt.business.services;
+package org.correomqtt.business.provider;
 
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.slf4j.Logger;
@@ -6,9 +6,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 
-public class BaseUserFileService {
+public class BaseUserFileProvider {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BaseUserFileService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BaseUserFileProvider.class);
 
     private static final String OPERATING_SYSTEM = System.getProperty("os.name").toLowerCase();
     private static final String USER_HOME = System.getProperty("user.home");
@@ -43,7 +43,7 @@ public class BaseUserFileService {
         }
 
         if (!targetFile.exists()) {
-            try (InputStream inputStream = SettingsService.class.getResourceAsStream(filename)) {
+            try (InputStream inputStream = SettingsProvider.class.getResourceAsStream(filename)) {
                 byte[] buffer = new byte[inputStream.available()];
                 inputStream.read(buffer);
 

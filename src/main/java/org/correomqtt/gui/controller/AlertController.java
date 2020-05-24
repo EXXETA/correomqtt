@@ -1,24 +1,27 @@
 package org.correomqtt.gui.controller;
 
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.dispatcher.ConfigObserver;
-import org.correomqtt.business.dispatcher.PersistPublishHistoryObserver;
-import org.correomqtt.business.dispatcher.PersistSubscriptionHistoryObserver;
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.dispatcher.*;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.helper.AlertHelper;
+import org.correomqtt.gui.utils.PlatformUtils;
 
 import java.util.ResourceBundle;
 
 public class AlertController extends BaseController implements
         ConfigObserver,
+        SecretStoreObserver,
         PersistPublishHistoryObserver,
         PersistSubscriptionHistoryObserver {
 
-    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
     private static AlertController instance;
 
     private AlertController() {
         ConfigDispatcher.getInstance().addObserver(this);
+        SecretStoreDispatcher.getInstance().addObserver(this);
+        PersistPublishHistoryDispatcher.getInstance().addObserver(this);
+        PersistSubscriptionHistoryDispatcher.getInstance().addObserver(this);
+
     }
 
     public static void activate() {
@@ -29,50 +32,58 @@ public class AlertController extends BaseController implements
 
     @Override
     public void onConfigDirectoryEmpty() {
-        AlertHelper.warn(resources.getString("alertControllerWarnTitle"),
-                resources.getString("alertControllerOnConfigDirectoryEmptyContent"));
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerWarnTitle"),
+                resources.getString("alertControllerOnConfigDirectoryEmptyContent")
+        ));
     }
 
     @Override
     public void onConfigDirectoryNotAccessible() {
-        AlertHelper.warn(resources.getString("alertControllerWarnTitle"),
-                resources.getString("alertControllerOnConfigDirectoryNotAccessibleContent"));
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerWarnTitle"),
+                resources.getString("alertControllerOnConfigDirectoryNotAccessibleContent")
+        ));
     }
 
     @Override
     public void onAppDataNull() {
-        AlertHelper.warn(resources.getString("alertControllerWarnTitle"),
-                resources.getString("alertControllerOnAppDataNullContent"));
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerWarnTitle"),
+                resources.getString("alertControllerOnAppDataNullContent")
+        ));
     }
 
     @Override
     public void onUserHomeNull() {
-        AlertHelper.warn(resources.getString("alertControllerWarnTitle"),
-                resources.getString("alertControllerOnUserHomeNullContent"));
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerWarnTitle"),
+                resources.getString("alertControllerOnUserHomeNullContent")
+        ));
     }
 
     @Override
     public void onFileAlreadyExists() {
-        AlertHelper.warn(resources.getString("alertControllerOnFileAlreadyExistsTitle"),
-                resources.getString("alertControllerOnFileAlreadyExistsContent"));
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerOnFileAlreadyExistsTitle"),
+                resources.getString("alertControllerOnFileAlreadyExistsContent")
+        ));
     }
 
     @Override
     public void onInvalidPath() {
-        AlertHelper.warn(resources.getString("alertControllerOnInvalidPathTitle"),
-                resources.getString("alertControllerOnInvalidPathContent"));
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerOnInvalidPathTitle"),
+                resources.getString("alertControllerOnInvalidPathContent")
+        ));
     }
 
     @Override
     public void onInvalidJsonFormat() {
-        AlertHelper.warn(resources.getString("alertControllerOnInvalidJsonFormatTitle"),
-                resources.getString("alertControllerOnInvalidJsonFormatContent"));
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerOnInvalidJsonFormatTitle"),
+                resources.getString("alertControllerOnInvalidJsonFormatContent")
+        ));
     }
 
     @Override
     public void onSavingFailed() {
-        AlertHelper.warn(resources.getString("alertControllerOnSavingFailedTitle"),
-                resources.getString("alertControllerOnSavingFailedContent"));
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerOnSavingFailedTitle"),
+                resources.getString("alertControllerOnSavingFailedContent")
+        ));
     }
 
     @Override
@@ -82,14 +93,16 @@ public class AlertController extends BaseController implements
 
     @Override
     public void onConfigPrepareFailed() {
-        AlertHelper.warn("Exception",
-                resources.getString("alertControllerOnConfigPrepareFailedContent"));
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn("Exception",
+                resources.getString("alertControllerOnConfigPrepareFailedContent")
+        ));
     }
 
     @Override
     public void onSettingsUpdated() {
-        AlertHelper.info(resources.getString("alertControllerOnSettingsUpdatedTitle"),
-                resources.getString("alertControllerOnSettingsUpdatedContent"));
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.info(resources.getString("alertControllerOnSettingsUpdatedTitle"),
+                resources.getString("alertControllerOnSettingsUpdatedContent")
+        ));
     }
 
     @Override
@@ -99,8 +112,9 @@ public class AlertController extends BaseController implements
 
     @Override
     public void errorReadingSubscriptionHistory(Throwable exception) {
-        AlertHelper.warn("Exception",
-                resources.getString("alertControllerErrorReadingSubscriptionHistoryContent") + exception.getLocalizedMessage());
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn("Exception",
+                resources.getString("alertControllerErrorReadingSubscriptionHistoryContent") + exception.getLocalizedMessage()
+        ));
     }
 
     @Override
@@ -110,14 +124,16 @@ public class AlertController extends BaseController implements
 
     @Override
     public void errorReadingPublishHistory(Throwable exception) {
-        AlertHelper.warn("Exception",
-                resources.getString("alertControllerErrorReadingPublishHistoryContent") + exception.getLocalizedMessage());
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn("Exception",
+                resources.getString("alertControllerErrorReadingPublishHistoryContent") + exception.getLocalizedMessage()
+        ));
     }
 
     @Override
     public void errorWritingPublishHistory(Throwable exception) {
-        AlertHelper.warn("Exception",
-                resources.getString("alertControllerErrorWritingPublishHistoryContent") + exception.getLocalizedMessage());
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn("Exception",
+                resources.getString("alertControllerErrorWritingPublishHistoryContent") + exception.getLocalizedMessage()
+        ));
     }
 
     @Override
@@ -127,7 +143,17 @@ public class AlertController extends BaseController implements
 
     @Override
     public void errorWritingSubscriptionHistory(Throwable exception) {
-        AlertHelper.warn("Exception",
-                resources.getString("alertControllerErrorWritingSubscriptionHistoryContent") + exception.getLocalizedMessage());
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn("Exception",
+                resources.getString("alertControllerErrorWritingSubscriptionHistoryContent") + exception.getLocalizedMessage()
+        ));
+    }
+
+    @Override
+    public void onPasswordFileUnreadable() {
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(
+                resources.getString("onPasswordFileUnreadableFailedTitle"),
+                resources.getString("onPasswordFileUnreadableFailedContent"),
+                true
+        ));
     }
 }

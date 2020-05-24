@@ -1,7 +1,7 @@
 package org.correomqtt.plugin.update;
 
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.exception.CorreoMqttPluginUpdateException;
 import org.correomqtt.plugin.manager.PluginSystem;
@@ -24,7 +24,7 @@ public class PluginUpdateManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginUpdateManager.class);
 
     private final PluginSystem pluginSystem;
-    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
     public PluginUpdateManager(PluginSystem pluginSystem) {
         this.pluginSystem = pluginSystem;

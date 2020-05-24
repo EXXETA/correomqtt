@@ -2,10 +2,10 @@ package org.correomqtt.gui.controller;
 
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
-import org.correomqtt.business.services.SettingsService;
-import org.correomqtt.business.services.PersistPublishHistoryService;
-import org.correomqtt.business.services.PersistPublishMessageHistoryService;
-import org.correomqtt.business.services.PersistSubscriptionHistoryService;
+import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.provider.PersistPublishHistoryProvider;
+import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
+import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -81,7 +81,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     @FXML
     public void initialize() {
-        tabPaneAnchorPane.getStyleClass().add(SettingsService.getInstance().getIconModeCssClass());
+        tabPaneAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
 
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
         setupAddTab();
@@ -169,9 +169,9 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         if (ConnectionHolder.getInstance().isConnectionUnused(ConnectionTransformer.propsToDto(config))) {
             String tabId = UUID.randomUUID().toString();
 
-            PersistPublishHistoryService.activate(config.getId());
-            PersistPublishMessageHistoryService.activate(config.getId());
-            PersistSubscriptionHistoryService.activate(config.getId());
+            PersistPublishHistoryProvider.activate(config.getId());
+            PersistPublishMessageHistoryProvider.activate(config.getId());
+            PersistSubscriptionHistoryProvider.activate(config.getId());
 
             Tab tab = new Tab();
             tab.setId(tabId);

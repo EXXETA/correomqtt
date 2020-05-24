@@ -5,8 +5,8 @@ import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.business.model.Qos;
-import org.correomqtt.business.services.PersistPublishHistoryService;
-import org.correomqtt.business.services.PersistPublishMessageHistoryService;
+import org.correomqtt.business.provider.PersistPublishHistoryProvider;
+import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.cell.QosCell;
 import org.correomqtt.gui.cell.TopicCell;
@@ -127,7 +127,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     }
 
     private void initTopicComboBox() {
-        List<String> topics = PersistPublishHistoryService.getInstance(getConnectionId()).getTopics(getConnectionId());
+        List<String> topics = PersistPublishHistoryProvider.getInstance(getConnectionId()).getTopics(getConnectionId());
         topicComboBox.setItems(FXCollections.observableArrayList(topics));
         topicComboBox.setCellFactory(TopicCell::new);
     }
@@ -199,7 +199,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         retainedCheckBox.setSelected(false);
 
         // reverse order, because first message in history must be last one to add
-        new LinkedList<>(PersistPublishMessageHistoryService.getInstance(getConnectionId())
+        new LinkedList<>(PersistPublishMessageHistoryProvider.getInstance(getConnectionId())
                 .getMessages(getConnectionId()))
                 .descendingIterator()
                 .forEachRemaining(messageDTO -> messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO)));

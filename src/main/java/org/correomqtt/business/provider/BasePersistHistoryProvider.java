@@ -1,4 +1,4 @@
-package org.correomqtt.business.services;
+package org.correomqtt.business.provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -7,9 +7,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
 
-abstract class BasePersistHistoryService<D> extends BaseUserFileService {
+abstract class BasePersistHistoryProvider<D> extends BaseUserFileProvider {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BasePersistHistoryService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BasePersistHistoryProvider.class);
 
     abstract String getHistoryFileName();
 
@@ -22,7 +22,7 @@ abstract class BasePersistHistoryService<D> extends BaseUserFileService {
     abstract void setDTO(String id, D readValue);
     private String connectionId;
 
-    BasePersistHistoryService(String id) {
+    BasePersistHistoryProvider(String id) {
         connectionId = id;
 
         String historyFileName = getHistoryFileName();
@@ -46,7 +46,7 @@ abstract class BasePersistHistoryService<D> extends BaseUserFileService {
     protected abstract void readingError(Exception e);
 
     protected void removeFileIfConnectionDeleted() {
-        SettingsService.getInstance().getConnectionConfigs().stream()
+        SettingsProvider.getInstance().getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
                 .ifPresentOrElse(c -> {

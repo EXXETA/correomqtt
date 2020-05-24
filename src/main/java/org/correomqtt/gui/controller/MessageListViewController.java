@@ -4,7 +4,7 @@ import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.cell.MessageViewCell;
 import org.correomqtt.gui.contextmenu.MessageListContextMenu;
 import org.correomqtt.gui.contextmenu.MessageListContextMenuDelegate;
@@ -82,7 +82,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     @FXML
     public void initialize() {
 
-        splitPane.getStyleClass().add(SettingsService.getInstance().getIconModeCssClass());
+        splitPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
 
         copyToFormButton.setDisable(true);
         showDetailsButton.setDisable(true);

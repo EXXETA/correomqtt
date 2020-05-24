@@ -3,8 +3,8 @@ package org.correomqtt.plugin;
 import org.apache.commons.io.FileUtils;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.dispatcher.StartupDispatcher;
-import org.correomqtt.business.services.BaseUserFileService;
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.BaseUserFileProvider;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.pf4j.update.DefaultUpdateRepository;
@@ -32,8 +32,8 @@ public class PluginSystem {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginSystem.class);
 
-    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
-    private String pluginsDisabledPath = new BaseUserFileService().getTargetDirectoryPath() + File.separator + "plugins.disabled.";
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+    private String pluginsDisabledPath = new BaseUserFileProvider().getTargetDirectoryPath() + File.separator + "plugins.disabled.";
 
     public void start() throws IOException {
         start(true);
@@ -41,7 +41,7 @@ public class PluginSystem {
 
     public void start(boolean retry) throws IOException {
 
-        String pluginDir = new BaseUserFileService().getTargetDirectoryPath() + File.separator + "plugins";
+        String pluginDir = new BaseUserFileProvider().getTargetDirectoryPath() + File.separator + "plugins";
         String brokenFile = pluginDir + File.separator + "broken";
 
         if(new File(brokenFile).exists()){
@@ -61,7 +61,7 @@ public class PluginSystem {
             LOGGER.info("No internet connection for updating plugins");
         } catch (Exception | NoClassDefFoundError e) {
             LOGGER.error("Error or Exception during loading plugins ", e);
-            if(new BaseUserFileService().isWindows()) {
+            if(new BaseUserFileProvider().isWindows()) {
                 // on windows it is not possible to move plugin files after plugin system start: https://github.com/pf4j/pf4j/pull/356
                 FileUtils.writeStringToFile(new File(brokenFile), e.getMessage(), StandardCharsets.UTF_8);
                 StartupDispatcher.getInstance().onPluginLoadFailed(); // This will exit the application after dialog
@@ -80,7 +80,7 @@ public class PluginSystem {
 
     private void disableAllPluginsDueToErrors() throws IOException {
         final String disabledPath = pluginsDisabledPath + new SimpleDateFormat("yyyy-dd-MM_HH-mm-ss").format(new Date());
-        FileUtils.moveDirectory(new File(new BaseUserFileService().getTargetDirectoryPath() + File.separator + "plugins"),
+        FileUtils.moveDirectory(new File(new BaseUserFileProvider().getTargetDirectoryPath() + File.separator + "plugins"),
                                 new File(disabledPath));
         StartupDispatcher.getInstance().onPluginUpdateFailed(disabledPath);
     }

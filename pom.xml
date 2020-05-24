@@ -48,6 +48,10 @@
             <name>bintray</name>
             <url>https://dl.bintray.com/jerady/maven</url>
         </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -186,6 +190,27 @@
             <artifactId>testfx-junit</artifactId>
             <version>4.0.15-alpha</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.xafero.java-keyring</groupId>
+            <artifactId>java-keyring</artifactId>
+            <version>6c90044</version>
+        </dependency>
+        <dependency>
+            <groupId>de.swiesend</groupId>
+            <artifactId>secret-service</artifactId>
+            <version>1.0.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.peter-gergely-horvath</groupId>
+            <artifactId>windpapi4j</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 

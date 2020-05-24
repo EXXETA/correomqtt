@@ -5,18 +5,21 @@ import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.PasswordRecoverableException;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.cell.ConnectionCell;
 import org.correomqtt.gui.cell.GenericCell;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.helper.CheckTopicHelper;
+import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.GenericCellModel;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
+import org.correomqtt.gui.utils.PlatformUtils;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
@@ -167,7 +170,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
     @FXML
     public void initialize() {
 
-        containerAnchorPane.getStyleClass().add(SettingsService.getInstance().getIconModeCssClass());
+        containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
 
         connectionConfigTabPane.setDisable(true);
         loadConnectionListFromBackground();
@@ -735,9 +738,16 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
         connectionsListView.getItems().remove(selectedItem);
 
-        //TODO check result in background
-        SettingsService.getInstance().saveConnections(
-                ConnectionTransformer.propsListToDtoList(connectionsListView.getItems())
+        //TODO ensure that the passwords are also removed
+
+        List<ConnectionConfigDTO> connections = ConnectionTransformer.propsListToDtoList(connectionsListView.getItems());
+        KeyringHandler.getInstance().retryWithMasterPassword(
+                masterPassword ->  SettingsProvider.getInstance().saveConnections(connections, masterPassword),
+                resources.getString("onPasswordSaveFailedTitle"),
+                resources.getString("onPasswordSaveFailedHeader"),
+                resources.getString("onPasswordSaveFailedContent"),
+                resources.getString("onPasswordSaveFailedGiveUp"),
+                resources.getString("onPasswordSaveFailedTryAgain")
         );
 
         if (selectedIndex != 0) {
@@ -798,8 +808,14 @@ public class ConnectionSettingsViewController extends BaseController implements 
             activeConnectionConfigDTO = executeOnSaveSettingsExtensions(activeConnectionConfigDTO);
             executeOnUnloadSettingsExtensions();
 
-            SettingsService.getInstance().saveConnections(
-                    ConnectionTransformer.propsListToDtoList(connectionsListView.getItems())
+            List<ConnectionConfigDTO> connections = ConnectionTransformer.propsListToDtoList(connectionsListView.getItems());
+            KeyringHandler.getInstance().retryWithMasterPassword(
+                    masterPassword ->  SettingsProvider.getInstance().saveConnections(connections, masterPassword),
+                    resources.getString("onPasswordSaveFailedTitle"),
+                    resources.getString("onPasswordSaveFailedHeader"),
+                    resources.getString("onPasswordSaveFailedContent"),
+                    resources.getString("onPasswordSaveFailedGiveUp"),
+                    resources.getString("onPasswordSaveFailedTryAgain")
             );
 
             saveButton.setDisable(false);

@@ -16,12 +16,17 @@ import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.business.dispatcher.*;
+import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.PasswordRecoverableException;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.VersionUtils;
+import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.controller.AlertController;
 import org.correomqtt.gui.controller.MainViewController;
 import org.correomqtt.gui.helper.AlertHelper;
+import org.correomqtt.gui.keyring.KeyringHandler;
+import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.plugin.PluginSystem;
@@ -31,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -53,7 +59,7 @@ public class CorreoMqtt extends Application implements StartupObserver {
 
         StartupDispatcher.getInstance().addObserver(this);
 
-        final SettingsDTO settings = SettingsService.getInstance().getSettings();
+        final SettingsDTO settings = SettingsProvider.getInstance().getSettings();
 
         handleVersionMismatch(settings);
         setLocale(settings);
@@ -71,8 +77,22 @@ public class CorreoMqtt extends Application implements StartupObserver {
             checkForUpdates();
         }
 
+        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderKeyring"));
+
+        KeyringHandler.getInstance().init();
+
+        KeyringHandler.getInstance().retryWithMasterPassword(
+                masterPassword -> SettingsProvider.getInstance().initializePasswords(masterPassword),
+                resources.getString("onPasswordReadFailedTitle"),
+                resources.getString("onPasswordReadFailedHeader"),
+                resources.getString("onPasswordReadFailedContent"),
+                resources.getString("onPasswordReadFailedGiveUp"),
+                resources.getString("onPasswordReadFailedTryAgain")
+        );
+
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderReady"));
-        SettingsService.getInstance().saveSettings();
+
+        SettingsProvider.getInstance().saveSettings();
 
     }
 
@@ -111,7 +131,7 @@ public class CorreoMqtt extends Application implements StartupObserver {
         }
         settings.setCurrentLocale(settings.getSavedLocale());
         LOGGER.info("Locale is: {}", settings.getSavedLocale());
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
     }
 
     private void checkForUpdates() {
@@ -123,7 +143,6 @@ public class CorreoMqtt extends Application implements StartupObserver {
     }
 
 
-
     @Override
     public void start(Stage primaryStage) throws Exception {
         loadPrimaryStage(primaryStage);
@@ -132,10 +151,10 @@ public class CorreoMqtt extends Application implements StartupObserver {
     }
 
     private void loadPrimaryStage(Stage primaryStage) throws IOException {
-        String cssPath = SettingsService.getInstance().getCssPath();
+        String cssPath = SettingsProvider.getInstance().getCssPath();
 
         FXMLLoader loader = new FXMLLoader(MainViewController.class.getResource("mainView.fxml"),
-                                           ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale()));
+                ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()));
         Parent root = loader.load();
 
         mainViewController = loader.getController();
@@ -167,31 +186,32 @@ public class CorreoMqtt extends Application implements StartupObserver {
     private void setupShortcut() {
         scene.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
 
-                                  if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && !event.isShiftDown()) {
-                                      ShortcutDispatcher.getInstance().onSubscriptionShortcutPressed(mainViewController.getUUIDofSelectedTab());
-                                      event.consume();
-                                  }
-                                  if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && event.isShiftDown()) {
-                                      ShortcutDispatcher.getInstance().onClearIncomingShortcutPressed(mainViewController.getUUIDofSelectedTab());
-                                      event.consume();
-                                  }
-                                  if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && !event.isShiftDown()) {
-                                      ShortcutDispatcher.getInstance().onPublishShortcutPressed(mainViewController.getUUIDofSelectedTab());
-                                      event.consume();
-                                  }
-                                  if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && event.isShiftDown()) {
-                                      ShortcutDispatcher.getInstance().onClearOutgoingShortcutPressed(mainViewController.getUUIDofSelectedTab());
-                                      event.consume();
-                                  }
-                                  //TODO rest
-                              }
+                    if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && !event.isShiftDown()) {
+                        ShortcutDispatcher.getInstance().onSubscriptionShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        event.consume();
+                    }
+                    if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && event.isShiftDown()) {
+                        ShortcutDispatcher.getInstance().onClearIncomingShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        event.consume();
+                    }
+                    if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && !event.isShiftDown()) {
+                        ShortcutDispatcher.getInstance().onPublishShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        event.consume();
+                    }
+                    if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && event.isShiftDown()) {
+                        ShortcutDispatcher.getInstance().onClearOutgoingShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        event.consume();
+                    }
+                    //TODO rest
+                }
         );
     }
 
     private void setLoggerFilePath() {
 
+
         // Set the path for file logging to user directory.
-        System.setProperty("correomqtt-logfile", SettingsService.getInstance().getLogPath());
+        System.setProperty("correomqtt-logfile", SettingsProvider.getInstance().getLogPath());
 
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         ContextInitializer ci = new ContextInitializer(lc);

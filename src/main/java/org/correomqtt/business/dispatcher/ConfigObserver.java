@@ -12,4 +12,6 @@ public interface ConfigObserver extends BaseObserver {
     void onSettingsUpdated();
     void onConnectionsUpdated();
     void onConfigPrepareFailed();
+    default void onPasswordSaveFailed(Exception e) {}
+    default void onPasswordRetrievalFailed(Exception e) {}
 }
