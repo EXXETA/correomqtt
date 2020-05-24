@@ -1,22 +1,15 @@
 package org.correomqtt.gui.controller;
 
+import javafx.fxml.FXML;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.Label;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.WindowHelper;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.fxml.FXML;
-import javafx.scene.control.Hyperlink;
-import javafx.scene.control.Label;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class AboutViewController extends BaseController {
 
@@ -66,6 +59,18 @@ public class AboutViewController extends BaseController {
     @FXML
     private Hyperlink sshjLicense;
     @FXML
+    private Hyperlink javaKeyring;
+    @FXML
+    private Hyperlink javaKeyringLicense;
+    @FXML
+    private Hyperlink secretService;
+    @FXML
+    private Hyperlink secretServiceLicense;
+    @FXML
+    private Hyperlink windpapi4j;
+    @FXML
+    private Hyperlink windpapi4jLicense;
+    @FXML
     private Hyperlink fontAwesomeRepo;
     @FXML
     private Hyperlink fontAwesomeLicense;
@@ -86,7 +91,7 @@ public class AboutViewController extends BaseController {
         Map<Object, Object> properties = new HashMap<>();
         properties.put(WindowProperty.WINDOW_TYPE, WindowType.ABOUT);
 
-        if(WindowHelper.focusWindowIfAlreadyThere(properties)){
+        if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
             return;
         }
         LoaderResult<AboutViewController> result = load();
@@ -122,6 +127,12 @@ public class AboutViewController extends BaseController {
         logbackLicense.getProperties().put("link", "https://github.com/qos-ch/logback/blob/v_1.2.3/LICENSE.txt");
         sshjRepo.getProperties().put("link", "https://github.com/hierynomus/sshj/tree/v0.27.0");
         sshjLicense.getProperties().put("link", "https://github.com/hierynomus/sshj/blob/v0.27.0/LICENSE_HEADER");
+        javaKeyring.getProperties().put("link", "https://github.com/xafero/java-keyring/tree/6c9004414013c06dd54f7e4e96f19f1821ace67d");
+        javaKeyringLicense.getProperties().put("link", "https://github.com/xafero/java-keyring/blob/6c9004414013c06dd54f7e4e96f19f1821ace67d/LICENSE");
+        secretService.getProperties().put("link", "https://github.com/swiesend/secret-service/tree/v1.0.0");
+        secretServiceLicense.getProperties().put("link", "https://github.com/swiesend/secret-service/blob/v1.0.0/LICENSE");
+        windpapi4j.getProperties().put("link", "https://github.com/peter-gergely-horvath/windpapi4j/tree/1.0");
+        windpapi4jLicense.getProperties().put("link", "https://github.com/peter-gergely-horvath/windpapi4j/blob/1.0/LICENSE");
         fontAwesomeRepo.getProperties().put("link", "https://github.com/FortAwesome/Font-Awesome");
         fontAwesomeLicense.getProperties().put("link", "https://fontawesome.com/license/free");
         exxetaLink.getProperties().put("link", "https://www.exxeta.com");
@@ -138,17 +149,18 @@ public class AboutViewController extends BaseController {
                 ioRepo, ioLicense,
                 logbackRepo, logbackLicense,
                 sshjRepo, sshjLicense,
+                javaKeyring, javaKeyringLicense,
+                secretService, secretServiceLicense,
+                windpapi4j, windpapi4jLicense,
                 fontAwesomeRepo, fontAwesomeLicense,
                 exxetaLink)
         );
 
-        for ( final Hyperlink hyperlink : links ) {
-            hyperlink.setOnAction(new EventHandler<ActionEvent>() {
-                @Override
-                public void handle(ActionEvent t) {
-                    HostServicesHolder.getInstance().getHostServices().showDocument(hyperlink.getProperties().get("link").toString());
-                }
-            });
+        for (final Hyperlink hyperlink : links) {
+            hyperlink.setOnAction(t -> HostServicesHolder.getInstance()
+                    .getHostServices()
+                    .showDocument(hyperlink.getProperties().get("link").toString())
+            );
         }
     }
 }
