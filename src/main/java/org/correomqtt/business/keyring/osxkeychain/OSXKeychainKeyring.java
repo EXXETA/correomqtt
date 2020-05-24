@@ -4,17 +4,23 @@ import net.east301.keyring.BackendNotSupportedException;
 import net.east301.keyring.PasswordRetrievalException;
 import net.east301.keyring.PasswordSaveException;
 import net.east301.keyring.osx.OSXKeychainBackend;
+import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.keyring.KeyringException;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.plugin.spi.KeyringHook;
 import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ResourceBundle;
+
 @Extension
-public class OSXKeychainKeyring implements KeyringHook {
+public class OSXKeychainKeyring extends BaseKeyring implements KeyringHook {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OSXKeychainKeyring.class);
     private static final String SERVICE_NAME = "CorreoMQTT";
+
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
     @Override
     public String getPassword(String label) {
@@ -22,7 +28,9 @@ public class OSXKeychainKeyring implements KeyringHook {
         try {
             keychainBackend.setup();
             return keychainBackend.getPassword(SERVICE_NAME, label);
-        } catch (PasswordRetrievalException | BackendNotSupportedException e) {
+        } catch (PasswordRetrievalException e) {
+            return null;
+        } catch (BackendNotSupportedException e) {
             LOGGER.error("Failed to retrieve password from osx keychain.", e);
             throw new KeyringException("Failed to retrieve password from osx keychain.", e);
         }
@@ -48,5 +56,15 @@ public class OSXKeychainKeyring implements KeyringHook {
     @Override
     public String getIdentifier() {
         return "OSXKeychain";
+    }
+
+    @Override
+    public String getName() {
+        return resources.getString("osxKeychainName");
+    }
+
+    @Override
+    public String getDescription() {
+        return resources.getString("osxKeychainDescription");
     }
 }

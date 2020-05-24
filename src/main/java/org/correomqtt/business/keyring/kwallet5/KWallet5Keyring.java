@@ -1,7 +1,9 @@
 package org.correomqtt.business.keyring.kwallet5;
 
 import com.sun.jna.Platform;
+import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.keyring.KeyringException;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.plugin.spi.KeyringHook;
 import org.pf4j.Extension;
 import org.slf4j.Logger;
@@ -13,9 +15,10 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.ResourceBundle;
 
 @Extension
-public class KWallet5Keyring implements KeyringHook {
+public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KWallet5Keyring.class);
 
@@ -24,6 +27,8 @@ public class KWallet5Keyring implements KeyringHook {
     private static final String QDBUS_BASE_CMD = "qdbus org.kde.kwalletd5 /modules/kwalletd5";
 
     private static final Charset STD_CHAR_SET = StandardCharsets.UTF_8;
+
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
     private Integer kwalletHandler = null;
 
@@ -48,7 +53,17 @@ public class KWallet5Keyring implements KeyringHook {
 
     @Override
     public String getIdentifier() {
-        return "KWallet5";
+        return resources.getString("kwallet5Name");
+    }
+
+    @Override
+    public String getName() {
+        return resources.getString("kwallet5Description");
+    }
+
+    @Override
+    public String getDescription() {
+        return null;
     }
 
     private synchronized int getKWalletHandler() {

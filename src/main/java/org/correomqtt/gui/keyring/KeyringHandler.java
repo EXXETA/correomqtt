@@ -1,5 +1,6 @@
 package org.correomqtt.gui.keyring;
 
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.business.keyring.Keyring;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.ConnectionConfigDTO;
@@ -54,7 +55,7 @@ public class KeyringHandler {
         } else {
             masterPassword = null;
             getMasterPassword();
-            if(!keyring.requiresUserinput()) {
+            if (!keyring.requiresUserinput()) {
                 keyring.setPassword(KEYRING_LABEL, masterPassword);
             }
 
@@ -139,23 +140,30 @@ public class KeyringHandler {
         }
 
         if (keyring == null) {
-            keyring = KeyringFactory.create();
+            keyring = KeyringFactory.create(); // Not null, will produce UserInputKeyring for sure
         }
 
         String newKeyringIdentifier = keyring.getIdentifier();
 
-        if (oldKeyringIdentifier == null) {
+        ComparableVersion createdVersion = new ComparableVersion(settings.getConfigCreatedWithCorreoVersion().replaceAll("[^0-9\\.]", ""));
+        ComparableVersion keyringSupportVersion = new ComparableVersion("0.13.0");
+
+        if (oldKeyringIdentifier == null && keyringSupportVersion.compareTo(createdVersion) > 0) {
             AlertHelper.info(
                     resources.getString("newKeyringTitle"),
                     resources.getString("newKeyringContent") + newKeyringIdentifier,
                     true
             );
-        } else if (!oldKeyringIdentifier.equals(newKeyringIdentifier)) {
-            AlertHelper.info(
+        } else if (!newKeyringIdentifier.equals(oldKeyringIdentifier)) {
+            AlertHelper.warn(
                     resources.getString("changedKeyringTitle"),
                     resources.getString("changedKeyringContent") + oldKeyringIdentifier + " -> " + newKeyringIdentifier,
                     true
             );
+        }
+
+        if (!newKeyringIdentifier.equals(oldKeyringIdentifier)) {
+            settings.setKeyringIdentifier(newKeyringIdentifier); // This is called during init phase, so no need to save here.
         }
 
         this.keyring = keyring;

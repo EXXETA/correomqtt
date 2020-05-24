@@ -1,14 +1,30 @@
 package org.correomqtt.business.keyring.userinput;
 
+import org.correomqtt.business.keyring.BaseKeyring;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.plugin.spi.KeyringHook;
 import org.pf4j.Extension;
 
+import java.util.ResourceBundle;
+
 @Extension
-public class UserInputKeyring implements KeyringHook {
+public class UserInputKeyring extends BaseKeyring implements KeyringHook {
+
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
     @Override
     public boolean requiresUserinput() {
         return true;
+    }
+
+    @Override
+    public String getName() {
+        return resources.getString("userInputKeyringName");
+    }
+
+    @Override
+    public String getDescription() {
+        return resources.getString("userInputKeyringDescription");
     }
 
     @Override

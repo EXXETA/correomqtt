@@ -12,7 +12,7 @@ public class KeyringModel implements GenericCellModel {
 
     @Override
     public String getLabelTranslationKey() {
-        return keyring.getIdentifier();
+        return keyring.getName();
     }
 
     public Keyring getKeyring(){

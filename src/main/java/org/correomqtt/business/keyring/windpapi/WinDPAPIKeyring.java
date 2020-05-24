@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.windpapi4j.InitializationFailedException;
 import com.github.windpapi4j.WinAPICallFailedException;
 import com.github.windpapi4j.WinDPAPI;
+import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.plugin.spi.KeyringHook;
@@ -19,17 +20,30 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 @Extension
-public class WinDPAPIKeyring implements KeyringHook {
+public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WinDPAPIKeyring.class);
 
     private static final Charset STD_CHAR_SET = StandardCharsets.UTF_8;
 
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+
     @Override
     public boolean requiresUserinput() {
         return false;
+    }
+
+    @Override
+    public String getName() {
+        return resources.getString("windpapiName");
+    }
+
+    @Override
+    public String getDescription() {
+        return resources.getString("windpapiDescription");
     }
 
     @Override

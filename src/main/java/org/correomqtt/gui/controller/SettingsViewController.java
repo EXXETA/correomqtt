@@ -4,11 +4,11 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import org.correomqtt.business.keyring.Keyring;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.model.ThemeDTO;
@@ -45,6 +45,8 @@ public class SettingsViewController extends BaseController {
     private ComboBox<KeyringModel> keyringBackendComboBox;
     @FXML
     private CheckBox searchUpdatesCheckbox;
+    @FXML
+    private Label keyringDescriptionLabel;
 
     private SettingsDTO settings;
     private static final Logger LOGGER = LoggerFactory.getLogger(SettingsViewController.class);
@@ -102,7 +104,7 @@ public class SettingsViewController extends BaseController {
 
         if (confirmed) {
             KeyringHandler.getInstance().retryWithMasterPassword(
-                    masterPassword ->  SettingsProvider.getInstance().wipeSecretData( masterPassword),
+                    masterPassword -> SettingsProvider.getInstance().wipeSecretData(masterPassword),
                     resources.getString("onPasswordWipeFailedTitle"),
                     resources.getString("onPasswordWipeFailedHeader"),
                     resources.getString("onPasswordWipeFailedContent"),
@@ -156,7 +158,9 @@ public class SettingsViewController extends BaseController {
                 .stream()
                 .map(KeyringModel::new)
                 .collect(Collectors.toList());
-        keyringBackendComboBox.setOnAction(null);
+        keyringBackendComboBox.setOnAction(event -> {
+            updateKeyringDescription(keyringBackendComboBox.getSelectionModel().getSelectedItem());
+        });
         keyringBackendComboBox.setItems(FXCollections.observableArrayList(keyringModels));
         keyringBackendComboBox.setCellFactory(GenericCell::new);
         keyringBackendComboBox.setConverter(new StringConverter<>() {
@@ -174,11 +178,17 @@ public class SettingsViewController extends BaseController {
             }
         });
 
-        keyringBackendComboBox.getSelectionModel().select(keyringModels.
+        KeyringModel selectedKeyring = keyringModels.
                 stream()
                 .filter(t -> t.getKeyring().getIdentifier().equals(SettingsProvider.getInstance().getSettings().getKeyringIdentifier()))
                 .findFirst()
-                .orElse(null));
+                .orElse(null);
+
+        keyringBackendComboBox.getSelectionModel().select(selectedKeyring);
+
+        if (selectedKeyring != null) {
+            updateKeyringDescription(selectedKeyring);
+        }
 
         languageComboBox.setCellFactory(GenericCell::new);
         languageComboBox.setConverter(new StringConverter<>() {
@@ -210,6 +220,14 @@ public class SettingsViewController extends BaseController {
         languageComboBox.getSelectionModel().select(new LanguageModel(settings.getSavedLocale()));
     }
 
+    private void updateKeyringDescription(KeyringModel selectedKeyring) {
+        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()); // too early here
+        keyringDescriptionLabel.setText(resources.getString("settingsViewKeyringBackendExplanationLabel")
+                + "\n\n"
+                + selectedKeyring.getLabelTranslationKey() + ":\n"
+                + selectedKeyring.getKeyring().getDescription());
+    }
+
     private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
         Set<Object> seen = ConcurrentHashMap.newKeySet();
         return t -> seen.add(keyExtractor.apply(t));
@@ -220,7 +238,7 @@ public class SettingsViewController extends BaseController {
 
         String newKeyringIdentifier = keyringBackendComboBox.getSelectionModel().getSelectedItem().getKeyring().getIdentifier();
         String oldKeyringIdentifier = settings.getKeyringIdentifier();
-        if(!newKeyringIdentifier.equals(oldKeyringIdentifier)) {
+        if (!newKeyringIdentifier.equals(oldKeyringIdentifier)) {
             settings.setKeyringIdentifier(newKeyringIdentifier);
             KeyringHandler.getInstance().migrate(newKeyringIdentifier);
         }

@@ -1,6 +1,8 @@
 package org.correomqtt.business.keyring.libsecret;
 
 import com.sun.jna.Platform;
+import org.correomqtt.business.keyring.BaseKeyring;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.plugin.spi.KeyringHook;
 import org.freedesktop.secret.simple.SimpleCollection;
 import org.pf4j.Extension;
@@ -12,11 +14,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 @Extension
-public class LibSecretKeyring implements KeyringHook {
+public class LibSecretKeyring extends BaseKeyring implements KeyringHook {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LibSecretKeyring.class);
+
+    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
     @Override
     public String getPassword(String label) {
@@ -44,7 +49,17 @@ public class LibSecretKeyring implements KeyringHook {
 
     @Override
     public String getIdentifier() {
-        return "LibSecret";
+        return resources.getString("libSecretName");
+    }
+
+    @Override
+    public String getName() {
+        return resources.getString("libSecretDescription");
+    }
+
+    @Override
+    public String getDescription() {
+        return null;
     }
 
     private boolean isAvailable() {

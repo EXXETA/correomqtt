@@ -14,4 +14,7 @@ public interface Keyring {
         return false;
     }
 
+    String getName();
+
+    String getDescription();
 }
