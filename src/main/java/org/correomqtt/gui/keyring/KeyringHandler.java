@@ -116,16 +116,7 @@ public class KeyringHandler {
                 }
             } else {
                 failed = false; //no retry
-
-                try {
-                    SecretStoreProvider.getInstance().wipe(getMasterPassword());
-                } catch (PasswordRecoverableException e) {
-                    AlertHelper.warn(
-                            resources.getString("couldNotContinueWithoutPasswordsTitle"),
-                            resources.getString("couldNotContinueWithoutPasswordsContent")
-                    );
-                }
-
+                wipe();
             }
         } while (failed);
     }
@@ -167,5 +158,10 @@ public class KeyringHandler {
         }
 
         this.keyring = keyring;
+    }
+
+    public void wipe() {
+        masterPassword=null;
+        SecretStoreProvider.getInstance().wipe();
     }
 }

@@ -3,6 +3,7 @@ package org.correomqtt.gui.helper;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.utils.PlatformUtils;
@@ -36,6 +37,7 @@ public class AlertHelper {
             alert.setTitle(title);
             alert.setHeaderText(null);
             alert.setContentText(content);
+            alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
             if (buttonType != null) {
                 alert.getButtonTypes().setAll(buttonType);
             }
@@ -61,14 +63,15 @@ public class AlertHelper {
         PlatformUtils.runLaterIfNotInFxThread(() -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             DialogPane dialogPane = alert.getDialogPane();
+            dialogPane.setMaxWidth(450);
             String cssPath = SettingsProvider.getInstance().getCssPath();
             if (cssPath != null) {
                 dialogPane.getStylesheets().add(cssPath);
             }
-
             alert.setTitle(title);
             alert.setHeaderText(header);
             alert.setContentText(content);
+            alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
             ButtonType no = new ButtonType(noButton);
             ButtonType yes = new ButtonType(yesButton);
 
@@ -126,8 +129,9 @@ public class AlertHelper {
         PlatformUtils.runLaterIfNotInFxThread(() -> {
             Dialog<String> dialog = new Dialog<>();
             dialog.setWidth(450);
-            dialog.setHeight(340);
             DialogPane dialogPane = dialog.getDialogPane();
+            dialog.setWidth(450);
+            dialogPane.setMinHeight(Region.USE_PREF_SIZE);
             String cssPath = SettingsProvider.getInstance().getCssPath();
             if (cssPath != null) {
                 dialogPane.getStylesheets().add(cssPath);
@@ -142,6 +146,7 @@ public class AlertHelper {
             vbox.setSpacing(10);
             Label label = new Label(content);
             label.setWrapText(true);
+            label.setMaxWidth(450);
             vbox.getChildren().addAll(label, pwd);
             dialog.getDialogPane().setContent(vbox);
             dialog.setResultConverter(dialogButton -> {

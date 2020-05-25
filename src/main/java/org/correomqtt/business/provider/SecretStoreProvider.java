@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.SecretStoreDispatcher;
+import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ConnectionPasswordType;
 import org.correomqtt.business.model.PasswordsDTO;
@@ -161,11 +162,13 @@ public class SecretStoreProvider extends BaseUserFileProvider {
         }
     }
 
-    public void wipe(String masterPassword) throws PasswordRecoverableException {
+    public void wipe() {
         decryptedPasswords = null;
         passwordsDTO.setSalt(UUID.randomUUID().toString());
         passwordsDTO.setPasswords("");
-        encryptAndSavePasswords(masterPassword);
+        if(getFile().exists() && !getFile().delete()){
+            throw new KeyringException("Could not delete passwords.json file.");
+        }
     }
 
 

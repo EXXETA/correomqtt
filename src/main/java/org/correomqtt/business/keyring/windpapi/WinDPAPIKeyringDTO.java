@@ -1,14 +1,10 @@
 package org.correomqtt.business.keyring.windpapi;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-
-import java.util.Map;
+import lombok.*;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class WinDPAPIKeyringDTO {

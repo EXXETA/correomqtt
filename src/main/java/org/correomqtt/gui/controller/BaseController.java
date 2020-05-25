@@ -1,5 +1,6 @@
 package org.correomqtt.gui.controller;
 
+import javafx.scene.layout.Region;
 import org.correomqtt.business.provider.SettingsProvider;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;

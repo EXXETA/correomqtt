@@ -47,4 +47,9 @@ public class UserInputKeyring extends BaseKeyring implements KeyringHook {
         return "UserInput";
     }
 
+    @Override
+    public int getSortIndex(){
+        return 1;
+    }
+
 }

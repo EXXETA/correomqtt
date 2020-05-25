@@ -17,4 +17,8 @@ public interface Keyring {
     String getName();
 
     String getDescription();
+
+    default int getSortIndex(){
+        return 0;
+    }
 }

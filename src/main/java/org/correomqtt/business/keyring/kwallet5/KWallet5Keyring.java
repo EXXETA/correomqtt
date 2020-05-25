@@ -53,17 +53,17 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
 
     @Override
     public String getIdentifier() {
-        return resources.getString("kwallet5Name");
+        return "KWallet5";
     }
 
     @Override
     public String getName() {
-        return resources.getString("kwallet5Description");
+        return resources.getString("kwallet5Name");
     }
 
     @Override
     public String getDescription() {
-        return null;
+        return resources.getString("kwallet5Description");
     }
 
     private synchronized int getKWalletHandler() {

@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -55,15 +56,19 @@ public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
     @Override
     public void setPassword(String label, String password) {
         Map<String, String> data = readData();
-        data.put(label,password);
+        data.put(label, password);
         writeData(data);
     }
 
     private void writeData(Map<String, String> data) {
         try {
-            String protectedData = protect(data);
             File file = getFile();
-            new ObjectMapper().writeValue(file, WinDPAPIKeyringDTO.builder().data(protectedData).build());
+            LOGGER.debug("Write encoded string {}",Base64.getEncoder().encodeToString(protect(data)));
+            new ObjectMapper().writeValue(file,
+                    WinDPAPIKeyringDTO
+                            .builder()
+                            .data(Base64.getEncoder().encodeToString(protect(data)))
+                            .build());
         } catch (JsonProcessingException e) {
             LOGGER.error("Failed to write json data for WinDPAPI.", e);
             throw new KeyringException("Failed to write json data for WinDPAPI.", e);
@@ -73,11 +78,11 @@ public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
         }
     }
 
-    private String protect(Map<String, String> data) {
+    private byte[] protect(Map<String, String> data) {
         try {
             String unprotectedData = new ObjectMapper().writeValueAsString(data);
             WinDPAPI winDPAPI = WinDPAPI.newInstance(WinDPAPI.CryptProtectFlag.CRYPTPROTECT_UI_FORBIDDEN);
-            return new String(winDPAPI.protectData(unprotectedData.getBytes(STD_CHAR_SET)), STD_CHAR_SET);
+            return winDPAPI.protectData(unprotectedData.getBytes(STD_CHAR_SET));
         } catch (InitializationFailedException | WinAPICallFailedException e) {
             LOGGER.error("Failed to unprotect data with WinDPAPI.", e);
             throw new KeyringException("Failed to unprotect data with WinDPAPI.", e);
@@ -88,27 +93,27 @@ public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
 
     }
 
-    private Map<String,String> readData(){
+    private Map<String, String> readData() {
         File file = getFile();
-        if(file.exists()) {
+        if (file.exists()) {
             try {
                 WinDPAPIKeyringDTO winDPAPIKeyringDTO = new ObjectMapper().readValue(file, WinDPAPIKeyringDTO.class);
-                String data = winDPAPIKeyringDTO.getData();
+                byte[] data = Base64.getDecoder().decode(winDPAPIKeyringDTO.getData().getBytes(STD_CHAR_SET));
                 return unprotect(data);
-            }catch(IOException e){
+            } catch (IOException e) {
                 LOGGER.error("Reading WinDPAPI file failed.", e);
                 throw new KeyringException("Reading WinDPAPI file failed.", e);
             }
-        }else{
+        } else {
             return new HashMap<>();
         }
     }
 
-    private Map<String, String> unprotect(String protectedData) {
+    private Map<String, String> unprotect(byte[] protectedData) {
         try {
             WinDPAPI winDPAPI = WinDPAPI.newInstance(WinDPAPI.CryptProtectFlag.CRYPTPROTECT_UI_FORBIDDEN);
-            String unprotectedData = new String(winDPAPI.unprotectData(protectedData.getBytes(STD_CHAR_SET)),STD_CHAR_SET);
-            return new ObjectMapper().readValue(unprotectedData,new TypeReference<HashMap<String, String>>() {
+            String unprotectedData = new String(winDPAPI.unprotectData(protectedData),STD_CHAR_SET);
+            return new ObjectMapper().readValue(unprotectedData, new TypeReference<HashMap<String, String>>() {
             });
         } catch (InitializationFailedException | WinAPICallFailedException e) {
             LOGGER.error("Failed to unprotect data with WinDPAPI.", e);
@@ -119,7 +124,7 @@ public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
         }
     }
 
-    private File getFile(){
+    private File getFile() {
         String windpapiPath = SettingsProvider.getInstance().getTargetDirectoryPath() + File.separator + "windpapi.json";
         return new File(windpapiPath);
     }

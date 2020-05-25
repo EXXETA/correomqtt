@@ -7,6 +7,9 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import org.correomqtt.business.keyring.KeyringFactory;
@@ -37,6 +40,10 @@ public class SettingsViewController extends BaseController {
 
     private static ResourceBundle resources;
 
+    @FXML
+    private AnchorPane settingsPane;
+    @FXML
+    private VBox settingsVBox;
     @FXML
     private ComboBox<ThemeProvider> themeComboBox;
     @FXML
@@ -218,6 +225,9 @@ public class SettingsViewController extends BaseController {
                         .map(LanguageModel::new)
                         .collect(Collectors.toList())));
         languageComboBox.getSelectionModel().select(new LanguageModel(settings.getSavedLocale()));
+
+        settingsPane.setMinHeight(500);
+        settingsPane.setMaxHeight(500);
     }
 
     private void updateKeyringDescription(KeyringModel selectedKeyring) {

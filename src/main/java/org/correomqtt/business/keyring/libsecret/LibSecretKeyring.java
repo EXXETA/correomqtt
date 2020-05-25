@@ -49,24 +49,24 @@ public class LibSecretKeyring extends BaseKeyring implements KeyringHook {
 
     @Override
     public String getIdentifier() {
-        return resources.getString("libSecretName");
+        return "LibSecret";
     }
 
     @Override
     public String getName() {
-        return resources.getString("libSecretDescription");
+        return resources.getString("libSecretName");
     }
 
     @Override
     public String getDescription() {
-        return null;
+        return resources.getString("libSecretDescription");
     }
 
     private boolean isAvailable() {
         try (SimpleCollection collection = new SimpleCollection()) {
             return true;
         } catch (IOException e) {
-            LOGGER.debug("Try to detect libsecret failed. This is not a real problem.",e);
+            LOGGER.debug("Try to detect libsecret failed. This is not a real problem.", e);
             return false;
         }
     }

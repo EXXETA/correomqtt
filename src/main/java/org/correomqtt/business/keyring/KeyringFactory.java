@@ -4,6 +4,7 @@ import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.spi.KeyringHook;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,7 +26,10 @@ public class KeyringFactory {
     }
 
     private static List<Keyring> getAllKeyrings() {
-        return new ArrayList<>(PluginManager.getInstance().getExtensions(KeyringHook.class));
+        return PluginManager.getInstance().getExtensions(KeyringHook.class)
+                .stream()
+                .sorted(Comparator.comparingInt(Keyring::getSortIndex))
+                .collect(Collectors.toList());
     }
 
     public static List<Keyring> getSupportedKeyrings() {

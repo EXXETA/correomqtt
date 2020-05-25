@@ -4,11 +4,13 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.keyring.Keyring;
 import org.correomqtt.business.model.ConfigDTO;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.model.ThemeSettingsDTO;
 import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.theme.ThemeProvider;
 import org.correomqtt.gui.theme.light.LightThemeProvider;
 import org.correomqtt.plugin.manager.PluginManager;
@@ -144,7 +146,7 @@ public class SettingsProvider extends BaseUserFileProvider {
     }
 
     public void wipeSecretData(String masterPassword) throws PasswordRecoverableException {
-        SecretStoreProvider.getInstance().wipe(masterPassword);
+        KeyringHandler.getInstance().wipe();
         List<ConnectionConfigDTO> connections = this.getConnectionConfigs();
         connections.forEach(c -> {
             c.setPassword(null);
