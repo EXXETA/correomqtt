@@ -4,6 +4,7 @@ import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.provider.PasswordRecoverableException;
 import org.correomqtt.business.provider.SettingsProvider;
@@ -131,6 +132,8 @@ public class ConnectionSettingsViewController extends BaseController implements 
     private CodeArea lwtPayloadCodeArea;
     @FXML
     private Pane lwtPayloadPane;
+    @FXML
+    private Label connectionSettingsViewHint;
 
     private static ResourceBundle resources;
 
@@ -285,6 +288,9 @@ public class ConnectionSettingsViewController extends BaseController implements 
         lwtPayloadCodeArea.textProperty().addListener(((observable, oldValue, newValue) -> setDirty(true)));
 
         internalIdLabel.setText("");
+
+        String keyringName = KeyringFactory.createKeyringByIdentifier(SettingsProvider.getInstance().getSettings().getKeyringIdentifier()).getName();
+        connectionSettingsViewHint.setText(connectionSettingsViewHint.getText() + " (" + keyringName + ").");
     }
 
     private <T extends GenericCellModel> StringConverter<T> getStringConverter() {
