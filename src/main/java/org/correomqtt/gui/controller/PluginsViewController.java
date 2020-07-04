@@ -1,7 +1,6 @@
 package org.correomqtt.gui.controller;
 
-import org.correomqtt.business.services.ConfigService;
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.ConfigProvider;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.HostServicesHolder;
@@ -158,7 +157,7 @@ public class PluginsViewController extends BaseController {
 
     @FXML
     public void onOpenPluginFolder() {
-        HostServicesHolder.getInstance().getHostServices().showDocument(new File(ConfigService.getInstance().getPluginRootPath()).toURI().toString());
+        HostServicesHolder.getInstance().getHostServices().showDocument(new File(ConfigProvider.getInstance().getPluginRootPath()).toURI().toString());
     }
 
     private void setStatusRestartRequired() {

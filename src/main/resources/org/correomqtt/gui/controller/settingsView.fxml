@@ -5,87 +5,104 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane prefWidth="450.0" prefHeight="300.0" styleClass="dialog" stylesheets="@../css/settings.css"
-            xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="org.correomqtt.gui.controller.SettingsViewController">
-    <VBox styleClass="settingsHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-          AnchorPane.topAnchor="0.0">
+<AnchorPane fx:id="settingsPane" prefWidth="600.0" styleClass="dialog" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.SettingsViewController">
+    <VBox fx:id="settingsVBox" styleClass="settingsHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <children>
-            <Label alignment="TOP_LEFT" styleClass="headline" text="%settingsViewHeaderLabel"/>
+            <Label alignment="TOP_LEFT" styleClass="headline" text="%settingsViewHeaderLabel">
+            <VBox.margin>
+               <Insets bottom="10.0" />
+            </VBox.margin></Label>
             <GridPane styleClass="settingsGrid" VBox.vgrow="ALWAYS">
                 <columnConstraints>
-                    <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="100.0"/>
-                    <ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES"/>
+                    <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="100.0" />
+                    <ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES" maxWidth="200.0" minWidth="200.0" prefWidth="200.0" />
                 </columnConstraints>
-                <rowConstraints>
-                    <RowConstraints vgrow="SOMETIMES"/>
-                    <RowConstraints vgrow="SOMETIMES"/>
-                    <RowConstraints vgrow="SOMETIMES"/>
-                    <RowConstraints vgrow="SOMETIMES"/>
-                </rowConstraints>
                 <children>
-                    <VBox GridPane.rowIndex="3">
+                    <VBox>
                         <children>
-                            <Label styleClass="settingsLabel" text="%settingsViewThemeLabel"/>
+                            <Label styleClass="settingsLabel" text="%settingsViewThemeLabel" />
                             <Label text="%settingsViewThemeExplanationLabel" wrapText="true">
                                 <styleClass>
-                                    <String fx:value="secondaryText"/>
-                                    <String fx:value="settingsDescription"/>
+                                    <String fx:value="secondaryText" />
+                                    <String fx:value="settingsDescription" />
                                 </styleClass>
                             </Label>
                         </children>
                     </VBox>
-                    <VBox alignment="TOP_RIGHT" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.valignment="TOP">
+                    <ComboBox fx:id="themeComboBox" onAction="#onThemeChanged" styleClass="themeCheckbox" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.valignment="TOP" />
+
+                    <VBox prefWidth="294.0" GridPane.rowIndex="1">
                         <children>
-                            <ComboBox fx:id="themeComboBox" onAction="#onThemeChanged" styleClass="themeCheckbox"/>
-                        </children>
-                    </VBox>
-                    <VBox prefWidth="294.0" GridPane.rowIndex="4">
-                        <children>
-                            <Label styleClass="settingsLabel" text="%settingsViewLanguageLabel"/>
+                            <Label styleClass="settingsLabel" text="%settingsViewLanguageLabel" />
                             <Label text="%settingsViewLangularExplanationLabel" wrapText="true">
                                 <styleClass>
-                                    <String fx:value="secondaryText"/>
-                                    <String fx:value="settingsDescription"/>
+                                    <String fx:value="secondaryText" />
+                                    <String fx:value="settingsDescription" />
                                 </styleClass>
                             </Label>
                         </children>
                     </VBox>
-                    <ComboBox fx:id="languageComboBox" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
-                    <VBox GridPane.rowIndex="5">
+                    <ComboBox fx:id="languageComboBox" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="1" GridPane.valignment="TOP" />
+
+                    <VBox GridPane.rowIndex="2">
                         <children>
-                            <Label styleClass="settingsLabel" text="%settingsViewUpdateLabel"/>
+                            <Label styleClass="settingsLabel" text="%settingsViewKeyringBackendLabel" />
+                            <Label fx:id="keyringDescriptionLabel" text="%settingsViewKeyringBackendExplanationLabel" wrapText="true">
+                                <styleClass>
+                                    <String fx:value="secondaryText" />
+                                    <String fx:value="settingsDescription" />
+                                </styleClass>
+                            </Label>
+                        </children>
+                    </VBox>
+                    <VBox alignment="TOP_RIGHT" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                        <ComboBox fx:id="keyringBackendComboBox" onAction="#onKeyringBackendChanged" styleClass="keyringBackendCheckbox" />
+                        <Button onAction="#onWipeKeyringClicked" styleClass="wipeKeyringButton" text="%wipeCurrentKeyring">
+                     <VBox.margin>
+                        <Insets top="30.0" />
+                     </VBox.margin></Button>
+                    </VBox>
+
+
+                    <VBox GridPane.rowIndex="3">
+                        <children>
+                            <Label styleClass="settingsLabel" text="%settingsViewUpdateLabel" />
                             <Label text="%settingsViewUpdatesExplanationLabel" wrapText="true">
                                 <styleClass>
-                                    <String fx:value="secondaryText"/>
-                                    <String fx:value="settingsDescription"/>
+                                    <String fx:value="secondaryText" />
+                                    <String fx:value="settingsDescription" />
                                 </styleClass>
                             </Label>
                         </children>
                     </VBox>
-                    <CheckBox fx:id="searchUpdatesCheckbox" layoutX="422.0" layoutY="10.0" mnemonicParsing="false" GridPane.columnIndex="1"
-                              GridPane.rowIndex="5" GridPane.valignment="TOP">
+                    <CheckBox fx:id="searchUpdatesCheckbox" layoutX="422.0" layoutY="10.0" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="3" GridPane.valignment="TOP">
                         <padding>
-                            <Insets top="7.0"/>
+                            <Insets top="7.0" />
                         </padding>
                     </CheckBox>
                 </children>
+            <rowConstraints>
+               <RowConstraints />
+               <RowConstraints />
+               <RowConstraints />
+               <RowConstraints />
+            </rowConstraints>
             </GridPane>
             <HBox alignment="CENTER_RIGHT">
                 <children>
                     <Button fx:id="settingsCancelButton" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">
                         <HBox.margin>
-                            <Insets left="5.0"/>
+                            <Insets left="5.0" />
                         </HBox.margin>
                     </Button>
                     <Button fx:id="settingsSaveButton" mnemonicParsing="false" onAction="#onSaveClicked" text="%commonSaveButton">
                         <HBox.margin>
-                            <Insets left="5.0"/>
+                            <Insets left="5.0" />
                         </HBox.margin>
                     </Button>
                 </children>
                 <VBox.margin>
-                    <Insets/>
+                    <Insets />
                 </VBox.margin>
             </HBox>
         </children>

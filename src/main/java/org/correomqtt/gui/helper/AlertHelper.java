@@ -1,16 +1,18 @@
 package org.correomqtt.gui.helper;
 
-import javafx.scene.control.Alert;
+import javafx.geometry.Pos;
+import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.DialogPane;
-import org.correomqtt.business.services.SettingsService;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.utils.PlatformUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static javafx.scene.control.Alert.AlertType.INFORMATION;
 import static javafx.scene.control.Alert.AlertType.WARNING;
@@ -28,13 +30,14 @@ public class AlertHelper {
         PlatformUtils.runLaterIfNotInFxThread(() -> {
             Alert alert = new Alert(type);
             DialogPane dialogPane = alert.getDialogPane();
-            String cssPath = SettingsService.getInstance().getCssPath();
+            String cssPath = SettingsProvider.getInstance().getCssPath();
             if (cssPath != null) {
                 dialogPane.getStylesheets().add(cssPath);
             }
             alert.setTitle(title);
             alert.setHeaderText(null);
             alert.setContentText(content);
+            alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
             if (buttonType != null) {
                 alert.getButtonTypes().setAll(buttonType);
             }
@@ -60,14 +63,15 @@ public class AlertHelper {
         PlatformUtils.runLaterIfNotInFxThread(() -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             DialogPane dialogPane = alert.getDialogPane();
-            String cssPath = SettingsService.getInstance().getCssPath();
+            dialogPane.setMaxWidth(450);
+            String cssPath = SettingsProvider.getInstance().getCssPath();
             if (cssPath != null) {
                 dialogPane.getStylesheets().add(cssPath);
             }
-
             alert.setTitle(title);
             alert.setHeaderText(header);
             alert.setContentText(content);
+            alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
             ButtonType no = new ButtonType(noButton);
             ButtonType yes = new ButtonType(yesButton);
 
@@ -117,5 +121,51 @@ public class AlertHelper {
 
     public static boolean confirm(String title, String header, String content, String noButton, String yesButton) {
         return showConfirmationDialog(title, header, content, noButton, yesButton);
+    }
+
+    public static String passwordInput(String title, String header, String content){
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        AtomicReference<String> result = new AtomicReference<>();
+        PlatformUtils.runLaterIfNotInFxThread(() -> {
+            Dialog<String> dialog = new Dialog<>();
+            dialog.setWidth(450);
+            DialogPane dialogPane = dialog.getDialogPane();
+            dialog.setWidth(450);
+            dialogPane.setMinHeight(Region.USE_PREF_SIZE);
+            String cssPath = SettingsProvider.getInstance().getCssPath();
+            if (cssPath != null) {
+                dialogPane.getStylesheets().add(cssPath);
+            }
+            dialog.setTitle(title);
+            dialog.setHeaderText(header);
+            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+            PasswordField pwd = new PasswordField();
+            VBox vbox = new VBox();
+            vbox.setAlignment(Pos.CENTER_LEFT);
+            vbox.setSpacing(10);
+            Label label = new Label(content);
+            label.setWrapText(true);
+            label.setMaxWidth(450);
+            vbox.getChildren().addAll(label, pwd);
+            dialog.getDialogPane().setContent(vbox);
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == ButtonType.OK) {
+                    return pwd.getText();
+                }
+                return null;
+            });
+            dialog.showAndWait().ifPresentOrElse(result::set,() -> result.set(null));
+            countDownLatch.countDown();
+        });
+
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            LOGGER.error("Exception during password input dialog ", e);
+            Thread.currentThread().interrupt();
+        }
+        return result.get();
+
     }
 }

@@ -51,4 +51,5 @@ public class ConfigDispatcher extends BaseDispatcher<ConfigObserver> {
     public void onConfigPrepareFailure() {
         trigger(ConfigObserver::onConfigPrepareFailed);
     }
+
 }

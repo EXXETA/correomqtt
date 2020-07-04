@@ -1,7 +1,9 @@
 package org.correomqtt.business.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,6 +26,7 @@ public class ConnectionConfigDTO {
     private int port = 1883;
     private String clientId;
     private String username;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // do never save passwords
     private String password;
     private boolean cleanSession;
     @Builder.Default
@@ -31,6 +34,7 @@ public class ConnectionConfigDTO {
     @Builder.Default
     private TlsSsl ssl = TlsSsl.OFF;
     private String sslKeystore;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // do never save passwords
     private String sslKeystorePassword;
     @Builder.Default
     private Proxy proxy = Proxy.OFF;
@@ -41,6 +45,7 @@ public class ConnectionConfigDTO {
     @Builder.Default
     private Auth auth = Auth.OFF;
     private String authUsername;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // do never save passwords
     private String authPassword;
     private String authKeyfile;
     @Builder.Default

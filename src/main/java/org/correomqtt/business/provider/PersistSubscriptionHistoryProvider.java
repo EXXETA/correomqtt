@@ -1,4 +1,4 @@
-package org.correomqtt.business.services;
+package org.correomqtt.business.provider;
 
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
@@ -17,21 +17,21 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class PersistSubscriptionHistoryService extends BasePersistHistoryService<SubscriptionHistoryListDTO>
+public class PersistSubscriptionHistoryProvider extends BasePersistHistoryProvider<SubscriptionHistoryListDTO>
         implements SubscribeGlobalObserver,
         ConnectionLifecycleObserver,
         ConfigObserver {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PersistSubscriptionHistoryService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PersistSubscriptionHistoryProvider.class);
 
     private static final String HISTORY_FILE_NAME = "subscriptionHistory.json";
 
     private static final int MAX_ENTRIES = 100;
 
-    private static Map<String, PersistSubscriptionHistoryService> instances = new HashMap<>();
+    private static Map<String, PersistSubscriptionHistoryProvider> instances = new HashMap<>();
     private static Map<String, SubscriptionHistoryListDTO> historyDTOs = new HashMap<>();
 
-    private PersistSubscriptionHistoryService(String id) {
+    private PersistSubscriptionHistoryProvider(String id) {
         super(id);
         SubscribeGlobalDispatcher.getInstance().addObserver(this);
         ConnectionLifecycleDispatcher.getInstance().addObserver(this);
@@ -44,11 +44,11 @@ public class PersistSubscriptionHistoryService extends BasePersistHistoryService
     }
 
     public static void activate(String id) {
-        instances.computeIfAbsent(id, PersistSubscriptionHistoryService::new);
+        instances.computeIfAbsent(id, PersistSubscriptionHistoryProvider::new);
     }
 
-    public static synchronized PersistSubscriptionHistoryService getInstance(String id) {
-        return instances.computeIfAbsent(id, PersistSubscriptionHistoryService::new);
+    public static synchronized PersistSubscriptionHistoryProvider getInstance(String id) {
+        return instances.computeIfAbsent(id, PersistSubscriptionHistoryProvider::new);
     }
 
     @Override

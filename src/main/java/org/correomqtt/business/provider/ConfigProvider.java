@@ -1,4 +1,4 @@
-package org.correomqtt.business.services;
+package org.correomqtt.business.provider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,20 +7,20 @@ import java.io.File;
 
 //TODO check invalid configs
 
-public class ConfigService extends BaseUserFileService {
+public class ConfigProvider extends BaseUserFileProvider {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigProvider.class);
 
     private static final String PLUGIN_FOLDER = "plugins";
     private static final String PLUGIN_JAR_FOLDER = "jars";
     private static final String PLUGIN_CONFIG_FOLDER = "config";
     private static final String PROTOCOL_XML = "protocol.xml";
 
-    private static ConfigService instance = null;
+    private static ConfigProvider instance = null;
 
-    public static synchronized ConfigService getInstance() {
+    public static synchronized ConfigProvider getInstance() {
         if (instance == null) {
-            instance = new ConfigService();
+            instance = new ConfigProvider();
             return instance;
         } else {
             return instance;

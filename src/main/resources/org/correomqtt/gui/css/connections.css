@@ -1,20 +1,20 @@
 @import "global.css";
 
 .plusMinus {
-    -fx-background-size: 10px 10px;
+    -fx-background-size: 15px 15px;
 }
 
 .upDown {
-    -fx-background-size: 14px 14px;
+    -fx-background-size: 21px 21px;
 }
 
 .connectionListActions {
     -fx-background-repeat: no-repeat;
     -fx-background-position: center;
-    -fx-min-height: 16;
-    -fx-max-height: 16;
-    -fx-min-width: 16;
-    -fx-max-width: 16;
+    -fx-min-height: 32;
+    -fx-max-height: 32;
+    -fx-min-width: 32;
+    -fx-max-width: 32;
 }
 
 .black .plus-solid {

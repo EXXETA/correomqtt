@@ -1,6 +1,6 @@
 package org.correomqtt.gui.contextmenu;
 
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.helper.ClipboardHelper;
 import javafx.event.ActionEvent;
@@ -28,7 +28,7 @@ abstract class BaseMessageContextMenu<D extends BaseMessageContextMenuDelegate> 
     @Override
     protected void initializeItems() {
 
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
         super.initializeItems();
 
         putToForm = new MenuItem(resources.getString("baseMessageContextMenuPutToFormMenuItem"));

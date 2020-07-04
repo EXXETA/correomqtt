@@ -3,7 +3,7 @@ package org.correomqtt.gui.controller;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.SettingsProvider;
 
 public class PreloaderViewController {
 
@@ -18,7 +18,7 @@ public class PreloaderViewController {
 
     @FXML
     private void initialize() {
-        preloaderAnchorPane.getStyleClass().add(SettingsService.getInstance().getIconModeCssClass());
+        preloaderAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
     }
 
     public Label getPreloaderProgressLabel() { return preloaderProgressLabel; }

@@ -3,7 +3,7 @@ package org.correomqtt.business.utils;
 import org.correomqtt.business.dispatcher.ApplicationLifecycleObserver;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.services.DisconnectService;
 
 import java.util.Comparator;
@@ -36,7 +36,7 @@ public class ConnectionHolder implements ApplicationLifecycleObserver {
 
         Set<String> existingConnectionIds = new HashSet<>(connectionMap.keySet());
 
-        for ( ConnectionConfigDTO c : SettingsService.getInstance().getConnectionConfigs() ) {
+        for ( ConnectionConfigDTO c : SettingsProvider.getInstance().getConnectionConfigs() ) {
             CorreoMqttConnection connection = connectionMap.get(c.getId());
             if(connection == null){
                 connectionMap.put(c.getId(), CorreoMqttConnection.builder()

@@ -1,7 +1,6 @@
 package org.correomqtt.plugin.manager;
 
-import org.correomqtt.business.services.ConfigService;
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.ConfigProvider;
 import org.correomqtt.plugin.spi.BaseExtensionPoint;
 import org.correomqtt.plugin.spi.ExtensionId;
 import org.jdom2.Element;
@@ -28,7 +27,7 @@ public class PluginSystem extends DefaultPluginManager {
 
     private PluginSystem() {
         // private constructor
-        super(Path.of(ConfigService.getInstance().getPluginJarPath()));
+        super(Path.of(ConfigProvider.getInstance().getPluginJarPath()));
         try {
             pluginProtocolParser = new PluginProtocolParser();
         } catch (IOException | JDOMException e) {

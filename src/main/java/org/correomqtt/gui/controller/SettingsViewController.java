@@ -1,20 +1,28 @@
 package org.correomqtt.gui.controller;
 
-import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.model.ThemeDTO;
-import org.correomqtt.business.services.SettingsService;
-import org.correomqtt.gui.cell.GenericCell;
-import org.correomqtt.gui.model.LanguageModel;
-import org.correomqtt.gui.model.WindowProperty;
-import org.correomqtt.gui.model.WindowType;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
+import org.correomqtt.business.keyring.KeyringFactory;
+import org.correomqtt.business.model.SettingsDTO;
+import org.correomqtt.business.model.ThemeDTO;
+import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.gui.cell.GenericCell;
+import org.correomqtt.gui.helper.AlertHelper;
+import org.correomqtt.gui.keyring.KeyringHandler;
+import org.correomqtt.gui.model.KeyringModel;
+import org.correomqtt.gui.model.LanguageModel;
+import org.correomqtt.gui.model.WindowProperty;
+import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.theme.ThemeProvider;
 import org.correomqtt.gui.theme.light.LightThemeProvider;
 import org.correomqtt.plugin.manager.PluginManager;
@@ -33,11 +41,19 @@ public class SettingsViewController extends BaseController {
     private static ResourceBundle resources;
 
     @FXML
+    private AnchorPane settingsPane;
+    @FXML
+    private VBox settingsVBox;
+    @FXML
     private ComboBox<ThemeProvider> themeComboBox;
     @FXML
     private ComboBox<LanguageModel> languageComboBox;
     @FXML
+    private ComboBox<KeyringModel> keyringBackendComboBox;
+    @FXML
     private CheckBox searchUpdatesCheckbox;
+    @FXML
+    private Label keyringDescriptionLabel;
 
     private SettingsDTO settings;
     private static final Logger LOGGER = LoggerFactory.getLogger(SettingsViewController.class);
@@ -59,7 +75,7 @@ public class SettingsViewController extends BaseController {
 
     @FXML
     public void initialize() {
-        settings = SettingsService.getInstance().getSettings();
+        settings = SettingsProvider.getInstance().getSettings();
         setupGUI();
 
         // Unfortunately @FXML Handler does not work with Combobox, so the action must be bound manually.
@@ -85,8 +101,34 @@ public class SettingsViewController extends BaseController {
     }
 
     @FXML
+    public void onWipeKeyringClicked() {
+        boolean confirmed = AlertHelper.confirm(
+                resources.getString("wipeCurrentKeyringTitle"),
+                resources.getString("wipeCurrentKeyringHeader"),
+                resources.getString("wipeCurrentKeyringContent"),
+                resources.getString("commonCancelButton"),
+                resources.getString("wipeOutYesButton"));
+
+        if (confirmed) {
+            KeyringHandler.getInstance().retryWithMasterPassword(
+                    masterPassword -> SettingsProvider.getInstance().wipeSecretData(masterPassword),
+                    resources.getString("onPasswordWipeFailedTitle"),
+                    resources.getString("onPasswordWipeFailedHeader"),
+                    resources.getString("onPasswordWipeFailedContent"),
+                    resources.getString("onPasswordWipeFailedGiveUp"),
+                    resources.getString("onPasswordWipeFailedTryAgain")
+            );
+        }
+    }
+
+    @FXML
     public void onThemeChanged() {
         LOGGER.debug("Theme changed in settings");
+    }
+
+    @FXML
+    public void onKeyringBackendChanged() {
+        LOGGER.debug("Keyring backend changed in settings");
     }
 
     private void setupGUI() {
@@ -115,9 +157,45 @@ public class SettingsViewController extends BaseController {
 
         themeComboBox.getSelectionModel().select(themes.
                 stream()
-                .filter(t -> t.getName().equals(SettingsService.getInstance().getThemeSettings().getActiveTheme().getName()))
+                .filter(t -> t.getName().equals(SettingsProvider.getInstance().getThemeSettings().getActiveTheme().getName()))
                 .findFirst()
                 .orElse(new LightThemeProvider()));
+
+        List<KeyringModel> keyringModels = KeyringFactory.getSupportedKeyrings()
+                .stream()
+                .map(KeyringModel::new)
+                .collect(Collectors.toList());
+        keyringBackendComboBox.setOnAction(event -> {
+            updateKeyringDescription(keyringBackendComboBox.getSelectionModel().getSelectedItem());
+        });
+        keyringBackendComboBox.setItems(FXCollections.observableArrayList(keyringModels));
+        keyringBackendComboBox.setCellFactory(GenericCell::new);
+        keyringBackendComboBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(KeyringModel object) {
+                if (object == null) {
+                    return null;
+                }
+                return object.getLabelTranslationKey();
+            }
+
+            @Override
+            public KeyringModel fromString(String string) {
+                return null;
+            }
+        });
+
+        KeyringModel selectedKeyring = keyringModels.
+                stream()
+                .filter(t -> t.getKeyring().getIdentifier().equals(SettingsProvider.getInstance().getSettings().getKeyringIdentifier()))
+                .findFirst()
+                .orElse(null);
+
+        keyringBackendComboBox.getSelectionModel().select(selectedKeyring);
+
+        if (selectedKeyring != null) {
+            updateKeyringDescription(selectedKeyring);
+        }
 
         languageComboBox.setCellFactory(GenericCell::new);
         languageComboBox.setConverter(new StringConverter<>() {
@@ -147,6 +225,17 @@ public class SettingsViewController extends BaseController {
                         .map(LanguageModel::new)
                         .collect(Collectors.toList())));
         languageComboBox.getSelectionModel().select(new LanguageModel(settings.getSavedLocale()));
+
+        settingsPane.setMinHeight(500);
+        settingsPane.setMaxHeight(500);
+    }
+
+    private void updateKeyringDescription(KeyringModel selectedKeyring) {
+        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()); // too early here
+        keyringDescriptionLabel.setText(resources.getString("settingsViewKeyringBackendExplanationLabel")
+                + "\n\n"
+                + selectedKeyring.getLabelTranslationKey() + ":\n"
+                + selectedKeyring.getKeyring().getDescription());
     }
 
     private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
@@ -157,11 +246,17 @@ public class SettingsViewController extends BaseController {
     private void saveSettings() {
         LOGGER.debug("Saving settings");
 
+        String newKeyringIdentifier = keyringBackendComboBox.getSelectionModel().getSelectedItem().getKeyring().getIdentifier();
+        String oldKeyringIdentifier = settings.getKeyringIdentifier();
+        if (!newKeyringIdentifier.equals(oldKeyringIdentifier)) {
+            settings.setKeyringIdentifier(newKeyringIdentifier);
+            KeyringHandler.getInstance().migrate(newKeyringIdentifier);
+        }
         settings.setSearchUpdates(searchUpdatesCheckbox.isSelected());
         ThemeProvider selectedTheme = themeComboBox.getSelectionModel().getSelectedItem();
         settings.setSavedLocale(languageComboBox.getSelectionModel().getSelectedItem().getLocale());
-        SettingsService.getInstance().getThemeSettings().setActiveTheme(new ThemeDTO(selectedTheme.getName(),selectedTheme.getIconMode()));
-        SettingsService.getInstance().saveSettings();
+        SettingsProvider.getInstance().getThemeSettings().setActiveTheme(new ThemeDTO(selectedTheme.getName(), selectedTheme.getIconMode()));
+        SettingsProvider.getInstance().saveSettings();
     }
 
     private void closeDialog() {

@@ -99,6 +99,27 @@
                         <Hyperlink fx:id="sshjLicense" text="Apache 2.0" />
                      </children>
                   </HBox>
+                  <HBox layoutX="10.0" layoutY="290.0" prefHeight="23.0">
+                     <children>
+                        <Hyperlink fx:id="javaKeyring" text="java-keyring" />
+                        <Label prefHeight="23.0" text="© 2012, east301" />
+                        <Hyperlink fx:id="javaKeyringLicense" text="Modified BSD" />
+                     </children>
+                  </HBox>
+                  <HBox layoutX="10.0" layoutY="290.0" prefHeight="23.0">
+                     <children>
+                        <Hyperlink fx:id="secretService" text="Secret Service" />
+                        <Label prefHeight="23.0" text="© 2019 Sebastian Wiesendahl" />
+                        <Hyperlink fx:id="secretServiceLicense" text="MIT" />
+                     </children>
+                  </HBox>
+                  <HBox layoutX="10.0" layoutY="290.0" prefHeight="23.0">
+                     <children>
+                        <Hyperlink fx:id="windpapi4j" text="WinDPAPI4J" />
+                        <Label prefHeight="23.0" text="by Peter G. Horvath" />
+                        <Hyperlink fx:id="windpapi4jLicense" text="LGPL-3.0" />
+                     </children>
+                  </HBox>
                   <HBox layoutX="10.0" layoutY="10.0" prefHeight="23.0">
                      <Label prefHeight="23.0" styleClass="aboutHeadline" text="Icons">
                         <HBox.margin>

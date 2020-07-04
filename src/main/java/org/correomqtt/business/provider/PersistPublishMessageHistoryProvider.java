@@ -1,4 +1,4 @@
-package org.correomqtt.business.services;
+package org.correomqtt.business.provider;
 
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
@@ -19,21 +19,21 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class PersistPublishMessageHistoryService extends BasePersistHistoryService<PublishMessageHistoryListDTO>
+public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProvider<PublishMessageHistoryListDTO>
         implements PublishGlobalObserver,
         ConnectionLifecycleObserver,
         ConfigObserver {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PersistPublishMessageHistoryService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PersistPublishMessageHistoryProvider.class);
 
     private static final String HISTORY_FILE_NAME = "publishMessageHistory.json";
     private static final int MAX_ENTRIES = 100;
 
-    private static Map<String, PersistPublishMessageHistoryService> instances = new HashMap<>();
+    private static Map<String, PersistPublishMessageHistoryProvider> instances = new HashMap<>();
     private static Map<String, PublishMessageHistoryListDTO> historyDTOs = new HashMap<>();
 
 
-    private PersistPublishMessageHistoryService(String id) {
+    private PersistPublishMessageHistoryProvider(String id) {
         super(id);
         PublishGlobalDispatcher.getInstance().addObserver(this);
         ConnectionLifecycleDispatcher.getInstance().addObserver(this);
@@ -41,11 +41,11 @@ public class PersistPublishMessageHistoryService extends BasePersistHistoryServi
     }
 
     public static void activate(String id) {
-        instances.computeIfAbsent(id, PersistPublishMessageHistoryService::new);
+        instances.computeIfAbsent(id, PersistPublishMessageHistoryProvider::new);
     }
 
-    public static synchronized PersistPublishMessageHistoryService getInstance(String id) {
-        return instances.computeIfAbsent(id, PersistPublishMessageHistoryService::new);
+    public static synchronized PersistPublishMessageHistoryProvider getInstance(String id) {
+        return instances.computeIfAbsent(id, PersistPublishMessageHistoryProvider::new);
     }
 
     @Override

@@ -2,9 +2,7 @@ package org.correomqtt;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
-import ch.qos.logback.classic.util.ContextInitializer;
 import ch.qos.logback.core.joran.spi.JoranException;
-import ch.qos.logback.core.util.StatusPrinter;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
@@ -17,10 +15,9 @@ import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
-import org.apache.commons.io.FileUtils;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.dispatcher.PreloadingObserver;
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.PreloaderViewController;
 import org.slf4j.LoggerFactory;
@@ -42,7 +39,7 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
     public void init() throws IOException {
         setLoggerFilePath();
 
-        String cssPath = SettingsService.getInstance().getCssPath();
+        String cssPath = SettingsProvider.getInstance().getCssPath();
 
         FXMLLoader loader = new FXMLLoader(PreloaderViewController.class.getResource("preloaderView.fxml"));
         Parent root = loader.load();
@@ -58,7 +55,7 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
 
     private void setLoggerFilePath() {
         // Set the path for file logging to user directory.
-        System.setProperty("correomqtt-logfile", SettingsService.getInstance().getLogPath());
+        System.setProperty("correomqtt-logfile", SettingsProvider.getInstance().getLogPath());
 
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.reset();

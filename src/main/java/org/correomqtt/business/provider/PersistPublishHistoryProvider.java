@@ -1,4 +1,4 @@
-package org.correomqtt.business.services;
+package org.correomqtt.business.provider;
 
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
@@ -19,20 +19,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class PersistPublishHistoryService extends BasePersistHistoryService<PublishHistoryListDTO>
+public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<PublishHistoryListDTO>
         implements PublishGlobalObserver,
         ConnectionLifecycleObserver,
         ConfigObserver {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PersistPublishHistoryService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PersistPublishHistoryProvider.class);
 
     private static final String HISTORY_FILE_NAME = "publishHistory.json";
     private static final int MAX_ENTRIES = 100;
 
-    private static Map<String, PersistPublishHistoryService> instances = new HashMap<>();
+    private static Map<String, PersistPublishHistoryProvider> instances = new HashMap<>();
     private static Map<String, PublishHistoryListDTO> historyDTOs = new HashMap<>();
 
-    private PersistPublishHistoryService(String id) {
+    private PersistPublishHistoryProvider(String id) {
         super(id);
         PublishGlobalDispatcher.getInstance().addObserver(this);
         ConnectionLifecycleDispatcher.getInstance().addObserver(this);
@@ -41,13 +41,13 @@ public class PersistPublishHistoryService extends BasePersistHistoryService<Publ
 
     public static void activate(String id) {
         if (instances.get(id) == null) {
-            instances.put(id, new PersistPublishHistoryService(id));
+            instances.put(id, new PersistPublishHistoryProvider(id));
         }
     }
 
-    public static synchronized PersistPublishHistoryService getInstance(String id) {
+    public static synchronized PersistPublishHistoryProvider getInstance(String id) {
         if (instances.get(id) == null) {
-            instances.put(id, new PersistPublishHistoryService(id));
+            instances.put(id, new PersistPublishHistoryProvider(id));
         }
         return instances.get(id);
     }

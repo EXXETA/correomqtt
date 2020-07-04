@@ -1,6 +1,6 @@
 package org.correomqtt.gui.cell;
 
-import org.correomqtt.business.services.SettingsService;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.plugin.manager.MessageValidator;
 import org.correomqtt.plugin.manager.PluginManager;
@@ -83,7 +83,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(MessageViewCell.class.getResource("messageView.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", SettingsService.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

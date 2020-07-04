@@ -14,7 +14,7 @@ import org.correomqtt.business.exception.CorreoMqttException;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.SubscriptionDTO;
-import org.correomqtt.business.services.PersistSubscriptionHistoryService;
+import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.cell.QosCell;
@@ -37,7 +37,6 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,7 +131,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     private void initTopicComboBox() {
-        List<String> topics = PersistSubscriptionHistoryService.getInstance(getConnectionId()).getTopics(getConnectionId());
+        List<String> topics = PersistSubscriptionHistoryProvider.getInstance(getConnectionId()).getTopics(getConnectionId());
         subscribeTopicComboBox.setItems(FXCollections.observableArrayList(topics));
         subscribeTopicComboBox.setCellFactory(TopicCell::new);
 
