@@ -1,15 +1,21 @@
 package org.correomqtt.gui.business;
 
+import org.correomqtt.business.model.ScriptExecutionDTO;
+import org.correomqtt.business.model.ScriptingDTO;
+import org.correomqtt.business.scripting.ScriptingBackend;
 import org.correomqtt.business.services.*;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.gui.model.ScriptingPropertiesDTO;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
+import org.correomqtt.gui.transformer.ScriptingTransformer;
 import org.correomqtt.gui.transformer.SubscriptionTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
 import org.correomqtt.plugin.spi.PublishMessageHook;
 
 import java.io.File;
+import java.io.OutputStream;
 
 public class TaskFactory {
 
@@ -21,8 +27,8 @@ public class TaskFactory {
         messagePropertiesDTO = executeOnPublishMessageExtensions(connectionId, messagePropertiesDTO);
 
         new GuiService<>(new PublishService(connectionId,
-                                            MessageTransformer.propsToDTO(messagePropertiesDTO)),
-                         PublishService::publish).start();
+                MessageTransformer.propsToDTO(messagePropertiesDTO)),
+                PublishService::publish).start();
     }
 
     private static MessagePropertiesDTO executeOnPublishMessageExtensions(String connectionId, MessagePropertiesDTO messagePropertiesDTO) {
@@ -35,14 +41,14 @@ public class TaskFactory {
 
     public static void subscribe(String connectionId, SubscriptionPropertiesDTO subscriptionDTO) {
         new GuiService<>(new SubscribeService(connectionId,
-                                              SubscriptionTransformer.propsToDTO(subscriptionDTO)),
-                         SubscribeService::subscribe).start();
+                SubscriptionTransformer.propsToDTO(subscriptionDTO)),
+                SubscribeService::subscribe).start();
     }
 
     public static void unsubscribe(String connectionId, SubscriptionPropertiesDTO subscriptionPropertiesDTO) {
         new GuiService<>(new UnsubscribeService(connectionId,
-                                                SubscriptionTransformer.propsToDTO(subscriptionPropertiesDTO)),
-                         UnsubscribeService::unsubscribe).start();
+                SubscriptionTransformer.propsToDTO(subscriptionPropertiesDTO)),
+                UnsubscribeService::unsubscribe).start();
     }
 
     public static void connect(String connectionId) {
@@ -51,7 +57,7 @@ public class TaskFactory {
 
     public static void disconnect(String connectionId) {
         new GuiService<>(new DisconnectService(connectionId),
-                         DisconnectService::disconnect).start();
+                DisconnectService::disconnect).start();
     }
 
     public static void importMessage(String connectionId, File file) {
@@ -60,7 +66,17 @@ public class TaskFactory {
 
     public static void exportMessage(String connectionId, File file, MessagePropertiesDTO messageDTO) {
         new GuiService<>(new ExportMessageService(connectionId, file, MessageTransformer.propsToDTO(messageDTO)),
-                         ExportMessageService::exportMessage).start();
+                ExportMessageService::exportMessage).start();
 
+    }
+
+    public static void loadScript(ScriptingPropertiesDTO scriptingPropertiesDTO) {
+        new GuiService<>(new LoadScriptService(ScriptingTransformer.propsToDTO(scriptingPropertiesDTO)),
+                LoadScriptService::loadScript).start();
+    }
+
+    public static void executeScript(ScriptExecutionDTO scriptExecutionDTO) {
+        new GuiService<>(new ExecuteScriptService(scriptExecutionDTO),
+                ExecuteScriptService::executeScript).start();
     }
 }

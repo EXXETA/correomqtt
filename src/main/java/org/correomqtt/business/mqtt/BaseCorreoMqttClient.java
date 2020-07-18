@@ -1,5 +1,6 @@
 package org.correomqtt.business.mqtt;
 
+import com.hivemq.client.mqtt.MqttClientState;
 import net.schmizz.sshj.connection.channel.direct.Parameters;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.exception.CorreoMqttAlreadySubscribedException;
@@ -31,7 +32,6 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -50,6 +50,7 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
     private final Set<SubscriptionDTO> subscriptions = new HashSet<>();
     private SSHClient sshClient;
     private LocalPortForwarder localPortforwarder;
+    private boolean failState;
 
     public BaseCorreoMqttClient(ConnectionConfigDTO configDTO) {
         this.configDTO = configDTO;
@@ -60,6 +61,8 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
     }
 
     abstract Logger getLogger();
+
+    abstract MqttClientState getClientState();
 
     public Set<SubscriptionDTO> getSubscriptions() {
         return new HashSet<>(subscriptions);
@@ -111,6 +114,7 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
                 localPortforwarder.listen();
             } catch (Exception e) {
                 getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "SSH socket to {}:{} failed.", configDTO.getSshHost(), configDTO.getPort());
+                failState = true;
                 throw new CorreoMqttSshFailedException(e);
             }
         });
@@ -170,6 +174,7 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
         triedReconnects.set(0);
         tryToReconnect.set(true);
         if (wasConnectedBefore.get()) {
+            failState = false;
             ConnectionLifecycleDispatcher.getInstance().onConnectionReconnected(configDTO.getId());
             getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Reconnected to broker successfully");
         }
@@ -225,10 +230,12 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
         getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Reconnecting connect to Broker.");
         if (tryToReconnect.get() && triedReconnects.get() < MAX_RECONNECTS && context.getSource() != MqttDisconnectSource.USER) {
             doReconnect(context);
+            failState = true;
             ConnectionLifecycleDispatcher.getInstance().onReconnectFailed(configDTO.getId(), triedReconnects, MAX_RECONNECTS);
             triedReconnects.incrementAndGet();
         } else {
             getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "Maximum number of reconnects reached.");
+            failState = true;
             ConnectionLifecycleDispatcher.getInstance().onConnectionFailed(configDTO.getId(), new CorreoMqttNoRetriesLeftException());
 
         }
@@ -267,4 +274,23 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
 
     abstract boolean isConnected();
 
+    @Override
+    public CorreoMqttClientState getState() {
+        if (failState) {
+            return CorreoMqttClientState.FAILED;
+        }
+        switch (getClientState()) {
+            case CONNECTED:
+                return CorreoMqttClientState.CONNECTED;
+            case CONNECTING:
+                return CorreoMqttClientState.CONNECTING;
+            case CONNECTING_RECONNECT:
+            case DISCONNECTED_RECONNECT:
+                return CorreoMqttClientState.RECONNECTING;
+            case DISCONNECTED:
+                return CorreoMqttClientState.DISCONNECTED;
+            default:
+                return CorreoMqttClientState.UNKOWN;
+        }
+    }
 }

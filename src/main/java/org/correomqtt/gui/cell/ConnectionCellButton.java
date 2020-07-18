@@ -1,6 +1,12 @@
 package org.correomqtt.gui.cell;
 
 import javafx.application.Platform;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.Pane;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.model.CorreoMqttVersion;
@@ -11,12 +17,6 @@ import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.layout.Pane;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,29 +24,15 @@ import org.slf4j.LoggerFactory;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> implements ConnectionLifecycleObserver {
+public class ConnectionCellButton extends ListCell<ConnectionPropertiesDTO> implements ConnectionLifecycleObserver {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionCell.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionCellButton.class);
     private final ListView<ConnectionPropertiesDTO> listView;
 
     @FXML
     private Pane mainNode;
     @FXML
     private Label nameLabel;
-    @FXML
-    private Label descriptionLabel;
-    @FXML
-    private Label credentialsTag;
-    @FXML
-    private Label sslTag;
-    @FXML
-    private Label proxyTag;
-    @FXML
-    private Label lwtTag;
-    @FXML
-    private Label mqtt3Tag;
-    @FXML
-    private Label mqtt5Tag;
     @FXML
     private ResourceBundle resources;
     @FXML
@@ -62,7 +48,7 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> implements
 
     }
 
-    public ConnectionCell(ListView<ConnectionPropertiesDTO> listView) {
+    public ConnectionCellButton(ListView<ConnectionPropertiesDTO> listView) {
         this.listView = listView;
     }
 
@@ -78,7 +64,7 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> implements
 
             if (loader == null) {
                 try {
-                    loader = new FXMLLoader(SubscriptionViewCell.class.getResource("connectionView.fxml"),
+                    loader = new FXMLLoader(SubscriptionViewCell.class.getResource("connectionButtonView.fxml"),
                             ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
@@ -109,39 +95,11 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> implements
             nameLabel.getStyleClass().removeAll("dirty");
             nameLabel.getStyleClass().add("dirty");
 
-            descriptionLabel.getStyleClass().removeAll("dirty");
-            descriptionLabel.getStyleClass().add("dirty");
-
-            mqtt3Tag.getStyleClass().removeAll("inactive");
-            mqtt3Tag.getStyleClass().add("inactive");
-
-            mqtt5Tag.getStyleClass().removeAll("inactive");
-            mqtt5Tag.getStyleClass().add("inactive");
-
-            credentialsTag.getStyleClass().removeAll("inactive");
-            credentialsTag.getStyleClass().add("inactive");
-
-            sslTag.getStyleClass().removeAll("inactive");
-            sslTag.getStyleClass().add("inactive");
-
-            proxyTag.getStyleClass().removeAll("inactive");
-            proxyTag.getStyleClass().add("inactive");
-
-            lwtTag.getStyleClass().removeAll("inactive");
-            lwtTag.getStyleClass().add("inactive");
         } else {
             nameLabel.setText(connectionDTO.getName());
             nameLabel.getStyleClass().removeAll("dirty");
-            descriptionLabel.getStyleClass().removeAll("dirty");
-            mqtt3Tag.getStyleClass().removeAll("inactive");
-            mqtt5Tag.getStyleClass().removeAll("inactive");
-            credentialsTag.getStyleClass().removeAll("inactive");
-            sslTag.getStyleClass().removeAll("inactive");
-            proxyTag.getStyleClass().removeAll("inactive");
-            lwtTag.getStyleClass().removeAll("inactive");
-        }
 
-        descriptionLabel.setText(connectionDTO.getHostAndPort());
+        }
 
         if (ConnectionHolder.getInstance().isConnectionUnused(ConnectionTransformer.propsToDto(connectionDTO))) {
             setGray();
@@ -169,30 +127,6 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> implements
             }
         }
 
-        boolean mqtt3 = connectionDTO.getMqttVersionProperty().getValue().equals(CorreoMqttVersion.MQTT_3_1_1);
-        mqtt3Tag.setVisible(mqtt3);
-        mqtt3Tag.setManaged(mqtt3);
-
-        boolean mqtt5 = connectionDTO.getMqttVersionProperty().getValue().equals(CorreoMqttVersion.MQTT_5_0);
-        mqtt5Tag.setVisible(mqtt5);
-        mqtt5Tag.setManaged(mqtt5);
-
-        boolean credentials = connectionDTO.getUsername() != null && !connectionDTO.getUsername().isEmpty()
-                && connectionDTO.getPassword() != null && !connectionDTO.getPassword().isEmpty();
-        credentialsTag.setVisible(credentials);
-        credentialsTag.setManaged(credentials);
-
-        boolean ssl = connectionDTO.getSslProperty().getValue().equals(TlsSsl.KEYSTORE);
-        sslTag.setVisible(ssl);
-        sslTag.setManaged(ssl);
-
-        boolean proxy = connectionDTO.getProxyProperty().getValue().equals(Proxy.SSH);
-        proxyTag.setVisible(proxy);
-        proxyTag.setManaged(proxy);
-
-        boolean lwt = connectionDTO.getLwtProperty().getValue().equals(Lwt.ON);
-        lwtTag.setVisible(lwt);
-        lwtTag.setManaged(lwt);
     }
 
     private void setGreen() {

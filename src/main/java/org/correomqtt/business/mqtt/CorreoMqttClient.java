@@ -21,4 +21,7 @@ public interface CorreoMqttClient {
     void unsubscribe(SubscriptionDTO subscriptionDTO);
 
     Set<SubscriptionDTO> getSubscriptions();
+
+    CorreoMqttClientState getState();
+
 }

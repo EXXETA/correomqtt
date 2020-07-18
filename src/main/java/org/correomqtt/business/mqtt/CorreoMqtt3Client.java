@@ -1,5 +1,6 @@
 package org.correomqtt.business.mqtt;
 
+import com.hivemq.client.mqtt.MqttClientState;
 import org.correomqtt.business.exception.CorreoMqtt3SubscriptionFailed;
 import org.correomqtt.business.exception.CorreoMqttConnectionFailedException;
 import org.correomqtt.business.exception.CorreoMqttNotConnectedException;
@@ -46,6 +47,14 @@ class CorreoMqtt3Client extends BaseCorreoMqttClient {
     @Override
     Logger getLogger() {
         return LOGGER;
+    }
+
+    @Override
+    MqttClientState getClientState() {
+        if(mqtt3BlockingClient != null) {
+            return mqtt3BlockingClient.getState();
+        }
+        return null;
     }
 
     void executeConnect() throws SSLException, InterruptedException, ExecutionException, TimeoutException {
@@ -175,6 +184,7 @@ class CorreoMqtt3Client extends BaseCorreoMqttClient {
         if (mqtt3BlockingClient == null) {
             throw new CorreoMqttNotConnectedException();
         }
+
         return mqtt3BlockingClient;
     }
 }

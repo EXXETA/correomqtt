@@ -28,7 +28,7 @@ public class ImportMessageService extends BaseService {
         try {
             messageDTO = new ObjectMapper().readValue(file, MessageDTO.class);
         } catch (IOException e) {
-            throw new CorreoMqttExportMessageException(e);
+            throw new CorreoMqttExportMessageException(e); //TODO import
         }
     }
 

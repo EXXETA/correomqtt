@@ -1,5 +1,8 @@
 @import "global.css";
 
+.connectionButtonView {
+    -fx-background-color: transparent;
+}
 
 .grayStatus {
     -fx-background-image: url('../icons/wifi-solid-gray.png');

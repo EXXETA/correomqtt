@@ -71,6 +71,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private Menu pluginMenu;
     @FXML
     private MenuItem pluginSettingsItem;
+    @FXML
+    private MenuItem scriptingItem;
 
     private SelectionModel<Tab> selectionModel;
     private ResourceBundle resources;
@@ -127,6 +129,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void setMenuEventHandler() {
         closeItem.setOnAction(event -> System.exit(0));
+        scriptingItem.setOnAction(event -> ScriptingViewController.showAsDialog());
         connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this));
         settingsItem.setOnAction(event -> SettingsViewController.showAsDialog());
         aboutItem.setOnAction(event -> AboutViewController.showAsDialog());

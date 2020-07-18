@@ -87,9 +87,8 @@ public class PluginSystem {
 
     private void updateSystem(PluginManager pluginManager) throws IOException {
 
-        LOGGER.info("Start Plugin Update");
-
         URL versionRepo = new URL(PLUGIN_REPO_URL);
+        LOGGER.info("Start Plugin Update: {}", versionRepo.toString());
         HttpURLConnection connection = (HttpURLConnection) versionRepo.openConnection();
 
         if (connection.getResponseCode() == 200) {

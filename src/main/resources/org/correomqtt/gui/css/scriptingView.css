@@ -1,0 +1,46 @@
+@import "global.css";
+@import "richtextfx.css";
+
+.headline {
+    -fx-font-size: 20;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 10 0;
+}
+
+.dialog {
+
+}
+
+.scriptingHolder {
+    -fx-padding: 0 0 0 0;
+}
+
+.settingsLabel {
+    -fx-padding: 0 0 0 0;
+    -fx-font-weight: bold;
+}
+
+.settingsDescription {
+    -fx-padding: 0 10 20 0;
+}
+
+.settingsLabel.disabled {
+    -fx-text-fill: #777777;
+    -fx-font-weight: bold;
+}
+
+.black .play-solid {
+    -fx-graphic: url("../icons/play-solid-black.png");
+}
+
+.white .play-solid {
+    -fx-graphic: url("../icons/play-solid-white.png");
+}
+
+.black .stop-solid {
+    -fx-graphic: url("../icons/stop-solid-black.png");
+}
+
+.white .stop-solid {
+    -fx-graphic: url("../icons/stop-solid-white.png");
+}

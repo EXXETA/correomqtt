@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.fxmisc.richtext.*?>
+
+<AnchorPane fx:id="scriptingRootPane" minHeight="300.0" minWidth="400.0" prefHeight="500.0" prefWidth="1000.0" styleClass="dialog" stylesheets="@../css/scriptingView.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ScriptingViewController">
+    <VBox styleClass="scriptingHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <children>
+         <SplitPane dividerPositions="0.29797979797979796" VBox.vgrow="ALWAYS">
+           <items>
+             <AnchorPane minHeight="100.0" minWidth="100.0">
+                  <children>
+                          <ListView fx:id="scriptListView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                  </children>
+               </AnchorPane>
+             <AnchorPane minHeight="100.0" minWidth="100.0">
+                  <children>
+                     <SplitPane dividerPositions="0.5" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                       <items>
+                         <AnchorPane minHeight="150.0" minWidth="0.0" prefHeight="200.0">
+                              <children>
+                                      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                          <children>
+                                              <HBox maxHeight="40.0" minHeight="40.0">
+                                                  <styleClass>
+                                                      <String fx:value="toolbar" />
+                                                      <String fx:value="bottom" />
+                                                  </styleClass>
+                                                  <children>
+                                                      <Button fx:id="scriptingRunButton" disable="true" mnemonicParsing="false" onAction="#onRunClicked" styleClass="play-solid">
+                                                          <tooltip>
+                                                              <Tooltip text="%scriptingViewRunButtonTooltip" />
+                                                          </tooltip>
+                                                          <HBox.margin>
+                                                              <Insets right="5.0" />
+                                                          </HBox.margin>
+                                                      </Button>
+                                                      <Button fx:id="scriptingStopButton" disable="true" mnemonicParsing="false" styleClass="stop-solid">
+                                                          <tooltip>
+                                                              <Tooltip text="%scriptingViewStopButtonTooltip" />
+                                                          </tooltip>
+                                                          <HBox.margin>
+                                                              <Insets right="5.0" />
+                                                          </HBox.margin>
+                                                      </Button>
+                                             <Pane prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS" />
+                                             <ComboBox fx:id="connectionList" prefWidth="300.0" />
+                                                  </children>
+                                              </HBox>
+                                              <Pane fx:id="scriptingViewCodeAreaPane" styleClass="codeAreaBackground" VBox.vgrow="ALWAYS">
+                                                  <CodeArea fx:id="codeArea" styleClass="codeArea" />
+                                              </Pane>
+                                          </children>
+                                      </VBox>
+                              </children>
+                           </AnchorPane>
+                         <AnchorPane minHeight="150.0" minWidth="0.0" prefHeight="100.0">
+                              <VBox prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                 <children>
+                                   <Pane fx:id="scriptingViewLogAreaPane" styleClass="codeAreaBackground" VBox.vgrow="ALWAYS">
+                                       <CodeArea fx:id="logArea" styleClass="codeArea" />
+                                   </Pane>
+                                    <Label fx:id="statusText">
+                                       <padding>
+                                          <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                       </padding>
+                                    </Label>
+                                 </children>
+                              </VBox>
+                         </AnchorPane>
+                       </items>
+                     </SplitPane>
+                  </children>
+               </AnchorPane>
+           </items>
+         </SplitPane>
+        </children>
+    </VBox>
+</AnchorPane>

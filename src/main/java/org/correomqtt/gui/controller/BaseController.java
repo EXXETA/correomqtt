@@ -25,8 +25,8 @@ abstract class BaseController {
 
     static <C extends BaseController, Z extends Class<C>> LoaderResult<C> load(Z controllerClazz, String fxml) {
         return load(controllerClazz,
-                    fxml,
-                    () -> controllerClazz.getDeclaredConstructor().newInstance());
+                fxml,
+                () -> controllerClazz.getDeclaredConstructor().newInstance());
     }
 
     static <C extends BaseController, Z extends Class<C>> LoaderResult<C> load(final Z controllerClazz,
@@ -63,10 +63,34 @@ abstract class BaseController {
     static <Z extends BaseController> void showAsDialog(LoaderResult<Z> result,
                                                         String title,
                                                         Map<Object, Object> windowProperties,
+                                                        int minWidth,
+                                                        int minHeight,
+                                                        boolean alwaysOnTop,
+                                                        final EventHandler<WindowEvent> closeHandler,
+                                                        final EventHandler<KeyEvent> keyHandler) {
+        showAsDialog(result, title, windowProperties, true, minWidth, minHeight, alwaysOnTop, closeHandler, keyHandler);
+    }
+
+    static <Z extends BaseController> void showAsDialog(LoaderResult<Z> result,
+                                                        String title,
+                                                        Map<Object, Object> windowProperties,
                                                         boolean resizable,
                                                         boolean alwaysOnTop,
                                                         final EventHandler<WindowEvent> closeHandler,
                                                         final EventHandler<KeyEvent> keyHandler) {
+        showAsDialog(result, title, windowProperties, resizable, null, null, alwaysOnTop, closeHandler, keyHandler);
+    }
+
+    private static <Z extends BaseController> void showAsDialog(LoaderResult<Z> result,
+                                                                String title,
+                                                                Map<Object, Object> windowProperties,
+                                                                boolean resizable,
+                                                                Integer minWidth,
+                                                                Integer minHeight,
+                                                                boolean alwaysOnTop,
+                                                                final EventHandler<WindowEvent> closeHandler,
+                                                                final EventHandler<KeyEvent> keyHandler) {
+
 
         Scene scene = new Scene(result.getMainPane());
         String cssPath = SettingsProvider.getInstance().getCssPath();
@@ -78,6 +102,12 @@ abstract class BaseController {
         stage.setScene(scene);
         stage.setResizable(resizable);
         stage.setAlwaysOnTop(alwaysOnTop);
+        if(minWidth != null){
+            stage.setMinWidth(minWidth);
+        }
+        if(minHeight != null){
+            stage.setMinHeight(minHeight);
+        }
         stage.show();
         if (closeHandler != null) {
             stage.getScene().getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, closeHandler);

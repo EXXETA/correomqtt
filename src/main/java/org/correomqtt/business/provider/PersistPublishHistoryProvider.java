@@ -73,7 +73,7 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
     }
 
     public List<String> getTopics(String connectionId) {
-        return historyDTOs.get(connectionId).getTopics();
+        return historyDTOs.get(connectionId).getTopics(); //TODO possible NPE
     }
 
     @Override
