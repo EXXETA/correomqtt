@@ -2,13 +2,13 @@ package org.correomqtt.business.dispatcher;
 
 import org.correomqtt.business.model.ScriptingDTO;
 
-public class LoadScriptDispatcher extends BaseDispatcher<LoadScriptObserver> {
+public class ScriptLoadDispatcher extends BaseDispatcher<ScriptLoadObserver> {
 
-    private static LoadScriptDispatcher instance;
+    private static ScriptLoadDispatcher instance;
 
-    public static synchronized LoadScriptDispatcher getInstance() {
+    public static synchronized ScriptLoadDispatcher getInstance() {
         if (instance == null) {
-            instance = new LoadScriptDispatcher();
+            instance = new ScriptLoadDispatcher();
         }
         return instance;
     }

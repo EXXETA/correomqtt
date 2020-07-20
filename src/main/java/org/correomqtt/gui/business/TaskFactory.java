@@ -1,8 +1,6 @@
 package org.correomqtt.gui.business;
 
 import org.correomqtt.business.model.ScriptExecutionDTO;
-import org.correomqtt.business.model.ScriptingDTO;
-import org.correomqtt.business.scripting.ScriptingBackend;
 import org.correomqtt.business.services.*;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.ScriptingPropertiesDTO;
@@ -15,7 +13,6 @@ import org.correomqtt.plugin.model.MessageExtensionDTO;
 import org.correomqtt.plugin.spi.PublishMessageHook;
 
 import java.io.File;
-import java.io.OutputStream;
 
 public class TaskFactory {
 
@@ -71,12 +68,17 @@ public class TaskFactory {
     }
 
     public static void loadScript(ScriptingPropertiesDTO scriptingPropertiesDTO) {
-        new GuiService<>(new LoadScriptService(ScriptingTransformer.propsToDTO(scriptingPropertiesDTO)),
-                LoadScriptService::loadScript).start();
+        new GuiService<>(new ScriptLoadService(ScriptingTransformer.propsToDTO(scriptingPropertiesDTO)),
+                ScriptLoadService::loadScript).start();
     }
 
-    public static void executeScript(ScriptExecutionDTO scriptExecutionDTO) {
-        new GuiService<>(new ExecuteScriptService(scriptExecutionDTO),
-                ExecuteScriptService::executeScript).start();
+    public static void submitScript(ScriptExecutionDTO scriptExecutionDTO) {
+        new GuiService<>(new ScriptSubmitService(scriptExecutionDTO),
+                ScriptSubmitService::submitScript).start();
+    }
+
+    public static void cancelScript(ScriptExecutionDTO scriptExecutionDTO) {
+        new GuiService<>(new ScriptCancelService(scriptExecutionDTO),
+                ScriptCancelService::cancelScript).start();
     }
 }

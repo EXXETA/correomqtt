@@ -5,7 +5,7 @@ import org.correomqtt.business.model.ScriptingDTO;
 
 import java.io.File;
 
-public interface LoadScriptObserver extends BaseObserver {
+public interface ScriptLoadObserver extends BaseObserver {
     void onLoadScriptSucceeded(ScriptingDTO scriptingDTO, String scriptCode);
 
     void onLoadScriptCancelled(ScriptingDTO scriptingDTO);
