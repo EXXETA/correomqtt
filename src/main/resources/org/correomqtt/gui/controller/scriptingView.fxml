@@ -81,7 +81,7 @@
                                        <Button mnemonicParsing="false" text="Button" />
                                     </children>
                                  </HBox>
-                                 <ListView prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
+                                 <ListView fx:id="executionList" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
                               </children>
                            </VBox>
                         </children>

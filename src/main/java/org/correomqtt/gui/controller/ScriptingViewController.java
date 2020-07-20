@@ -14,6 +14,7 @@ import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.mqtt.CorreoMqttClientState;
 import org.correomqtt.business.provider.ScriptingProvider;
 import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.scripting.ScriptingBackend;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.cell.ConnectionCell;
@@ -21,12 +22,14 @@ import org.correomqtt.gui.cell.ConnectionCellButton;
 import org.correomqtt.gui.cell.ScriptCell;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.model.ExecutionPropertiesDTO;
 import org.correomqtt.gui.model.ScriptingPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
+import org.correomqtt.gui.transformer.ExecutionTransformer;
 import org.correomqtt.gui.transformer.ScriptingTransformer;
-import org.correomqtt.gui.utils.CodeAreaOutputStream;
+import org.correomqtt.gui.utils.PlatformUtils;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
@@ -65,6 +68,9 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
 
     @FXML
     private ListView<ScriptingPropertiesDTO> scriptListView;
+
+    @FXML
+    private ListView<ExecutionPropertiesDTO> executionList;
 
     @FXML
     private Button scriptingRunButton;
@@ -146,6 +152,12 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
 
         connectionList.getSelectionModel().select(selectedItem);
 
+        executionList.setItems(FXCollections.observableArrayList(ScriptingBackend.getInstance().getExecutions()
+                        .stream()
+                        .map(ExecutionTransformer::dtoToProps)
+                        .collect(Collectors.toList())));
+
+        executionList.getSelectionModel().sele
     }
 
 
@@ -198,7 +210,6 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
     }
 
     public void onRunClicked(ActionEvent actionEvent) {
-        CodeAreaOutputStream out = new CodeAreaOutputStream(logArea);
         ConnectionPropertiesDTO selectedConnection = connectionList.getSelectionModel().getSelectedItem();
 
         if (selectedConnection == null) {
@@ -219,52 +230,45 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
 
         TaskFactory.submitScript(ScriptExecutionDTO.builder()
                 .jsCode(codeArea.getText())
-                .out(out)
                 .connectionId(selectedConnection.getId())
                 .build());
     }
 
     @Override
     public void onSubmitScriptSucceeded(ScriptExecutionDTO scriptExecutionDTO) {
-        // do nothing, wait for result
+        executionList.setItems(FXCollections.observableArrayList(ScriptingBackend.getInstance().getExecutions()
+                                                                                 .stream()
+                                                                                 .map(ExecutionTransformer::dtoToProps)
+                                                                                 .collect(Collectors.toList())));
     }
 
     @Override
     public void onSubmitScriptCancelled(ScriptExecutionDTO scriptExecutionDTO) {
-
-        scriptingStopButton.setDisable(true);
-        scriptingRunButton.setDisable(false);
-        statusText.setText(resources.getString("scriptCancelExecution"));
-
-        try {
-            scriptExecutionDTO.getOut().close();
-        } catch (IOException e) {
-            throw new CorreoMqttScriptExecutionFailed(e);
-        }
+        PlatformUtils.runLaterIfNotInFxThread(() -> {
+            scriptingStopButton.setDisable(true);
+            scriptingRunButton.setDisable(false);
+            statusText.setText(resources.getString("scriptCancelExecution"));
+        });
     }
 
     @Override
     public void onSubmitScriptFailed(ScriptExecutionDTO scriptExecutionDTO, Throwable exception) {
-        scriptingStopButton.setDisable(true);
-        scriptingRunButton.setDisable(false);
-        statusText.setText(resources.getString("scriptFailedExecution"));
+        PlatformUtils.runLaterIfNotInFxThread(() -> {
+            scriptingStopButton.setDisable(true);
+            scriptingRunButton.setDisable(false);
+            statusText.setText(resources.getString("scriptFailedExecution"));
 
-        if(exception != null) {
-            logArea.appendText(exception.getMessage());
-        }else{
-            logArea.appendText("Script Submission Failed.");
-        }
-
-        try {
-            scriptExecutionDTO.getOut().close();
-        } catch (IOException e) {
-            throw new CorreoMqttScriptExecutionFailed(e);
-        }
+            if (exception != null) {
+                logArea.appendText(exception.getMessage());
+            } else {
+                logArea.appendText("Script Submission Failed.");
+            }
+        });
     }
 
     @Override
     public void onCancelScriptSucceeded(ScriptExecutionDTO scriptExecutionDTO) {
-        // do nothing, wait for result
+
     }
 
     @Override
@@ -280,15 +284,12 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
     @Override
     public void onScriptExecutionSucceeded(ScriptExecutionDTO scriptExecutionDTO, long executionTimeInMilliseconds) {
 
-        scriptingStopButton.setDisable(true);
-        scriptingRunButton.setDisable(false);
-        statusText.setText(MessageFormat.format(resources.getString("scriptSuccessExecution"), executionTimeInMilliseconds));
+        PlatformUtils.runLaterIfNotInFxThread(() -> {
+            scriptingStopButton.setDisable(true);
+            scriptingRunButton.setDisable(false);
+            statusText.setText(MessageFormat.format(resources.getString("scriptSuccessExecution"), executionTimeInMilliseconds));
+        });
 
-        try {
-            scriptExecutionDTO.getOut().close();
-        } catch (IOException e) {
-            throw new CorreoMqttScriptExecutionFailed(e);
-        }
     }
 
     @Override

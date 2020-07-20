@@ -15,5 +15,4 @@ public class ScriptExecutionDTO {
     private String executionId = UUID.randomUUID().toString();
     private String connectionId;
     private String jsCode;
-    private OutputStream out;
 }

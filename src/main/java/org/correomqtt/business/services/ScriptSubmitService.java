@@ -18,6 +18,7 @@ public class ScriptSubmitService implements BusinessService {
     public void submitScript() {
         ScriptSubmitDispatcher.getInstance().onSubmitScriptStarted(scriptExecutionDTO);
         LOGGER.info("Start submitting script: {}", scriptExecutionDTO.getExecutionId());
+        ScriptingBackend.getInstance().submitScript(scriptExecutionDTO);
     }
 
     @Override

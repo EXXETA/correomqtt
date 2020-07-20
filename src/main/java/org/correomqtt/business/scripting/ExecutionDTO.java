@@ -16,7 +16,9 @@ import java.util.concurrent.Future;
 @Builder
 public class ExecutionDTO {
 
+    private ExecutorService executorService;
     private Context context;
+    private StringBuilder log;
     private ScriptExecutionDTO scriptExecutionDTO;
     private long startTime;
 
