@@ -74,6 +74,7 @@ public class ScriptingBackend {
                                                 .build();
 
         ScriptingLogOutputStream out = new ScriptingLogOutputStream(executionDTO);
+        executionDTO.setOut(out);
 
         Context context = Context.newBuilder("js")
                                  .out(out)
@@ -81,10 +82,11 @@ public class ScriptingBackend {
                                  .build();
         executionDTO.setContext(context);
 
-        context.getBindings("js").putMember("correo", new CorreoJsBinding(scriptExecutionDTO));
+        context.getBindings("js").putMember("correo", new CorreoJsBinding(executionDTO));
 
 
         executions.put(scriptExecutionDTO.getExecutionId(), executionDTO);
+
 
         CompletableFuture.supplyAsync(() -> context.eval("js", scriptExecutionDTO.getJsCode()),executorService)
                          .handle((value, t) -> this.onScriptReturned(scriptExecutionDTO.getExecutionId(), value, t));

@@ -5,6 +5,7 @@ import org.correomqtt.business.model.ScriptExecutionDTO;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 
+import java.io.OutputStream;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -21,5 +22,6 @@ public class ExecutionDTO {
     private StringBuilder log;
     private ScriptExecutionDTO scriptExecutionDTO;
     private long startTime;
+    private ScriptingLogOutputStream out;
 
 }

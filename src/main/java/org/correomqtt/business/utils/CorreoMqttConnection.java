@@ -9,6 +9,9 @@ import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Getter
 @Setter
 @Builder
@@ -20,6 +23,7 @@ public class CorreoMqttConnection {
     private int sort;
     private ConnectionConfigDTO configDTO;
     private CorreoMqttClient client;
+    private Map<String, CorreoMqttClient> secondaryClients= new HashMap<>();
 
     public CorreoMqttConnection(ConnectionConfigDTO configDTO, int sort){
         this.sort = sort;

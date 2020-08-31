@@ -1,5 +1,6 @@
 package org.correomqtt.gui.controller;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -7,7 +8,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
 import org.correomqtt.business.dispatcher.*;
-import org.correomqtt.business.exception.CorreoMqttScriptExecutionFailed;
 import org.correomqtt.business.model.ScriptExecutionDTO;
 import org.correomqtt.business.model.ScriptingDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
@@ -19,6 +19,7 @@ import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.cell.ConnectionCell;
 import org.correomqtt.gui.cell.ConnectionCellButton;
+import org.correomqtt.gui.cell.ExecutionCell;
 import org.correomqtt.gui.cell.ScriptCell;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -114,7 +115,7 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
         scriptingViewCodeAreaPane.setVisible(false);
         scriptingViewLogAreaPane.setVisible(false);
 
-        scriptListView.setCellFactory(this::createCell);
+        scriptListView.setCellFactory(this::createScriptCell);
 
         List<ScriptingPropertiesDTO> scriptsList = ScriptingProvider.getInstance().getScripts()
                 .stream()
@@ -153,21 +154,42 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
         connectionList.getSelectionModel().select(selectedItem);
 
         executionList.setItems(FXCollections.observableArrayList(ScriptingBackend.getInstance().getExecutions()
-                        .stream()
-                        .map(ExecutionTransformer::dtoToProps)
-                        .collect(Collectors.toList())));
+                .stream()
+                .map(ExecutionTransformer::dtoToProps)
+                .collect(Collectors.toList())));
 
-        executionList.getSelectionModel().sele
+        executionList.setCellFactory(this::createExcecutionCell);
+        executionList.getSelectionModel().selectFirst();
+
     }
 
 
-    private ListCell<ScriptingPropertiesDTO> createCell(ListView<ScriptingPropertiesDTO> scriptListView) {
+    private ListCell<ScriptingPropertiesDTO> createScriptCell(ListView<ScriptingPropertiesDTO> scriptListView) {
         ScriptCell cell = new ScriptCell(scriptListView);
         cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
             ScriptingPropertiesDTO selectedItem = scriptListView.getSelectionModel().getSelectedItem();
-            TaskFactory.loadScript(selectedItem);
+            onSelectScript(selectedItem);
         });
         return cell;
+    }
+
+    private void onSelectScript(ScriptingPropertiesDTO selectedItem) {
+        TaskFactory.loadScript(selectedItem);
+    }
+
+    private ListCell<ExecutionPropertiesDTO> createExcecutionCell(ListView<ExecutionPropertiesDTO> executionListView) {
+        ExecutionCell cell = new ExecutionCell(executionList);
+        cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            ExecutionPropertiesDTO selectedItem = executionList.getSelectionModel().getSelectedItem();
+            onSelectExecution(selectedItem);
+        });
+        return cell;
+    }
+
+    private void onSelectExecution(ExecutionPropertiesDTO selectedItem) {
+        if(selectedItem != null && selectedItem.getLog() != null) {
+            logArea.replaceText(selectedItem.getLog());
+        }
     }
 
     @Override
@@ -213,15 +235,10 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
         ConnectionPropertiesDTO selectedConnection = connectionList.getSelectionModel().getSelectedItem();
 
         if (selectedConnection == null) {
-            AlertHelper.warn(resources.getString("scriptStartWithoutConnectionNotPossibleTitle"),resources.getString("scriptStartWithoutConnectionNotPossibleContent"));
+            AlertHelper.warn(resources.getString("scriptStartWithoutConnectionNotPossibleTitle"), resources.getString("scriptStartWithoutConnectionNotPossibleContent"));
             return;
         }
 
-        CorreoMqttClient client = ConnectionHolder.getInstance().getConnection(selectedConnection.getId()).getClient();
-        if(client == null || client.getState() != CorreoMqttClientState.CONNECTED){
-            AlertHelper.warn(resources.getString("scriptStartWithoutConnectedConnectionTitle"),resources.getString("scriptStartWithoutConnectedConnectionContent"));
-            return;
-        }
 
         scriptingStopButton.setDisable(false);
         scriptingRunButton.setDisable(true);
@@ -237,9 +254,9 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
     @Override
     public void onSubmitScriptSucceeded(ScriptExecutionDTO scriptExecutionDTO) {
         executionList.setItems(FXCollections.observableArrayList(ScriptingBackend.getInstance().getExecutions()
-                                                                                 .stream()
-                                                                                 .map(ExecutionTransformer::dtoToProps)
-                                                                                 .collect(Collectors.toList())));
+                .stream()
+                .map(ExecutionTransformer::dtoToProps)
+                .collect(Collectors.toList())));
     }
 
     @Override
@@ -305,5 +322,17 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
     @Override
     public void onScriptExecutionFailed(ScriptExecutionDTO scriptExecutionDTO, long executionTimeInMilliseconds, Throwable t) {
 
+    }
+
+    @Override
+    public void onScriptExecutionLogUpdate(String executionId, char i) {
+        System.out.println(i);
+        ExecutionPropertiesDTO selectedItem = executionList.getSelectionModel().getSelectedItem();
+        if (selectedItem != null) {
+            String selectedExecutionId = selectedItem.getExecutionId();
+            if (selectedExecutionId.equals(executionId)) {
+                PlatformUtils.runLaterIfNotInFxThread(() -> logArea.appendText(String.valueOf(i)));
+            }
+        }
     }
 }

@@ -11,4 +11,6 @@ public interface ScriptResultObserver extends BaseObserver {
     void onScriptExecutionCancelled(ScriptExecutionDTO scriptExecutionDTO);
 
     void onScriptExecutionFailed(ScriptExecutionDTO scriptExecutionDTO, long executionTimeInMilliseconds, Throwable t);
+
+    void onScriptExecutionLogUpdate(String executionId, char i);
 }

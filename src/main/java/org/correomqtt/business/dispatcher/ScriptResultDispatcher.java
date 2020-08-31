@@ -29,4 +29,7 @@ public class ScriptResultDispatcher extends BaseDispatcher<ScriptResultObserver>
         trigger(o -> o.onScriptExecutionCancelled(scriptExecutionDTO));
     }
 
+    public void onScriptExecutionLogUpdate(String executionId, char i) {
+        trigger(o -> o.onScriptExecutionLogUpdate(executionId, i));
+    }
 }
