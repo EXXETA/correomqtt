@@ -65,7 +65,7 @@ public class LibSecretKeyring extends BaseKeyring implements KeyringHook {
     private boolean isAvailable() {
         try (SimpleCollection collection = new SimpleCollection()) {
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.debug("Try to detect libsecret failed. This is not a real problem.", e);
             return false;
         }
