@@ -22,8 +22,10 @@ import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.PreloaderViewController;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 public class CorreoPreloader extends Preloader implements PreloadingObserver {
 
@@ -36,7 +38,7 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
     }
 
     @Override
-    public void init() throws IOException {
+    public void init() throws IOException, NoSuchFieldException, IllegalAccessException {
         setLoggerFilePath();
 
         String cssPath = SettingsProvider.getInstance().getCssPath();
@@ -70,6 +72,8 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        com.sun.glass.ui.Application.GetApplication().setName("org.correomqtt.CorreoMqtt");
+
         this.preloaderStage = primaryStage;
         preloaderStage.setScene(scene);
         preloaderStage.initStyle(StageStyle.UNDECORATED);

@@ -165,7 +165,8 @@ elif [ "$1" = "linux" ]; then
     --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.png \
-    --linux-package-deps libpng16-16
+    --linux-package-deps libpng16-16 \
+    --resource-dir .travis/resources/linux
   echo " done"
   echo -n "Package RPM ..."
   ./jdk-14/bin/jpackage \
@@ -175,7 +176,8 @@ elif [ "$1" = "linux" ]; then
     -n CorreoMQTT \
     --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
-    --icon ./src/main/deploy/package/Icon.png
+    --icon ./src/main/deploy/package/Icon.png \
+    --resource-dir .travis/resources/linux
   echo " done"
 elif [ "$1" = "windows" ]; then
   echo -n "Package MSI ..."
