@@ -26,7 +26,8 @@ public class SettingsDTO {
     private boolean searchUpdates;
     private boolean firstStart = true;
     private String keyringIdentifier;
-
+    @Builder.Default
+    private GlobalUISettings globalUISettings = null;
     @Builder.Default
     private String configCreatedWithCorreoVersion = null;
 
@@ -52,5 +53,13 @@ public class SettingsDTO {
 
     public void setSavedLocale(Locale savedLocale) {
         this.savedLocale = savedLocale;
+    }
+
+    public GlobalUISettings getGlobalUISettings() {
+        return globalUISettings;
+    }
+
+    public void setGlobalUISettings(GlobalUISettings globalUISettings) {
+        this.globalUISettings = globalUISettings;
     }
 }

@@ -284,7 +284,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     @Override
-    public void onSettingsUpdated() {
+    public void onSettingsUpdated(boolean showInfoDialog) {
 
     }
 

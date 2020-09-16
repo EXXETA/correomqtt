@@ -16,17 +16,14 @@ import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.business.dispatcher.*;
-import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.GlobalUISettings;
 import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.provider.PasswordRecoverableException;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.VersionUtils;
-import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.controller.AlertController;
 import org.correomqtt.gui.controller.MainViewController;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
-import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.plugin.PluginSystem;
@@ -36,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -92,7 +88,7 @@ public class CorreoMqtt extends Application implements StartupObserver {
 
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderReady"));
 
-        SettingsProvider.getInstance().saveSettings();
+        SettingsProvider.getInstance().saveSettings(false);
 
     }
 
@@ -167,10 +163,25 @@ public class CorreoMqtt extends Application implements StartupObserver {
         primaryStage.setScene(scene);
         primaryStage.setMinHeight(400);
         primaryStage.setMinWidth(850);
-        primaryStage.show();
+
+        final SettingsDTO settings = SettingsProvider.getInstance().getSettings();
+
+        if (settings.getGlobalUISettings() == null) {
+            primaryStage.show();
+            saveGlobalUISettings(primaryStage);
+        } else {
+            primaryStage.setX(settings.getGlobalUISettings().getWindowPositionX());
+            primaryStage.setY(settings.getGlobalUISettings().getWindowPositionY());
+            primaryStage.setWidth(settings.getGlobalUISettings().getWindowWidth());
+            primaryStage.setHeight(settings.getGlobalUISettings().getWindowHeight());
+
+            primaryStage.show();
+        }
 
         primaryStage.setOnCloseRequest(t -> {
             LOGGER.info("Main window closed. Initialize shutdown.");
+            LOGGER.info("Saving global UI settings.");
+            saveGlobalUISettings(primaryStage);
             LOGGER.info("Shutting down connections.");
             ApplicationLifecycleDispatcher.getInstance().onShutdown();
             LOGGER.info("Shutting down plugins.");
@@ -181,6 +192,19 @@ public class CorreoMqtt extends Application implements StartupObserver {
         });
 
         setupShortcut();
+    }
+
+    private void saveGlobalUISettings(Stage primaryStage) {
+        final SettingsDTO settings = SettingsProvider.getInstance().getSettings();
+
+        settings.setGlobalUISettings(new GlobalUISettings(
+                primaryStage.getX(),
+                primaryStage.getY(),
+                primaryStage.getWidth(),
+                primaryStage.getHeight()
+        ));
+
+        SettingsProvider.getInstance().saveSettings(false);
     }
 
     private void setupShortcut() {

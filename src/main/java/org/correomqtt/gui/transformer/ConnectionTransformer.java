@@ -46,6 +46,7 @@ public class ConnectionTransformer {
                 .lwtQoS(dto.getLwtQoS())
                 .lwtRetained(dto.isLwtRetained())
                 .lwtPayload(dto.getLwtPayload())
+                .connectionUISettings(dto.getConnectionUISettings())
                 .dirty(false)
                 .unpersisted(false)
                 .build();
@@ -84,6 +85,7 @@ public class ConnectionTransformer {
                 .lwtQoS(props.getLwtQos())
                 .lwtRetained(props.isLwtRetained())
                 .lwtPayload(props.getLwtPayload())
+                .connectionUISettings(props.getConnectionUISettings())
                 .build();
     }
 }

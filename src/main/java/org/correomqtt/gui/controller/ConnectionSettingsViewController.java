@@ -6,7 +6,6 @@ import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
-import org.correomqtt.business.provider.PasswordRecoverableException;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.TaskFactory;
@@ -20,7 +19,6 @@ import org.correomqtt.gui.model.GenericCellModel;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
-import org.correomqtt.gui.utils.PlatformUtils;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
@@ -1057,7 +1055,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
     }
 
     @Override
-    public void onSettingsUpdated() {
+    public void onSettingsUpdated(boolean showInfoDialog) {
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Updated settings in connection settings view controller");

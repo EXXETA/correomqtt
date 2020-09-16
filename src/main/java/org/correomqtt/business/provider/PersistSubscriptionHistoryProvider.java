@@ -155,7 +155,7 @@ public class PersistSubscriptionHistoryProvider extends BasePersistHistoryProvid
     }
 
     @Override
-    public void onSettingsUpdated() {
+    public void onSettingsUpdated(boolean showInfoDialog) {
         // nothing to do
     }
 
