@@ -51,7 +51,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     @FXML
     Button showDetailsButton;
     @FXML
-    private SplitPane splitPane;
+    protected SplitPane splitPane;
     @FXML
     private VBox messagesVBox;
     @FXML
@@ -60,7 +60,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     private Button messageSearchClearButton;
 
     @FXML
-    private ToggleButton showDetailViewButton;
+    protected ToggleButton showDetailViewButton;
 
     private ObservableList<MessagePropertiesDTO> messages;
 
@@ -96,20 +96,40 @@ public class MessageListViewController extends BaseConnectionController implemen
 
         splitPane.widthProperty().addListener((observable, oldValue, newValue) -> {
             Platform.runLater(() -> {
-                if (newValue.intValue() <= 670) {
-                    closeDetailView();
-                    showDetailViewButton.setDisable(true);
-                } else {
-                    showDetailViewButton.setDisable(false);
-
-                    if (showDetailViewButton.isSelected()) {
-                        showDetailView();
-                    }
-                }
+                calculateDetailView(newValue);
             });
         });
 
         messageSearchTextField.textProperty().addListener((observable, oldValue, newValue) -> searchInMessages(newValue));
+    }
+
+    public void calculateDetailView(Number newValue) {
+        if (newValue.intValue() <= 670) {
+            closeDetailView();
+            showDetailViewButton.setDisable(true);
+        } else {
+            showDetailViewButton.setDisable(false);
+
+            if (showDetailViewButton.isSelected()) {
+                showDetailView();
+            }
+        }
+    }
+
+    public double getDetailDividerPosition() {
+        if (splitPane.getDividers().size() > 0) {
+            return splitPane.getDividers().get(0).getPosition();
+        } else {
+            return 0.5;
+        }
+    }
+
+    public boolean isDetailActive() {
+        if (showDetailViewButton.isSelected()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void searchInMessages(String newValue) {
@@ -300,14 +320,14 @@ public class MessageListViewController extends BaseConnectionController implemen
         }
     }
 
-    private void closeDetailView() {
+    protected void closeDetailView() {
         if (this.detailViewController != null) {
             splitPane.getItems().remove(detailViewController.getMainNode());
             this.detailViewController = null;
         }
     }
 
-    private void showDetailView() {
+    protected void showDetailView() {
 
         if (detailViewController == null) {
             LoaderResult<DetailViewController> result = DetailViewController.load(getSelectedMessage(), getConnectionId(), this, true);

@@ -12,11 +12,31 @@ import lombok.*;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ConnectionUISettings {
+    private boolean showSubscribe;
+    private boolean showPublish;
     private double mainDividerPosition;
     private double publishDividerPosition;
+    private double publishDetailDividerPosition;
     private boolean publishDetailActive;
     private double subscribeDividerPosition;
+    private double subscribeDetailDividerPosition;
     private boolean subscribeDetailActive;
+
+    public boolean isShowSubscribe() {
+        return showSubscribe;
+    }
+
+    public void setShowSubscribe(boolean showSubscribe) {
+        this.showSubscribe = showSubscribe;
+    }
+
+    public boolean isShowPublish() {
+        return showPublish;
+    }
+
+    public void setShowPublish(boolean showPublish) {
+        this.showPublish = showPublish;
+    }
 
     public double getMainDividerPosition() {
         return mainDividerPosition;
@@ -34,6 +54,14 @@ public class ConnectionUISettings {
         this.publishDividerPosition = publishDividerPosition;
     }
 
+    public double getPublishDetailDividerPosition() {
+        return publishDetailDividerPosition;
+    }
+
+    public void setPublishDetailDividerPosition(double publishDetailDividerPosition) {
+        this.publishDetailDividerPosition = publishDetailDividerPosition;
+    }
+
     public boolean isPublishDetailActive() {
         return publishDetailActive;
     }
@@ -48,6 +76,14 @@ public class ConnectionUISettings {
 
     public void setSubscribeDividerPosition(double subscribeDividerPosition) {
         this.subscribeDividerPosition = subscribeDividerPosition;
+    }
+
+    public double getSubscribeDetailDividerPosition() {
+        return subscribeDetailDividerPosition;
+    }
+
+    public void setSubscribeDetailDividerPosition(double subscribeDetailDividerPosition) {
+        this.subscribeDetailDividerPosition = subscribeDetailDividerPosition;
     }
 
     public boolean isSubscribeDetailActive() {

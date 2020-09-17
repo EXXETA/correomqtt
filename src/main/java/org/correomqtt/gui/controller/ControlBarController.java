@@ -4,8 +4,13 @@ import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.exception.CorreoMqttException;
 import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.ConnectionUISettings;
+import org.correomqtt.business.model.GlobalUISettings;
+import org.correomqtt.business.model.SettingsDTO;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionState;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -50,6 +55,7 @@ public class ControlBarController extends BaseConnectionController implements Co
     private ResourceBundle resources;
 
     boolean gracefulDisconnenct = false;
+    private ConnectionConfigDTO connectionConfigDTO;
 
     public ControlBarController(String connectionId, ControlBarDelegate delegate) {
         super(connectionId);
@@ -59,13 +65,25 @@ public class ControlBarController extends BaseConnectionController implements Co
 
     static LoaderResult<ControlBarController> load(String connectionId, ControlBarDelegate delegate) {
         return load(ControlBarController.class, "controlBarView.fxml",
-                    () -> new ControlBarController(connectionId, delegate)
+                () -> new ControlBarController(connectionId, delegate)
         );
     }
 
     @FXML
     public void initialize() {
-        controlViewPSButton.setSelected(true);
+        SettingsProvider.getInstance().getConnectionConfigs().stream()
+                .filter(c -> c.getId().equals(getConnectionId()))
+                .findFirst()
+                .ifPresent(c -> {
+                    connectionConfigDTO = c;
+                    if (connectionConfigDTO.getConnectionUISettings().isShowPublish() && c.getConnectionUISettings().isShowSubscribe()) {
+                        controlViewPSButton.setSelected(true);
+                    } else if (c.getConnectionUISettings().isShowSubscribe()) {
+                        controlViewSButton.setSelected(true);
+                    } else {
+                        controlViewPButton.setSelected(true);
+                    }
+                });
         brokerInfo.setText("");
         disconnectBtn.setVisible(false);
         disconnectBtn.setManaged(false);
@@ -96,7 +114,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Show only publish clicked: {}", getConnectionId());
         }
 
-        delegate.setLayout(true,false);
+        delegate.setLayout(true, false);
         controlViewPButton.setSelected(true);
         controlViewPSButton.setSelected(false);
         controlViewSButton.setSelected(false);
@@ -108,7 +126,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Show publish AND subscribe clicked: {}", getConnectionId());
         }
 
-        delegate.setLayout(true,true);
+        delegate.setLayout(true, true);
         controlViewPButton.setSelected(false);
         controlViewPSButton.setSelected(true);
         controlViewSButton.setSelected(false);
@@ -120,10 +138,35 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Show only subscribe clicked: {}", getConnectionId());
         }
 
-        delegate.setLayout(false,true);
+        delegate.setLayout(false, true);
         controlViewPButton.setSelected(false);
         controlViewPSButton.setSelected(false);
         controlViewSButton.setSelected(true);
+    }
+
+    @FXML
+    public void saveUISettings() {
+        if (controlViewPButton.isSelected()) {
+            connectionConfigDTO.getConnectionUISettings().setShowPublish(true);
+            connectionConfigDTO.getConnectionUISettings().setShowSubscribe(false);
+        } else if (controlViewSButton.isSelected()) {
+            connectionConfigDTO.getConnectionUISettings().setShowPublish(false);
+            connectionConfigDTO.getConnectionUISettings().setShowSubscribe(true);
+        } else {
+            connectionConfigDTO.getConnectionUISettings().setShowPublish(true);
+            connectionConfigDTO.getConnectionUISettings().setShowSubscribe(true);
+        }
+
+        delegate.saveConnectionUISettings();
+    }
+
+    @FXML
+    public void resetUISettings() {
+        controlViewPButton.setSelected(false);
+        controlViewPSButton.setSelected(true);
+        controlViewSButton.setSelected(false);
+
+        delegate.resetConnectionUISettings();
     }
 
     @FXML

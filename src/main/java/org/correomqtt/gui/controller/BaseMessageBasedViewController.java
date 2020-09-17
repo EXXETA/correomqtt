@@ -24,6 +24,18 @@ abstract class BaseMessageBasedViewController extends BaseConnectionController i
         splitPane.getItems().add(messageListViewController.getMainNode());
     }
 
+    public double getDividerPosition() {
+        return splitPane.getDividers().get(0).getPosition();
+    }
+
+    public double getDetailDividerPosition() {
+        return messageListViewController.getDetailDividerPosition();
+    }
+
+    public boolean isDetailActive() {
+        return messageListViewController.isDetailActive();
+    }
+
     @Override
     public void setConnectionId(String connectionId) {
         super.setConnectionId(connectionId);

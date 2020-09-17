@@ -116,6 +116,7 @@ public class SettingsProvider extends BaseUserFileProvider {
 
     public void saveConnections(List<ConnectionConfigDTO> connections, String masterPassword) throws PasswordRecoverableException {
         configDTO.setConnections(connections);
+        saveDTO();
 
         SecretStoreProvider secretStoreProvider = SecretStoreProvider.getInstance();
         for(ConnectionConfigDTO c: connections){

@@ -1,12 +1,10 @@
 package org.correomqtt.gui.controller;
 
 import org.correomqtt.business.exception.CorreoMqttException;
-import org.correomqtt.business.model.MessageDTO;
-import org.correomqtt.business.model.MessageType;
-import org.correomqtt.business.model.PublishStatus;
-import org.correomqtt.business.model.Qos;
+import org.correomqtt.business.model.*;
 import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.cell.QosCell;
 import org.correomqtt.gui.cell.TopicCell;
@@ -122,6 +120,18 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         codeAreaScrollPane.getChildren().add(new VirtualizedScrollPane<>(payloadCodeArea));
         payloadCodeArea.prefWidthProperty().bind(codeAreaScrollPane.widthProperty());
         payloadCodeArea.prefHeightProperty().bind(codeAreaScrollPane.heightProperty());
+
+        SettingsProvider.getInstance().getConnectionConfigs().stream()
+                .filter(c -> c.getId().equals(getConnectionId()))
+                .findFirst()
+                .ifPresent(c -> {
+                    splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDividerPosition());
+                    super.messageListViewController.showDetailViewButton.setSelected(c.getConnectionUISettings().isPublishDetailActive());
+                    if (c.getConnectionUISettings().isPublishDetailActive()) {
+                        super.messageListViewController.showDetailView();
+                        super.messageListViewController.splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDetailDividerPosition());
+                    }
+                });
 
         initTopicComboBox();
     }
