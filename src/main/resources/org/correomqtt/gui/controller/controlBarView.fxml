@@ -25,12 +25,15 @@
                 <Tooltip text="%controlBarViewOnlySubscribeButtonTooltip" />
             </tooltip>
         </ToggleButton>
-      <Button mnemonicParsing="false" onAction="#saveUISettings" text="Save">
+      <Button mnemonicParsing="false" onAction="#saveUISettings" styleClass="save-ui" text="Save">
          <HBox.margin>
             <Insets left="5.0" />
          </HBox.margin>
       </Button>
-      <Button mnemonicParsing="false" onAction="#resetUISettings" text="Reset" />
+      <Button mnemonicParsing="false" onAction="#resetUISettings" styleClass="reset-ui" text="Reset">
+         <HBox.margin>
+            <Insets left="-1.0" />
+         </HBox.margin></Button>
       <Button fx:id="sysButton" mnemonicParsing="false" onAction="#onSysClicked" text="\$SYS">
          <HBox.margin>
             <Insets left="5.0" />

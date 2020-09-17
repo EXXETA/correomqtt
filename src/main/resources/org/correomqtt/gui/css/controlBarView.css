@@ -62,3 +62,13 @@
   -fx-background-radius: 3 0 0 3;
   -fx-border-radius: 3 0 0 3;
 }
+
+.button.save-ui {
+    -fx-background-radius: 3 0 0 3;
+    -fx-border-radius: 3 0 0 3;
+}
+
+.button.reset-ui{
+    -fx-background-radius: 0 3 3 0;
+    -fx-border-radius: 0 3 3 0;
+}
