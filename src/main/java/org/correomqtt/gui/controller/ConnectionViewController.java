@@ -86,7 +86,6 @@ public class ConnectionViewController extends BaseConnectionController implement
                                 0.5,
                                 false
                         ));
-                        saveConnectionUISettings();
                     }
                 });
 
@@ -111,27 +110,22 @@ public class ConnectionViewController extends BaseConnectionController implement
         } else {
             setLayout(true, false);
         }
+
+        saveConnectionUISettings();
     }
 
     @Override
     public void saveConnectionUISettings() {
-        //mainDivider
-        if (connectionConfigDTO.getConnectionUISettings().isShowSubscribe() && connectionConfigDTO.getConnectionUISettings().isShowPublish()) {
+        if (splitPane.getDividers().size() > 0) {
             connectionConfigDTO.getConnectionUISettings().setMainDividerPosition(splitPane.getDividers().get(0).positionProperty().getValue());
         }
 
-        //pubDivider
         connectionConfigDTO.getConnectionUISettings().setPublishDividerPosition(publishController.getDividerPosition());
-        //pubDetailDivider
         connectionConfigDTO.getConnectionUISettings().setPublishDetailDividerPosition(publishController.getDetailDividerPosition());
-        //pubDetail
         connectionConfigDTO.getConnectionUISettings().setPublishDetailActive(publishController.isDetailActive());
 
-        //subDivider
         connectionConfigDTO.getConnectionUISettings().setSubscribeDividerPosition(subscribeController.getDividerPosition());
-        //subDetailDivider
         connectionConfigDTO.getConnectionUISettings().setSubscribeDetailDividerPosition(subscribeController.getDetailDividerPosition());
-        //subDetail
         connectionConfigDTO.getConnectionUISettings().setSubscribeDetailActive(subscribeController.isDetailActive());
 
         KeyringHandler.getInstance().retryWithMasterPassword(
