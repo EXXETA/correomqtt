@@ -29,11 +29,18 @@
          <HBox.margin>
             <Insets left="5.0" />
          </HBox.margin>
+          <tooltip>
+              <Tooltip text="%controlBarViewSaveUIButtonTooltip" />
+          </tooltip>
       </Button>
       <Button mnemonicParsing="false" onAction="#resetUISettings" styleClass="reset-ui">
          <HBox.margin>
             <Insets left="-1.0" />
-         </HBox.margin></Button>
+         </HBox.margin>
+          <tooltip>
+              <Tooltip text="%controlBarViewResetUIButtonTooltip" />
+          </tooltip>
+      </Button>
       <Button fx:id="sysButton" mnemonicParsing="false" onAction="#onSysClicked" text="\$SYS">
          <HBox.margin>
             <Insets left="5.0" />
