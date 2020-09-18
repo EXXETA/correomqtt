@@ -25,7 +25,11 @@ abstract class BaseMessageBasedViewController extends BaseConnectionController i
     }
 
     public double getDividerPosition() {
-        return splitPane.getDividers().get(0).getPosition();
+        if (splitPane.getDividers().size() > 0) {
+            return splitPane.getDividers().get(0).getPosition();
+        } else {
+            return 0.5;
+        }
     }
 
     public double getDetailDividerPosition() {

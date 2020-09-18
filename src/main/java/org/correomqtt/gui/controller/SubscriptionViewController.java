@@ -131,11 +131,11 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
                 .ifPresent(c -> {
-                    splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDividerPosition());
+                    if (splitPane.getDividers().size() > 0) {splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDividerPosition());}
                     super.messageListViewController.showDetailViewButton.setSelected(c.getConnectionUISettings().isSubscribeDetailActive());
                     if (c.getConnectionUISettings().isSubscribeDetailActive()) {
                         super.messageListViewController.showDetailView();
-                        super.messageListViewController.splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDetailDividerPosition());
+                        if (super.messageListViewController.splitPane.getDividers().size() > 0) {super.messageListViewController.splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDetailDividerPosition());}
                     }
                 });
 

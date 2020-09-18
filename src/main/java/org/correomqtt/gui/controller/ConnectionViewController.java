@@ -141,11 +141,11 @@ public class ConnectionViewController extends BaseConnectionController implement
     @Override
     public void resetConnectionUISettings() {
         setLayout(true, true);
-        splitPane.getDividers().get(0).setPosition(0.5);
-        publishController.splitPane.getDividers().get(0).setPosition(0.5);
+        if (splitPane.getDividers().size() > 0) {splitPane.getDividers().get(0).setPosition(0.5);}
+        if (publishController.splitPane.getDividers().size() > 0) {publishController.splitPane.getDividers().get(0).setPosition(0.5);}
         publishController.messageListViewController.showDetailViewButton.setSelected(false);
         publishController.messageListViewController.closeDetailView();
-        subscribeController.splitPane.getDividers().get(0).setPosition(0.5);
+        if (subscribeController.splitPane.getDividers().size() > 0) {subscribeController.splitPane.getDividers().get(0).setPosition(0.5);}
         subscribeController.messageListViewController.showDetailViewButton.setSelected(false);
         subscribeController.messageListViewController.closeDetailView();
     }
@@ -174,7 +174,7 @@ public class ConnectionViewController extends BaseConnectionController implement
             if (!splitPane.getItems().contains(publishPane)) {
                 splitPane.getItems().add(0, publishPane);
             }
-            splitPane.getDividers().get(0).positionProperty().setValue(connectionConfigDTO.getConnectionUISettings().getMainDividerPosition());
+            if (splitPane.getDividers().size() > 0) {splitPane.getDividers().get(0).positionProperty().setValue(connectionConfigDTO.getConnectionUISettings().getMainDividerPosition());}
         }
     }
 
