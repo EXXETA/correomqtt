@@ -204,7 +204,7 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
     }
 
     @Override
-    public void onSettingsUpdated(boolean showInfoDialog) {
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
         // nothing to do
     }
 

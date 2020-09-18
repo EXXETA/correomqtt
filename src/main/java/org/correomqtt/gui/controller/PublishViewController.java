@@ -331,7 +331,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     }
 
     @Override
-    public void onSettingsUpdated(boolean showInfoDialog) {
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Updated settings in publish view controller: {}", getConnectionId());

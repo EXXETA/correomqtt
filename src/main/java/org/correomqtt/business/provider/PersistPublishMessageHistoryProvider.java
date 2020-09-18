@@ -152,7 +152,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
 
 
     @Override
-    public void onSettingsUpdated(boolean showInfoDialog) {
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
         // nothing to do
     }
 

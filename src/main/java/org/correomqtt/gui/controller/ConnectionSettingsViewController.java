@@ -1055,7 +1055,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
     }
 
     @Override
-    public void onSettingsUpdated(boolean showInfoDialog) {
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Updated settings in connection settings view controller");

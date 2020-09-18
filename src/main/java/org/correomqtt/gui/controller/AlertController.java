@@ -99,8 +99,8 @@ public class AlertController extends BaseController implements
     }
 
     @Override
-    public void onSettingsUpdated(boolean showInfoDialog) {
-        if (showInfoDialog) {
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
+        if (showRestartRequiredDialog) {
             PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.info(resources.getString("alertControllerOnSettingsUpdatedTitle"),
                     resources.getString("alertControllerOnSettingsUpdatedContent")
             ));

@@ -9,7 +9,7 @@ public interface ConfigObserver extends BaseObserver {
     void onInvalidPath();
     void onInvalidJsonFormat();
     void onSavingFailed();
-    void onSettingsUpdated(boolean showInfoDialog);
+    void onSettingsUpdated(boolean showRestartRequiredDialog);
     void onConnectionsUpdated();
     void onConfigPrepareFailed();
     default void onPasswordSaveFailed(Exception e) {}

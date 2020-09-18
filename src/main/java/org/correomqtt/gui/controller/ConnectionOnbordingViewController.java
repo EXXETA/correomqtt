@@ -266,7 +266,7 @@ public class ConnectionOnbordingViewController extends BaseController implements
     }
 
     @Override
-    public void onSettingsUpdated(boolean showInfoDialog) {
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
 
     }
 
