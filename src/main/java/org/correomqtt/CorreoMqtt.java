@@ -36,12 +36,13 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-public class CorreoMqtt extends Application implements StartupObserver {
+public class CorreoMqtt extends Application implements StartupObserver, ShutdownObserver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CorreoMqtt.class);
     private ResourceBundle resources;
     private MainViewController mainViewController;
     private Scene scene;
+    private Stage primaryStage;
 
     public static void main(String[] args) {
         launch(args);
@@ -54,6 +55,7 @@ public class CorreoMqtt extends Application implements StartupObserver {
         LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
 
         StartupDispatcher.getInstance().addObserver(this);
+        ShutdownDispatcher.getInstance().addObserver(this);
 
         final SettingsDTO settings = SettingsProvider.getInstance().getSettings();
 
@@ -141,12 +143,13 @@ public class CorreoMqtt extends Application implements StartupObserver {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        loadPrimaryStage(primaryStage);
+        this.primaryStage = primaryStage;
+        loadPrimaryStage();
 
         AlertController.activate();
     }
 
-    private void loadPrimaryStage(Stage primaryStage) throws IOException {
+    private void loadPrimaryStage() throws IOException {
         String cssPath = SettingsProvider.getInstance().getCssPath();
 
         FXMLLoader loader = new FXMLLoader(MainViewController.class.getResource("mainView.fxml"),
@@ -168,7 +171,7 @@ public class CorreoMqtt extends Application implements StartupObserver {
 
         if (settings.getGlobalUISettings() == null) {
             primaryStage.show();
-            saveGlobalUISettings(primaryStage);
+            saveGlobalUISettings();
         } else {
             primaryStage.setX(settings.getGlobalUISettings().getWindowPositionX());
             primaryStage.setY(settings.getGlobalUISettings().getWindowPositionY());
@@ -179,22 +182,13 @@ public class CorreoMqtt extends Application implements StartupObserver {
         }
 
         primaryStage.setOnCloseRequest(t -> {
-            LOGGER.info("Main window closed. Initialize shutdown.");
-            LOGGER.info("Saving global UI settings.");
-            saveGlobalUISettings(primaryStage);
-            LOGGER.info("Shutting down connections.");
-            ApplicationLifecycleDispatcher.getInstance().onShutdown();
-            LOGGER.info("Shutting down plugins.");
-            PluginManager.getInstance().stopPlugins();
-            LOGGER.info("Shutting down application. Bye.");
-            Platform.exit();
-            System.exit(0);
+            onShutdownRequested();
         });
 
         setupShortcut();
     }
 
-    private void saveGlobalUISettings(Stage primaryStage) {
+    private void saveGlobalUISettings() {
         final SettingsDTO settings = SettingsProvider.getInstance().getSettings();
 
         settings.setGlobalUISettings(new GlobalUISettings(
@@ -270,4 +264,17 @@ public class CorreoMqtt extends Application implements StartupObserver {
         System.exit(1);
     }
 
+    @Override
+    public void onShutdownRequested() {
+        LOGGER.info("Main window closed. Initialize shutdown.");
+        LOGGER.info("Saving global UI settings.");
+        saveGlobalUISettings();
+        LOGGER.info("Shutting down connections.");
+        ApplicationLifecycleDispatcher.getInstance().onShutdown();
+        LOGGER.info("Shutting down plugins.");
+        PluginManager.getInstance().stopPlugins();
+        LOGGER.info("Shutting down application. Bye.");
+        Platform.exit();
+        System.exit(0);
+    }
 }

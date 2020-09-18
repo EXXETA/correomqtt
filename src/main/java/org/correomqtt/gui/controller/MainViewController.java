@@ -2,6 +2,7 @@ package org.correomqtt.gui.controller;
 
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
+import org.correomqtt.business.dispatcher.ShutdownDispatcher;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
@@ -126,7 +127,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     private void setMenuEventHandler() {
-        closeItem.setOnAction(event -> System.exit(0));
+        closeItem.setOnAction(event -> ShutdownDispatcher.getInstance().onShutdownRequested());
         connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this));
         settingsItem.setOnAction(event -> SettingsViewController.showAsDialog());
         aboutItem.setOnAction(event -> AboutViewController.showAsDialog());
