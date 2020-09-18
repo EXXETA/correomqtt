@@ -107,11 +107,11 @@ public class SettingsProvider extends BaseUserFileProvider {
         return configDTO.getThemesSettings();
     }
 
-    public void saveSettings(boolean showInfoDialog) {
+    public void saveSettings(boolean showRestartRequiredDialog) {
         this.activeThemeProvider = null;
         saveDTO();
         saveToUserDirectory(CSS_FILE_NAME, getActiveTheme().getCss());
-        ConfigDispatcher.getInstance().onSettingsUpdated(showInfoDialog);
+        ConfigDispatcher.getInstance().onSettingsUpdated(showRestartRequiredDialog);
     }
 
     public void saveConnections(List<ConnectionConfigDTO> connections, String masterPassword) throws PasswordRecoverableException {
