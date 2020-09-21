@@ -2,6 +2,7 @@ package org.correomqtt.gui.controller;
 
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.business.provider.SettingsProvider;
@@ -67,6 +68,8 @@ public class MessageListViewController extends BaseConnectionController implemen
     private FilteredList<MessagePropertiesDTO> filteredMessages;
 
     private DetailViewController detailViewController;
+
+    protected ControllerType controllerType = null;
 
     public MessageListViewController(String connectionId, MessageListViewDelegate delegate) {
         super(connectionId);
@@ -333,6 +336,19 @@ public class MessageListViewController extends BaseConnectionController implemen
             LoaderResult<DetailViewController> result = DetailViewController.load(getSelectedMessage(), getConnectionId(), this, true);
             detailViewController = result.getController();
             splitPane.getItems().add(result.getMainPane());
+
+            SettingsProvider.getInstance().getConnectionConfigs().stream()
+                    .filter(c -> c.getId().equals(getConnectionId()))
+                    .findFirst()
+                    .ifPresent(c -> {
+                        if (splitPane.getDividers().size() > 0) {
+                            if (controllerType == ControllerType.SUBSCRIBE) {
+                                splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDetailDividerPosition());
+                            } else if (controllerType == ControllerType.PUBLISH) {
+                                splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDetailDividerPosition());
+                            }
+                        }
+                    });
         }
     }
 

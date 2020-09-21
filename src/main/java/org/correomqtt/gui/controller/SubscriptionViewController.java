@@ -11,6 +11,7 @@ import org.correomqtt.business.dispatcher.SubscribeObserver;
 import org.correomqtt.business.dispatcher.UnsubscribeDispatcher;
 import org.correomqtt.business.dispatcher.UnsubscribeObserver;
 import org.correomqtt.business.exception.CorreoMqttException;
+import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.SubscriptionDTO;
@@ -135,7 +136,10 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
                     super.messageListViewController.showDetailViewButton.setSelected(c.getConnectionUISettings().isSubscribeDetailActive());
                     if (c.getConnectionUISettings().isSubscribeDetailActive()) {
                         super.messageListViewController.showDetailView();
-                        if (super.messageListViewController.splitPane.getDividers().size() > 0) {super.messageListViewController.splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDetailDividerPosition());}
+                        if (super.messageListViewController.splitPane.getDividers().size() > 0) {
+                            super.messageListViewController.splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDetailDividerPosition());
+                            super.messageListViewController.controllerType = ControllerType.SUBSCRIBE;
+                        }
                     }
                 });
 
