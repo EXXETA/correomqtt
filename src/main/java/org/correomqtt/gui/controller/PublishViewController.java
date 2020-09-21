@@ -127,11 +127,11 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 .ifPresent(c -> {
                     if (splitPane.getDividers().size() > 0) {splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDividerPosition());}
                     super.messageListViewController.showDetailViewButton.setSelected(c.getConnectionUISettings().isPublishDetailActive());
+                    super.messageListViewController.controllerType = ControllerType.PUBLISH;
                     if (c.getConnectionUISettings().isPublishDetailActive()) {
                         super.messageListViewController.showDetailView();
                         if (super.messageListViewController.splitPane.getDividers().size() > 0) {
                             super.messageListViewController.splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDetailDividerPosition());
-                            super.messageListViewController.controllerType = ControllerType.PUBLISH;
                         }
                     }
                 });
