@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 0.14.0
+=======
+0.13.0
+>>>>>>> a630031... Add formating for publish textarea

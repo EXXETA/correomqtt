@@ -1,5 +1,8 @@
 package org.correomqtt.gui.controller;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.scene.control.ToggleButton;
 import org.correomqtt.business.exception.CorreoMqttException;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.MessageType;
@@ -7,9 +10,11 @@ import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
+import org.correomqtt.business.utils.AutoFormatPayload;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.cell.QosCell;
 import org.correomqtt.gui.cell.TopicCell;
+import org.correomqtt.gui.formats.Format;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.helper.CheckTopicHelper;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
@@ -82,6 +87,9 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     @FXML
     private Pane codeAreaScrollPane;
 
+    @FXML
+    private ToggleButton publishViewFormatToggleButton;
+
     private LoadingViewController loadingViewController;
 
     public PublishViewController(String connectionId, PublishViewDelegate delegate) {
@@ -122,6 +130,21 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         codeAreaScrollPane.getChildren().add(new VirtualizedScrollPane<>(payloadCodeArea));
         payloadCodeArea.prefWidthProperty().bind(codeAreaScrollPane.widthProperty());
         payloadCodeArea.prefHeightProperty().bind(codeAreaScrollPane.heightProperty());
+
+        ChangeListener<String> listener = new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
+                Format format = AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), true, getConnectionId(), payloadCodeArea, this);
+                publishViewFormatToggleButton.setSelected(format.isFormatable());
+                publishViewFormatToggleButton.setDisable(!format.isFormatable());
+            }
+        };
+
+        publishViewFormatToggleButton.setOnMouseClicked(mouseEvent -> {
+            AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, listener);
+        });
+
+        payloadCodeArea.textProperty().addListener(listener);
 
         initTopicComboBox();
     }
