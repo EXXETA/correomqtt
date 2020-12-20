@@ -91,6 +91,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     private ToggleButton publishViewFormatToggleButton;
 
     private LoadingViewController loadingViewController;
+    private ChangeListener<String> payloadCodeAreaChangeListener;
 
     public PublishViewController(String connectionId, PublishViewDelegate delegate) {
         super(connectionId);
@@ -131,22 +132,26 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         payloadCodeArea.prefWidthProperty().bind(codeAreaScrollPane.widthProperty());
         payloadCodeArea.prefHeightProperty().bind(codeAreaScrollPane.heightProperty());
 
-        ChangeListener<String> listener = new ChangeListener<String>() {
+        payloadCodeAreaChangeListener = new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
-                Format format = AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), true, getConnectionId(), payloadCodeArea, this);
-                publishViewFormatToggleButton.setSelected(format.isFormatable());
-                publishViewFormatToggleButton.setDisable(!format.isFormatable());
+                checkFormat();
             }
         };
 
         publishViewFormatToggleButton.setOnMouseClicked(mouseEvent -> {
-            AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, listener);
+            AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, payloadCodeAreaChangeListener);
         });
 
-        payloadCodeArea.textProperty().addListener(listener);
+        payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
 
         initTopicComboBox();
+    }
+
+    private void checkFormat() {
+        Format format = AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), true, getConnectionId(), payloadCodeArea, payloadCodeAreaChangeListener);
+        publishViewFormatToggleButton.setSelected(format.isFormatable());
+        publishViewFormatToggleButton.setDisable(!format.isFormatable());
     }
 
     private void initTopicComboBox() {
@@ -288,7 +293,13 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         } else {
             retainedCheckBox.setSelected(false);
         }
+        
         payloadCodeArea.replaceText(messageDTO.getPayload());
+
+        if (messageDTO.getPayload().equals(payloadCodeArea.getText())) {
+            checkFormat();
+        }
+        
         topicComboBox.setValue(messageDTO.getTopic());
 
         qosComboBox.setValue(messageDTO.getQos());
