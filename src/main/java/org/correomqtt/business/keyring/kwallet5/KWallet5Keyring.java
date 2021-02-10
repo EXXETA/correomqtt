@@ -133,7 +133,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
     private boolean isEnabled() {
         try {
             return runQDBusCommand("isEnabled").equals("true");
-        } catch (InterruptedException | IOException e) {
+        } catch (Exception e) {
             return false;
         }
     }

@@ -87,13 +87,13 @@ public class PluginSystem {
 
     private void updateSystem(PluginManager pluginManager) throws IOException {
 
-        LOGGER.info("Start Plugin Update");
+        LOGGER.info("Start Plugin Update from {}",PLUGIN_REPO_URL);
 
         URL versionRepo = new URL(PLUGIN_REPO_URL);
         HttpURLConnection connection = (HttpURLConnection) versionRepo.openConnection();
 
         if (connection.getResponseCode() == 200) {
-            List<UpdateRepository> repos = Collections.singletonList(new DefaultUpdateRepository("bundled", versionRepo, "plugins-" + VersionUtils.getVersion() + ".json"));
+            List<UpdateRepository> repos = Collections.singletonList(new DefaultUpdateRepository("bundled", versionRepo, "plugins-" + VersionUtils.getVersion().trim() + ".json"));
             UpdateManager updateManager = new UpdateManager(pluginManager, repos);
             updateExisitingPlugins(updateManager, pluginManager);
             installNewPlugins(updateManager);
