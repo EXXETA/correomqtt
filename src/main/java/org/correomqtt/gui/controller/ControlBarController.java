@@ -1,5 +1,6 @@
 package org.correomqtt.gui.controller;
 
+import javafx.geometry.Pos;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.exception.CorreoMqttException;
@@ -15,6 +16,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
+import org.correomqtt.plugin.manager.PluginManager;
+import org.correomqtt.plugin.spi.MainToolbarHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ControlBarController extends BaseConnectionController implements ConnectionLifecycleObserver {
     private static final Logger LOGGER = LoggerFactory.getLogger(ControlBarController.class);
     private final ControlBarDelegate delegate;
+    private final PluginManager pluginSystem = PluginManager.getInstance();
+
     @FXML
     public AnchorPane mainViewHBoxAnchorPane;
     @FXML
@@ -45,7 +50,7 @@ public class ControlBarController extends BaseConnectionController implements Co
     @FXML
     public Label brokerInfo;
     @FXML
-    private Button sysButton;
+    private HBox pluginControlBox;
     @FXML
     private ResourceBundle resources;
 
@@ -69,6 +74,13 @@ public class ControlBarController extends BaseConnectionController implements Co
         brokerInfo.setText("");
         disconnectBtn.setVisible(false);
         disconnectBtn.setManaged(false);
+
+        pluginSystem.getExtensions(MainToolbarHook.class).forEach(p -> {
+            HBox pluginBox = new HBox();
+            pluginBox.setAlignment(Pos.CENTER_RIGHT);
+            pluginControlBox.getChildren().add(pluginBox);
+            p.onInstantiateMainToolbar(getConnectionId(), pluginBox);
+        });
     }
 
     @FXML
@@ -158,7 +170,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         controlViewPSButton.setDisable(true);
         controlViewPButton.setDisable(true);
         controlViewSButton.setDisable(true);
-        sysButton.setDisable(true);
+
     }
 
     private void updateBrokerInfo() {
@@ -187,7 +199,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         controlViewPSButton.setDisable(false);
         controlViewPButton.setDisable(false);
         controlViewSButton.setDisable(false);
-        sysButton.setDisable(false);
+
     }
 
     private void setGuiConnecting() {
@@ -205,7 +217,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         controlViewPSButton.setDisable(true);
         controlViewPButton.setDisable(true);
         controlViewSButton.setDisable(true);
-        sysButton.setDisable(true);
+
     }
 
     private void setGuiDisconnecting() {
@@ -223,7 +235,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         controlViewPSButton.setDisable(true);
         controlViewPButton.setDisable(true);
         controlViewSButton.setDisable(true);
-        sysButton.setDisable(true);
+
     }
 
     @Override

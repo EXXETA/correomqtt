@@ -10,14 +10,14 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane fx:id="mainViewHBoxAnchorPane" styleClass="mainToolbar" minWidth="500.0" prefHeight="32.0" prefWidth="663.0" stylesheets="@../css/controlBarView.css" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ControlBarController">
-    <HBox fx:id="controllViewButtonHBox"  alignment="CENTER_LEFT" prefHeight="32.0" prefWidth="270.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <ToggleButton fx:id="controlViewPButton"  mnemonicParsing="false" onAction="#onClickP" styleClass="columns-solid-left" textAlignment="CENTER">
+<AnchorPane fx:id="mainViewHBoxAnchorPane" minWidth="500.0" prefHeight="32.0" prefWidth="663.0" styleClass="mainToolbar" stylesheets="@../css/controlBarView.css" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ControlBarController">
+    <HBox fx:id="controllViewButtonHBox" alignment="CENTER_LEFT" prefHeight="32.0" prefWidth="270.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <ToggleButton fx:id="controlViewPButton" mnemonicParsing="false" onAction="#onClickP" styleClass="columns-solid-left" textAlignment="CENTER">
             <tooltip>
                 <Tooltip text="%controlBarViewOnlyPublishButtonTooltip" />
             </tooltip>
         </ToggleButton>
-        <ToggleButton fx:id="controlViewPSButton"  mnemonicParsing="false" onAction="#onClickPS" styleClass="columns-solid" textAlignment="CENTER">
+        <ToggleButton fx:id="controlViewPSButton" mnemonicParsing="false" onAction="#onClickPS" styleClass="columns-solid" textAlignment="CENTER">
             <HBox.margin>
                 <Insets left="-1.0" right="-1.0" />
             </HBox.margin>
@@ -25,16 +25,12 @@
                 <Tooltip text="%controlBarViewPublishAndSubscribeButtonTooltip" />
             </tooltip>
         </ToggleButton>
-        <ToggleButton fx:id="controlViewSButton"  mnemonicParsing="false" onAction="#onClickS" styleClass="columns-solid-right" textAlignment="CENTER">
+        <ToggleButton fx:id="controlViewSButton" mnemonicParsing="false" onAction="#onClickS" styleClass="columns-solid-right" textAlignment="CENTER">
             <tooltip>
                 <Tooltip text="%controlBarViewOnlySubscribeButtonTooltip" />
             </tooltip>
         </ToggleButton>
-      <Button fx:id="sysButton" mnemonicParsing="false" onAction="#onSysClicked" text="\$SYS">
-         <HBox.margin>
-            <Insets left="5.0" />
-         </HBox.margin>
-      </Button>
+      <HBox fx:id="pluginControlBox" prefHeight="100.0" prefWidth="200.0" />
       <VBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
          <children>
               <Label fx:id="brokerInfo" styleClass="brokerInfo" text="BrokerInfo" VBox.vgrow="NEVER" />
