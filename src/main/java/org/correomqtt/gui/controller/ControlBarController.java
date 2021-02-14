@@ -138,11 +138,6 @@ public class ControlBarController extends BaseConnectionController implements Co
         controlViewSButton.setSelected(true);
     }
 
-    @FXML
-    public void onSysClicked() {
-        SysTopicViewController.showAsDialog(getConnectionId());
-    }
-
     private void setGuiDisconnected() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Set gui to disconnected state: {}", getConnectionId());
