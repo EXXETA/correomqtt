@@ -1,0 +1,8 @@
+
+.toggle-button:selected {
+    -fx-graphic: url("../icons/columns-solid-without-toolbar-removeFavorite.png");
+
+}
+.toggle-button {
+    -fx-graphic: url("../icons/columns-solid-without-toolbar-add-star.png");
+}

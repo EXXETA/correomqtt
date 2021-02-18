@@ -35,23 +35,29 @@
                     </tooltip>
                 </Button>
                 <Pane HBox.hgrow="ALWAYS" />
-            <TextField fx:id="messageSearchTextField" promptText="Search topics .." styleClass="messageSearchTextField" />
-            <Button fx:id="messageSearchClearButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#resetMessageSearchTextField">
-               <HBox.margin>
-                  <Insets left="-1.0" />
-               </HBox.margin>
-               <styleClass>
-                  <String fx:value="broom-solid" />
-                  <String fx:value="messageSearchClear" />
-               </styleClass></Button>
+                <TextField fx:id="messageSearchTextField" promptText="Search topics .." styleClass="messageSearchTextField" />
+                <ToggleButton fx:id="FavoritesListButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#OnClickedFavoritesList" stylesheets="@../css/favoritesList.css">
+                    <HBox.margin>
+                        <Insets left="5.0" />
+                    </HBox.margin>
+                </ToggleButton>
+                <ToggleButton fx:id="FavoritesListButto" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#OnClickedChangeFavoritStatus" stylesheets="@../css/changeFavoriteStatusButton.css">
+                    <HBox.margin>
+                        <Insets left="5.0" />
+                    </HBox.margin></ToggleButton>
+                <Button fx:id="messageSearchClearButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#resetMessageSearchTextField">
+                    <HBox.margin>
+                        <Insets left="5.0" />
+                    </HBox.margin>
+                    <styleClass>
+                        <String fx:value="broom-solid" />
+                        <String fx:value="messageSearchClear" />
+                    </styleClass></Button>
 
                 <Button fx:id="clearMessagesButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#clearList" styleClass="trash-alt-solid">
-                    <tooltip>
-                        <Tooltip text="%messageListViewClearMessagesButton" />
-                    </tooltip>
-               <HBox.margin>
-                  <Insets left="5.0" />
-               </HBox.margin>
+                    <HBox.margin>
+                        <Insets left="5.0" />
+                    </HBox.margin>
                 </Button>
                 <ToggleButton fx:id="showDetailViewButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#toggleDetailView" styleClass="columns-solid-without-toolbar">
                     <tooltip>
@@ -61,6 +67,9 @@
                         <Insets left="5.0" />
                     </HBox.margin>
                 </ToggleButton>
+                <VBox.margin>
+                    <Insets />
+                </VBox.margin>
             </HBox>
             <ListView fx:id="listView" styleClass="noBorder" VBox.vgrow="ALWAYS">
             </ListView>

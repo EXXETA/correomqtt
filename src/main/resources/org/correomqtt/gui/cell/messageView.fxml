@@ -2,6 +2,7 @@
 
 <?import java.lang.String?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -18,19 +19,20 @@
             </Label>
             <Label fx:id="subscriptionLabel" styleClass="subscription" text="sub" />
             <Region HBox.hgrow="SOMETIMES" />
+            <ToggleButton fx:id="FavoriteButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="2.0" prefWidth="34.0" stylesheets="@../css/CellFavoriteStarButton.css" />
             <HBox>
                 <HBox fx:id="labelBox">
                 </HBox>
                 <Label fx:id="validLabel" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" text=" " textAlignment="CENTER">
                     <styleClass>
-                        <String fx:value="tag"/>
-                        <String fx:value="valid"/>
+                        <String fx:value="tag" />
+                        <String fx:value="valid" />
                     </styleClass>
                 </Label>
                 <Label fx:id="invalidLabel" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" text=" " textAlignment="CENTER">
                     <styleClass>
-                        <String fx:value="tag"/>
-                        <String fx:value="invalid"/>
+                        <String fx:value="tag" />
+                        <String fx:value="invalid" />
                     </styleClass>
                 </Label>
                 <Label fx:id="retainedLabel" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" styleClass="tag" text="Retained" textAlignment="CENTER">

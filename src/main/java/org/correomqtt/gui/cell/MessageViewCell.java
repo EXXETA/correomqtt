@@ -57,6 +57,9 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     private Label payloadLabel;
 
     @FXML
+    private ToggleButton FavoriteButton;
+
+    @FXML
     private Label subscriptionLabel;
 
     private FXMLLoader loader;
@@ -64,7 +67,6 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     private MessagePropertiesDTO messageDTO;
 
     private ContextMenu contextMenu;
-
     @FXML
     private ResourceBundle resources;
 
@@ -126,6 +128,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
         subscriptionLabel.setVisible(false);
         subscriptionLabel.setManaged(false);
 
+
         this.messageDTO = messageDTO;
         topicLabel.setText(messageDTO.getTopic());
 
@@ -137,6 +140,10 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
 
         retainedLabel.setVisible(messageDTO.isRetained());
         retainedLabel.setManaged(messageDTO.isRetained());
+
+        FavoriteButton.setVisible(messageDTO.isFavorited());
+        FavoriteButton.setSelected(messageDTO.isFavorited());
+
         qosLabel.setText(messageDTO.getQos().toString());
         String payload = messageDTO.getPayload();
         payloadLabel.setText(payload.substring(0, Math.min(payload.length(), MAX_PAYLOAD_LENGTH))
@@ -148,7 +155,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     private void executeOnCreateMessageEntryExtensions(MessagePropertiesDTO messageDTO) {
         labelBox.getChildren().clear();
         PluginManager.getInstance().getExtensions(MessageListHook.class)
-                     .forEach(p -> p.onCreateEntry(new MessageExtensionDTO(messageDTO), labelBox));
+                .forEach(p -> p.onCreateEntry(new MessageExtensionDTO(messageDTO), labelBox));
     }
 
     private void validateMessage(MessagePropertiesDTO messageDTO) {

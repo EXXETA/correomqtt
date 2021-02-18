@@ -275,6 +275,11 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         }
     }
 
+    @Override
+    public void changeFavoriteStatus(MessagePropertiesDTO messageDTO) {
+        PublishGlobalDispatcher.getInstance().onPublishChangeFavoriteStatus(getConnectionId(), MessageTransformer.propsToDTO(messageDTO));
+    }
+
     private void executeOnCopyMessageToFormExtensions(MessagePropertiesDTO messageDTO) {
         pluginSystem.getExtensions(MessageContextMenuHook.class)
                 .forEach(p -> p.onCopyMessageToPublishForm(getConnectionId(), new MessageExtensionDTO(messageDTO)));

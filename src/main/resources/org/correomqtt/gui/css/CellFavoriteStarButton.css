@@ -1,0 +1,15 @@
+
+.toggle-button:selected {
+    -fx-graphic: url("../icons/columns-solid-without-toolbar-removeFavorite-stargold.png");
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-background-color: transparent;
+}
+.toggle-button{
+    -fx-graphic: url("../icons/columns-solid-without-toolbar-removeFavorite-stargold.png");
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-background-color: transparent;
+}

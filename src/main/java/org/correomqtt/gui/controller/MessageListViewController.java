@@ -2,6 +2,7 @@ package org.correomqtt.gui.controller;
 
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.business.provider.SettingsProvider;
@@ -18,6 +19,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -29,14 +31,15 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import lombok.Getter;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 public class MessageListViewController extends BaseConnectionController implements
         ConnectionLifecycleObserver,
         MessageListContextMenuDelegate,
-        DetailViewDelegate {
+        DetailViewDelegate ,
+        MessageListViewDelegate{
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageListViewController.class);
 
@@ -58,7 +61,12 @@ public class MessageListViewController extends BaseConnectionController implemen
     private TextField messageSearchTextField;
     @FXML
     private Button messageSearchClearButton;
-
+    @Getter
+    @FXML
+    private ToggleButton FavoritesListButton;
+    @Getter
+    @FXML
+    private ToggleButton FavoritesListButto;
     @FXML
     private ToggleButton showDetailViewButton;
 
@@ -66,9 +74,11 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     private FilteredList<MessagePropertiesDTO> filteredMessages;
 
+    private FilteredList<MessagePropertiesDTO> favoritesMessages;
+
     private DetailViewController detailViewController;
 
-    public MessageListViewController(String connectionId, MessageListViewDelegate delegate) {
+    public MessageListViewController(String connectionId, MessageListViewDelegate delegate ) {
         super(connectionId);
         ConnectionLifecycleDispatcher.getInstance().addObserver(this);
         this.delegate = delegate;
@@ -90,6 +100,9 @@ public class MessageListViewController extends BaseConnectionController implemen
 
         messages = FXCollections.observableArrayList(MessagePropertiesDTO.extractor());
         filteredMessages = new FilteredList<>(messages, s -> true);
+
+        favoritesMessages = new FilteredList<>(messages, MessagePropertiesDTO::isFavorited);
+
 
         listView.setItems(filteredMessages);
         listView.setCellFactory(this::createCell);
@@ -121,11 +134,9 @@ public class MessageListViewController extends BaseConnectionController implemen
             if (newValue == null || newValue.isEmpty()) {
                 return true;
             }
-
             if (message.getTopic().contains(newValue)) {
                 return true;
             }
-
             return false;
         });
     }
@@ -158,12 +169,12 @@ public class MessageListViewController extends BaseConnectionController implemen
         if (messageDTO != null && event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
             DetailViewController.showAsDialog(messageDTO, getConnectionId(), this);
         }
+        FavoritesListButto.setSelected(this.getSelectedMessage().isFavorited());
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Message selected in list: {}: {}", (messageDTO != null) ? messageDTO.getTopic() : null, getConnectionId());
+            LOGGER.debug("Message selected in list: {}: {}"+getSelectedMessage().isFavorited(), (messageDTO != null) ? messageDTO.getTopic() : null, getConnectionId());
         }
     }
-
 
     @FXML
     public void clearList() {
@@ -201,6 +212,7 @@ public class MessageListViewController extends BaseConnectionController implemen
         MessageUtils.saveMessage(getConnectionId(), messageDTO, stage);
     }
 
+
     void setFilterPredicate(Predicate<MessagePropertiesDTO> filterPredicate) {
         filteredMessages.setPredicate(filterPredicate);
     }
@@ -209,7 +221,6 @@ public class MessageListViewController extends BaseConnectionController implemen
     Node getMainNode() {
         return splitPane;
     }
-
 
     private MessagePropertiesDTO getSelectedMessage() {
         return listView.getSelectionModel().getSelectedItem();
@@ -315,6 +326,23 @@ public class MessageListViewController extends BaseConnectionController implemen
             splitPane.getItems().add(result.getMainPane());
         }
     }
+    @FXML
+    void OnClickedFavoritesList() {
+       if(FavoritesListButton.isSelected())
+         listView.setItems(favoritesMessages);
+       else
+           listView.setItems(messages);
+    }
+    @FXML
+    void OnClickedChangeFavoritStatus(ActionEvent event) {
+        if (this.getSelectedMessage()!=null)
+            changeFavoriteStatus(this.getSelectedMessage());
+    }
+    @Override
+    public void changeFavoriteStatus(MessagePropertiesDTO messageDTO) {
+        messageDTO.getIsFavoritedProperty().set(!messageDTO.isFavorited());
+        delegate.changeFavoriteStatus(messageDTO);
+    }
 
     @Override
     public void onDisconnectFromConnectionDeleted(String connectionId) {
@@ -401,7 +429,24 @@ public class MessageListViewController extends BaseConnectionController implemen
     }
 
     @Override
+    public void removeMessage(MessageDTO messageDTO) {
+        // do nothing
+    }
+
+    @Override
+    public void clearMessages() {
+        // do nothing
+    }
+
+    @Override
+    public void setTabDirty() {
+        // do nothing
+    }
+
+    @Override
     public void setUpToForm(MessagePropertiesDTO messageDTO) {
         delegate.setUpToForm(messageDTO);
     }
+
+
 }
