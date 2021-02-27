@@ -30,7 +30,6 @@
                 <Tooltip text="%controlBarViewOnlySubscribeButtonTooltip" />
             </tooltip>
         </ToggleButton>
-      <HBox fx:id="pluginControlBox" prefHeight="100.0" prefWidth="200.0" />
       <VBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
          <children>
               <Label fx:id="brokerInfo" styleClass="brokerInfo" text="BrokerInfo" VBox.vgrow="NEVER" />

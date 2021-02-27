@@ -26,35 +26,48 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ControlBarController extends BaseConnectionController implements ConnectionLifecycleObserver {
     private static final Logger LOGGER = LoggerFactory.getLogger(ControlBarController.class);
+
     private final ControlBarDelegate delegate;
+
     private final PluginManager pluginSystem = PluginManager.getInstance();
 
     @FXML
     public AnchorPane mainViewHBoxAnchorPane;
+
+    @FXML
+    public HBox controllViewButtonHBox;
+
     @FXML
     public HBox controllViewMainViewHBox;
+
     @FXML
     public Button connectBtn;
+
     @FXML
     public Button disconnectBtn;
+
     @FXML
     public ToggleButton controlViewPButton;
+
     @FXML
     public ToggleButton controlViewPSButton;
+
     @FXML
     public ToggleButton controlViewSButton;
+
     @FXML
     public Label statusLabel;
+
     @FXML
     public Label statusInfo;
+
     @FXML
     public Label brokerInfo;
-    @FXML
-    private HBox pluginControlBox;
-    @FXML
-    private ResourceBundle resources;
 
     boolean gracefulDisconnenct = false;
+
+    @FXML
+    private ResourceBundle resources;
 
     public ControlBarController(String connectionId, ControlBarDelegate delegate) {
         super(connectionId);
@@ -75,11 +88,10 @@ public class ControlBarController extends BaseConnectionController implements Co
         disconnectBtn.setVisible(false);
         disconnectBtn.setManaged(false);
 
+        int indexToInsert = controllViewButtonHBox.getChildrenUnmodifiable().indexOf(controlViewSButton) + 1;
+
         pluginSystem.getExtensions(MainToolbarHook.class).forEach(p -> {
-            HBox pluginBox = new HBox();
-            pluginBox.setAlignment(Pos.CENTER_RIGHT);
-            pluginControlBox.getChildren().add(pluginBox);
-            p.onInstantiateMainToolbar(getConnectionId(), pluginBox);
+            p.onInstantiateMainToolbar(getConnectionId(), controllViewButtonHBox, indexToInsert);
         });
     }
 
@@ -108,7 +120,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Show only publish clicked: {}", getConnectionId());
         }
 
-        delegate.setLayout(true,false);
+        delegate.setLayout(true, false);
         controlViewPButton.setSelected(true);
         controlViewPSButton.setSelected(false);
         controlViewSButton.setSelected(false);
@@ -120,7 +132,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Show publish AND subscribe clicked: {}", getConnectionId());
         }
 
-        delegate.setLayout(true,true);
+        delegate.setLayout(true, true);
         controlViewPButton.setSelected(false);
         controlViewPSButton.setSelected(true);
         controlViewSButton.setSelected(false);
@@ -132,7 +144,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Show only subscribe clicked: {}", getConnectionId());
         }
 
-        delegate.setLayout(false,true);
+        delegate.setLayout(false, true);
         controlViewPButton.setSelected(false);
         controlViewPSButton.setSelected(false);
         controlViewSButton.setSelected(true);
