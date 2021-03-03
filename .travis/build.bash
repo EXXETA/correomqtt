@@ -154,6 +154,31 @@ if [ "$1" = "osx" ]; then
     --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.icns
+
+  ./jdk-14.jdk/Contents/Home/bin/jpackage \
+    --type app-image \
+    -d target \
+    -i target/shade \
+    -n CorreoMQTT \
+    --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
+    --app-version $CORREO_VERSION \
+    --icon ./src/main/deploy/package/Icon.icns
+
+  openssl req -subj '/CN=correomqtt.org' -config .travis/correo.certconfig -x509 -newkey rsa:4096 -keyout correokey.pem -out correocert.pem -days 365 -node
+  openssl pkcs12 -passout pass:1234 -export -out correomqtt.p12 -inkey correokey.pem -in correocert.pem
+  security create-keychain -p 1234 /tmp/correomqtt-db
+  security import correomqtt.p12 -k /tmp/correomqtt-db -P 1234 -T /usr/bin/codesign
+  security default-keychain -d user -s /tmp/correomqtt-db
+  security unlock-keychain -p 1234 /tmp/correomqtt-db
+  security list-keychains -s /tmp/correomqtt-db
+  codesign -h -fs correomqtt.org --keychain /tmp/correomqtt-db --force correo/CorreoMQTT.app
+
+  ./jdk-14.jdk/Contents/Home/bin/jpackage \
+    --type dmg \
+    -d target \
+    -n CorreoMQTT \
+    --app-version 0.14.0 \
+    --app-image correo/CorreoMQTT.app
   echo " done"
 elif [ "$1" = "linux" ]; then
   echo -n "Package DEB ..."
