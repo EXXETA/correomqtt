@@ -162,7 +162,7 @@ if [ "$1" = "osx" ]; then
   security default-keychain -d user -s /tmp/correomqtt-db
   security unlock-keychain -p 1234 /tmp/correomqtt-db
   security list-keychains -s /tmp/correomqtt-db
-  codesign -h -fs correomqtt.org --keychain /tmp/correomqtt-db --force correo/CorreoMQTT.app
+  codesign -h -fs correomqtt.org --keychain /tmp/correomqtt-db --force target/CorreoMQTT.app
 
   ./jdk-14.jdk/Contents/Home/bin/jpackage \
     --type dmg \
