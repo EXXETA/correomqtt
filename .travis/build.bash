@@ -155,7 +155,7 @@ if [ "$1" = "osx" ]; then
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.icns
 
-  openssl req -subj '/CN=correomqtt.org' -config .travis/correo.certconfig -x509 -newkey rsa:4096 -keyout correokey.pem -out correocert.pem -days 365 -node
+  openssl req -subj '/CN=correomqtt.org' -config .travis/correo.certconfig -x509 -newkey rsa:4096 -keyout correokey.pem -out correocert.pem -days 365 -nodes
   openssl pkcs12 -passout pass:1234 -export -out correomqtt.p12 -inkey correokey.pem -in correocert.pem
   security create-keychain -p 1234 /tmp/correomqtt-db
   security import correomqtt.p12 -k /tmp/correomqtt-db -P 1234 -T /usr/bin/codesign
