@@ -147,15 +147,6 @@ echo "==== PACKAGE CORREO ===="
 if [ "$1" = "osx" ]; then
   echo -n "Package DMG ..."
   ./jdk-14.jdk/Contents/Home/bin/jpackage \
-    --type dmg \
-    -d target \
-    -i target/shade \
-    -n CorreoMQTT \
-    --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
-    --app-version $CORREO_VERSION \
-    --icon ./src/main/deploy/package/Icon.icns
-
-  ./jdk-14.jdk/Contents/Home/bin/jpackage \
     --type app-image \
     -d target \
     -i target/shade \
