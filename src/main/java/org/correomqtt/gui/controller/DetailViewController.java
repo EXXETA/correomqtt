@@ -487,8 +487,12 @@ public class DetailViewController extends BaseConnectionController implements
             foundFormat = availableFormats.stream()
                     .filter(Objects::nonNull)
                     .filter(format -> {
-                                format.setText(payload);
-                                return format.isValid();
+                                try {
+                                    format.setText(payload);
+                                    return format.isValid();
+                                }catch(Exception e){
+                                    return false;
+                                }
                             }
                     )
                     .findFirst()
@@ -499,8 +503,15 @@ public class DetailViewController extends BaseConnectionController implements
         }
 
         codeArea.clear();
-        codeArea.replaceText(0, 0, foundFormat.getPrettyString());
-        codeArea.setStyleSpans(0, foundFormat.getFxSpans());
+        try {
+            codeArea.replaceText(0, 0, foundFormat.getPrettyString());
+            codeArea.setStyleSpans(0, foundFormat.getFxSpans());
+        }catch(Exception e){
+            foundFormat = new Plain();
+            foundFormat.setText(payload);
+            codeArea.replaceText(0, 0, foundFormat.getPrettyString());
+            codeArea.setStyleSpans(0, foundFormat.getFxSpans());
+        }
         return foundFormat;
     }
 
