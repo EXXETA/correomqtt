@@ -168,8 +168,8 @@ if [ "$1" = "osx" ]; then
     --type dmg \
     -d target \
     -n CorreoMQTT \
-    --app-version 0.14.0 \
-    --app-image correo/CorreoMQTT.app
+    --app-version $CORREO_VERSION \
+    --app-image target/CorreoMQTT.app
   echo " done"
 elif [ "$1" = "linux" ]; then
   echo -n "Package DEB ..."
