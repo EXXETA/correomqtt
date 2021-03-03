@@ -487,6 +487,48 @@ public class DetailViewController extends BaseConnectionController implements
         MessageUtils.saveMessage(getConnectionId(), messageDTO, stage);
     }
 
+    private Format autoFormatPayload(final String payload, boolean doFormatting) {
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Auto formatting payload: {}", getConnectionId());
+        }
+
+        Format foundFormat;
+        if (doFormatting) {
+            // Find the first format that is valid.
+            ArrayList<Format> availableFormats = new ArrayList<>(PluginManager.getInstance().getExtensions(DetailViewFormatHook.class));
+            availableFormats.add(new Plain());
+            foundFormat = availableFormats.stream()
+                    .filter(Objects::nonNull)
+                    .filter(format -> {
+                                try {
+                                    format.setText(payload);
+                                    return format.isValid();
+                                }catch(Exception e){
+                                    return false;
+                                }
+                            }
+                    )
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Plain format did not match."));
+        } else {
+            foundFormat = new Plain();
+            foundFormat.setText(payload);
+        }
+
+        codeArea.clear();
+        try {
+            codeArea.replaceText(0, 0, foundFormat.getPrettyString());
+            codeArea.setStyleSpans(0, foundFormat.getFxSpans());
+        }catch(Exception e){
+            foundFormat = new Plain();
+            foundFormat.setText(payload);
+            codeArea.replaceText(0, 0, foundFormat.getPrettyString());
+            codeArea.setStyleSpans(0, foundFormat.getFxSpans());
+        }
+        return foundFormat;
+    }
+
     private void showSearchResult() {
 
         currentSearchString = searchTextField.textProperty().get();
