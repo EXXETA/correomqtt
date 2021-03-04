@@ -37,8 +37,13 @@ public class AutoFormatPayload {
             foundFormat = availableFormats.stream()
                     .filter(Objects::nonNull)
                     .filter(format -> {
-                                format.setText(payload);
-                                return format.isValid();
+                                try {
+                                    format.setText(payload);
+                                    return format.isValid();
+                                }catch(Exception e){
+                                    LOGGER.error("Formatting check failed. ",e);
+                                    return false;
+                                }
                             }
                     )
                     .findFirst()
@@ -54,8 +59,16 @@ public class AutoFormatPayload {
         }
 
         codeArea.clear();
-        codeArea.replaceText(0, 0, foundFormat.getPrettyString());
-        codeArea.setStyleSpans(0, foundFormat.getFxSpans());
+        try {
+            codeArea.replaceText(0, 0, foundFormat.getPrettyString());
+            codeArea.setStyleSpans(0, foundFormat.getFxSpans());
+        }catch(Exception e){
+            LOGGER.error("Formatter failed. ",e);
+            foundFormat = new Plain();
+            foundFormat.setText(payload);
+            codeArea.replaceText(0, 0, foundFormat.getPrettyString());
+            codeArea.setStyleSpans(0, foundFormat.getFxSpans());
+        }
 
         if (listener != null) {
             codeArea.textProperty().addListener(listener);
