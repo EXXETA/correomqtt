@@ -28,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
@@ -75,6 +77,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private SelectionModel<Tab> selectionModel;
     private ResourceBundle resources;
+    public Map<String, ConnectionViewController> conntectionViewControllers;
 
     public MainViewController() {
         ConfigDispatcher.getInstance().addObserver(this);
@@ -87,6 +90,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
         setupAddTab();
         createLogTab();
+
+        conntectionViewControllers = new HashMap<>();
 
         final String os = System.getProperty("os.name");
         if (os != null && os.startsWith("Mac")) {
@@ -193,6 +198,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             result.getController().setTabId(tabId);
             tab.setContent(result.getMainPane());
             tab.setOnCloseRequest(event -> result.getController().disconnect());
+
+            conntectionViewControllers.put(tabId, result.getController());
 
             tabPane.getTabs().add(tabPane.getTabs().size() - 1, tab);
             selectionModel = tabPane.getSelectionModel();

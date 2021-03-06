@@ -26,3 +26,4 @@ openjdk-14*
 share/
 zulu13*
 wix
+hs_err*

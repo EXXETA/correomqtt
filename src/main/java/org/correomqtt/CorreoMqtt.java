@@ -201,6 +201,14 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         SettingsProvider.getInstance().saveSettings(false);
     }
 
+    private void saveConnectionUISettings() {
+        mainViewController.tabPane.getTabs().forEach(tab -> {
+            if (mainViewController.conntectionViewControllers.get(tab.getId()) != null) {
+                mainViewController.conntectionViewControllers.get(tab.getId()).saveConnectionUISettings();
+            }
+        });
+    }
+
     private void setupShortcut() {
         scene.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
 
@@ -269,6 +277,8 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         LOGGER.info("Main window closed. Initialize shutdown.");
         LOGGER.info("Saving global UI settings.");
         saveGlobalUISettings();
+        LOGGER.info("Saving connection UI settings.");
+        saveConnectionUISettings();
         LOGGER.info("Shutting down connections.");
         ApplicationLifecycleDispatcher.getInstance().onShutdown();
         LOGGER.info("Shutting down plugins.");

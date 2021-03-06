@@ -116,6 +116,7 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     @Override
     public void saveConnectionUISettings() {
+        LOGGER.debug("Save connection ui settings", getConnectionId());
         if (splitPane.getDividers().size() > 0) {
             connectionConfigDTO.getConnectionUISettings().setMainDividerPosition(splitPane.getDividers().get(0).positionProperty().getValue());
         }
@@ -252,6 +253,7 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     public void disconnect() {
         TaskFactory.disconnect(getConnectionId());
+        System.out.println("CLOSE");
     }
 
     public Pane getMainNode() {
