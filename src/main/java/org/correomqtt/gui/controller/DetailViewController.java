@@ -7,10 +7,10 @@ import org.correomqtt.business.dispatcher.ImportMessageObserver;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.utils.AutoFormatPayload;
 import org.correomqtt.gui.contextmenu.DetailContextMenu;
 import org.correomqtt.gui.contextmenu.DetailContextMenuDelegate;
 import org.correomqtt.gui.formats.Format;
-import org.correomqtt.gui.formats.Plain;
 import org.correomqtt.gui.menuitem.TaskMenuItem;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.Search;
@@ -22,7 +22,6 @@ import org.correomqtt.plugin.manager.MessageValidator;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.manager.Task;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
-import org.correomqtt.plugin.spi.DetailViewFormatHook;
 import org.correomqtt.plugin.spi.DetailViewHook;
 import org.correomqtt.plugin.spi.DetailViewManipulatorHook;
 import org.correomqtt.plugin.spi.MessageValidatorHook;
@@ -221,7 +220,7 @@ public class DetailViewController extends BaseConnectionController implements
         });
 
         detailViewFormatToggleButton.setOnMouseClicked(mouseEvent -> {
-            autoFormatPayload(messageDTO.getPayload(), detailViewFormatToggleButton.isSelected());
+            AutoFormatPayload.autoFormatPayload(messageDTO.getPayload(), detailViewFormatToggleButton.isSelected(), getConnectionId(), codeArea);
             showSearchResult();
         });
 
@@ -395,7 +394,7 @@ public class DetailViewController extends BaseConnectionController implements
 
         if (messageDTO != null) {
             validateMessage(messageDTO.getTopic(), codeArea.getText());
-            autoFormatPayload(codeArea.getText(), true);
+            AutoFormatPayload.autoFormatPayload(codeArea.getText(), true, getConnectionId(), codeArea);
         }
     }
 
@@ -440,7 +439,7 @@ public class DetailViewController extends BaseConnectionController implements
 
         codeArea.setEditable(false);
 
-        Format format = autoFormatPayload(payload, true);
+        Format format = AutoFormatPayload.autoFormatPayload(payload, true, getConnectionId(), codeArea);
         detailViewFormatToggleButton.setSelected(format.isFormatable());
         detailViewFormatToggleButton.setDisable(!format.isFormatable());
     }
@@ -471,37 +470,6 @@ public class DetailViewController extends BaseConnectionController implements
 
         Stage stage = (Stage) detailViewVBox.getScene().getWindow();
         MessageUtils.saveMessage(getConnectionId(), messageDTO, stage);
-    }
-
-    private Format autoFormatPayload(final String payload, boolean doFormatting) {
-
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Auto formatting payload: {}", getConnectionId());
-        }
-
-        Format foundFormat;
-        if (doFormatting) {
-            // Find the first format that is valid.
-            ArrayList<Format> availableFormats = new ArrayList<>(PluginManager.getInstance().getExtensions(DetailViewFormatHook.class));
-            availableFormats.add(new Plain());
-            foundFormat = availableFormats.stream()
-                    .filter(Objects::nonNull)
-                    .filter(format -> {
-                                format.setText(payload);
-                                return format.isValid();
-                            }
-                    )
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("Plain format did not match."));
-        } else {
-            foundFormat = new Plain();
-            foundFormat.setText(payload);
-        }
-
-        codeArea.clear();
-        codeArea.replaceText(0, 0, foundFormat.getPrettyString());
-        codeArea.setStyleSpans(0, foundFormat.getFxSpans());
-        return foundFormat;
     }
 
     private void showSearchResult() {

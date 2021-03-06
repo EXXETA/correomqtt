@@ -1,5 +1,13 @@
 @import "global.css";
 
+.black .highlighter-solid {
+    -fx-graphic: url("../icons/highlighter-solid-black.png");
+}
+
+.white .highlighter-solid {
+    -fx-graphic: url("../icons/highlighter-solid-white.png");
+}
+
 .black .trash-alt-solid {
     -fx-graphic: url('../icons/trash-alt-solid-black.png');
 }

@@ -29,7 +29,7 @@ public enum Qos {
     @SuppressWarnings("unused")
     @JsonCreator
     public static Qos fromJsonValue(int value) {
-        if (value < 0 || value >= 2) {
+        if (value < 0 || value > 2) {
             return null;
         }
         return values()[value];

@@ -6,7 +6,7 @@
 
     <groupId>org.correomqtt</groupId>
     <artifactId>correomqtt-client</artifactId>
-    <version>0.13.0</version>
+    <version>0.15.0</version>
 
     <name>CorreoMQTT</name>
     <description>A modern graphical MQTT client using the HiveMQ client library.</description>
@@ -99,7 +99,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.10.1</version>
+            <version>2.10.5.1</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
