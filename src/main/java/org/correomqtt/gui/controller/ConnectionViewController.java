@@ -252,8 +252,8 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     public void disconnect() {
+        saveConnectionUISettings();
         TaskFactory.disconnect(getConnectionId());
-        System.out.println("CLOSE");
     }
 
     public Pane getMainNode() {
