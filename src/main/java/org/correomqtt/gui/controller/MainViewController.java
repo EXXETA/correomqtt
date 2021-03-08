@@ -217,6 +217,34 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     }
 
+    @FXML
+    public void resetUISettings() {
+        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).resetConnectionUISettings();
+        }
+    }
+
+    @FXML
+    public void onClickP() {
+        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(true, false);
+        }
+    }
+
+    @FXML
+    public void onClickPS() {
+        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(true, true);
+        }
+    }
+
+    @FXML
+    public void onClickS() {
+        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(false, true);
+        }
+    }
+
     private void calcTabWidth() {
         ObservableList<Tab> tabs = FXCollections.observableArrayList(tabPane.getTabs());
         tabPane.setTabMaxWidth((tabPane.widthProperty().doubleValue() - 80) / Math.max(1, tabs.size() - 2) - 25);

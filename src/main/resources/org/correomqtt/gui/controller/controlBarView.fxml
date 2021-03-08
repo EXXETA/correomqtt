@@ -14,7 +14,7 @@
     <HBox fx:id="controllViewButtonHBox" alignment="CENTER_LEFT" prefHeight="32.0" prefWidth="270.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <ToggleButton fx:id="controlViewPButton" mnemonicParsing="false" onAction="#onClickP" styleClass="columns-solid-left" textAlignment="CENTER">
             <tooltip>
-                <Tooltip text="%controlBarViewOnlyPublishButtonTooltip" />
+                <Tooltip text="%mainViewPublishItem" />
             </tooltip>
         </ToggleButton>
         <ToggleButton fx:id="controlViewPSButton" mnemonicParsing="false" onAction="#onClickPS" styleClass="columns-solid" textAlignment="CENTER">
@@ -22,30 +22,14 @@
                 <Insets left="-1.0" right="-1.0" />
             </HBox.margin>
             <tooltip>
-                <Tooltip text="%controlBarViewPublishAndSubscribeButtonTooltip" />
+                <Tooltip text="%mainViewPublishSubscribeItem" />
             </tooltip>
         </ToggleButton>
         <ToggleButton fx:id="controlViewSButton" mnemonicParsing="false" onAction="#onClickS" styleClass="columns-solid-right" textAlignment="CENTER">
             <tooltip>
-                <Tooltip text="%controlBarViewOnlySubscribeButtonTooltip" />
+                <Tooltip text="%mainViewSubscribeItem" />
             </tooltip>
         </ToggleButton>
-      <Button mnemonicParsing="false" onAction="#saveUISettings" styleClass="save-ui">
-         <HBox.margin>
-            <Insets left="5.0" />
-         </HBox.margin>
-          <tooltip>
-              <Tooltip text="%controlBarViewSaveUIButtonTooltip" />
-          </tooltip>
-      </Button>
-      <Button mnemonicParsing="false" onAction="#resetUISettings" styleClass="reset-ui">
-         <HBox.margin>
-            <Insets left="-1.0" />
-         </HBox.margin>
-          <tooltip>
-              <Tooltip text="%controlBarViewResetUIButtonTooltip" />
-          </tooltip>
-      </Button>
       <VBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
          <children>
               <Label fx:id="brokerInfo" styleClass="brokerInfo" text="BrokerInfo" VBox.vgrow="NEVER" />
