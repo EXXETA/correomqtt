@@ -103,8 +103,10 @@ public class MessageListViewController extends BaseConnectionController implemen
         clearMessagesButton.setDisable(true);
         FavoriteButton.setVisible(false);
         FavoritesFilterButton.setVisible(false);
+        FavoriteButton.setDisable(true);
 
         messages = FXCollections.observableArrayList(MessagePropertiesDTO.extractor());
+
         filteredMessages = new FilteredList<>(messages, s -> true);
 
         favoritesMessages = new FilteredList<>(messages, MessagePropertiesDTO::isFavorited);
@@ -127,7 +129,6 @@ public class MessageListViewController extends BaseConnectionController implemen
                 }
             });
         });
-
         messageSearchTextField.textProperty().addListener((observable, oldValue, newValue) -> searchInMessages(newValue));
     }
 
@@ -177,7 +178,8 @@ public class MessageListViewController extends BaseConnectionController implemen
         }
 
         if(this.getSelectedMessage()!=null)
-        FavoriteButton.setSelected(this.getSelectedMessage().isFavorited());
+            FavoriteButton.setDisable(false);
+            FavoriteButton.setSelected(this.getSelectedMessage().isFavorited());
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Message selected in list: {}: {}", (messageDTO != null) ? messageDTO.getTopic() : null, getConnectionId());
@@ -336,14 +338,16 @@ public class MessageListViewController extends BaseConnectionController implemen
         }
     }
     @FXML
-    void OnClickedFavoritesList() {
-       if(FavoritesFilterButton.isSelected())
-         listView.setItems(favoritesMessages);
-       else
-           listView.setItems(messages);
+    void OnClickedFavoritesFilter() {
+       if(FavoritesFilterButton.isSelected()) {
+           listView.setItems(favoritesMessages);
+       }
+       else {
+           listView.setItems(filteredMessages);
+       }
     }
     @FXML
-    void OnClickedChangeFavoriteStatus(ActionEvent event) {
+    void OnClickedChangeFavoriteStatus() {
         if (this.getSelectedMessage()!=null)
             changeFavoriteStatus(this.getSelectedMessage());
     }

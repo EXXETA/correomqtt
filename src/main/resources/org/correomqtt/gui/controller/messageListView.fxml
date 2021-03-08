@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane fx:id="mainPane" minHeight="250.0" styleClass="noBorder" stylesheets="@../css/messageListView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.MessageListViewController">
+<AnchorPane fx:id="mainPane" minHeight="250.0" styleClass="noBorder" stylesheets="@../css/messageListView.css" xmlns="http://javafx.com/javafx/8.0.191" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.MessageListViewController">
     <SplitPane fx:id="splitPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <VBox fx:id="messagesVBox" minWidth="250.0" styleClass="noBorder">
             <HBox maxHeight="40.0" minHeight="40.0">
@@ -45,12 +45,12 @@
                         <String fx:value="messageSearchClear" />
                     </styleClass>
             </Button>
-                <ToggleButton fx:id="FavoritesFilterButton" mnemonicParsing="false" onAction="#OnClickedFavoritesList" stylesheets="@../css/FavoritesList.css">
+                <ToggleButton fx:id="FavoritesFilterButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="20.0" mnemonicParsing="false" onAction="#OnClickedFavoritesFilter" prefHeight="25.0" prefWidth="20.0" stylesheets="@../css/FavoritesList.css">
                     <HBox.margin>
                         <Insets left="5.0" />
                     </HBox.margin>
                 </ToggleButton>
-                <ToggleButton fx:id="FavoriteButton" mnemonicParsing="false" onAction="#OnClickedChangeFavoriteStatus" stylesheets="@../css/FavoritesList.css">
+                <ToggleButton fx:id="FavoriteButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="25.0" mnemonicParsing="false" onAction="#OnClickedChangeFavoriteStatus" prefHeight="25.0" prefWidth="25.0" stylesheets="@../css/FavoritesList.css">
                     <HBox.margin>
                         <Insets />
                     </HBox.margin>
