@@ -110,6 +110,9 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         qosComboBox.getSelectionModel().selectFirst();
         qosComboBox.setCellFactory(QosCell::new);
 
+        messageListViewController.getFavoritesFilterButton().setVisible(true);
+        messageListViewController.getFavoriteButton().setVisible(true);
+
         pluginSystem.getExtensions(PublishMenuHook.class).forEach(p -> {
             HBox pluginBox = new HBox();
             pluginBox.setAlignment(Pos.CENTER_RIGHT);

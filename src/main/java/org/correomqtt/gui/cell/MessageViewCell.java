@@ -57,7 +57,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     private Label payloadLabel;
 
     @FXML
-    private ToggleButton FavoriteButton;
+    private ToggleButton FavoriteStar;
 
     @FXML
     private Label subscriptionLabel;
@@ -141,8 +141,8 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
         retainedLabel.setVisible(messageDTO.isRetained());
         retainedLabel.setManaged(messageDTO.isRetained());
 
-        FavoriteButton.setVisible(messageDTO.isFavorited());
-        FavoriteButton.setSelected(messageDTO.isFavorited());
+        FavoriteStar.setVisible(messageDTO.isFavorited());
+        FavoriteStar.setSelected(messageDTO.isFavorited());
 
         qosLabel.setText(messageDTO.getQos().toString());
         String payload = messageDTO.getPayload();

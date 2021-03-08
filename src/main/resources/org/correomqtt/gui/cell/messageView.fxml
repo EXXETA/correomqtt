@@ -19,7 +19,7 @@
             </Label>
             <Label fx:id="subscriptionLabel" styleClass="subscription" text="sub" />
             <Region HBox.hgrow="SOMETIMES" />
-            <ToggleButton fx:id="FavoriteButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="2.0" prefWidth="34.0" stylesheets="@../css/CellFavoriteStarButton.css" />
+            <ToggleButton fx:id="FavoriteStar" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="2.0" prefWidth="34.0" stylesheets="@../css/FavoritesList.css" />
             <HBox>
                 <HBox fx:id="labelBox">
                 </HBox>

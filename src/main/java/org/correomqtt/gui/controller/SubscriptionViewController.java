@@ -105,8 +105,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     public void initialize() {
 
         initMessageListView();
-        messageListViewController.getFavoritesListButton().setVisible(false);
-        messageListViewController.getFavoritesListButto().setVisible(false);
         qosComboBox.setItems(FXCollections.observableArrayList(Qos.values()));
         qosComboBox.getSelectionModel().selectFirst();
         qosComboBox.setCellFactory(QosCell::new);

@@ -1,9 +1,0 @@
-.toggle-button {
-    -fx-graphic: url("../icons/columns-solid-without-toolbar-favoritelist.png");
-
-}
-
-.toggle-button:selected {
-    -fx-graphic: url("../icons/columns-solid-without-toolbar-favoritelistGold.png");
-
-}

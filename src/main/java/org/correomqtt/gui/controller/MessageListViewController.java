@@ -32,8 +32,11 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import lombok.Getter;
+
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class MessageListViewController extends BaseConnectionController implements
         ConnectionLifecycleObserver,
@@ -61,12 +64,12 @@ public class MessageListViewController extends BaseConnectionController implemen
     private TextField messageSearchTextField;
     @FXML
     private Button messageSearchClearButton;
-    @Getter
     @FXML
-    private ToggleButton FavoritesListButton;
     @Getter
+    public ToggleButton FavoritesFilterButton;
     @FXML
-    private ToggleButton FavoritesListButto;
+    @Getter
+    public ToggleButton FavoriteButton;
     @FXML
     private ToggleButton showDetailViewButton;
 
@@ -77,6 +80,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     private FilteredList<MessagePropertiesDTO> favoritesMessages;
 
     private DetailViewController detailViewController;
+
 
     public MessageListViewController(String connectionId, MessageListViewDelegate delegate ) {
         super(connectionId);
@@ -97,6 +101,8 @@ public class MessageListViewController extends BaseConnectionController implemen
         copyToFormButton.setDisable(true);
         showDetailsButton.setDisable(true);
         clearMessagesButton.setDisable(true);
+        FavoriteButton.setVisible(false);
+        FavoritesFilterButton.setVisible(false);
 
         messages = FXCollections.observableArrayList(MessagePropertiesDTO.extractor());
         filteredMessages = new FilteredList<>(messages, s -> true);
@@ -169,10 +175,12 @@ public class MessageListViewController extends BaseConnectionController implemen
         if (messageDTO != null && event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 2) {
             DetailViewController.showAsDialog(messageDTO, getConnectionId(), this);
         }
-        FavoritesListButto.setSelected(this.getSelectedMessage().isFavorited());
+
+        if(this.getSelectedMessage()!=null)
+        FavoriteButton.setSelected(this.getSelectedMessage().isFavorited());
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Message selected in list: {}: {}"+getSelectedMessage().isFavorited(), (messageDTO != null) ? messageDTO.getTopic() : null, getConnectionId());
+            LOGGER.debug("Message selected in list: {}: {}", (messageDTO != null) ? messageDTO.getTopic() : null, getConnectionId());
         }
     }
 
@@ -183,11 +191,12 @@ public class MessageListViewController extends BaseConnectionController implemen
             detailViewController.setMessage(null);
         }
 
-        messages.clear();
+        List<MessagePropertiesDTO> messageList =messages.stream().filter(m-> !m.isFavorited()).collect(Collectors.toList());
+        messages.removeAll(messageList);
+
 
         copyToFormButton.setDisable(true);
         showDetailsButton.setDisable(true);
-        clearMessagesButton.setDisable(true);
 
         delegate.clearMessages();
 
@@ -328,13 +337,13 @@ public class MessageListViewController extends BaseConnectionController implemen
     }
     @FXML
     void OnClickedFavoritesList() {
-       if(FavoritesListButton.isSelected())
+       if(FavoritesFilterButton.isSelected())
          listView.setItems(favoritesMessages);
        else
            listView.setItems(messages);
     }
     @FXML
-    void OnClickedChangeFavoritStatus(ActionEvent event) {
+    void OnClickedChangeFavoriteStatus(ActionEvent event) {
         if (this.getSelectedMessage()!=null)
             changeFavoriteStatus(this.getSelectedMessage());
     }

@@ -9,12 +9,14 @@ import org.correomqtt.business.dispatcher.PublishGlobalObserver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.PublishMessageHistoryListDTO;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -125,8 +127,12 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     public void onPublishesCleared(String connectionId) {
         LOGGER.info("Clearing publish history for {}.", connectionId);
         LinkedList<MessageDTO> messageList = getMessages(connectionId);
-        messageList.clear();
+
+        List<MessageDTO> nonFavoriteMessages =messageList.stream().filter(m-> !m.isFavorited()).collect(Collectors.toList());
+
+        messageList.removeAll(nonFavoriteMessages);
         saveHistory(connectionId);
+
     }
 
 
