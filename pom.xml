@@ -192,9 +192,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.xafero.java-keyring</groupId>
+            <groupId>com.github.xafero</groupId>
             <artifactId>java-keyring</artifactId>
-            <version>6c90044</version>
+            <version>7c26961cc4</version>
         </dependency>
         <dependency>
             <groupId>de.swiesend</groupId>
