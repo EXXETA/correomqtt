@@ -22,6 +22,7 @@ public class MessagePropertiesDTO implements Comparable<MessagePropertiesDTO> {
     private final StringProperty topicProperty;
     private final StringProperty payloadProperty;
     private final BooleanProperty isRetainedProperty;
+    private final BooleanProperty isFavoritedProperty;
     private final Property<Qos> qosProperty;
     private final Property<LocalDateTime> dateTimeProperty;
     private final Property<SubscriptionPropertiesDTO> subscriptionDTOProperty;
@@ -35,13 +36,14 @@ public class MessagePropertiesDTO implements Comparable<MessagePropertiesDTO> {
                 m.topicProperty,
                 m.payloadProperty,
                 m.isRetainedProperty,
+                m.isFavoritedProperty,
                 m.qosProperty,
                 m.dateTimeProperty,
                 m.subscriptionDTOProperty,
                 m.messageIdProperty,
                 m.messageTypeProperty,
                 m.publishStatusProperty,
-                m.extraProperties
+                m.extraProperties,
         };
     }
 
@@ -73,6 +75,8 @@ public class MessagePropertiesDTO implements Comparable<MessagePropertiesDTO> {
         return isRetainedProperty.get();
     }
 
+    public boolean isFavorited() {return isFavoritedProperty.get(); }
+
     public Qos getQos() {
         return qosProperty.getValue();
     }
@@ -92,11 +96,6 @@ public class MessagePropertiesDTO implements Comparable<MessagePropertiesDTO> {
     @MessageDateTimeFormatter
     public LocalDateTime getDateTime() {
         return dateTimeProperty.getValue();
-    }
-
-    @Override
-    public String toString() {
-        return "Message to " + getTopic() + " with QoS: " + getQos().ordinal() + " at " + getDateTime();
     }
 
     @Override
@@ -143,6 +142,7 @@ public class MessagePropertiesDTO implements Comparable<MessagePropertiesDTO> {
         private StringProperty topicProperty = new SimpleStringProperty();
         private StringProperty payloadProperty = new SimpleStringProperty();
         private BooleanProperty isRetainedProperty = new SimpleBooleanProperty(false);
+        private BooleanProperty FavoritedProperty = new SimpleBooleanProperty(false);
         private Property<Qos> qosProperty = new SimpleObjectProperty<>();
         private Property<LocalDateTime> dateTimeProperty = new SimpleObjectProperty<>();
         private Property<SubscriptionPropertiesDTO> subscriptionDTOProperty = new SimpleObjectProperty<>();
@@ -150,6 +150,7 @@ public class MessagePropertiesDTO implements Comparable<MessagePropertiesDTO> {
         private Property<MessageType> messageTypeProperty = new SimpleObjectProperty<>();
         private Property<PublishStatus> publishStatusProperty = new SimpleObjectProperty<>();
         private SimpleMapProperty<String, Object> extraProperties = new SimpleMapProperty<>();
+
 
         public MessagePropertiesDTOBuilder topic(String topic) {
             this.topicProperty.set(topic);
@@ -163,6 +164,10 @@ public class MessagePropertiesDTO implements Comparable<MessagePropertiesDTO> {
 
         public MessagePropertiesDTOBuilder isRetained(boolean isRetained) {
             this.isRetainedProperty.set(isRetained);
+            return this;
+        }
+        public MessagePropertiesDTOBuilder isFavorited(boolean isFavorited ) {
+            this.FavoritedProperty.set(isFavorited);
             return this;
         }
 
@@ -205,6 +210,7 @@ public class MessagePropertiesDTO implements Comparable<MessagePropertiesDTO> {
             return new MessagePropertiesDTO(topicProperty,
                     payloadProperty,
                     isRetainedProperty,
+                    FavoritedProperty,
                     qosProperty,
                     dateTimeProperty,
                     subscriptionDTOProperty,

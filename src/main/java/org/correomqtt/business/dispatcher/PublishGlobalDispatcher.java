@@ -16,11 +16,12 @@ public class PublishGlobalDispatcher extends BaseConnectionDispatcher<PublishGlo
     public void onPublishSuceeded(String connectionId, MessageDTO messageDTO) {
         triggerFiltered(connectionId, o -> o.onPublishSucceeded(connectionId, messageDTO));
     }
-
+    public void onPublishChangeFavoriteStatus(String connectionId, MessageDTO messageDTO) {
+        triggerFiltered(connectionId, o -> o.onPublishChangeFavoriteStatus(connectionId, messageDTO));
+    }
     public void onPublishRemoved(String connectionId, MessageDTO messageDTO) {
         triggerFiltered(connectionId, o -> o.onPublishRemoved(connectionId, messageDTO));
     }
-
     public void onPublishesCleared(String connectionId){
         triggerFiltered(connectionId, o -> o.onPublishesCleared(connectionId));
     }

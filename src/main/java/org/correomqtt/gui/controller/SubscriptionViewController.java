@@ -105,7 +105,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     public void initialize() {
 
         initMessageListView();
-
         qosComboBox.setItems(FXCollections.observableArrayList(Qos.values()));
         qosComboBox.getSelectionModel().selectFirst();
         qosComboBox.setCellFactory(QosCell::new);
@@ -144,7 +143,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         cell.itemProperty().addListener((observable, oldValue, newValue) -> {
             contextMenu.setObject(cell.getItem());
         });
-       //cell.setOnMouseClicked(event -> onSubscriptionListClicked(event, cell.getItem()));
+        //cell.setOnMouseClicked(event -> onSubscriptionListClicked(event, cell.getItem()));
         cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue) {
                 onSubscriptionSelected(cell.getItem());
@@ -171,7 +170,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
                                                                           .topic(topic)
                                                                           .qos(selectedQos)
                                                                           .build());
-
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Subscribing to topic '{}': {}", topic, getConnectionId());
         }
@@ -348,6 +346,10 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     @Override
+    public void changeFavoriteStatus(MessagePropertiesDTO messageDTO) {
+            // do nothing
+    }
+    @Override
     public void onDisconnectFromConnectionDeleted(String connectionId) {
         // do nothing
     }
@@ -454,12 +456,12 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
 
     @Override
     public void onUnsubscribeCanceled(SubscriptionDTO subscriptionDTO) {
-// nothing to do
+         // nothing to do
     }
 
     @Override
     public void onUnsubscribeFailed(SubscriptionDTO subscriptionDTO, Throwable exception) {
-// nothing to do
+        // nothing to do
     }
 
     @Override

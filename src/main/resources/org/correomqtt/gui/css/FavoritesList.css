@@ -1,0 +1,43 @@
+@import "global.css";
+
+
+.black #FavoriteButton  {
+    -fx-graphic: url("../icons/star-regular-black.png");
+}
+
+.white #FavoriteButton  {
+    -fx-graphic: url("../icons/star-regular-white.png");
+}
+
+.black #FavoriteButton:selected   {
+    -fx-graphic: url("../icons/star-solid-black.png");
+}
+
+.white #FavoriteButton:selected  {
+    -fx-graphic: url("../icons/star-solid-white.png");
+}
+
+.black #FavoritesFilterButton  {
+    -fx-graphic: url("../icons/filter-solid-black.png");
+}
+
+.white #FavoritesFilterButton  {
+    -fx-graphic: url("../icons/filter-solid-white.png");
+}
+
+#FavoriteStar:selected {
+    -fx-graphic: url("../icons/columns-solid-without-toolbar-stargold.png");
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-background-color: transparent;
+}
+#FavoriteStar{
+    -fx-graphic: url("../icons/columns-solid-without-toolbar-stargold.png");
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-background-color: transparent;
+}
+
+
