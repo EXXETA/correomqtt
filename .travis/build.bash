@@ -183,11 +183,13 @@ elif [ "$1" = "linux" ]; then
     --resource-dir .travis/resources/linux
   echo " done"
   echo - n "Package Modern DEB ..."
+  cd target
   DEB_NAME="correomqtt_$CORREO_VERSION-1_amd64.deb"
   ar x $DEB_NAME
   gawk -i inplace '{ gsub(/libpng12-0/, "libpng16-16") }; { print }' control
   tar c {post,pre}{inst,rm} control | gzip -c > control.tar.gz
   ar rcs $(echo -n $DEB_NAME | sed 's/correomqtt_/correomqtt_modern_/g') debian-binary control.tar.gz data.tar.xz
+  cd ..
   echo " done"
   echo -n "Package RPM ..."
   ./jdk-14/bin/jpackage \
