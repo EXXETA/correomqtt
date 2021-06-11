@@ -4,12 +4,10 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.ToggleButton;
 import org.correomqtt.business.exception.CorreoMqttException;
-import org.correomqtt.business.model.MessageDTO;
-import org.correomqtt.business.model.MessageType;
-import org.correomqtt.business.model.PublishStatus;
-import org.correomqtt.business.model.Qos;
+import org.correomqtt.business.model.*;
 import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.AutoFormatPayload;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.cell.QosCell;
@@ -145,6 +143,21 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         });
 
         payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
+
+        SettingsProvider.getInstance().getConnectionConfigs().stream()
+                .filter(c -> c.getId().equals(getConnectionId()))
+                .findFirst()
+                .ifPresent(c -> {
+                    if (splitPane.getDividers().size() > 0) {splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDividerPosition());}
+                    super.messageListViewController.showDetailViewButton.setSelected(c.getConnectionUISettings().isPublishDetailActive());
+                    super.messageListViewController.controllerType = ControllerType.PUBLISH;
+                    if (c.getConnectionUISettings().isPublishDetailActive()) {
+                        super.messageListViewController.showDetailView();
+                        if (super.messageListViewController.splitPane.getDividers().size() > 0) {
+                            super.messageListViewController.splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDetailDividerPosition());
+                        }
+                    }
+                });
 
         initTopicComboBox();
     }
@@ -292,7 +305,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         } else {
             retainedCheckBox.setSelected(false);
         }
-        
+
         payloadCodeArea.replaceText(messageDTO.getPayload());
 
         checkFormat();
@@ -352,7 +365,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     }
 
     @Override
-    public void onSettingsUpdated() {
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Updated settings in publish view controller: {}", getConnectionId());

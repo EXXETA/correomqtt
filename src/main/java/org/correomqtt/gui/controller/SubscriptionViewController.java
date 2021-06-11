@@ -11,10 +11,12 @@ import org.correomqtt.business.dispatcher.SubscribeObserver;
 import org.correomqtt.business.dispatcher.UnsubscribeDispatcher;
 import org.correomqtt.business.dispatcher.UnsubscribeObserver;
 import org.correomqtt.business.exception.CorreoMqttException;
+import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.SubscriptionDTO;
 import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.cell.QosCell;
@@ -125,6 +127,21 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
                 afterSubscribe = false;
             }
         });
+
+        SettingsProvider.getInstance().getConnectionConfigs().stream()
+                .filter(c -> c.getId().equals(getConnectionId()))
+                .findFirst()
+                .ifPresent(c -> {
+                    if (splitPane.getDividers().size() > 0) {splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDividerPosition());}
+                    super.messageListViewController.showDetailViewButton.setSelected(c.getConnectionUISettings().isSubscribeDetailActive());
+                    super.messageListViewController.controllerType = ControllerType.SUBSCRIBE;
+                    if (c.getConnectionUISettings().isSubscribeDetailActive()) {
+                        super.messageListViewController.showDetailView();
+                        if (super.messageListViewController.splitPane.getDividers().size() > 0) {
+                            super.messageListViewController.splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDetailDividerPosition());
+                        }
+                    }
+                });
 
         initTopicComboBox();
 

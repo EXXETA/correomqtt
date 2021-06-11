@@ -267,7 +267,7 @@ public class DetailViewController extends BaseConnectionController implements
         }
 
         SettingsProvider.getInstance().getSettings().setUseIgnoreCase(!SettingsProvider.getInstance().getSettings().isUseIgnoreCase());
-        SettingsProvider.getInstance().saveSettings();
+        SettingsProvider.getInstance().saveSettings(false);
         this.searchMenuButton.getItems().remove(ignoreCaseMenuItem);
         if (SettingsProvider.getInstance().getSettings().isUseIgnoreCase()) {
             ignoreCaseMenuItem.getStyleClass().add(CHECK_SOLID_CLASS);
@@ -287,7 +287,7 @@ public class DetailViewController extends BaseConnectionController implements
         }
 
         SettingsProvider.getInstance().getSettings().setUseRegexForSearch(!SettingsProvider.getInstance().getSettings().isUseRegexForSearch());
-        SettingsProvider.getInstance().saveSettings();
+        SettingsProvider.getInstance().saveSettings(false);
         this.searchMenuButton.getItems().remove(regexMenuItem);
         if (SettingsProvider.getInstance().getSettings().isUseRegexForSearch()) {
             regexMenuItem.getStyleClass().add(CHECK_SOLID_CLASS);

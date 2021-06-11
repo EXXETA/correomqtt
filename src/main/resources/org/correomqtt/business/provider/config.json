@@ -27,7 +27,8 @@
       "lwtMessageId": false,
       "lwtAnswerExpected": false,
       "lwtRetained": false,
-      "lwtPayload": null
+      "lwtPayload": null,
+      "connectionUISettings": null
     }
   ],
   "themesSettings": {
@@ -44,7 +45,8 @@
     "useIgnoreCase": true,
     "searchUpdates": false,
     "firstStart": true,
-    "configCreatedWithCorreoVersion": null
+    "configCreatedWithCorreoVersion": null,
+    "globalUISettings": null
   }
 }
 
