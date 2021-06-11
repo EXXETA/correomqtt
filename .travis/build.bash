@@ -163,7 +163,6 @@ if [ "$1" = "osx" ]; then
   security unlock-keychain -p 1234 /tmp/correomqtt-db
   security list-keychains -s /tmp/correomqtt-db
   codesign -h -fs correomqtt.org --keychain /tmp/correomqtt-db --force target/CorreoMQTT.app
-
   ./jdk-14.jdk/Contents/Home/bin/jpackage \
     --type dmg \
     -d target \
@@ -181,8 +180,14 @@ elif [ "$1" = "linux" ]; then
     --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
     --app-version $CORREO_VERSION \
     --icon ./src/main/deploy/package/Icon.png \
-    --linux-package-deps libpng16-16 \
     --resource-dir .travis/resources/linux
+  echo " done"
+  echo - n "Package Modern DEB ..."
+  DEB_NAME="correomqtt_$CORREO_VERSION-1_amd64.deb"
+  ar x $DEB_NAME
+  gawk -i inplace '{ gsub(/libpng12-0/, "libpng16-16") }; { print }' control
+  tar c {post,pre}{inst,rm} control | gzip -c > control.tar.gz
+  ar rcs $(echo -n $DEB_NAME | sed 's/correomqtt_/correomqtt_modern_/g') debian-binary control.tar.gz data.tar.xz
   echo " done"
   echo -n "Package RPM ..."
   ./jdk-14/bin/jpackage \
