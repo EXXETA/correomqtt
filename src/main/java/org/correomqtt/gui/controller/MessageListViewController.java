@@ -297,7 +297,7 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     private MessagePropertiesDTO executeOnMessageIncomingExtensions(MessagePropertiesDTO messageDTO) {
         MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
-        for (MessageIncomingHook p : PluginManager.getInstance().getExtensions(MessageIncomingHook.class)) {
+        for (MessageIncomingHook p : PluginManager.getInstance().getConfiguredExtensions(MessageIncomingHook.class)) {
             messageExtensionDTO = p.onMessageIncoming(getConnectionId(), messageExtensionDTO);
         }
         return messageExtensionDTO.merge(messageDTO);
