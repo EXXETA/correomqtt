@@ -30,7 +30,7 @@
         </encoder>
     </appender>
 
-    <logger name="org.correomqtt" level="DEBUG" additivity="false">
+    <logger name="org.correomqtt" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
         <appender-ref ref="GUI"/>

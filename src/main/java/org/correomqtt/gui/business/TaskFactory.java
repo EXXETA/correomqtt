@@ -27,7 +27,7 @@ public class TaskFactory {
 
     private static MessagePropertiesDTO executeOnPublishMessageExtensions(String connectionId, MessagePropertiesDTO messagePropertiesDTO) {
         MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messagePropertiesDTO);
-        for (PublishMessageHook p : PluginManager.getInstance().getExtensions(PublishMessageHook.class)) {
+        for (PublishMessageHook p : PluginManager.getInstance().getConfiguredExtensions(PublishMessageHook.class)) {
             messageExtensionDTO = p.onPublishMessage(connectionId, messageExtensionDTO);
         }
         return messageExtensionDTO.merge(messagePropertiesDTO);

@@ -25,6 +25,10 @@ public class AutoFormatPayload {
 
     public static Format autoFormatPayload(final String payload, boolean doFormatting, String connectionId, CodeArea codeArea, ChangeListener<String> listener) {
 
+        if(!doFormatting){
+            return null;
+        }
+
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Auto formatting payload: {}", connectionId);
         }

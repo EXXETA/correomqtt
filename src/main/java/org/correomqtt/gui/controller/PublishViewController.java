@@ -130,19 +130,16 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         payloadCodeArea.prefWidthProperty().bind(codeAreaScrollPane.widthProperty());
         payloadCodeArea.prefHeightProperty().bind(codeAreaScrollPane.heightProperty());
 
-        payloadCodeAreaChangeListener = new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
-                checkFormat();
-            }
-        };
+        publishViewFormatToggleButton.setVisible(false);
 
-        publishViewFormatToggleButton.setSelected(true);
+        /*payloadCodeAreaChangeListener = (observableValue, s, t1) -> checkFormat();
+
+        publishViewFormatToggleButton.setSelected(false);
         publishViewFormatToggleButton.setOnMouseClicked(mouseEvent -> {
             AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, payloadCodeAreaChangeListener);
         });
 
-        payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
+        payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);*/
 
         SettingsProvider.getInstance().getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
