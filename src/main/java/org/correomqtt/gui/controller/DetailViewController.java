@@ -1,5 +1,14 @@
 package org.correomqtt.gui.controller;
 
+import javafx.scene.control.Button;
+import javafx.scene.control.IndexRange;
+import javafx.scene.control.Label;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SplitMenuButton;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
 import org.correomqtt.business.dispatcher.ExportMessageDispatcher;
 import org.correomqtt.business.dispatcher.ExportMessageObserver;
 import org.correomqtt.business.dispatcher.ImportMessageDispatcher;
@@ -7,6 +16,7 @@ import org.correomqtt.business.dispatcher.ImportMessageObserver;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.utils.AutoFormatPayload;
 import org.correomqtt.gui.contextmenu.DetailContextMenu;
 import org.correomqtt.gui.contextmenu.DetailContextMenuDelegate;
 import org.correomqtt.gui.formats.Format;
@@ -34,7 +44,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -49,7 +58,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -221,7 +235,7 @@ public class DetailViewController extends BaseConnectionController implements
         });
 
         detailViewFormatToggleButton.setOnMouseClicked(mouseEvent -> {
-            autoFormatPayload(messageDTO.getPayload(), detailViewFormatToggleButton.isSelected());
+            AutoFormatPayload.autoFormatPayload(messageDTO.getPayload(), detailViewFormatToggleButton.isSelected(), getConnectionId(), codeArea);
             showSearchResult();
         });
 
@@ -395,7 +409,7 @@ public class DetailViewController extends BaseConnectionController implements
 
         if (messageDTO != null) {
             validateMessage(messageDTO.getTopic(), codeArea.getText());
-            autoFormatPayload(codeArea.getText(), true);
+            AutoFormatPayload.autoFormatPayload(codeArea.getText(), true, getConnectionId(), codeArea);
         }
     }
 
@@ -440,7 +454,7 @@ public class DetailViewController extends BaseConnectionController implements
 
         codeArea.setEditable(false);
 
-        Format format = autoFormatPayload(payload, true);
+        Format format = AutoFormatPayload.autoFormatPayload(payload, true, getConnectionId(), codeArea);
         detailViewFormatToggleButton.setSelected(format.isFormatable());
         detailViewFormatToggleButton.setDisable(!format.isFormatable());
     }
