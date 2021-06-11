@@ -2,6 +2,7 @@ package org.correomqtt.gui.controller;
 
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
+import org.correomqtt.business.dispatcher.ShutdownDispatcher;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
@@ -27,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
@@ -74,6 +77,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private SelectionModel<Tab> selectionModel;
     private ResourceBundle resources;
+    public Map<String, ConnectionViewController> conntectionViewControllers;
 
     public MainViewController() {
         ConfigDispatcher.getInstance().addObserver(this);
@@ -86,6 +90,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
         setupAddTab();
         createLogTab();
+
+        conntectionViewControllers = new HashMap<>();
 
         final String os = System.getProperty("os.name");
         if (os != null && os.startsWith("Mac")) {
@@ -126,7 +132,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     private void setMenuEventHandler() {
-        closeItem.setOnAction(event -> System.exit(0));
+        closeItem.setOnAction(event -> ShutdownDispatcher.getInstance().onShutdownRequested());
         connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this));
         settingsItem.setOnAction(event -> SettingsViewController.showAsDialog());
         aboutItem.setOnAction(event -> AboutViewController.showAsDialog());
@@ -193,6 +199,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             tab.setContent(result.getMainPane());
             tab.setOnCloseRequest(event -> result.getController().disconnect());
 
+            conntectionViewControllers.put(tabId, result.getController());
+
             tabPane.getTabs().add(tabPane.getTabs().size() - 1, tab);
             selectionModel = tabPane.getSelectionModel();
             selectionModel.select(tab);
@@ -207,6 +215,34 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                     resources.getString("mainViewControllerAlreadyUsedContent"));
         }
 
+    }
+
+    @FXML
+    public void resetUISettings() {
+        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).resetConnectionUISettings();
+        }
+    }
+
+    @FXML
+    public void onClickP() {
+        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(true, false);
+        }
+    }
+
+    @FXML
+    public void onClickPS() {
+        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(true, true);
+        }
+    }
+
+    @FXML
+    public void onClickS() {
+        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(false, true);
+        }
     }
 
     private void calcTabWidth() {
@@ -284,7 +320,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     @Override
-    public void onSettingsUpdated() {
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
 
     }
 

@@ -46,7 +46,7 @@ public class ConfigDispatcher extends BaseDispatcher<ConfigObserver> {
 
     public void onConnectionsUpdated() { trigger(ConfigObserver::onConnectionsUpdated);}
 
-    public void onSettingsUpdated() { trigger(ConfigObserver::onSettingsUpdated);}
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) { trigger(o -> o.onSettingsUpdated(showRestartRequiredDialog));}
 
     public void onConfigPrepareFailure() {
         trigger(ConfigObserver::onConfigPrepareFailed);

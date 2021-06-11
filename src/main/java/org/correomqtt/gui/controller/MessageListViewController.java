@@ -2,6 +2,7 @@ package org.correomqtt.gui.controller;
 
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.business.provider.SettingsProvider;
@@ -51,7 +52,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     @FXML
     Button showDetailsButton;
     @FXML
-    private SplitPane splitPane;
+    protected SplitPane splitPane;
     @FXML
     private VBox messagesVBox;
     @FXML
@@ -60,13 +61,15 @@ public class MessageListViewController extends BaseConnectionController implemen
     private Button messageSearchClearButton;
 
     @FXML
-    private ToggleButton showDetailViewButton;
+    protected ToggleButton showDetailViewButton;
 
     private ObservableList<MessagePropertiesDTO> messages;
 
     private FilteredList<MessagePropertiesDTO> filteredMessages;
 
     private DetailViewController detailViewController;
+
+    protected ControllerType controllerType = null;
 
     public MessageListViewController(String connectionId, MessageListViewDelegate delegate) {
         super(connectionId);
@@ -96,20 +99,40 @@ public class MessageListViewController extends BaseConnectionController implemen
 
         splitPane.widthProperty().addListener((observable, oldValue, newValue) -> {
             Platform.runLater(() -> {
-                if (newValue.intValue() <= 670) {
-                    closeDetailView();
-                    showDetailViewButton.setDisable(true);
-                } else {
-                    showDetailViewButton.setDisable(false);
-
-                    if (showDetailViewButton.isSelected()) {
-                        showDetailView();
-                    }
-                }
+                calculateDetailView(newValue);
             });
         });
 
         messageSearchTextField.textProperty().addListener((observable, oldValue, newValue) -> searchInMessages(newValue));
+    }
+
+    public void calculateDetailView(Number newValue) {
+        if (newValue.intValue() <= 670) {
+            closeDetailView();
+            showDetailViewButton.setDisable(true);
+        } else {
+            showDetailViewButton.setDisable(false);
+
+            if (showDetailViewButton.isSelected()) {
+                showDetailView();
+            }
+        }
+    }
+
+    public double getDetailDividerPosition() {
+        if (splitPane.getDividers().size() > 0) {
+            return splitPane.getDividers().get(0).getPosition();
+        } else {
+            return 0.5;
+        }
+    }
+
+    public boolean isDetailActive() {
+        if (showDetailViewButton.isSelected()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void searchInMessages(String newValue) {
@@ -300,19 +323,32 @@ public class MessageListViewController extends BaseConnectionController implemen
         }
     }
 
-    private void closeDetailView() {
+    protected void closeDetailView() {
         if (this.detailViewController != null) {
             splitPane.getItems().remove(detailViewController.getMainNode());
             this.detailViewController = null;
         }
     }
 
-    private void showDetailView() {
+    protected void showDetailView() {
 
         if (detailViewController == null) {
             LoaderResult<DetailViewController> result = DetailViewController.load(getSelectedMessage(), getConnectionId(), this, true);
             detailViewController = result.getController();
             splitPane.getItems().add(result.getMainPane());
+
+            SettingsProvider.getInstance().getConnectionConfigs().stream()
+                    .filter(c -> c.getId().equals(getConnectionId()))
+                    .findFirst()
+                    .ifPresent(c -> {
+                        if (splitPane.getDividers().size() > 0) {
+                            if (controllerType == ControllerType.SUBSCRIBE) {
+                                splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDetailDividerPosition());
+                            } else if (controllerType == ControllerType.PUBLISH) {
+                                splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDetailDividerPosition());
+                            }
+                        }
+                    });
         }
     }
 

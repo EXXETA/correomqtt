@@ -10,11 +10,11 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane fx:id="mainViewHBoxAnchorPane" minWidth="500.0" prefHeight="32.0" prefWidth="663.0" styleClass="mainToolbar" stylesheets="@../css/controlBarView.css" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ControlBarController">
+<AnchorPane fx:id="mainViewHBoxAnchorPane" minWidth="500.0" prefHeight="32.0" prefWidth="663.0" styleClass="mainToolbar" stylesheets="@../css/controlBarView.css" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ControlBarController">
     <HBox fx:id="controllViewButtonHBox" alignment="CENTER_LEFT" prefHeight="32.0" prefWidth="270.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <ToggleButton fx:id="controlViewPButton" mnemonicParsing="false" onAction="#onClickP" styleClass="columns-solid-left" textAlignment="CENTER">
             <tooltip>
-                <Tooltip text="%controlBarViewOnlyPublishButtonTooltip" />
+                <Tooltip text="%mainViewPublishItem" />
             </tooltip>
         </ToggleButton>
         <ToggleButton fx:id="controlViewPSButton" mnemonicParsing="false" onAction="#onClickPS" styleClass="columns-solid" textAlignment="CENTER">
@@ -22,12 +22,12 @@
                 <Insets left="-1.0" right="-1.0" />
             </HBox.margin>
             <tooltip>
-                <Tooltip text="%controlBarViewPublishAndSubscribeButtonTooltip" />
+                <Tooltip text="%mainViewPublishSubscribeItem" />
             </tooltip>
         </ToggleButton>
         <ToggleButton fx:id="controlViewSButton" mnemonicParsing="false" onAction="#onClickS" styleClass="columns-solid-right" textAlignment="CENTER">
             <tooltip>
-                <Tooltip text="%controlBarViewOnlySubscribeButtonTooltip" />
+                <Tooltip text="%mainViewSubscribeItem" />
             </tooltip>
         </ToggleButton>
       <VBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">

@@ -256,7 +256,7 @@ public class SettingsViewController extends BaseController {
         ThemeProvider selectedTheme = themeComboBox.getSelectionModel().getSelectedItem();
         settings.setSavedLocale(languageComboBox.getSelectionModel().getSelectedItem().getLocale());
         SettingsProvider.getInstance().getThemeSettings().setActiveTheme(new ThemeDTO(selectedTheme.getName(), selectedTheme.getIconMode()));
-        SettingsProvider.getInstance().saveSettings();
+        SettingsProvider.getInstance().saveSettings(true);
     }
 
     private void closeDialog() {
