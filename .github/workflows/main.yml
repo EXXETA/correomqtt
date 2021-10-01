@@ -10,15 +10,18 @@ jobs:
       - name: Checkout master
         uses: actions/checkout@v2
       - run: .github/build.bash linux
+        shell: bash
   winbuild:
     runs-on: windows-2019
     steps:
       - name: Checkout master
         uses: actions/checkout@v2
       - run: .github/build.bash windows
+        shell: bash
   macbuild:
     runs-on: macos-11
     steps:    
       - name: Checkout master
         uses: actions/checkout@v2
       - run: .github/build.bash osx
+        shell: bash
