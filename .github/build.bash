@@ -19,7 +19,7 @@ echo "==== INSTALL DEPENDENCIES ===="
 if [ "$1" = "osx" ]; then
   if [ ! -d "zulu13.29.9-ca-jdk13.0.2-macosx_x64" ]; then
     echo -n "Downloading Java 13 ..."
-    curl https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz --output zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz
+    curl -s https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz --output zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz
     echo " done"
     echo -n "Extracting Java 13 ..."
     tar zxvf zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz >/dev/null 2>&1
@@ -29,7 +29,7 @@ if [ "$1" = "osx" ]; then
   fi
   if [ ! -d "jdk-14.jdk" ]; then
     echo -n "Downloading Java 14 ..."
-    curl https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_osx-x64_bin.tar.gz --output openjdk-14_osx-x64_bin.tar.gz
+    curl -s https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_osx-x64_bin.tar.gz --output openjdk-14_osx-x64_bin.tar.gz
     echo " done"
     echo -n "Extracting Java 14 ..."
     tar zxvf openjdk-14_osx-x64_bin.tar.gz >/dev/null 2>&1
@@ -42,7 +42,7 @@ if [ "$1" = "osx" ]; then
 elif [ "$1" = "linux" ]; then
   if [ ! -d "zulu13.29.9-ca-jdk13.0.2-linux_x64" ]; then
     echo -n "Downloading Java 13 ..."
-    curl https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz --output zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz
+    curl -s https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz --output zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz
     echo " done"
     echo -n "Extracting Java 13 ..."
     tar zxvf zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz >/dev/null 2>&1
@@ -54,7 +54,7 @@ elif [ "$1" = "linux" ]; then
   export PATH=$JAVA_HOME/bin:$PATH
   if [ ! -d "jdk-14" ]; then
     echo -n "Downloading Java 14 ..."
-    curl https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_linux-x64_bin.tar.gz --output openjdk-14_linux-x64_bin.tar.gz
+    curl -s https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_linux-x64_bin.tar.gz --output openjdk-14_linux-x64_bin.tar.gz
     echo " done"
     echo -n "Extracting Java 14 ..."
     tar zxvf openjdk-14_linux-x64_bin.tar.gz >/dev/null 2>&1
@@ -65,10 +65,10 @@ elif [ "$1" = "linux" ]; then
 elif [ "$1" = "windows" ]; then
   if [ ! -d "zulu13" ]; then
     echo "Downloading Unzip"
-    curl -q http://stahlworks.com/dev/unzip.exe --output unzip.exe
+    curl -s http://stahlworks.com/dev/unzip.exe --output unzip.exe
     echo " done"
     echo -n "Downloading Java 13 ..."
-    curl -k https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-win_x64.zip --output zulu13.29.9-ca-jdk13.0.2-win_x64.zip 
+    curl -s -k https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-win_x64.zip --output zulu13.29.9-ca-jdk13.0.2-win_x64.zip 
     echo " done"
     echo -n "Extracting Java 13 ..."
     unzip -q zulu13.29.9-ca-jdk13.0.2-win_x64.zip
@@ -79,7 +79,7 @@ elif [ "$1" = "windows" ]; then
   fi
   if [ ! -d "maven" ]; then
     echo "Downloading Maven"
-    curl -k https://mirror.dkd.de/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip --output apache-maven-3.6.3-bin.zip
+    curl -s -k https://mirror.dkd.de/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip --output apache-maven-3.6.3-bin.zip
     echo " done"
     echo -n "Extracting Maven ..."
     unzip -q apache-maven-3.6.3-bin.zip
@@ -92,7 +92,7 @@ elif [ "$1" = "windows" ]; then
     mkdir wix
     cd wix || exit 1
     echo "Downloading WIX"
-    curl -k https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip --output wix311-binaries.zip
+    curl -s -k https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip --output wix311-binaries.zip
     echo " done"
     echo -n "Extracting WIX ..."
     unzip wix311-binaries.zip
@@ -103,7 +103,7 @@ elif [ "$1" = "windows" ]; then
   fi
   if [ ! -d "jdk-14" ]; then
     echo -n "Downloading Java 14 ..."
-    curl https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_windows-x64_bin.zip --output openjdk-14_windows-x64_bin.zip
+    curl -s https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_windows-x64_bin.zip --output openjdk-14_windows-x64_bin.zip
     echo " done"
     echo -n "Extracting Java 14 ..."
     unzip -q openjdk-14_windows-x64_bin.zip
