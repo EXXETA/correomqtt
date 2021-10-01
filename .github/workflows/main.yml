@@ -12,24 +12,13 @@ jobs:
       - run: .github/build.bash linux
         id: build
         shell: bash
-      - name: Upload DEB
-        id: upload-release-deb
-        uses: svenstaro/upload-release-action@v2
+      - name: Release Artifacts
+        uses: Roang-zero1/github-upload-release-artifacts-action@master
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/${{ steps.build.outputs.correo_deb }}
-          asset_name: ${{ steps.build.outputs.correo_deb }}
-          tag: ${{ github.ref }}
-          overwrite: true
-      - name: Upload RPM
-        id: upload-release-rpm 
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/${{ steps.build.outputs.correo_rpm }}
-          asset_name: ${{ steps.build.outputs.correo_rpm }}
-          tag: ${{ github.ref }}
-          overwrite: true
+          args:
+          - release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   winbuild:
     runs-on: windows-2019
     steps:
@@ -38,15 +27,13 @@ jobs:
       - run: .github/build.bash windows
         id: build
         shell: bash
-      - name: Upload MSI
-        id: upload-release-msi
-        uses: svenstaro/upload-release-action@v2
+      - name: Release Artifacts
+        uses: Roang-zero1/github-upload-release-artifacts-action@master
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/${{ steps.build.outputs.correo_msi }}
-          asset_name: ${{ steps.build.outputs.correo_msi }}
-          tag: ${{ github.ref }}
-          overwrite: true
+          args:
+          - release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   macbuild:
     runs-on: macos-11
     steps:    
@@ -55,12 +42,10 @@ jobs:
       - run: .github/build.bash osx
         id: build
         shell: bash
-      - name: Upload DMG
-        id: upload-release-dmg
-        uses: svenstaro/upload-release-action@v2
+      - name: Release Artifacts
+        uses: Roang-zero1/github-upload-release-artifacts-action@master
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/${{ steps.build.outputs.correo_dmg }}
-          asset_name: ${{ steps.build.outputs.correo_dmg }}
-          tag: ${{ github.ref }}
-          overwrite: true
+          args:
+          - release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
