@@ -5,7 +5,7 @@ cd "$GITHUB_WORKSPACE" || exit 1
 echo "==== DECLARE CORREO VERSION ===="
 export CORREO_VERSION
 
-if [ "$GITHUB_REF" =~ [^v[0-9]+\.[0-9]+\.[0-9]] ]; then
+if [[ "$GITHUB_REF" =~ [^v[0-9]+\.[0-9]+\.[0-9]] ]]; then
   echo "tag set -> set version to tag version"
   CORREO_VERSION=$(echo "$GITHUB_REF" | cut -d "v" -f 2)
 else
@@ -134,7 +134,7 @@ echo "==== BUILD CORREO ===="
 mvn clean install -DskipTests=true
 
 echo "==== DEPLOY TO MAVEN CENTRAL ===="
-if [ "$1" = "linux" ] && [ "$GITHUB_REF" =~ [^v[0-9]+\.[0-9]+\.[0-9]] ] && [ ! -n $GITHUB_HEAD_REF ]; then
+if [ "$1" = "linux" ] && [[ "$GITHUB_REF" =~ [^v[0-9]+\.[0-9]+\.[0-9]] ]] && [ ! -n $GITHUB_HEAD_REF ]; then
   echo "$GPG_SECRET_KEYS" | base64 --decode | $GPG_EXECUTABLE --import
   echo "$GPG_OWNERTRUST" | base64 --decode | $GPG_EXECUTABLE --import-ownertrust
   echo "tag set -> deploy release to maven central only on linux"
