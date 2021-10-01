@@ -12,36 +12,24 @@ jobs:
       - run: .github/build.bash linux
         id: build
         shell: bash
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
       - name: Upload DEB
         id: upload-release-deb
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: svenstaro/upload-release-action@v2
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ steps.build.outputs.correo_deb }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/${{ steps.build.outputs.correo_deb }}
           asset_name: ${{ steps.build.outputs.correo_deb }}
-          asset_content_type: application/vnd.debian.binary-package
+          tag: ${{ github.ref }}
+          overwrite: true
       - name: Upload RPM
         id: upload-release-rpm 
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: svenstaro/upload-release-action@v2
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ steps.build.outputs.correo_rpm }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/${{ steps.build.outputs.correo_rpm }}
           asset_name: ${{ steps.build.outputs.correo_rpm }}
-          asset_content_type: application/x-rpm
+          tag: ${{ github.ref }}
+          overwrite: true
   winbuild:
     runs-on: windows-2019
     steps:
@@ -50,26 +38,15 @@ jobs:
       - run: .github/build.bash windows
         id: build
         shell: bash
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
       - name: Upload MSI
         id: upload-release-msi
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: svenstaro/upload-release-action@v2
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ steps.build.outputs.correo_msi }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/${{ steps.build.outputs.correo_msi }}
           asset_name: ${{ steps.build.outputs.correo_msi }}
-          asset_content_type: application/x-msi
+          tag: ${{ github.ref }}
+          overwrite: true
   macbuild:
     runs-on: macos-11
     steps:    
@@ -78,23 +55,12 @@ jobs:
       - run: .github/build.bash osx
         id: build
         shell: bash
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
       - name: Upload DMG
         id: upload-release-dmg
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: svenstaro/upload-release-action@v2
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ steps.build.outputs.correo_dmg }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/${{ steps.build.outputs.correo_dmg }}
           asset_name: ${{ steps.build.outputs.correo_dmg }}
-          asset_content_type: application/zlib
+          tag: ${{ github.ref }}
+          overwrite: true
