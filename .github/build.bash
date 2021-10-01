@@ -5,7 +5,7 @@ cd "$GITHUB_WORKSPACE" || exit 1
 echo "==== DECLARE CORREO VERSION ===="
 export CORREO_VERSION
 
-if [ "$GITHUB_REF" =~ [^v[0-9]+\.[0-9]+\.[0-9]] ]; then
+if [[ "$GITHUB_REF" =~ [^v[0-9]+\.[0-9]+\.[0-9]] ]]; then
   echo "tag set -> set version to tag version"
   CORREO_VERSION=$(echo "$GITHUB_REF" | cut -d "v" -f 2)
 else
@@ -19,7 +19,7 @@ echo "==== INSTALL DEPENDENCIES ===="
 if [ "$1" = "osx" ]; then
   if [ ! -d "zulu13.29.9-ca-jdk13.0.2-macosx_x64" ]; then
     echo -n "Downloading Java 13 ..."
-    wget -q https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz
+    curl -s https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz --output zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz
     echo " done"
     echo -n "Extracting Java 13 ..."
     tar zxvf zulu13.29.9-ca-jdk13.0.2-macosx_x64.tar.gz >/dev/null 2>&1
@@ -29,7 +29,7 @@ if [ "$1" = "osx" ]; then
   fi
   if [ ! -d "jdk-14.jdk" ]; then
     echo -n "Downloading Java 14 ..."
-    wget -q https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_osx-x64_bin.tar.gz
+    curl -s https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_osx-x64_bin.tar.gz --output openjdk-14_osx-x64_bin.tar.gz
     echo " done"
     echo -n "Extracting Java 14 ..."
     tar zxvf openjdk-14_osx-x64_bin.tar.gz >/dev/null 2>&1
@@ -42,7 +42,7 @@ if [ "$1" = "osx" ]; then
 elif [ "$1" = "linux" ]; then
   if [ ! -d "zulu13.29.9-ca-jdk13.0.2-linux_x64" ]; then
     echo -n "Downloading Java 13 ..."
-    wget -q https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz
+    curl -s https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz --output zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz
     echo " done"
     echo -n "Extracting Java 13 ..."
     tar zxvf zulu13.29.9-ca-jdk13.0.2-linux_x64.tar.gz >/dev/null 2>&1
@@ -54,7 +54,7 @@ elif [ "$1" = "linux" ]; then
   export PATH=$JAVA_HOME/bin:$PATH
   if [ ! -d "jdk-14" ]; then
     echo -n "Downloading Java 14 ..."
-    wget -q https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_linux-x64_bin.tar.gz
+    curl -s https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_linux-x64_bin.tar.gz --output openjdk-14_linux-x64_bin.tar.gz
     echo " done"
     echo -n "Extracting Java 14 ..."
     tar zxvf openjdk-14_linux-x64_bin.tar.gz >/dev/null 2>&1
@@ -65,10 +65,10 @@ elif [ "$1" = "linux" ]; then
 elif [ "$1" = "windows" ]; then
   if [ ! -d "zulu13" ]; then
     echo "Downloading Unzip"
-    wget -q http://stahlworks.com/dev/unzip.exe
+    curl -s http://stahlworks.com/dev/unzip.exe --output unzip.exe
     echo " done"
     echo -n "Downloading Java 13 ..."
-    wget -q --no-check-certificate https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-win_x64.zip
+    curl -s -k https://cdn.azul.com/zulu/bin/zulu13.29.9-ca-jdk13.0.2-win_x64.zip --output zulu13.29.9-ca-jdk13.0.2-win_x64.zip 
     echo " done"
     echo -n "Extracting Java 13 ..."
     unzip -q zulu13.29.9-ca-jdk13.0.2-win_x64.zip
@@ -79,7 +79,7 @@ elif [ "$1" = "windows" ]; then
   fi
   if [ ! -d "maven" ]; then
     echo "Downloading Maven"
-    wget -q --no-check-certificate https://mirror.dkd.de/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip
+    curl -s -k https://mirror.dkd.de/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip --output apache-maven-3.6.3-bin.zip
     echo " done"
     echo -n "Extracting Maven ..."
     unzip -q apache-maven-3.6.3-bin.zip
@@ -92,7 +92,7 @@ elif [ "$1" = "windows" ]; then
     mkdir wix
     cd wix || exit 1
     echo "Downloading WIX"
-    wget -q --no-check-certificate https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip
+    curl -s -k https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip --output wix311-binaries.zip
     echo " done"
     echo -n "Extracting WIX ..."
     unzip wix311-binaries.zip
@@ -103,7 +103,7 @@ elif [ "$1" = "windows" ]; then
   fi
   if [ ! -d "jdk-14" ]; then
     echo -n "Downloading Java 14 ..."
-    wget -q https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_windows-x64_bin.zip
+    curl -s https://download.java.net/java/GA/jdk14/076bab302c7b4508975440c56f6cc26a/36/GPL/openjdk-14_windows-x64_bin.zip --output openjdk-14_windows-x64_bin.zip
     echo " done"
     echo -n "Extracting Java 14 ..."
     unzip -q openjdk-14_windows-x64_bin.zip
@@ -124,26 +124,27 @@ echo "PATH=$PATH"
 echo "JAVA_VERSION"
 java -version
 echo "MVN_VERSION"
-mvn -version
+mvn -B -version
 
 echo "==== SET CORREO VERSION ===="
-mvn versions:set -DnewVersion="$CORREO_VERSION"
+mvn -B versions:set -DnewVersion="$CORREO_VERSION"
 echo -n "$CORREO_VERSION" >./src/main/resources/org/correomqtt/business/utils/version.txt
 
 echo "==== BUILD CORREO ===="
-mvn clean install -DskipTests=true
+mvn -B clean install -DskipTests=true
 
 echo "==== DEPLOY TO MAVEN CENTRAL ===="
-if [ "$1" = "linux" ] && [ "$GITHUB_REF" =~ [^v[0-9]+\.[0-9]+\.[0-9]] ] && [ ! -n $GITHUB_HEAD_REF ]; then
+if [ "$1" = "linux" ] && [[ "$GITHUB_REF" =~ [^v[0-9]+\.[0-9]+\.[0-9]] ]] && [ ! -n $GITHUB_HEAD_REF ]; then
   echo "$GPG_SECRET_KEYS" | base64 --decode | $GPG_EXECUTABLE --import
   echo "$GPG_OWNERTRUST" | base64 --decode | $GPG_EXECUTABLE --import-ownertrust
   echo "tag set -> deploy release to maven central only on linux"
-  mvn deploy -P release -DskipTests=true --settings "${GITHUB_WORKSPACE}/.github/mvn-deploy.xml"
+  mvn -B deploy -P release -DskipTests=true --settings "${GITHUB_WORKSPACE}/.github/mvn-deploy.xml"
 else
   echo "no tag set -> no deploy"
 fi
 
 echo "==== PACKAGE CORREO ===="
+mkdir release
 if [ "$1" = "osx" ]; then
   echo -n "Package DMG ..."
   ./jdk-14.jdk/Contents/Home/bin/jpackage \
@@ -171,6 +172,7 @@ if [ "$1" = "osx" ]; then
     --app-version $CORREO_VERSION \
     --app-image target/CorreoMQTT.app
   echo " done"
+  cp target/*.dmg release/
 elif [ "$1" = "linux" ]; then
   echo -n "Package DEB ..."
   ./jdk-14/bin/jpackage \
@@ -184,6 +186,7 @@ elif [ "$1" = "linux" ]; then
     --linux-package-deps libpng16-16 \
     --resource-dir .github/resources/linux
   echo " done"
+  cp target/*.deb release/
   echo -n "Package RPM ..."
   ./jdk-14/bin/jpackage \
     --type rpm \
@@ -195,6 +198,7 @@ elif [ "$1" = "linux" ]; then
     --icon ./src/main/deploy/package/Icon.png \
     --resource-dir .github/resources/linux
   echo " done"
+  cp target/*.rpm release/
 elif [ "$1" = "windows" ]; then
   echo -n "Package MSI ..."
   ./jdk-14/bin/jpackage \
@@ -212,16 +216,5 @@ elif [ "$1" = "windows" ]; then
     --vendor "EXXETA AG" \
     --win-upgrade-uuid "146a4ea7-af22-4e1e-a9ea-7945ce0190fd"
   echo " done"
-
-  check if release and deploy manually to github because deploy in windows not working
-  echo "==== DEPLOY ===="
-  #echo "$TRAVIS_TAG"
-  #if [ -n "$TRAVIS_TAG" ]; then
-  #  echo "tag set -> deploy release to github"
-  #  cd ./target || exit 1
-  #  gem install dpl --pre
-  #  dpl releases --token "$GITHUB_API_KEY" --file_glob --file *.msi
-  #else
-  #  echo "no tag set"
-  #fi
+  cp target/*.msi release/
 fi

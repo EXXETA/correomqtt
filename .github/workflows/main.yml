@@ -7,12 +7,42 @@ jobs:
   linuxbuild:
     runs-on: ubuntu-latest
     steps:
-      - run: find .
+      - name: Checkout master
+        uses: actions/checkout@v2
+      - run: .github/build.bash linux
+        id: build
+        shell: bash
+      - name: Release Artifacts
+        uses: Roang-zero1/github-upload-release-artifacts-action@master
+        with:
+          args: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   winbuild:
     runs-on: windows-2019
     steps:
-      - run: ./.github/build.bash windows
+      - name: Checkout master
+        uses: actions/checkout@v2
+      - run: .github/build.bash windows
+        id: build
+        shell: bash
+      - name: Release Artifacts
+        uses: Roang-zero1/github-upload-release-artifacts-action@master
+        with:
+          args: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   macbuild:
     runs-on: macos-11
     steps:    
-      - run: ./.github/build.bash osx
+      - name: Checkout master
+        uses: actions/checkout@v2
+      - run: .github/build.bash osx
+        id: build
+        shell: bash
+      - name: Release Artifacts
+        uses: Roang-zero1/github-upload-release-artifacts-action@master
+        with:
+          args: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
