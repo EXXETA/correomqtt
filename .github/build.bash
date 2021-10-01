@@ -144,6 +144,7 @@ else
 fi
 
 echo "==== PACKAGE CORREO ===="
+mkdir release
 if [ "$1" = "osx" ]; then
   echo -n "Package DMG ..."
   ./jdk-14.jdk/Contents/Home/bin/jpackage \
@@ -171,7 +172,7 @@ if [ "$1" = "osx" ]; then
     --app-version $CORREO_VERSION \
     --app-image target/CorreoMQTT.app
   echo " done"
-  echo ::set-output name=correo_dmg::$(ls | grep "dmg")
+  cp *.dmg release/
 elif [ "$1" = "linux" ]; then
   echo -n "Package DEB ..."
   ./jdk-14/bin/jpackage \
@@ -185,7 +186,7 @@ elif [ "$1" = "linux" ]; then
     --linux-package-deps libpng16-16 \
     --resource-dir .github/resources/linux
   echo " done"
-  echo ::set-output name=correo_deb::$(ls | grep "deb")
+  cp *.deb release/
   echo -n "Package RPM ..."
   ./jdk-14/bin/jpackage \
     --type rpm \
@@ -197,7 +198,7 @@ elif [ "$1" = "linux" ]; then
     --icon ./src/main/deploy/package/Icon.png \
     --resource-dir .github/resources/linux
   echo " done"
-  echo ::set-output name=correo_rpm::$(ls | grep "rpm")
+  cp *.rpm release/
 elif [ "$1" = "windows" ]; then
   echo -n "Package MSI ..."
   ./jdk-14/bin/jpackage \
@@ -215,18 +216,5 @@ elif [ "$1" = "windows" ]; then
     --vendor "EXXETA AG" \
     --win-upgrade-uuid "146a4ea7-af22-4e1e-a9ea-7945ce0190fd"
   echo " done"
-  echo ::set-output name=correo_msi::$(ls | grep "msi")
-
-
-  #check if release and deploy manually to github because deploy in windows not working
-  echo "==== DEPLOY ===="
-  #echo "$TRAVIS_TAG"
-  #if [ -n "$TRAVIS_TAG" ]; then
-  #  echo "tag set -> deploy release to github"
-  #  cd ./target || exit 1
-  #  gem install dpl --pre
-  #  dpl releases --token "$GITHUB_API_KEY" --file_glob --file *.msi
-  #else
-  #  echo "no tag set"
-  #fi
+  cp *.msi release/
 fi
