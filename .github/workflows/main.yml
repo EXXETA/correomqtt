@@ -10,6 +10,7 @@ jobs:
       - name: Checkout master
         uses: actions/checkout@v2
       - run: .github/build.bash linux
+        id: build
         shell: bash
       - name: Create Release
         id: create_release
@@ -28,18 +29,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.CORREO_DEB }}
-          asset_name: ${{ env.CORREO_DEB }}
+          asset_path: ./${{ steps.build.outputs.correo_deb }}
+          asset_name: ${{ steps.build.outputs.correo_deb }}
           asset_content_type: application/vnd.debian.binary-package
-      - name: Upload Release RPM
+      - name: Upload RPM
         id: upload-release-rpm 
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.CORREO_RPM }}
-          asset_name: ${{ env.CORREO_RPM }}
+          asset_path: ./${{ steps.build.outputs.correo_rpm }}
+          asset_name: ${{ steps.build.outputs.correo_rpm }}
           asset_content_type: application/x-rpm
   winbuild:
     runs-on: windows-2019
@@ -47,6 +48,7 @@ jobs:
       - name: Checkout master
         uses: actions/checkout@v2
       - run: .github/build.bash windows
+        id: build
         shell: bash
       - name: Create Release
         id: create_release
@@ -65,8 +67,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.CORREO_MSI }}
-          asset_name: ${{ env.CORREO_MSI }}
+          asset_path: ./${{ steps.build.outputs.correo_msi }}
+          asset_name: ${{ steps.build.outputs.correo_msi }}
           asset_content_type: application/x-msi
   macbuild:
     runs-on: macos-11
@@ -74,6 +76,7 @@ jobs:
       - name: Checkout master
         uses: actions/checkout@v2
       - run: .github/build.bash osx
+        id: build
         shell: bash
       - name: Create Release
         id: create_release
@@ -92,6 +95,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.CORREO_DMG }}
-          asset_name: ${{ env.CORREO_DMG }}
+          asset_path: ./${{ steps.build.outputs.correo_dmg }}
+          asset_name: ${{ steps.build.outputs.correo_dmg }}
           asset_content_type: application/zlib
