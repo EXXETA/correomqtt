@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Checkout master
         uses: actions/checkout@v2
-      - run: find .
+      - run: .github/build.bash linux
 #  winbuild:
 #    runs-on: windows-2019
 #    steps:
