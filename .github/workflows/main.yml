@@ -7,7 +7,7 @@ jobs:
   linuxbuild:
     runs-on: ubuntu-latest
     steps:
-      - run: ./.github/build.bash linux
+      - run: find .
   winbuild:
     runs-on: windows-2019
     steps:
