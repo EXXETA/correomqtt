@@ -7,12 +7,14 @@ jobs:
   linuxbuild:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout master
+        uses: actions/checkout@v2
       - run: find .
-  winbuild:
-    runs-on: windows-2019
-    steps:
-      - run: ./.github/build.bash windows
-  macbuild:
-    runs-on: macos-11
-    steps:    
-      - run: ./.github/build.bash osx
+#  winbuild:
+#    runs-on: windows-2019
+#    steps:
+#      - run: ./.github/build.bash windows
+#  macbuild:
+#    runs-on: macos-11
+#    steps:    
+#      - run: ./.github/build.bash osx
