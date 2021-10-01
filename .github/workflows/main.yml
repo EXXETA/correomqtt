@@ -15,8 +15,7 @@ jobs:
       - name: Release Artifacts
         uses: Roang-zero1/github-upload-release-artifacts-action@master
         with:
-          args:
-          - release
+          args: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   winbuild:
@@ -30,8 +29,7 @@ jobs:
       - name: Release Artifacts
         uses: Roang-zero1/github-upload-release-artifacts-action@master
         with:
-          args:
-          - release
+          args: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   macbuild:
@@ -45,7 +43,6 @@ jobs:
       - name: Release Artifacts
         uses: Roang-zero1/github-upload-release-artifacts-action@master
         with:
-          args:
-          - release
+          args: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
