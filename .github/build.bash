@@ -124,21 +124,21 @@ echo "PATH=$PATH"
 echo "JAVA_VERSION"
 java -version
 echo "MVN_VERSION"
-mvn -version
+mvn -B -version
 
 echo "==== SET CORREO VERSION ===="
-mvn versions:set -DnewVersion="$CORREO_VERSION"
+mvn -B versions:set -DnewVersion="$CORREO_VERSION"
 echo -n "$CORREO_VERSION" >./src/main/resources/org/correomqtt/business/utils/version.txt
 
 echo "==== BUILD CORREO ===="
-mvn clean install -DskipTests=true
+mvn -B clean install -DskipTests=true
 
 echo "==== DEPLOY TO MAVEN CENTRAL ===="
 if [ "$1" = "linux" ] && [[ "$GITHUB_REF" =~ [^v[0-9]+\.[0-9]+\.[0-9]] ]] && [ ! -n $GITHUB_HEAD_REF ]; then
   echo "$GPG_SECRET_KEYS" | base64 --decode | $GPG_EXECUTABLE --import
   echo "$GPG_OWNERTRUST" | base64 --decode | $GPG_EXECUTABLE --import-ownertrust
   echo "tag set -> deploy release to maven central only on linux"
-  mvn deploy -P release -DskipTests=true --settings "${GITHUB_WORKSPACE}/.github/mvn-deploy.xml"
+  mvn -B deploy -P release -DskipTests=true --settings "${GITHUB_WORKSPACE}/.github/mvn-deploy.xml"
 else
   echo "no tag set -> no deploy"
 fi
