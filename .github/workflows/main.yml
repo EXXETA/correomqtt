@@ -12,12 +12,11 @@ jobs:
       - run: .github/build.bash linux
         id: build
         shell: bash
-      - name: Release Artifacts
-        uses: Roang-zero1/github-upload-release-artifacts-action@master
+      - name: Release 
+        uses: xresloader/upload-to-github-release@v1.3.2
         with:
-          args: release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          file: target/*.deb;target/*.rpm
+          tags: true
   winbuild:
     runs-on: windows-2019
     steps:
@@ -26,12 +25,11 @@ jobs:
       - run: .github/build.bash windows
         id: build
         shell: bash
-      - name: Release Artifacts
-        uses: Roang-zero1/github-upload-release-artifacts-action@master
+      - name: Release 
+        uses: xresloader/upload-to-github-release@v1.3.2
         with:
-          args: release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          file: target/*.msi
+          tags: true
   macbuild:
     runs-on: macos-11
     steps:    
@@ -40,9 +38,8 @@ jobs:
       - run: .github/build.bash osx
         id: build
         shell: bash
-      - name: Release Artifacts
-        uses: Roang-zero1/github-upload-release-artifacts-action@master
+      - name: Release 
+        uses: xresloader/upload-to-github-release@v1.3.2
         with:
-          args: release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          file: target/*.dmg
+          tags: true
