@@ -2,6 +2,7 @@
 [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/exxeta/correomqtt?include_prereleases)](https://github.com/exxeta/correomqtt/releases/latest) 
 [![GitHub All Releases](https://img.shields.io/github/downloads/exxeta/correomqtt/total)](https://github.com/exxeta/correomqtt/releases/latest) 
 [![GitHub](https://img.shields.io/github/license/exxeta/correomqtt)](https://github.com/exxeta/correomqtt/blob/develop/LICENSE) 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=correomqtt-farion&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=correomqtt-farion)
 
 # CorreoMQTT
 
