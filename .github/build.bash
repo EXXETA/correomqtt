@@ -145,76 +145,80 @@ fi
 
 echo "==== PACKAGE CORREO ===="
 mkdir release
-if [ "$1" = "osx" ]; then
-  echo -n "Package DMG ..."
-  ./jdk-14.jdk/Contents/Home/bin/jpackage \
-    --type app-image \
-    -d target \
-    -i target/shade \
-    -n CorreoMQTT \
-    --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
-    --app-version $CORREO_VERSION \
-    --icon ./src/main/deploy/package/Icon.icns
+if [[ "$GITHUB_REF" =~ [^v[0-9]+\.[0-9]+\.[0-9]] ]] && [ ! -n $GITHUB_HEAD_REF ]; then
+  if [ "$1" = "osx" ]; then
+    echo -n "Package DMG ..."
+    ./jdk-14.jdk/Contents/Home/bin/jpackage \
+      --type app-image \
+      -d target \
+      -i target/shade \
+      -n CorreoMQTT \
+      --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
+      --app-version $CORREO_VERSION \
+      --icon ./src/main/deploy/package/Icon.icns
 
-  openssl req -subj '/CN=correomqtt.org' -config .github/correo.certconfig -x509 -newkey rsa:4096 -keyout correokey.pem -out correocert.pem -days 365 -nodes
-  openssl pkcs12 -passout pass:1234 -export -out correomqtt.p12 -inkey correokey.pem -in correocert.pem
-  security create-keychain -p 1234 /tmp/correomqtt-db
-  security import correomqtt.p12 -k /tmp/correomqtt-db -P 1234 -T /usr/bin/codesign
-  security default-keychain -d user -s /tmp/correomqtt-db
-  security unlock-keychain -p 1234 /tmp/correomqtt-db
-  security list-keychains -s /tmp/correomqtt-db
-  codesign -h -fs correomqtt.org --keychain /tmp/correomqtt-db --force target/CorreoMQTT.app
+    openssl req -subj '/CN=correomqtt.org' -config .github/correo.certconfig -x509 -newkey rsa:4096 -keyout correokey.pem -out correocert.pem -days 365 -nodes
+    openssl pkcs12 -passout pass:1234 -export -out correomqtt.p12 -inkey correokey.pem -in correocert.pem
+    security create-keychain -p 1234 /tmp/correomqtt-db
+    security import correomqtt.p12 -k /tmp/correomqtt-db -P 1234 -T /usr/bin/codesign
+    security default-keychain -d user -s /tmp/correomqtt-db
+    security unlock-keychain -p 1234 /tmp/correomqtt-db
+    security list-keychains -s /tmp/correomqtt-db
+    codesign -h -fs correomqtt.org --keychain /tmp/correomqtt-db --force target/CorreoMQTT.app
 
-  ./jdk-14.jdk/Contents/Home/bin/jpackage \
-    --type dmg \
-    -d target \
-    -n CorreoMQTT \
-    --app-version $CORREO_VERSION \
-    --app-image target/CorreoMQTT.app
-  echo " done"
-  cp target/*.dmg release/
-elif [ "$1" = "linux" ]; then
-  echo -n "Package DEB ..."
-  ./jdk-14/bin/jpackage \
-    --type deb \
-    -d target \
-    -i target/shade \
-    -n CorreoMQTT \
-    --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
-    --app-version $CORREO_VERSION \
-    --icon ./src/main/deploy/package/Icon.png \
-    --linux-package-deps libpng16-16 \
-    --resource-dir .github/resources/linux
-  echo " done"
-  cp target/*.deb release/
-  echo -n "Package RPM ..."
-  ./jdk-14/bin/jpackage \
-    --type rpm \
-    -d target \
-    -i target/shade \
-    -n CorreoMQTT \
-    --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
-    --app-version $CORREO_VERSION \
-    --icon ./src/main/deploy/package/Icon.png \
-    --resource-dir .github/resources/linux
-  echo " done"
-  cp target/*.rpm release/
-elif [ "$1" = "windows" ]; then
-  echo -n "Package MSI ..."
-  ./jdk-14/bin/jpackage \
-    --type msi \
-    -d target \
-    -i target/shade \
-    -n CorreoMQTT \
-    --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
-    --app-version $CORREO_VERSION \
-    --icon ./src/main/deploy/package/Icon.ico \
-    --win-dir-chooser \
-    --win-menu \
-    --win-menu-group CorreoMqtt \
-    --win-shortcut \
-    --vendor "EXXETA AG" \
-    --win-upgrade-uuid "146a4ea7-af22-4e1e-a9ea-7945ce0190fd"
-  echo " done"
-  cp target/*.msi release/
+    ./jdk-14.jdk/Contents/Home/bin/jpackage \
+      --type dmg \
+      -d target \
+      -n CorreoMQTT \
+      --app-version $CORREO_VERSION \
+      --app-image target/CorreoMQTT.app
+    echo " done"
+    cp target/*.dmg release/
+  elif [ "$1" = "linux" ]; then
+    echo -n "Package DEB ..."
+    ./jdk-14/bin/jpackage \
+      --type deb \
+      -d target \
+      -i target/shade \
+      -n CorreoMQTT \
+      --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
+      --app-version $CORREO_VERSION \
+      --icon ./src/main/deploy/package/Icon.png \
+      --linux-package-deps libpng16-16 \
+      --resource-dir .github/resources/linux
+    echo " done"
+    cp target/*.deb release/
+    echo -n "Package RPM ..."
+    ./jdk-14/bin/jpackage \
+      --type rpm \
+      -d target \
+      -i target/shade \
+      -n CorreoMQTT \
+      --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
+      --app-version $CORREO_VERSION \
+      --icon ./src/main/deploy/package/Icon.png \
+      --resource-dir .github/resources/linux
+    echo " done"
+    cp target/*.rpm release/
+  elif [ "$1" = "windows" ]; then
+    echo -n "Package MSI ..."
+    ./jdk-14/bin/jpackage \
+      --type msi \
+      -d target \
+      -i target/shade \
+      -n CorreoMQTT \
+      --main-jar correomqtt-client-$CORREO_VERSION-runnable.jar \
+      --app-version $CORREO_VERSION \
+      --icon ./src/main/deploy/package/Icon.ico \
+      --win-dir-chooser \
+      --win-menu \
+      --win-menu-group CorreoMqtt \
+      --win-shortcut \
+      --vendor "EXXETA AG" \
+      --win-upgrade-uuid "146a4ea7-af22-4e1e-a9ea-7945ce0190fd"
+    echo " done"
+    cp target/*.msi release/
+  fi
+else
+  echo "no tag set -> no package"
 fi
