@@ -2,8 +2,9 @@
 [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/exxeta/correomqtt?include_prereleases)](https://github.com/exxeta/correomqtt/releases/latest) 
 [![GitHub All Releases](https://img.shields.io/github/downloads/exxeta/correomqtt/total)](https://github.com/exxeta/correomqtt/releases/latest) 
 [![GitHub](https://img.shields.io/github/license/exxeta/correomqtt)](https://github.com/exxeta/correomqtt/blob/develop/LICENSE) 
-![CodeQL](https://github.com/EXXETA/correomqtt/workflows/CodeQL/badge.svg)
 [![Maven Central](https://img.shields.io/maven-metadata/v.svg?label=Maven%20Central&metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Forg%2Fcorreomqtt%2Fcorreomqtt-client%2Fmaven-metadata.xml)](https://search.maven.org/search?q=g:%22org.correomqtt%22%20AND%20a:%22correomqtt-client%22)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=correomqtt-farion&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=correomqtt-farion)
+![CodeQL](https://github.com/EXXETA/correomqtt/workflows/CodeQL/badge.svg)
 
 # CorreoMQTT
 
