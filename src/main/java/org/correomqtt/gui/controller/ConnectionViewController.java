@@ -98,7 +98,11 @@ public class ConnectionViewController extends BaseConnectionController implement
         setLayout(
                 connectionConfigDTO.getConnectionUISettings().isShowPublish(),
                 connectionConfigDTO.getConnectionUISettings().isShowSubscribe());
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 0425407 (Fixed Sonar issues, reactivated test setup (#99))
         saveConnectionUISettings();
     }
 
