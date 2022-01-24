@@ -8,6 +8,7 @@ import org.jdom2.input.SAXBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.XMLConstants;
 import java.io.*;
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +36,8 @@ class PluginProtocolParser {
             createDefaultProtocolFile(protocolFile);
         }
         SAXBuilder builder = new SAXBuilder();
+        builder.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        builder.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
         Document document = builder.build(protocolFile);
         return document.getRootElement();
     }
@@ -42,11 +45,15 @@ class PluginProtocolParser {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void createDefaultProtocolFile(File protocolFile) throws IOException {
         try (InputStream inputStream = PluginProtocolParser.class.getResourceAsStream(protocolFile.getName())) {
-            byte[] buffer = new byte[inputStream.available()];
-            inputStream.read(buffer);
+            if (inputStream != null) {
+                byte[] buffer = new byte[inputStream.available()];
+                inputStream.read(buffer);
 
-            try (OutputStream outStream = new FileOutputStream(protocolFile)) {
-                outStream.write(buffer);
+                try (OutputStream outStream = new FileOutputStream(protocolFile)) {
+                    outStream.write(buffer);
+                }
+            } else {
+                LOGGER.warn("Error reading plugin file {}", protocolFile);
             }
         }
     }

@@ -5,18 +5,18 @@ public enum PublishStatus {
     SUCCEEDED("succeeded"),
     FAILED("failed");
 
-    private final String publishStatus;
+    private final String labelTranslationKey;
 
-    PublishStatus(String publishStatus) {
-        this.publishStatus = publishStatus;
+    PublishStatus(String labelTranslationKey) {
+        this.labelTranslationKey = labelTranslationKey;
     }
 
-    public String getPublishStatus() {
-        return publishStatus;
+    public String getLabelTranslationKey() {
+        return labelTranslationKey;
     }
 
     @Override
     public String toString() {
-        return publishStatus;
+        return labelTranslationKey;
     }
 }

@@ -13,7 +13,7 @@ import java.util.Objects;
 
 public class AutoFormatPayload {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CorreoCharsetDecoder.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AutoFormatPayload.class);
 
     private AutoFormatPayload() {
         // private Constructor

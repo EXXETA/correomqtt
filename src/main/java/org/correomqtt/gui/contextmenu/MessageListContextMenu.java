@@ -14,7 +14,6 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
     private MenuItem removeMessage;
     private MenuItem saveMessage;
     private MenuItem timeInfo;
-    private MenuItem clearList;
 
     private SeparatorMenuItem separator1;
     private SeparatorMenuItem separator2;
@@ -38,7 +37,7 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
         timeInfo.setVisible(false);
         timeInfo.setDisable(true);
 
-        clearList = new MenuItem(getResources().getString("messageListContextMenuClearMenuItem"));
+        MenuItem clearList = new MenuItem(getResources().getString("messageListContextMenuClearMenuItem"));
         clearList.setOnAction(this::clearList);
 
         separator1 = new SeparatorMenuItem();
@@ -56,7 +55,7 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
                                separator2,
                                timeInfo,
                                separator3,
-                               clearList);
+                clearList);
 
         updateDateTime();
     }

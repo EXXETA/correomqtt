@@ -8,7 +8,6 @@ import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
@@ -135,7 +134,9 @@ public class SettingsViewController extends BaseController {
         searchUpdatesCheckbox.setSelected(settings.isSearchUpdates());
 
         ArrayList<ThemeProvider> themes = new ArrayList<>(PluginManager.getInstance().getExtensions(ThemeProviderHook.class));
-        LOGGER.info(themes.stream().map(ThemeProvider::getName).collect(Collectors.joining(",")));
+        if(LOGGER.isInfoEnabled()) {
+            LOGGER.info(themes.stream().map(ThemeProvider::getName).collect(Collectors.joining(",")));
+        }
 
         themeComboBox.setOnAction(null);
         themeComboBox.setItems(FXCollections.observableArrayList(themes));
@@ -165,9 +166,7 @@ public class SettingsViewController extends BaseController {
                 .stream()
                 .map(KeyringModel::new)
                 .collect(Collectors.toList());
-        keyringBackendComboBox.setOnAction(event -> {
-            updateKeyringDescription(keyringBackendComboBox.getSelectionModel().getSelectedItem());
-        });
+        keyringBackendComboBox.setOnAction(event -> updateKeyringDescription(keyringBackendComboBox.getSelectionModel().getSelectedItem()));
         keyringBackendComboBox.setItems(FXCollections.observableArrayList(keyringModels));
         keyringBackendComboBox.setCellFactory(GenericCell::new);
         keyringBackendComboBox.setConverter(new StringConverter<>() {

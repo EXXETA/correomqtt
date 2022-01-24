@@ -1,6 +1,11 @@
 package org.correomqtt.business.utils;
 
 public class VendorConstants {
+
+    private VendorConstants(){
+        // private constructor
+    }
+
     public static final String PLUGIN_REPO_URL = "https://raw.githubusercontent.com/exxeta/correomqtt-pluginrepo/master/plugins-" + VersionUtils.getVersion().trim() + ".json";
     public static final String WEBSITE = "http://correomqtt.org";
     public static final String GITHUB_API_LATEST = "https://api.github.com/repos/exxeta/correomqtt/releases/latest";
