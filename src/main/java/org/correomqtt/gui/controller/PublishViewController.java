@@ -1,10 +1,40 @@
 package org.correomqtt.gui.controller;
 
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.fxml.FXML;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.dispatcher.ConfigObserver;
+import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
+import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import org.correomqtt.business.dispatcher.ImportMessageDispatcher;
+import org.correomqtt.business.dispatcher.ImportMessageObserver;
+import org.correomqtt.business.dispatcher.PersistPublishHistoryDispatcher;
+import org.correomqtt.business.dispatcher.PersistPublishHistoryObserver;
+import org.correomqtt.business.dispatcher.PublishDispatcher;
+import org.correomqtt.business.dispatcher.PublishGlobalDispatcher;
+import org.correomqtt.business.dispatcher.PublishObserver;
+import org.correomqtt.business.dispatcher.ShortcutDispatcher;
+import org.correomqtt.business.dispatcher.ShortcutObserver;
 import org.correomqtt.business.exception.CorreoMqttException;
-import org.correomqtt.business.model.*;
+import org.correomqtt.business.model.ControllerType;
+import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.model.MessageType;
+import org.correomqtt.business.model.PublishStatus;
+import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
 import org.correomqtt.business.provider.SettingsProvider;
@@ -12,7 +42,6 @@ import org.correomqtt.business.utils.AutoFormatPayload;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.cell.QosCell;
 import org.correomqtt.gui.cell.TopicCell;
-import org.correomqtt.gui.formats.Format;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.helper.CheckTopicHelper;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
@@ -21,21 +50,6 @@ import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
 import org.correomqtt.plugin.spi.MessageContextMenuHook;
 import org.correomqtt.plugin.spi.PublishMenuHook;
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.fxml.FXML;
-import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
-import org.correomqtt.business.dispatcher.*;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
@@ -130,17 +144,15 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         payloadCodeArea.prefWidthProperty().bind(codeAreaScrollPane.widthProperty());
         payloadCodeArea.prefHeightProperty().bind(codeAreaScrollPane.heightProperty());
 
-        payloadCodeAreaChangeListener = new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observableValue, String s, String t1) {
-                checkFormat();
-            }
-        };
+        payloadCodeAreaChangeListener = (observableValue, s, t1) -> checkFormat();
 
         publishViewFormatToggleButton.setSelected(true);
-        publishViewFormatToggleButton.setOnMouseClicked(mouseEvent -> {
-            AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, payloadCodeAreaChangeListener);
-        });
+        publishViewFormatToggleButton.setOnMouseClicked(mouseEvent -> AutoFormatPayload.autoFormatPayload(
+                payloadCodeArea.getText(),
+                publishViewFormatToggleButton.isSelected(),
+                getConnectionId(),
+                payloadCodeArea,
+                payloadCodeAreaChangeListener));
 
         payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
 
@@ -148,12 +160,14 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
                 .ifPresent(c -> {
-                    if (splitPane.getDividers().size() > 0) {splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDividerPosition());}
+                    if (!splitPane.getDividers().isEmpty()) {
+                        splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDividerPosition());
+                    }
                     super.messageListViewController.showDetailViewButton.setSelected(c.getConnectionUISettings().isPublishDetailActive());
                     super.messageListViewController.controllerType = ControllerType.PUBLISH;
                     if (c.getConnectionUISettings().isPublishDetailActive()) {
                         super.messageListViewController.showDetailView();
-                        if (super.messageListViewController.splitPane.getDividers().size() > 0) {
+                        if (!super.messageListViewController.splitPane.getDividers().isEmpty()) {
                             super.messageListViewController.splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDetailDividerPosition());
                         }
                     }
@@ -163,7 +177,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     }
 
     private void checkFormat() {
-        Format format = AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, payloadCodeAreaChangeListener);
+        AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, payloadCodeAreaChangeListener);
     }
 
     private void initTopicComboBox() {
@@ -300,11 +314,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         executeOnCopyMessageToFormExtensions(messageDTO);
 
         // Retained-Abfrage
-        if (messageDTO.isRetained()) {
-            retainedCheckBox.setSelected(true);
-        } else {
-            retainedCheckBox.setSelected(false);
-        }
+        retainedCheckBox.setSelected(messageDTO.isRetained());
 
         payloadCodeArea.replaceText(messageDTO.getPayload());
 
@@ -495,12 +505,12 @@ public class PublishViewController extends BaseMessageBasedViewController implem
 
     @Override
     public void errorReadingPublishHistory(Throwable exception) {
-
+        // nothing to do
     }
 
     @Override
     public void errorWritingPublishHistory(Throwable exception) {
-
+        // nothing to do
     }
 
     @Override

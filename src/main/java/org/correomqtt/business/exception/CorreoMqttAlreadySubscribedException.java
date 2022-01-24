@@ -5,7 +5,7 @@ import org.correomqtt.business.model.SubscriptionDTO;
 public class CorreoMqttAlreadySubscribedException extends CorreoMqttException {
 
     private final String connectionId;
-    private final SubscriptionDTO subcriptionDTO;
+    private final transient SubscriptionDTO subcriptionDTO;
 
     public CorreoMqttAlreadySubscribedException(String connectionId, SubscriptionDTO subscriptionDTO) {
         super();

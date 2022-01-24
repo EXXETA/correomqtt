@@ -20,7 +20,6 @@ import org.correomqtt.business.utils.AutoFormatPayload;
 import org.correomqtt.gui.contextmenu.DetailContextMenu;
 import org.correomqtt.gui.contextmenu.DetailContextMenuDelegate;
 import org.correomqtt.gui.formats.Format;
-import org.correomqtt.gui.formats.Plain;
 import org.correomqtt.gui.menuitem.TaskMenuItem;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.Search;
@@ -32,7 +31,6 @@ import org.correomqtt.plugin.manager.MessageValidator;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.manager.Task;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
-import org.correomqtt.plugin.spi.DetailViewFormatHook;
 import org.correomqtt.plugin.spi.DetailViewHook;
 import org.correomqtt.plugin.spi.DetailViewManipulatorHook;
 import org.correomqtt.plugin.spi.MessageValidatorHook;
@@ -62,7 +60,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -142,10 +139,9 @@ public class DetailViewController extends BaseConnectionController implements
     private List<Search> results;
     private int currentSearchResult;
     private String currentSearchString = null;
-    private String codeAreaText;
 
     private MessagePropertiesDTO messageDTO;
-    private DetailContextMenu contextMenu;
+
     private Task<DetailViewManipulatorHook> lastManipulatorTask;
 
     private DetailViewController(String connectionId, DetailViewDelegate delegate, boolean isInlineView) {
@@ -225,7 +221,7 @@ public class DetailViewController extends BaseConnectionController implements
         detailViewScrollPane.prefWidthProperty().bind(detailViewVBox.widthProperty());
         detailViewScrollPane.prefHeightProperty().bind(detailViewVBox.heightProperty());
 
-        contextMenu = new DetailContextMenu(this);
+        DetailContextMenu contextMenu = new DetailContextMenu(this);
 
         metaHolder.setOnContextMenuRequested(event -> {
             if (messageDTO != null) {
@@ -494,7 +490,7 @@ public class DetailViewController extends BaseConnectionController implements
         results = new ArrayList<>();
 
         if (!currentSearchString.isEmpty()) {
-            codeAreaText = codeArea.getText();
+            String codeAreaText = codeArea.getText();
 
             boolean ignoreCase = SettingsProvider.getInstance().getSettings().isUseIgnoreCase();
             boolean regex = SettingsProvider.getInstance().getSettings().isUseRegexForSearch();
@@ -662,30 +658,22 @@ public class DetailViewController extends BaseConnectionController implements
 
     @Override
     public void onExportStarted(File file, MessageDTO messageDTO) {
-        Platform.runLater(() -> {
-            detailViewVBox.setDisable(true);
-        });
+        Platform.runLater(() -> detailViewVBox.setDisable(true));
     }
 
     @Override
     public void onExportSucceeded() {
-        Platform.runLater(() -> {
-            detailViewVBox.setDisable(false);
-        });
+        Platform.runLater(() -> detailViewVBox.setDisable(false));
     }
 
     @Override
     public void onExportCancelled(File file, MessageDTO messageDTO) {
-        Platform.runLater(() -> {
-            detailViewVBox.setDisable(false);
-        });
+        Platform.runLater(() -> detailViewVBox.setDisable(false));
     }
 
     @Override
     public void onExportFailed(File file, MessageDTO messageDTO, Throwable exception) {
-        Platform.runLater(() -> {
-            detailViewVBox.setDisable(false);
-        });
+        Platform.runLater(() -> detailViewVBox.setDisable(false));
     }
 
     @Override

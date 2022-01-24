@@ -3,12 +3,15 @@ package org.correomqtt.business.keyring;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.spi.KeyringHook;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class KeyringFactory {
+
+    private KeyringFactory(){
+        // empty constructor
+    }
 
     public static Keyring create() {
         return getSupportedKeyrings()

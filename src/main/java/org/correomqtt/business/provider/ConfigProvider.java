@@ -1,15 +1,10 @@
 package org.correomqtt.business.provider;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 
 //TODO check invalid configs
 
 public class ConfigProvider extends BaseUserFileProvider {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigProvider.class);
 
     private static final String PLUGIN_FOLDER = "plugins";
     private static final String PLUGIN_JAR_FOLDER = "jars";

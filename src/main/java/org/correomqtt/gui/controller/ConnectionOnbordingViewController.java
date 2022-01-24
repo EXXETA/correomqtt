@@ -112,7 +112,7 @@ public class ConnectionOnbordingViewController extends BaseController implements
 
         AtomicInteger sortIndex = new AtomicInteger();
         Map<String, Integer> sorted = newConnectionList.stream()
-                .collect(Collectors.toMap(i -> i.getId(), i -> sortIndex.getAndIncrement()));
+                .collect(Collectors.toMap(ConnectionPropertiesDTO::getId, i -> sortIndex.getAndIncrement()));
 
         Map<String, ConnectionPropertiesDTO> oldConnections = resultList.stream()
                 .collect(Collectors.toMap(ConnectionPropertiesDTO::getId, i -> i));
@@ -162,7 +162,7 @@ public class ConnectionOnbordingViewController extends BaseController implements
             }
         });
 
-        if (allConnectionsToDelete != null && !allConnectionsToDelete.isEmpty()) {
+        if (!allConnectionsToDelete.isEmpty()) {
             resultList.removeAll(allConnectionsToDelete);
         }
 
@@ -227,47 +227,47 @@ public class ConnectionOnbordingViewController extends BaseController implements
 
     @Override
     public void onConfigDirectoryEmpty() {
-
+        // nothing to do
     }
 
     @Override
     public void onConfigDirectoryNotAccessible() {
-
+        // nothing to do
     }
 
     @Override
     public void onAppDataNull() {
-
+        // nothing to do
     }
 
     @Override
     public void onUserHomeNull() {
-
+        // nothing to do
     }
 
     @Override
     public void onFileAlreadyExists() {
-
+        // nothing to do
     }
 
     @Override
     public void onInvalidPath() {
-
+        // nothing to do
     }
 
     @Override
     public void onInvalidJsonFormat() {
-
+        // nothing to do
     }
 
     @Override
     public void onSavingFailed() {
-
+        // nothing to do
     }
 
     @Override
     public void onSettingsUpdated(boolean showRestartRequiredDialog) {
-
+        // nothing to do
     }
 
     @Override
@@ -277,11 +277,11 @@ public class ConnectionOnbordingViewController extends BaseController implements
 
     @Override
     public void onConfigPrepareFailed() {
-
+        // nothing to do
     }
 
     @Override
     public void onConnect(ConnectionPropertiesDTO config) {
-
+        // nothing to do
     }
 }

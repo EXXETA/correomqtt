@@ -79,7 +79,6 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
             // method bool org.kde.KWallet.isOpen(QString wallet)
             return runQDBusCommand("isOpen", String.valueOf(kwalletHandler)).equals("true");
         } catch (InterruptedException | IOException e) {
-            LOGGER.error("Cannot check KWallet", e);
             throw new KeyringException("Cannot check KWallet", e);
         }
     }
@@ -90,7 +89,6 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
             String result = runQDBusCommand("open", WALLET_NAME, "0", APP_NAME);
             return Integer.parseInt(result);
         } catch (InterruptedException | IOException e) {
-            LOGGER.error("Cannot open KWallet", e);
             throw new KeyringException("Cannot open KWallet", e);
         }
     }
@@ -100,11 +98,9 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
             // method int org.kde.KWallet.writePassword(int handle, QString folder, QString key, QString value, QString appid)
             String result = runQDBusCommand("writePassword", String.valueOf(handler), APP_NAME, key, password, APP_NAME);
             if (Integer.parseInt(result) < 0) {
-                LOGGER.error("Cannot store password in KWallet.");
                 throw new KeyringException("Cannot store password in KWallet.");
             }
         } catch (InterruptedException | IOException e) {
-            LOGGER.error("Cannot store password in KWallet", e);
             throw new KeyringException("Cannot store password in KWallet", e);
         }
     }
@@ -115,7 +111,6 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
             // method int org.kde.KWallet.removeEntry(int handle, QString folder, QString key, QString appid)
             runQDBusCommand("removeEntry", String.valueOf(handler), APP_NAME, key, APP_NAME);
         } catch (InterruptedException | IOException e) {
-            LOGGER.error("Cannot remove password from KWallet", e);
             throw new KeyringException("Cannot remove password from KWallet", e);
         }
     }
@@ -125,15 +120,20 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
             // method QString org.kde.KWallet.readPassword( int handle, QString folder, QString key, QString appid)
             return runQDBusCommand("readPassword", String.valueOf(handler), APP_NAME, key, APP_NAME);
         } catch (InterruptedException | IOException e) {
-            LOGGER.error("Cannot get password from KWallet", e);
             throw new KeyringException("Cannot get password from KWallet", e);
         }
     }
 
     private boolean isEnabled() {
+
         try {
             return runQDBusCommand("isEnabled").equals("true");
-        } catch (Exception e) {
+        } catch (IOException e) {
+            LOGGER.warn("QDBus Command failed.", e);
+            return false;
+        } catch (InterruptedException e) {
+            LOGGER.warn("QDBus Command failed.", e);
+            Thread.currentThread().interrupt();
             return false;
         }
     }

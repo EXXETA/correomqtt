@@ -9,16 +9,14 @@ import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.plugin.spi.KeyringHook;
 import org.pf4j.Extension;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
 @Extension
 public class OSXKeychainKeyring extends BaseKeyring implements KeyringHook {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(OSXKeychainKeyring.class);
     private static final String SERVICE_NAME = "CorreoMQTT";
+    public static final String FAILED_TO_RETRIEVE_PASSWORD_FROM_OSX_KEYCHAIN = "Failed to retrieve password from osx keychain.";
 
     private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
@@ -31,8 +29,7 @@ public class OSXKeychainKeyring extends BaseKeyring implements KeyringHook {
         } catch (PasswordRetrievalException e) {
             return null;
         } catch (BackendNotSupportedException e) {
-            LOGGER.error("Failed to retrieve password from osx keychain.", e);
-            throw new KeyringException("Failed to retrieve password from osx keychain.", e);
+            throw new KeyringException(FAILED_TO_RETRIEVE_PASSWORD_FROM_OSX_KEYCHAIN, e);
         }
     }
 
@@ -43,8 +40,7 @@ public class OSXKeychainKeyring extends BaseKeyring implements KeyringHook {
             keychainBackend.setup();
             keychainBackend.setPassword(SERVICE_NAME, label, password);
         } catch (BackendNotSupportedException | PasswordSaveException e) {
-            LOGGER.error("Failed to retrieve password from osx keychain.", e);
-            throw new KeyringException("Failed to retrieve password from osx keychain.", e);
+            throw new KeyringException(FAILED_TO_RETRIEVE_PASSWORD_FROM_OSX_KEYCHAIN, e);
         }
     }
 
