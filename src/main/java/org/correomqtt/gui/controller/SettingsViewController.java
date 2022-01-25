@@ -8,7 +8,6 @@ import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
@@ -38,8 +37,6 @@ import java.util.stream.Collectors;
 
 public class SettingsViewController extends BaseController {
 
-    private static ResourceBundle resources;
-
     @FXML
     private AnchorPane settingsPane;
     @FXML
@@ -54,6 +51,8 @@ public class SettingsViewController extends BaseController {
     private CheckBox searchUpdatesCheckbox;
     @FXML
     private Label keyringDescriptionLabel;
+
+    private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
     private SettingsDTO settings;
     private static final Logger LOGGER = LoggerFactory.getLogger(SettingsViewController.class);
@@ -135,7 +134,9 @@ public class SettingsViewController extends BaseController {
         searchUpdatesCheckbox.setSelected(settings.isSearchUpdates());
 
         ArrayList<ThemeProvider> themes = new ArrayList<>(PluginManager.getInstance().getExtensions(ThemeProviderHook.class));
-        LOGGER.info(themes.stream().map(ThemeProvider::getName).collect(Collectors.joining(",")));
+        if(LOGGER.isInfoEnabled()) {
+            LOGGER.info(themes.stream().map(ThemeProvider::getName).collect(Collectors.joining(",")));
+        }
 
         themeComboBox.setOnAction(null);
         themeComboBox.setItems(FXCollections.observableArrayList(themes));
@@ -165,9 +166,7 @@ public class SettingsViewController extends BaseController {
                 .stream()
                 .map(KeyringModel::new)
                 .collect(Collectors.toList());
-        keyringBackendComboBox.setOnAction(event -> {
-            updateKeyringDescription(keyringBackendComboBox.getSelectionModel().getSelectedItem());
-        });
+        keyringBackendComboBox.setOnAction(event -> updateKeyringDescription(keyringBackendComboBox.getSelectionModel().getSelectedItem()));
         keyringBackendComboBox.setItems(FXCollections.observableArrayList(keyringModels));
         keyringBackendComboBox.setCellFactory(GenericCell::new);
         keyringBackendComboBox.setConverter(new StringConverter<>() {
@@ -231,7 +230,6 @@ public class SettingsViewController extends BaseController {
     }
 
     private void updateKeyringDescription(KeyringModel selectedKeyring) {
-        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()); // too early here
         keyringDescriptionLabel.setText(resources.getString("settingsViewKeyringBackendExplanationLabel")
                 + "\n\n"
                 + selectedKeyring.getLabelTranslationKey() + ":\n"

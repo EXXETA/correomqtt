@@ -3,24 +3,24 @@ package org.correomqtt.business.model;
 import org.correomqtt.gui.model.GenericCellModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public enum Proxy implements GenericCellModel {
     OFF("proxyEnumOff"),
     SSH("proxyEnumSsh");
 
-    private final String proxy;
+    private static final Logger LOGGER = LoggerFactory.getLogger(Proxy.class);
 
-    Proxy(String proxy) {
-        this.proxy = proxy;
-    }
+    private final String labelTranslationKey;
 
-    public String getProxy() {
-        return proxy;
+    Proxy(String labelTranslationKey) {
+        this.labelTranslationKey = labelTranslationKey;
     }
 
     @Override
     public String toString() {
-        return proxy;
+        return labelTranslationKey;
     }
 
     @SuppressWarnings("unused")
@@ -29,7 +29,7 @@ public enum Proxy implements GenericCellModel {
         try {
             return Proxy.valueOf(value);
         } catch (IllegalArgumentException iae) {
-            //TODO: Log
+            LOGGER.warn("Exception parsing json value.", iae);
             return OFF;
         }
     }
@@ -42,6 +42,6 @@ public enum Proxy implements GenericCellModel {
 
     @Override
     public String getLabelTranslationKey() {
-        return proxy;
+        return labelTranslationKey;
     }
 }

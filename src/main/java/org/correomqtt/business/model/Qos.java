@@ -11,17 +11,17 @@ public enum Qos {
     AT_LEAST_ONCE(MqttQos.AT_LEAST_ONCE, "qosEnumAtLeastOnce"),
     EXACTLY_ONCE(MqttQos.EXACTLY_ONCE, "qosEnumExactlyOnce");
 
-    private final MqttQos qos;
+    private final MqttQos mqttQos;
     private final String description;
 
-    Qos(MqttQos qos, String description) {
-        this.qos = qos;
+    Qos(MqttQos mqttQos, String description) {
+        this.mqttQos = mqttQos;
         this.description = description;
     }
 
-    public static Qos valueOf(MqttQos qos) {
+    public static Qos valueOf(MqttQos mqttQos) {
         return Arrays.stream(values())
-                     .filter(v -> qos == v.getMqttQos())
+                     .filter(v -> mqttQos == v.getMqttQos())
                      .findFirst()
                      .orElseThrow(() -> new IllegalArgumentException("Qos can not be matched."));
     }
@@ -37,11 +37,11 @@ public enum Qos {
 
     @Override
     public String toString() {
-        return "QoS " + qos.ordinal();
+        return "QoS " + mqttQos.ordinal();
     }
 
     public MqttQos getMqttQos() {
-        return qos;
+        return mqttQos;
     }
 
     @SuppressWarnings("unused")
