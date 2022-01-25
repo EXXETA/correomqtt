@@ -24,6 +24,7 @@ import java.util.Base64;
  * @deprecated Will be removed due to security issues. Current implementation is used for migration only.
  */
 @Deprecated(since = "0.15.0", forRemoval = true)
+@SuppressWarnings("lgtm[java/weak-cryptographic-algorithm]")
 public class EncryptorAesCbc implements Encryptor {
 
     public static final String ENCRYPTION_TRANSFORMATION = "AES/CBC/PKCS5Padding";
@@ -38,7 +39,6 @@ public class EncryptorAesCbc implements Encryptor {
     }
 
     @Override
-    @SuppressWarnings("lgtm[java/weak-cryptographic-algorithm]")
     public String decrypt(String encryptedData) throws EncryptionRecoverableException {
 
         try {
