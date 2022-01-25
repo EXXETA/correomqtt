@@ -14,7 +14,7 @@ public class CorreoMqttPluginUpdateException extends RuntimeException{
             Throwable cause2 = cause1.getCause();
             return getSafeMessage(Objects.requireNonNullElse(cause2, cause1));
         } else {
-            return getMessage();
+            return cause1.getMessage();
         }
     }
 

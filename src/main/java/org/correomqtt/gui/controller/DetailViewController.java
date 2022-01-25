@@ -20,6 +20,7 @@ import org.correomqtt.business.utils.AutoFormatPayload;
 import org.correomqtt.gui.contextmenu.DetailContextMenu;
 import org.correomqtt.gui.contextmenu.DetailContextMenuDelegate;
 import org.correomqtt.gui.formats.Format;
+import org.correomqtt.gui.formats.Plain;
 import org.correomqtt.gui.menuitem.TaskMenuItem;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.Search;
@@ -31,6 +32,7 @@ import org.correomqtt.plugin.manager.MessageValidator;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.manager.Task;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
+import org.correomqtt.plugin.spi.DetailViewFormatHook;
 import org.correomqtt.plugin.spi.DetailViewHook;
 import org.correomqtt.plugin.spi.DetailViewManipulatorHook;
 import org.correomqtt.plugin.spi.MessageValidatorHook;
@@ -60,6 +62,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -139,9 +142,10 @@ public class DetailViewController extends BaseConnectionController implements
     private List<Search> results;
     private int currentSearchResult;
     private String currentSearchString = null;
+    private String codeAreaText;
 
     private MessagePropertiesDTO messageDTO;
-
+    private DetailContextMenu contextMenu;
     private Task<DetailViewManipulatorHook> lastManipulatorTask;
 
     private DetailViewController(String connectionId, DetailViewDelegate delegate, boolean isInlineView) {
@@ -221,7 +225,7 @@ public class DetailViewController extends BaseConnectionController implements
         detailViewScrollPane.prefWidthProperty().bind(detailViewVBox.widthProperty());
         detailViewScrollPane.prefHeightProperty().bind(detailViewVBox.heightProperty());
 
-        DetailContextMenu contextMenu = new DetailContextMenu(this);
+        contextMenu = new DetailContextMenu(this);
 
         metaHolder.setOnContextMenuRequested(event -> {
             if (messageDTO != null) {
@@ -483,6 +487,50 @@ public class DetailViewController extends BaseConnectionController implements
         MessageUtils.saveMessage(getConnectionId(), messageDTO, stage);
     }
 
+    private Format autoFormatPayload(final String payload, boolean doFormatting) {
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Auto formatting payload: {}", getConnectionId());
+        }
+
+        Format foundFormat;
+        if (doFormatting) {
+            // Find the first format that is valid.
+            ArrayList<Format> availableFormats = new ArrayList<>(PluginManager.getInstance().getExtensions(DetailViewFormatHook.class));
+            availableFormats.add(new Plain());
+            foundFormat = availableFormats.stream()
+                    .filter(Objects::nonNull)
+                    .filter(format -> {
+                                try {
+                                    format.setText(payload);
+                                    return format.isValid();
+                                }catch(Exception e){
+                                    LOGGER.error("Formatting check failed. ",e);
+                                    return false;
+                                }
+                            }
+                    )
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Plain format did not match."));
+        } else {
+            foundFormat = new Plain();
+            foundFormat.setText(payload);
+        }
+
+        codeArea.clear();
+        try {
+            codeArea.replaceText(0, 0, foundFormat.getPrettyString());
+            codeArea.setStyleSpans(0, foundFormat.getFxSpans());
+        }catch(Exception e){
+            LOGGER.error("Formatter failed. ",e);
+            foundFormat = new Plain();
+            foundFormat.setText(payload);
+            codeArea.replaceText(0, 0, foundFormat.getPrettyString());
+            codeArea.setStyleSpans(0, foundFormat.getFxSpans());
+        }
+        return foundFormat;
+    }
+
     private void showSearchResult() {
 
         currentSearchString = searchTextField.textProperty().get();
@@ -490,7 +538,7 @@ public class DetailViewController extends BaseConnectionController implements
         results = new ArrayList<>();
 
         if (!currentSearchString.isEmpty()) {
-            String codeAreaText = codeArea.getText();
+            codeAreaText = codeArea.getText();
 
             boolean ignoreCase = SettingsProvider.getInstance().getSettings().isUseIgnoreCase();
             boolean regex = SettingsProvider.getInstance().getSettings().isUseRegexForSearch();
@@ -658,22 +706,30 @@ public class DetailViewController extends BaseConnectionController implements
 
     @Override
     public void onExportStarted(File file, MessageDTO messageDTO) {
-        Platform.runLater(() -> detailViewVBox.setDisable(true));
+        Platform.runLater(() -> {
+            detailViewVBox.setDisable(true);
+        });
     }
 
     @Override
     public void onExportSucceeded() {
-        Platform.runLater(() -> detailViewVBox.setDisable(false));
+        Platform.runLater(() -> {
+            detailViewVBox.setDisable(false);
+        });
     }
 
     @Override
     public void onExportCancelled(File file, MessageDTO messageDTO) {
-        Platform.runLater(() -> detailViewVBox.setDisable(false));
+        Platform.runLater(() -> {
+            detailViewVBox.setDisable(false);
+        });
     }
 
     @Override
     public void onExportFailed(File file, MessageDTO messageDTO, Throwable exception) {
-        Platform.runLater(() -> detailViewVBox.setDisable(false));
+        Platform.runLater(() -> {
+            detailViewVBox.setDisable(false);
+        });
     }
 
     @Override

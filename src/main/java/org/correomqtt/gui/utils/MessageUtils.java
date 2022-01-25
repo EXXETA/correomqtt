@@ -10,13 +10,14 @@ import java.io.File;
 import java.util.ResourceBundle;
 
 public class MessageUtils {
+    private static ResourceBundle resources;
 
     private MessageUtils() {
-        // private constructor
+
     }
 
     public static void saveMessage(String connectionId, MessagePropertiesDTO messageDTO, Stage stage) {
-        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(resources.getString("messageUtilsTitle"));

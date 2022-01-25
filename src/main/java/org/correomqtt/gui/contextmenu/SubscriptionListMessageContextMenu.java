@@ -17,8 +17,13 @@ public class SubscriptionListMessageContextMenu extends BaseObjectContextMenu<Su
     private MenuItem unsubscribe;
     private MenuItem filter;
     private MenuItem filterOnly;
+    private MenuItem selectAll;
+    private MenuItem selectNone;
+    private MenuItem unsubscribeAll;
 
     private SeparatorMenuItem separator1;
+    private SeparatorMenuItem separator2;
+    private ResourceBundle resources;
 
     public SubscriptionListMessageContextMenu(SubscriptionListMessageContextMenuDelegate dispatcher) {
         super(dispatcher);
@@ -26,7 +31,7 @@ public class SubscriptionListMessageContextMenu extends BaseObjectContextMenu<Su
 
     @Override
     protected void initializeItems() {
-        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
         super.initializeItems();
 
@@ -39,26 +44,26 @@ public class SubscriptionListMessageContextMenu extends BaseObjectContextMenu<Su
         filterOnly = new MenuItem(resources.getString("subscriptionListMessageContextMenuFilterOnlyMenuItem"));
         filterOnly.setOnAction(this::filterOnly);
 
-        MenuItem selectAll = new MenuItem(resources.getString("subscriptionListMessageContextMenuSelectAllMenuItem"));
+        selectAll = new MenuItem(resources.getString("subscriptionListMessageContextMenuSelectAllMenuItem"));
         selectAll.setOnAction(this::selectAll);
 
-        MenuItem selectNone = new MenuItem(resources.getString("subscriptionListMessageContextMenuSelectNoneMenuItem"));
+        selectNone = new MenuItem(resources.getString("subscriptionListMessageContextMenuSelectNoneMenuItem"));
         selectNone.setOnAction(this::selectNone);
 
-        MenuItem unsubscribeAll = new MenuItem(resources.getString("subscriptionListMessageContextMenuUnsubscribeAllMenuItem"));
+        unsubscribeAll = new MenuItem(resources.getString("subscriptionListMessageContextMenuUnsubscribeAllMenuItem"));
         unsubscribeAll.setOnAction(this::unsubscribeAll);
 
         separator1 = new SeparatorMenuItem();
-        SeparatorMenuItem separator2 = new SeparatorMenuItem();
+        separator2 = new SeparatorMenuItem();
 
         this.getItems().addAll(unsubscribe,
                                filter,
                                filterOnly,
                                separator1,
-                selectAll,
-                selectNone,
-                separator2,
-                unsubscribeAll);
+                               selectAll,
+                               selectNone,
+                               separator2,
+                               unsubscribeAll);
     }
 
     @Override

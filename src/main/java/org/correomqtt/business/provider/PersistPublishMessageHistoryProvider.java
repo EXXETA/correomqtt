@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,8 +29,8 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     private static final String HISTORY_FILE_NAME = "publishMessageHistory.json";
     private static final int MAX_ENTRIES = 100;
 
-    private static final Map<String, PersistPublishMessageHistoryProvider> instances = new HashMap<>();
-    private static final Map<String, PublishMessageHistoryListDTO> historyDTOs = new HashMap<>();
+    private static Map<String, PersistPublishMessageHistoryProvider> instances = new HashMap<>();
+    private static Map<String, PublishMessageHistoryListDTO> historyDTOs = new HashMap<>();
 
 
     private PersistPublishMessageHistoryProvider(String id) {
@@ -68,7 +68,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
         historyDTOs.put(id, dto);
     }
 
-    public List<MessageDTO> getMessages(String connectionId) {
+    public LinkedList<MessageDTO> getMessages(String connectionId) {
         return historyDTOs.get(connectionId).getMessages();
     }
 
@@ -76,11 +76,11 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     public void onPublishSucceeded(String connectionId, MessageDTO messageDTO) {
         LOGGER.info("Persisting new publish history entry: {}", messageDTO.getTopic());
 
-        List<MessageDTO> messageList = getMessages(connectionId);
-        messageList.add(0,messageDTO);
+        LinkedList<MessageDTO> messageList = getMessages(connectionId);
+        messageList.addFirst(messageDTO);
         while (messageList.size() > MAX_ENTRIES) {
             LOGGER.info("Removing last entry from publish history, cause limit of {} is reached.", MAX_ENTRIES);
-            messageList.remove(messageList.size()-1);
+            messageList.removeLast();
         }
         saveHistory(connectionId);
     }
@@ -97,7 +97,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     @Override
     public void onPublishRemoved(String connectionId, MessageDTO messageDTO) {
         LOGGER.info("Removing {} from publish history for {}.", messageDTO.getTopic(), connectionId);
-        List<MessageDTO> messageList = getMessages(connectionId);
+        LinkedList<MessageDTO> messageList = getMessages(connectionId);
         messageList.remove(messageDTO);
         saveHistory(connectionId);
     }
@@ -105,7 +105,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     @Override
     public void onPublishesCleared(String connectionId) {
         LOGGER.info("Clearing publish history for {}.", connectionId);
-        List<MessageDTO> messageList = getMessages(connectionId);
+        LinkedList<MessageDTO> messageList = getMessages(connectionId);
         messageList.clear();
         saveHistory(connectionId);
     }
@@ -168,7 +168,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
 
     @Override
     public void onDisconnectFromConnectionDeleted(String connectionId) {
-        // nothing to do
+
     }
 
     @Override

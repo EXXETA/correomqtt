@@ -38,7 +38,6 @@ import static org.correomqtt.business.utils.VendorConstants.WEBSITE;
 public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainViewController.class);
-    public static final String DIRTY_CLASS = "dirty";
 
     @FXML
     public TabPane tabPane;
@@ -78,7 +77,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private SelectionModel<Tab> selectionModel;
     private ResourceBundle resources;
-    private Map<String, ConnectionViewController> conntectionViewControllers;
+    public Map<String, ConnectionViewController> conntectionViewControllers;
 
     public MainViewController() {
         ConfigDispatcher.getInstance().addObserver(this);
@@ -113,10 +112,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         tabPane.widthProperty().addListener((a, b, c) -> calcTabWidth());
     }
 
-    public Map<String, ConnectionViewController> getConntectionViewControllers() {
-        return conntectionViewControllers;
-    }
-
     private void setupAddTab() {
         addTab.setClosable(false);
         LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this, this);
@@ -144,12 +139,16 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         updateItem.setOnAction(event -> {
             try {
                 CheckNewVersionUtils.checkNewVersion(true);
-            } catch (IOException | ParseException e) {
-                LOGGER.warn("Exception checking version", e);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ParseException e) {
+                e.printStackTrace();
             }
         });
-        websiteItem.setOnAction(event -> HostServicesHolder.getInstance().getHostServices().showDocument(
-                new Hyperlink(WEBSITE).getText()));
+        websiteItem.setOnAction(event -> {
+            HostServicesHolder.getInstance().getHostServices().showDocument(
+                    new Hyperlink(WEBSITE).getText());
+        });
         pluginSettingsItem.setOnAction(event -> openPluginSettings());
     }
 
@@ -186,12 +185,14 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             tab.setText(config.getName());
             tab.setOnSelectionChanged(event -> {
                 if (tab.isSelected()) {
-                    tab.getStyleClass().removeAll(DIRTY_CLASS);
+                    tab.getStyleClass().removeAll("dirty");
                 }
             });
             tab.getStyleClass().add("connection");
 
-            config.getNameProperty().addListener(((observableValue, s, t1) -> tab.setText(t1)));
+            config.getNameProperty().addListener(((observableValue, s, t1) -> {
+                tab.setText(t1);
+            }));
 
             LoaderResult<ConnectionViewController> result = ConnectionViewController.load(config.getId(), this);
             result.getController().setTabId(tabId);
@@ -261,8 +262,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                 .findFirst()
                 .ifPresent(t -> {
                     if (!t.isSelected()) {
-                        t.getStyleClass().removeAll(DIRTY_CLASS);
-                        t.getStyleClass().add(DIRTY_CLASS);
+                        t.getStyleClass().removeAll("dirty");
+                        t.getStyleClass().add("dirty");
                     }
                 });
     }
@@ -280,57 +281,56 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     @Override
     public void onConfigDirectoryEmpty() {
-        // nothing to do
+
     }
 
     @Override
     public void onConfigDirectoryNotAccessible() {
-        // nothing to do
+
     }
 
     @Override
     public void onAppDataNull() {
-        // nothing to do
+
     }
 
     @Override
     public void onUserHomeNull() {
-        // nothing to do
+
     }
 
     @Override
     public void onFileAlreadyExists() {
-        // nothing to do
+
     }
 
     @Override
     public void onInvalidPath() {
-        // nothing to do
+
     }
 
     @Override
     public void onInvalidJsonFormat() {
-        // nothing to do
+
     }
 
     @Override
     public void onSavingFailed() {
-        // nothing to do
+
     }
 
     @Override
     public void onSettingsUpdated(boolean showRestartRequiredDialog) {
-        // nothing to do
+
     }
 
     @Override
     public void onConnectionsUpdated() {
-        // nothing to do
     }
 
     @Override
     public void onConfigPrepareFailed() {
-        // nothing to do
+
     }
 
     @Override
@@ -338,7 +338,9 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         tabPane.getTabs().stream()
                 .filter(t -> connectionName.equals(t.getText()))
                 .findFirst()
-                .ifPresent(t -> tabPane.getTabs().remove(t));
-        LOGGER.info("Closing tab for connection: {}", connectionName);
+                .ifPresent(t -> {
+                    tabPane.getTabs().remove(t);
+                });
+        LOGGER.info("Closing tab for connection: " + connectionName);
     }
 }

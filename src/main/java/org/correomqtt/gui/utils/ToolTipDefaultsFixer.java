@@ -14,10 +14,6 @@ import org.slf4j.LoggerFactory;
  */
 public class ToolTipDefaultsFixer
 {
-    private ToolTipDefaultsFixer(){
-        // private constructor
-    }
-
     /**
      * Returns true if successful.
      * Current defaults are 1000, 5000, 200;

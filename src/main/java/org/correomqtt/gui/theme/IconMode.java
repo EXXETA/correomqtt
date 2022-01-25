@@ -8,27 +8,27 @@ import java.util.Arrays;
 public enum IconMode {
     BLACK("black"),WHITE("white");
 
-    private final String jsonValue;
+    private final String iconMode;
 
     IconMode(String white) {
-        this.jsonValue = white;
+        this.iconMode = white;
     }
 
     @Override
     public String toString() {
-        return jsonValue;
+        return iconMode;
     }
 
     @JsonValue
-    public String getJsonValue() {
-        return jsonValue;
+    public String getIconMode() {
+        return iconMode;
     }
 
     @JsonCreator
     public static IconMode forValue(String iconMode) {
 
         return Arrays.stream(IconMode.values())
-                .filter(im -> im.jsonValue.equalsIgnoreCase(iconMode))
+                .filter(im -> im.iconMode.equalsIgnoreCase(iconMode))
                 .findFirst()
                 .orElse(BLACK);
     }

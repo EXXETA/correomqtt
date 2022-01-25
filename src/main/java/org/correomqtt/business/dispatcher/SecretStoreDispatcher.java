@@ -1,5 +1,6 @@
 package org.correomqtt.business.dispatcher;
 
+import org.correomqtt.business.provider.SecretStoreProvider;
 
 public class SecretStoreDispatcher extends BaseDispatcher<SecretStoreObserver> {
 
@@ -17,7 +18,7 @@ public class SecretStoreDispatcher extends BaseDispatcher<SecretStoreObserver> {
     }
 
     public void onPasswordFileUnreadable() {
-        observer.forEach(SecretStoreObserver::onPasswordFileUnreadable);
+        observer.forEach(o -> o.onPasswordFileUnreadable());
     }
 
 }

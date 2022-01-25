@@ -1,42 +1,39 @@
 package org.correomqtt.gui.controller;
 
-import javafx.animation.PauseTransition;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
-import javafx.scene.control.TableView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.util.Duration;
 import org.correomqtt.business.provider.ConfigProvider;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.plugin.manager.PermissionPlugin;
-import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.manager.PluginSecurityPolicy;
+import org.correomqtt.plugin.manager.PluginManager;
+import javafx.animation.PauseTransition;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.scene.control.Label;
+import javafx.scene.control.*;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.util.Duration;
 import org.pf4j.Plugin;
 import org.pf4j.PluginState;
 import org.pf4j.PluginWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.security.Permission;
 import java.security.Permissions;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class PluginsViewController extends BaseController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluginsViewController.class);
 
     @FXML
     private Pane pluginRootPane;
@@ -67,6 +64,8 @@ public class PluginsViewController extends BaseController {
 
     private boolean isRestartRequired;
 
+    private static ResourceBundle resources;
+
     private PluginManager pluginSystem;
 
     public static void showAsDialog() {
@@ -78,7 +77,7 @@ public class PluginsViewController extends BaseController {
         }
 
         LoaderResult<PluginsViewController> result = load(PluginsViewController.class, "pluginsView.fxml");
-        ResourceBundle resources = result.getResourceBundle();
+        resources = result.getResourceBundle();
         showAsDialog(result, resources.getString("pluginsViewControllerTitle"), properties, true, false, null, null);
     }
 
@@ -106,7 +105,7 @@ public class PluginsViewController extends BaseController {
         CheckBox checkBox = new CheckBox();
         checkBox.selectedProperty().setValue(!cellData.getValue().getPluginState().equals(PluginState.DISABLED));
         checkBox.selectedProperty().addListener((observableValue, oldValue, newValue) -> {
-            if (Boolean.TRUE.equals(newValue)) {
+            if (newValue) {
                 pluginSystem.enablePlugin(cellData.getValue().getPluginId());
             } else {
                 pluginSystem.disablePlugin(cellData.getValue().getPluginId());

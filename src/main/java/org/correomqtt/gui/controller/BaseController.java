@@ -1,5 +1,6 @@
 package org.correomqtt.gui.controller;
 
+import javafx.scene.layout.Region;
 import org.correomqtt.business.provider.SettingsProvider;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
@@ -14,14 +15,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.text.MessageFormat;
 import java.util.Map;
 import java.util.ResourceBundle;
 
 abstract class BaseController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseController.class);
-    private static final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+    private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
     static <C extends BaseController, Z extends Class<C>> LoaderResult<C> load(Z controllerClazz, String fxml) {
         return load(controllerClazz,
@@ -40,7 +40,8 @@ abstract class BaseController {
             try {
                 return constructorMethod.construct();
             } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-                throw new IllegalStateException(MessageFormat.format("Exception loading {0} from {1}: ", controllerClazz.getSimpleName(), fxml), e);
+                LOGGER.error("Exception loading {} from {}: ", controllerClazz.getSimpleName(), fxml, e);
+                throw new IllegalStateException(e);
             }
         });
 
