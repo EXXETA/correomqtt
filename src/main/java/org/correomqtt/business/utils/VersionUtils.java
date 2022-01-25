@@ -1,6 +1,5 @@
 package org.correomqtt.business.utils;
 
-import javafx.util.Pair;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.json.simple.JSONObject;
@@ -16,6 +15,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import static org.correomqtt.business.utils.VendorConstants.GITHUB_API_LATEST;
 
@@ -32,7 +32,7 @@ public class VersionUtils {
     public static String getVersion() {
         if (version == null) {
             try {
-                version = IOUtils.toString(VersionUtils.class.getResourceAsStream("version.txt"), StandardCharsets.UTF_8);
+                version = IOUtils.toString(Objects.requireNonNull(VersionUtils.class.getResourceAsStream("version.txt")), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 LOGGER.error("Error reading version: ", e);
                 version = "N/A";

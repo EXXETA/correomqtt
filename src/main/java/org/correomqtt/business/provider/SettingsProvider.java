@@ -122,7 +122,7 @@ public class SettingsProvider extends BaseUserFileProvider {
             secretStoreProvider.setPassword(masterPassword, c, PASSWORD, c.getPassword());
             secretStoreProvider.setPassword(masterPassword,c, AUTH_PASSWORD,  c.getAuthPassword());
             secretStoreProvider.setPassword(masterPassword, c, SSL_KEYSTORE_PASSWORD, c.getSslKeystorePassword());
-        };
+        }
         secretStoreProvider.encryptAndSavePasswords(masterPassword);
 
         ConnectionHolder.getInstance().refresh();
