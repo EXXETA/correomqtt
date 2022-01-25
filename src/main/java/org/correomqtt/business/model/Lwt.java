@@ -3,23 +3,25 @@ package org.correomqtt.business.model;
 import org.correomqtt.gui.model.GenericCellModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public enum Lwt implements GenericCellModel {
     OFF("lwtEnumOff"),
     ON("lwtEnumActive");
 
-    private final String lwt;
+    private static final Logger LOGGER = LoggerFactory.getLogger(Lwt.class);
 
-    Lwt(String lwt) {
-        this.lwt = lwt;
-    }
+    private final String labelTranslationKey;
 
-    public String getLwt() {
-        return lwt;
+    Lwt(String labelTranslationKey) {
+        this.labelTranslationKey = labelTranslationKey;
     }
 
     @Override
-    public String toString() { return lwt; }
+    public String toString() {
+        return labelTranslationKey;
+    }
 
     @SuppressWarnings("unused")
     @JsonCreator
@@ -27,7 +29,7 @@ public enum Lwt implements GenericCellModel {
         try {
             return Lwt.valueOf(value);
         } catch (IllegalArgumentException iae) {
-            //TODO: Log
+            LOGGER.warn("Exception reading from json value.", iae);
             return OFF;
         }
     }
@@ -40,6 +42,6 @@ public enum Lwt implements GenericCellModel {
 
     @Override
     public String getLabelTranslationKey() {
-        return lwt;
+        return labelTranslationKey;
     }
 }

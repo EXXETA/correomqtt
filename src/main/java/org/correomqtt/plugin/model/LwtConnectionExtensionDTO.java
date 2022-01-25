@@ -1,9 +1,9 @@
 package org.correomqtt.plugin.model;
 
+import javafx.collections.FXCollections;
 import org.correomqtt.business.model.Lwt;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import com.sun.javafx.collections.ObservableMapWrapper;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -41,7 +41,7 @@ public class LwtConnectionExtensionDTO {
         activeConnectionConfigDTO.getLwtQoSProperty().setValue(lwtQoS);
         activeConnectionConfigDTO.getLwtRetainedProperty().setValue(lwtRetained);
         activeConnectionConfigDTO.getLwtPayloadProperty().setValue(lwtPayload);
-        activeConnectionConfigDTO.getExtraProperties().setValue(new ObservableMapWrapper<>(customFields));
+        activeConnectionConfigDTO.getExtraProperties().setValue(FXCollections.observableMap(customFields));
         return activeConnectionConfigDTO;
     }
 }

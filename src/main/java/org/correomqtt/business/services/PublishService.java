@@ -1,9 +1,13 @@
 package org.correomqtt.business.services;
 
 import org.correomqtt.business.dispatcher.PublishDispatcher;
+import org.correomqtt.business.exception.CorreoMqttExecutionException;
 import org.correomqtt.business.model.MessageDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 public class PublishService extends BaseService {
 
@@ -18,7 +22,16 @@ public class PublishService extends BaseService {
 
     public void publish() {
         LOGGER.info(getConnectionMarker(), "Start publishing to topic: {}", messageDTO.getTopic());
-        callSafeOnClient(client -> client.publish(messageDTO));
+        callSafeOnClient(client -> {
+            try {
+                client.publish(messageDTO);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new CorreoMqttExecutionException(e);
+            } catch (ExecutionException | TimeoutException e) {
+                throw new CorreoMqttExecutionException(e);
+            }
+        });
     }
 
     @Override

@@ -23,7 +23,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
@@ -111,12 +113,12 @@ public class SecretStoreProvider extends BaseUserFileProvider {
             throw new PasswordRecoverableException();
         }
 
-        Map<String, String> decryptedPasswords = getDecryptedPasswords(masterPassword);
+        Map<String, String> localDecryptedPasswords = getDecryptedPasswords(masterPassword);
 
         try {
             String encryptedPasswords = "";
-            if (decryptedPasswords.size() != 0) {
-                encryptedPasswords = encrypt(new ObjectMapper().writeValueAsString(decryptedPasswords), createSecretKey(masterPassword));
+            if (localDecryptedPasswords.size() != 0) {
+                encryptedPasswords = encrypt(new ObjectMapper().writeValueAsString(localDecryptedPasswords), createSecretKey(masterPassword));
             }
             passwordsDTO.setPasswords(encryptedPasswords);
             new ObjectMapper().writeValue(getFile(), passwordsDTO);
@@ -130,7 +132,7 @@ public class SecretStoreProvider extends BaseUserFileProvider {
     }
 
     private Map<String, String> getDecryptedPasswords(String masterPassword) throws PasswordRecoverableException {
-        if(decryptedPasswords == null) {
+        if (decryptedPasswords == null) {
             if (passwordsDTO.getPasswords() == null) {
                 decryptedPasswords = new HashMap<>();
             } else {
@@ -166,8 +168,13 @@ public class SecretStoreProvider extends BaseUserFileProvider {
         decryptedPasswords = null;
         passwordsDTO.setSalt(UUID.randomUUID().toString());
         passwordsDTO.setPasswords("");
-        if(getFile().exists() && !getFile().delete()){
-            throw new KeyringException("Could not delete passwords.json file.");
+        Path path = getFile().toPath();
+        if (Files.exists(path)) {
+            try {
+                Files.delete(getFile().toPath());
+            } catch (IOException e) {
+                throw new KeyringException("Could not delete passwords.json file.", e);
+            }
         }
     }
 

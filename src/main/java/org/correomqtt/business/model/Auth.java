@@ -3,25 +3,25 @@ package org.correomqtt.business.model;
 import org.correomqtt.gui.model.GenericCellModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public enum Auth implements GenericCellModel {
     OFF("authEnumOff"),
     PASSWORD("authEnumPassword"),
     KEYFILE("authEnumKeyfile");
 
-    private final String auth;
+    private static final Logger LOGGER = LoggerFactory.getLogger(Auth.class);
 
-    Auth(String auth) {
-        this.auth = auth;
-    }
+    private final String labelTranslationKey;
 
-    public String getAuth() {
-        return auth;
+    Auth(String labelTranslationKey) {
+        this.labelTranslationKey = labelTranslationKey;
     }
 
     @Override
     public String toString() {
-        return auth;
+        return labelTranslationKey;
     }
 
     @SuppressWarnings("unused")
@@ -30,7 +30,7 @@ public enum Auth implements GenericCellModel {
         try {
             return Auth.valueOf(value);
         } catch (IllegalArgumentException iae) {
-            //TODO: Log
+            LOGGER.debug("Unknown auth value {}", value);
             return OFF;
         }
     }
@@ -43,6 +43,6 @@ public enum Auth implements GenericCellModel {
 
     @Override
     public String getLabelTranslationKey() {
-        return auth;
+        return labelTranslationKey;
     }
 }

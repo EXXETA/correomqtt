@@ -2,12 +2,9 @@ package org.correomqtt.gui.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.SplitPane;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 abstract class BaseMessageBasedViewController extends BaseConnectionController implements MessageListViewDelegate {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(BaseMessageBasedViewController.class);
 
     @FXML
     protected SplitPane splitPane;
@@ -25,7 +22,7 @@ abstract class BaseMessageBasedViewController extends BaseConnectionController i
     }
 
     public double getDividerPosition() {
-        if (splitPane.getDividers().size() > 0) {
+        if (!splitPane.getDividers().isEmpty()) {
             return splitPane.getDividers().get(0).getPosition();
         } else {
             return 0.5;

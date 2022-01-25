@@ -7,6 +7,7 @@ import javafx.scene.control.SeparatorMenuItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("java:S110")
 public class MessageListContextMenu extends BaseMessageContextMenu<MessageListContextMenuDelegate> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageListContextMenu.class);
@@ -14,7 +15,6 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
     private MenuItem removeMessage;
     private MenuItem saveMessage;
     private MenuItem timeInfo;
-    private MenuItem clearList;
 
     private SeparatorMenuItem separator1;
     private SeparatorMenuItem separator2;
@@ -38,7 +38,7 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
         timeInfo.setVisible(false);
         timeInfo.setDisable(true);
 
-        clearList = new MenuItem(getResources().getString("messageListContextMenuClearMenuItem"));
+        MenuItem clearList = new MenuItem(getResources().getString("messageListContextMenuClearMenuItem"));
         clearList.setOnAction(this::clearList);
 
         separator1 = new SeparatorMenuItem();
@@ -56,7 +56,7 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
                                separator2,
                                timeInfo,
                                separator3,
-                               clearList);
+                clearList);
 
         updateDateTime();
     }

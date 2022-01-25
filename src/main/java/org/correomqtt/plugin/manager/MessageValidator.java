@@ -8,6 +8,10 @@ import java.util.Optional;
 
 public class MessageValidator {
 
+    private MessageValidator(){
+        // private constructor
+    }
+
     public static MessageValidatorHook.Validation validateMessage(String topic, String payload) {
         Optional<Task<MessageValidatorHook>> validatorTaskOptional = PluginManager.getInstance()
                                                                                   .getTasks(MessageValidatorHook.class)
