@@ -38,6 +38,7 @@ public class EncryptorAesCbc implements Encryptor {
     }
 
     @Override
+    @SuppressWarnings("lgtm[java/weak-cryptographic-algorithm]")
     public String decrypt(String encryptedData) throws EncryptionRecoverableException {
 
         try {
