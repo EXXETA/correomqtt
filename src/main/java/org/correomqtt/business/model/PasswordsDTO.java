@@ -13,6 +13,7 @@ import lombok.*;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PasswordsDTO {
 
+    private String encryptionType;
     private String salt;
     private String passwords;
 }

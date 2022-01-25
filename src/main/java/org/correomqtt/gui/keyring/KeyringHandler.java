@@ -5,16 +5,20 @@ import org.correomqtt.business.keyring.Keyring;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.provider.PasswordRecoverableException;
+import org.correomqtt.business.provider.EncryptionRecoverableException;
 import org.correomqtt.business.provider.SecretStoreProvider;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.helper.AlertHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
 public class KeyringHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeyringHandler.class);
 
     private static KeyringHandler instance = null;
     private ResourceBundle resources;
@@ -111,7 +115,8 @@ public class KeyringHandler {
                 failed = false;
                 try {
                     consumer.apply(getMasterPassword());
-                } catch (PasswordRecoverableException e) {
+                } catch (EncryptionRecoverableException e) {
+                    LOGGER.error("Error de/encrypt passwords. ", e);
                     failed = true;
                 }
             } else {
