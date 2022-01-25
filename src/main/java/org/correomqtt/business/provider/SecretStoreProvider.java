@@ -24,7 +24,6 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 
 public class SecretStoreProvider extends BaseUserFileProvider {
