@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
+@SuppressWarnings("java:S110")
 public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionCell.class);

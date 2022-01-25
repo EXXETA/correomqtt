@@ -7,10 +7,10 @@ import org.testfx.matcher.base.NodeMatchers;
 import static org.testfx.api.FxAssert.verifyThat;
 
 @Disabled
-public class LogAreaTests extends TestBaseClass{
+class LogAreaTests extends TestBaseClass{
 
     @Test
-    public void logAreaVisibleTest(){
+    void logAreaVisibleTest(){
         verifyThat("#logTextArea",NodeMatchers.isVisible());
     }
 }

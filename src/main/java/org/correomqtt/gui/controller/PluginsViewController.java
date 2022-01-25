@@ -126,8 +126,7 @@ public class PluginsViewController extends BaseController {
         StringBuilder permissions = new StringBuilder();
         Plugin plugin = cellData.getValue().getPlugin();
         if (plugin instanceof PermissionPlugin) {
-            Permissions pluginPermissions = PluginSecurityPolicy.removeForbiddenPermissions(plugin.getWrapper().getPluginId(),
-                    ((PermissionPlugin) plugin).getPermissions());
+            Permissions pluginPermissions = PluginSecurityPolicy.removeForbiddenPermissions(((PermissionPlugin) plugin).getPermissions());
             Iterator<Permission> it = pluginPermissions.elements().asIterator();
             while (it.hasNext()) {
                 Permission p = it.next();

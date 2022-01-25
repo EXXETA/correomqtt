@@ -15,6 +15,6 @@ public class CorreoMqttAlreadySubscribedException extends CorreoMqttException {
 
     @Override
     public String getInfo() {
-        return subcriptionDTO.getTopic() + " " + resources.getString("correoMqttAlreadySubscribedExceptionInfo");
+        return "[" + connectionId + "] " + subcriptionDTO.getTopic() + " " + resources.getString("correoMqttAlreadySubscribedExceptionInfo");
     }
 }

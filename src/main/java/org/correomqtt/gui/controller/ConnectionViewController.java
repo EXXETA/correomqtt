@@ -98,7 +98,7 @@ public class ConnectionViewController extends BaseConnectionController implement
         setLayout(
                 connectionConfigDTO.getConnectionUISettings().isShowPublish(),
                 connectionConfigDTO.getConnectionUISettings().isShowSubscribe());
-        
+
         saveConnectionUISettings();
     }
 
@@ -167,35 +167,48 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     @Override
     public void setLayout(boolean publish, boolean subscribe) {
+
         if (publish && !subscribe) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Show only publish clicked': {}", getConnectionId());
             }
-            splitPane.getItems().remove(subscribePane);
-            if (!splitPane.getItems().contains(publishPane)) {
-                splitPane.getItems().add(0, publishPane);
-            }
+            setLayoutPublishOnly();
         } else if (!publish && subscribe) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Show only subscribe clicked': {}", getConnectionId());
             }
-            splitPane.getItems().remove(publishPane);
-            if (!splitPane.getItems().contains(subscribePane)) {
-                splitPane.getItems().add(0, subscribePane);
-            }
+            setLayoutSubscribeOnly();
         } else {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Show publish and subscribe clicked': {}", getConnectionId());
             }
-            if (!splitPane.getItems().contains(subscribePane)) {
-                splitPane.getItems().add(subscribePane);
-            }
-            if (!splitPane.getItems().contains(publishPane)) {
-                splitPane.getItems().add(0, publishPane);
-            }
-            if (!splitPane.getDividers().isEmpty()) {
-                splitPane.getDividers().get(0).positionProperty().setValue(connectionConfigDTO.getConnectionUISettings().getMainDividerPosition());
-            }
+            setLayoutBoth();
+        }
+    }
+
+    private void setLayoutBoth() {
+        if (!splitPane.getItems().contains(subscribePane)) {
+            splitPane.getItems().add(subscribePane);
+        }
+        if (!splitPane.getItems().contains(publishPane)) {
+            splitPane.getItems().add(0, publishPane);
+        }
+        if (!splitPane.getDividers().isEmpty()) {
+            splitPane.getDividers().get(0).positionProperty().setValue(connectionConfigDTO.getConnectionUISettings().getMainDividerPosition());
+        }
+    }
+
+    private void setLayoutSubscribeOnly() {
+        splitPane.getItems().remove(publishPane);
+        if (!splitPane.getItems().contains(subscribePane)) {
+            splitPane.getItems().add(0, subscribePane);
+        }
+    }
+
+    private void setLayoutPublishOnly() {
+        splitPane.getItems().remove(subscribePane);
+        if (!splitPane.getItems().contains(publishPane)) {
+            splitPane.getItems().add(0, publishPane);
         }
     }
 

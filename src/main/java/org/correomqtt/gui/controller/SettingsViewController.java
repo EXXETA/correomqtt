@@ -37,8 +37,6 @@ import java.util.stream.Collectors;
 
 public class SettingsViewController extends BaseController {
 
-    private static ResourceBundle resources;
-
     @FXML
     private AnchorPane settingsPane;
     @FXML
@@ -53,6 +51,8 @@ public class SettingsViewController extends BaseController {
     private CheckBox searchUpdatesCheckbox;
     @FXML
     private Label keyringDescriptionLabel;
+
+    private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
     private SettingsDTO settings;
     private static final Logger LOGGER = LoggerFactory.getLogger(SettingsViewController.class);
@@ -230,7 +230,6 @@ public class SettingsViewController extends BaseController {
     }
 
     private void updateKeyringDescription(KeyringModel selectedKeyring) {
-        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()); // too early here
         keyringDescriptionLabel.setText(resources.getString("settingsViewKeyringBackendExplanationLabel")
                 + "\n\n"
                 + selectedKeyring.getLabelTranslationKey() + ":\n"

@@ -376,29 +376,30 @@ public class ConnectionSettingsViewController extends BaseController implements 
                 Dragboard db = event.getDragboard();
                 if (db.hasString()) {
                     ObservableList<ConnectionPropertiesDTO> items = cell.getListView().getItems();
-                    int draggedIdx = connectionsListView.getSelectionModel().getSelectedIndex();
-                    int thisIdx = items.indexOf(cell.getItem());
-
-                    if (draggedIdx > thisIdx && thisIdx > -1) {
-                        for (int i = draggedIdx; i > thisIdx; i--) {
-                            ConnectionPropertiesDTO temp = connectionsListView.getItems().get(i);
-                            connectionsListView.getItems().set(i, connectionsListView.getItems().get(i - 1));
-                            connectionsListView.getItems().set(i - 1, temp);
-                        }
-                    }
-
-                    if (draggedIdx < thisIdx && draggedIdx > -1) {
-                        for (int i = draggedIdx; i < thisIdx; i++) {
-                            ConnectionPropertiesDTO temp = connectionsListView.getItems().get(i);
-                            connectionsListView.getItems().set(i, connectionsListView.getItems().get(i + 1));
-                            connectionsListView.getItems().set(i + 1, temp);
-                        }
-                    }
-
-                    connectionsListView.getSelectionModel().select(thisIdx);
+                    performDrag(connectionsListView.getSelectionModel().getSelectedIndex(), items.indexOf(cell.getItem()));
                 }
             }
         });
+    }
+
+    private void performDrag(int draggedIdx, int thisIdx) {
+        if (draggedIdx > thisIdx && thisIdx > -1) {
+            for (int i = draggedIdx; i > thisIdx; i--) {
+                ConnectionPropertiesDTO temp = connectionsListView.getItems().get(i);
+                connectionsListView.getItems().set(i, connectionsListView.getItems().get(i - 1));
+                connectionsListView.getItems().set(i - 1, temp);
+            }
+        }
+
+        if (draggedIdx < thisIdx && draggedIdx > -1) {
+            for (int i = draggedIdx; i < thisIdx; i++) {
+                ConnectionPropertiesDTO temp = connectionsListView.getItems().get(i);
+                connectionsListView.getItems().set(i, connectionsListView.getItems().get(i + 1));
+                connectionsListView.getItems().set(i + 1, temp);
+            }
+        }
+
+        connectionsListView.getSelectionModel().select(thisIdx);
     }
 
     private void setOnDragDropped(ConnectionCell cell) {
@@ -440,32 +441,41 @@ public class ConnectionSettingsViewController extends BaseController implements 
     private boolean checkDirty() {
         if (activeConnectionConfigDTO != null && activeConnectionConfigDTO.isDirty()) {
             if (confirmUnsavedConnectionSync()) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Unsaved connection status confirmed: {}", activeConnectionConfigDTO.getId());
-                }
-                return saveConnection();
+                return handleConfirmedConnectionSync();
             } else {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Discarding unsaved changes: {}", activeConnectionConfigDTO.getId());
-                }
-
-                if (activeConnectionConfigDTO.isUnpersisted()) {
-                    connectionsListView.getItems().remove(activeConnectionConfigDTO);
-
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Removing connection: {}", activeConnectionConfigDTO.getId());
-                    }
-                } else {
-                    activeConnectionConfigDTO.getDirtyProperty().set(false);
-                    showConnection(activeConnectionConfigDTO);
-
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Dirty Property set to false: {}", activeConnectionConfigDTO.getId());
-                    }
-                }
+                return handleUnconfirmedConnectionSync();
             }
         }
         return true;
+    }
+
+    private boolean handleUnconfirmedConnectionSync() {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Discarding unsaved changes: {}", activeConnectionConfigDTO.getId());
+        }
+
+        if (activeConnectionConfigDTO.isUnpersisted()) {
+            connectionsListView.getItems().remove(activeConnectionConfigDTO);
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Removing connection: {}", activeConnectionConfigDTO.getId());
+            }
+        } else {
+            activeConnectionConfigDTO.getDirtyProperty().set(false);
+            showConnection(activeConnectionConfigDTO);
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Dirty Property set to false: {}", activeConnectionConfigDTO.getId());
+            }
+        }
+        return true;
+    }
+
+    private boolean handleConfirmedConnectionSync() {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Unsaved connection status confirmed: {}", activeConnectionConfigDTO.getId());
+        }
+        return saveConnection();
     }
 
     @FXML
@@ -491,12 +501,11 @@ public class ConnectionSettingsViewController extends BaseController implements 
     @FXML
     public void onCancelClicked() {
         ConnectionPropertiesDTO config = connectionsListView.getSelectionModel().getSelectedItem();
-        if (config != null && LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Cancel editing clicked: {}", activeConnectionConfigDTO.getId());
-        } else if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Cancel editing clicked without selected connection");
-        }
+        logCancelClick(config);
+        handleCancelClick(config);
+    }
 
+    private void handleCancelClick(ConnectionPropertiesDTO config) {
         if (config != null && config.isDirty()) {
 
             if (confirmUnsavedConnectionSync()) {
@@ -516,6 +525,16 @@ public class ConnectionSettingsViewController extends BaseController implements 
             }
         }
         closeDialog();
+    }
+
+    private void logCancelClick(ConnectionPropertiesDTO config) {
+        if (LOGGER.isDebugEnabled()) {
+            if (config != null) {
+                LOGGER.debug("Cancel editing clicked: {}", activeConnectionConfigDTO.getId());
+            } else {
+                LOGGER.debug("Cancel editing clicked without selected connection");
+            }
+        }
     }
 
     @FXML
@@ -748,7 +767,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
         List<ConnectionConfigDTO> connections = ConnectionTransformer.propsListToDtoList(connectionsListView.getItems());
         KeyringHandler.getInstance().retryWithMasterPassword(
-                masterPassword ->  SettingsProvider.getInstance().saveConnections(connections, masterPassword),
+                masterPassword -> SettingsProvider.getInstance().saveConnections(connections, masterPassword),
                 resources.getString("onPasswordSaveFailedTitle"),
                 resources.getString("onPasswordSaveFailedHeader"),
                 resources.getString("onPasswordSaveFailedContent"),
@@ -816,7 +835,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
             List<ConnectionConfigDTO> connections = ConnectionTransformer.propsListToDtoList(connectionsListView.getItems());
             KeyringHandler.getInstance().retryWithMasterPassword(
-                    masterPassword ->  SettingsProvider.getInstance().saveConnections(connections, masterPassword),
+                    masterPassword -> SettingsProvider.getInstance().saveConnections(connections, masterPassword),
                     resources.getString("onPasswordSaveFailedTitle"),
                     resources.getString("onPasswordSaveFailedHeader"),
                     resources.getString("onPasswordSaveFailedContent"),

@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
+@SuppressWarnings("java:S110")
 public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageViewCell.class);

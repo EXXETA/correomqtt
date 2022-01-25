@@ -1,10 +1,10 @@
 package org.correomqtt.plugin.model;
 
+import javafx.collections.FXCollections;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
-import com.sun.javafx.collections.ObservableMapWrapper;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -46,7 +46,7 @@ public class MessageExtensionDTO {
         messageDTO.getMessageIdProperty().setValue(messageId);
         messageDTO.getMessageTypeProperty().setValue(messageType);
         messageDTO.getPublishStatusProperty().setValue(publishStatus);
-        messageDTO.getExtraProperties().setValue(new ObservableMapWrapper<>(customFields));
+        messageDTO.getExtraProperties().setValue(FXCollections.observableMap(customFields));
         return messageDTO;
     }
 }

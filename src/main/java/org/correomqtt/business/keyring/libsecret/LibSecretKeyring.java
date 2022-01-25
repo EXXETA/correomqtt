@@ -1,6 +1,6 @@
 package org.correomqtt.business.keyring.libsecret;
 
-import com.sun.jna.Platform;
+import org.apache.commons.lang3.SystemUtils;
 import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.plugin.spi.KeyringHook;
@@ -44,7 +44,7 @@ public class LibSecretKeyring extends BaseKeyring implements KeyringHook {
 
     @Override
     public boolean isSupported() {
-        return Platform.isLinux() && isAvailable();
+        return SystemUtils.IS_OS_LINUX && isAvailable();
     }
 
     @Override

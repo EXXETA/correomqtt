@@ -46,10 +46,10 @@ public class BaseUserFileProvider {
             try (InputStream inputStream = SettingsProvider.class.getResourceAsStream(filename)) {
                 if(inputStream != null) {
                     byte[] buffer = new byte[inputStream.available()];
-                    inputStream.read(buffer);
-
-                    try (OutputStream outStream = new FileOutputStream(targetFile)) {
-                        outStream.write(buffer);
+                    if(inputStream.read(buffer) > 0) {
+                        try (OutputStream outStream = new FileOutputStream(targetFile)) {
+                            outStream.write(buffer);
+                        }
                     }
                 }else{
                     LOGGER.warn("Can not read file {}", filename);

@@ -261,7 +261,9 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         selectNoneButton.setDisable(true);
     }
 
-
+    /**
+     * @param actionEvent The event given by JavaFX.
+     */
     public void onClickSubscribe(@SuppressWarnings("unused") ActionEvent actionEvent) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Subscribe to topic clicked: {}", getConnectionId());

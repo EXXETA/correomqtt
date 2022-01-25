@@ -51,7 +51,7 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
     private SSHClient sshClient;
     private LocalPortForwarder localPortforwarder;
 
-    public BaseCorreoMqttClient(ConnectionConfigDTO configDTO) {
+    protected BaseCorreoMqttClient(ConnectionConfigDTO configDTO) {
         this.configDTO = configDTO;
     }
 
@@ -105,11 +105,15 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
         final Parameters parameters
                 = new Parameters("localhost", configDTO.getLocalPort(), configDTO.getUrl(), configDTO.getPort());
         Thread thread = new Thread(() -> {
-            try (ServerSocket serverSocket = new ServerSocket()) {
-                serverSocket.setReuseAddress(true);
-                serverSocket.bind(new InetSocketAddress(parameters.getLocalHost(), parameters.getLocalPort()));
-                localPortforwarder = sshClient.newLocalPortForwarder(parameters, serverSocket);
-                localPortforwarder.listen();
+
+            try{
+                ServerSocket serverSocket = new ServerSocket();
+                try (serverSocket) {
+                    serverSocket.setReuseAddress(true);
+                    serverSocket.bind(new InetSocketAddress(parameters.getLocalHost(), parameters.getLocalPort()));
+                    localPortforwarder = sshClient.newLocalPortForwarder(parameters, serverSocket);
+                    localPortforwarder.listen();
+                }
             } catch (Exception e) {
                 getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "SSH socket to {}:{} failed.", configDTO.getSshHost(), configDTO.getPort());
                 throw new CorreoMqttSshFailedException(e);

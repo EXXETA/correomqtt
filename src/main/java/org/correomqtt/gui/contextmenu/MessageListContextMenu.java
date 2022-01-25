@@ -7,6 +7,7 @@ import javafx.scene.control.SeparatorMenuItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("java:S110")
 public class MessageListContextMenu extends BaseMessageContextMenu<MessageListContextMenuDelegate> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageListContextMenu.class);

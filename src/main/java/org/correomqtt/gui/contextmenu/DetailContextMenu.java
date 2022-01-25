@@ -2,7 +2,7 @@ package org.correomqtt.gui.contextmenu;
 
 import javafx.scene.control.SeparatorMenuItem;
 
-
+@SuppressWarnings("java:S110")
 public class DetailContextMenu extends BaseMessageContextMenu<DetailContextMenuDelegate> {
 
     private SeparatorMenuItem separator;

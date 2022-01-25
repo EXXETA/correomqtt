@@ -1,6 +1,6 @@
 package org.correomqtt.business.keyring.kwallet5;
 
-import com.sun.jna.Platform;
+import org.apache.commons.lang3.SystemUtils;
 import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.provider.SettingsProvider;
@@ -28,7 +28,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
 
     private static final Charset STD_CHAR_SET = StandardCharsets.UTF_8;
 
-    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+    private final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
     private Integer kwalletHandler = null;
 
@@ -48,7 +48,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
 
     @Override
     public boolean isSupported() {
-        return Platform.isLinux() && isEnabled();
+        return SystemUtils.IS_OS_LINUX && isEnabled();
     }
 
     @Override
@@ -78,7 +78,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
         try {
             // method bool org.kde.KWallet.isOpen(QString wallet)
             return runQDBusCommand("isOpen", String.valueOf(kwalletHandler)).equals("true");
-        } catch (InterruptedException | IOException e) {
+        } catch (IOException e) {
             throw new KeyringException("Cannot check KWallet", e);
         }
     }
@@ -88,7 +88,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
             // method int org.kde.KWallet.open(QString wallet, qlonglong wId, QString appid)
             String result = runQDBusCommand("open", WALLET_NAME, "0", APP_NAME);
             return Integer.parseInt(result);
-        } catch (InterruptedException | IOException e) {
+        } catch (IOException e) {
             throw new KeyringException("Cannot open KWallet", e);
         }
     }
@@ -100,7 +100,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
             if (Integer.parseInt(result) < 0) {
                 throw new KeyringException("Cannot store password in KWallet.");
             }
-        } catch (InterruptedException | IOException e) {
+        } catch (IOException e) {
             throw new KeyringException("Cannot store password in KWallet", e);
         }
     }
@@ -110,7 +110,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
         try {
             // method int org.kde.KWallet.removeEntry(int handle, QString folder, QString key, QString appid)
             runQDBusCommand("removeEntry", String.valueOf(handler), APP_NAME, key, APP_NAME);
-        } catch (InterruptedException | IOException e) {
+        } catch (IOException e) {
             throw new KeyringException("Cannot remove password from KWallet", e);
         }
     }
@@ -119,7 +119,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
         try {
             // method QString org.kde.KWallet.readPassword( int handle, QString folder, QString key, QString appid)
             return runQDBusCommand("readPassword", String.valueOf(handler), APP_NAME, key, APP_NAME);
-        } catch (InterruptedException | IOException e) {
+        } catch (IOException e) {
             throw new KeyringException("Cannot get password from KWallet", e);
         }
     }
@@ -131,15 +131,16 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
         } catch (IOException e) {
             LOGGER.warn("QDBus Command failed.", e);
             return false;
-        } catch (InterruptedException e) {
-            LOGGER.warn("QDBus Command failed.", e);
-            Thread.currentThread().interrupt();
-            return false;
         }
     }
 
-    private String runQDBusCommand(String... parameter) throws IOException, InterruptedException {
-        return runShellCommand(QDBUS_BASE_CMD + " " + String.join(" ", parameter));
+    private String runQDBusCommand(String... parameter) throws IOException {
+        try {
+            return runShellCommand(QDBUS_BASE_CMD + " " + String.join(" ", parameter));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        }
     }
 
     private String runShellCommand(String cmd) throws IOException, InterruptedException {

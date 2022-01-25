@@ -7,10 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
-public class ConnectionPropertiesDTOTests {
+class ConnectionPropertiesDTOTests {
 
     @Test
-    public void testBuilder() {
+    void testBuilder() {
         ConnectionPropertiesDTO props = ConnectionPropertiesDTO.builder()
                                                                .name("test")
                                                                .build();

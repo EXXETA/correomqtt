@@ -38,7 +38,7 @@ abstract class BaseService implements BusinessService {
         if (client != null) {
             try {
                 consumer.accept(client);
-            } catch (Exception e) {
+            }catch(Exception e){
                 throw new CorreoMqttExecutionException(e);
             }
         } else {
@@ -48,6 +48,6 @@ abstract class BaseService implements BusinessService {
 
     @FunctionalInterface
     public interface ClientConsumerThatMightFail {
-        void accept(CorreoMqttClient client) throws Exception;
+        void accept(CorreoMqttClient client);
     }
 }
