@@ -44,15 +44,11 @@ public class BaseUserFileProvider {
 
         if (!targetFile.exists()) {
             try (InputStream inputStream = SettingsProvider.class.getResourceAsStream(filename)) {
-                if(inputStream != null) {
-                    byte[] buffer = new byte[inputStream.available()];
-                    inputStream.read(buffer);
+                byte[] buffer = new byte[inputStream.available()];
+                inputStream.read(buffer);
 
-                    try (OutputStream outStream = new FileOutputStream(targetFile)) {
-                        outStream.write(buffer);
-                    }
-                }else{
-                    LOGGER.warn("Can not read file {}", filename);
+                try (OutputStream outStream = new FileOutputStream(targetFile)) {
+                    outStream.write(buffer);
                 }
             }
         }
@@ -74,7 +70,7 @@ public class BaseUserFileProvider {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(targetDirectoryPath + File.separator + filename))) {
             writer.write(content);
         } catch (IOException e) {
-            LOGGER.warn("Error writing file {}", filename, e);
+            e.printStackTrace();//TODO
         }
     }
 

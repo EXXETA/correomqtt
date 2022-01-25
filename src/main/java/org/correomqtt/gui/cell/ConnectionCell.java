@@ -20,8 +20,6 @@ import java.util.ResourceBundle;
 public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionCell.class);
-    public static final String DIRTY_CLASS = "dirty";
-    public static final String INACTIVE_CLASS = "inactive";
     private final ListView<ConnectionPropertiesDTO> listView;
 
     @FXML
@@ -92,39 +90,39 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
         //TODO parent css class only
         if (connectionDTO.isDirty()) {
             nameLabel.setText(connectionDTO.getName() + " *");
-            nameLabel.getStyleClass().removeAll(DIRTY_CLASS);
-            nameLabel.getStyleClass().add(DIRTY_CLASS);
+            nameLabel.getStyleClass().removeAll("dirty");
+            nameLabel.getStyleClass().add("dirty");
 
-            descriptionLabel.getStyleClass().removeAll(DIRTY_CLASS);
-            descriptionLabel.getStyleClass().add(DIRTY_CLASS);
+            descriptionLabel.getStyleClass().removeAll("dirty");
+            descriptionLabel.getStyleClass().add("dirty");
 
-            mqtt3Tag.getStyleClass().removeAll(INACTIVE_CLASS);
-            mqtt3Tag.getStyleClass().add(INACTIVE_CLASS);
+            mqtt3Tag.getStyleClass().removeAll("inactive");
+            mqtt3Tag.getStyleClass().add("inactive");
 
-            mqtt5Tag.getStyleClass().removeAll(INACTIVE_CLASS);
-            mqtt5Tag.getStyleClass().add(INACTIVE_CLASS);
+            mqtt5Tag.getStyleClass().removeAll("inactive");
+            mqtt5Tag.getStyleClass().add("inactive");
 
-            credentialsTag.getStyleClass().removeAll(INACTIVE_CLASS);
-            credentialsTag.getStyleClass().add(INACTIVE_CLASS);
+            credentialsTag.getStyleClass().removeAll("inactive");
+            credentialsTag.getStyleClass().add("inactive");
 
-            sslTag.getStyleClass().removeAll(INACTIVE_CLASS);
-            sslTag.getStyleClass().add(INACTIVE_CLASS);
+            sslTag.getStyleClass().removeAll("inactive");
+            sslTag.getStyleClass().add("inactive");
 
-            proxyTag.getStyleClass().removeAll(INACTIVE_CLASS);
-            proxyTag.getStyleClass().add(INACTIVE_CLASS);
+            proxyTag.getStyleClass().removeAll("inactive");
+            proxyTag.getStyleClass().add("inactive");
 
-            lwtTag.getStyleClass().removeAll(INACTIVE_CLASS);
-            lwtTag.getStyleClass().add(INACTIVE_CLASS);
+            lwtTag.getStyleClass().removeAll("inactive");
+            lwtTag.getStyleClass().add("inactive");
         } else {
             nameLabel.setText(connectionDTO.getName());
-            nameLabel.getStyleClass().removeAll(DIRTY_CLASS);
-            descriptionLabel.getStyleClass().removeAll(DIRTY_CLASS);
-            mqtt3Tag.getStyleClass().removeAll(INACTIVE_CLASS);
-            mqtt5Tag.getStyleClass().removeAll(INACTIVE_CLASS);
-            credentialsTag.getStyleClass().removeAll(INACTIVE_CLASS);
-            sslTag.getStyleClass().removeAll(INACTIVE_CLASS);
-            proxyTag.getStyleClass().removeAll(INACTIVE_CLASS);
-            lwtTag.getStyleClass().removeAll(INACTIVE_CLASS);
+            nameLabel.getStyleClass().removeAll("dirty");
+            descriptionLabel.getStyleClass().removeAll("dirty");
+            mqtt3Tag.getStyleClass().removeAll("inactive");
+            mqtt5Tag.getStyleClass().removeAll("inactive");
+            credentialsTag.getStyleClass().removeAll("inactive");
+            sslTag.getStyleClass().removeAll("inactive");
+            proxyTag.getStyleClass().removeAll("inactive");
+            lwtTag.getStyleClass().removeAll("inactive");
         }
 
         descriptionLabel.setText(connectionDTO.getHostAndPort());

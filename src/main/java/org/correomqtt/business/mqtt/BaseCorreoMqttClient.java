@@ -29,9 +29,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -72,10 +72,9 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
             try {
                 setupSsh();
             } catch (IOException e) {
+                getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "Error while creating ssh connection. ", e);
                 disconnect(false);
-                throw new CorreoMqttSshFailedException(
-                        MessageFormat.format("{0} Error while creating ssh connection.", MarkerFactory.getMarker(configDTO.getName())),
-                        e);
+                throw new CorreoMqttSshFailedException(e);
             }
         }
 

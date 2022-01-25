@@ -50,8 +50,6 @@ public class ConnectionSettingsViewController extends BaseController implements 
     private static final String TEXT_INPUT = "text-input";
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionSettingsViewController.class);
     private static final int CLIENT_ID_MAX_SIZE = 64;
-    public static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
-    public static final String EMPTY_ERROR_CLASS = "emptyError";
     private final ConnectionSettingsViewDelegate delegate;
 
     @FXML
@@ -379,7 +377,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
                     int draggedIdx = connectionsListView.getSelectionModel().getSelectedIndex();
                     int thisIdx = items.indexOf(cell.getItem());
 
-                    if (draggedIdx > thisIdx && thisIdx > -1) {
+                    if (draggedIdx > thisIdx && draggedIdx > -1 && thisIdx > -1) {
                         for (int i = draggedIdx; i > thisIdx; i--) {
                             ConnectionPropertiesDTO temp = connectionsListView.getItems().get(i);
                             connectionsListView.getItems().set(i, connectionsListView.getItems().get(i - 1));
@@ -387,7 +385,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
                         }
                     }
 
-                    if (draggedIdx < thisIdx && draggedIdx > -1) {
+                    if (draggedIdx < thisIdx && draggedIdx > -1 && thisIdx > -1) {
                         for (int i = draggedIdx; i < thisIdx; i++) {
                             ConnectionPropertiesDTO temp = connectionsListView.getItems().get(i);
                             connectionsListView.getItems().set(i, connectionsListView.getItems().get(i + 1));
@@ -938,7 +936,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         }
 
         textField.setTooltip(new Tooltip(tooltipText));
-        textField.getStyleClass().add(EXCLAMATION_CIRCLE_SOLID);
+        textField.getStyleClass().add("exclamationCircleSolid");
     }
 
     private boolean checkRequired(TextField textField) {
@@ -956,24 +954,26 @@ public class ConnectionSettingsViewController extends BaseController implements 
         sslKeystoreTextField.clear();
         sslKeystorePasswordTextField.clear();
         internalIdLabel.setText("");
-        nameTextField.getStyleClass().removeAll(EMPTY_ERROR_CLASS);
-        nameTextField.getStyleClass().removeAll(EXCLAMATION_CIRCLE_SOLID);
-        urlTextField.getStyleClass().removeAll(EMPTY_ERROR_CLASS);
-        urlTextField.getStyleClass().removeAll(EXCLAMATION_CIRCLE_SOLID);
-        portTextField.getStyleClass().removeAll(EMPTY_ERROR_CLASS);
-        portTextField.getStyleClass().removeAll(EXCLAMATION_CIRCLE_SOLID);
-        clientIdTextField.getStyleClass().removeAll(EMPTY_ERROR_CLASS);
-        clientIdTextField.getStyleClass().removeAll(EXCLAMATION_CIRCLE_SOLID);
+        nameTextField.getStyleClass().removeAll("emptyError");
+        nameTextField.getStyleClass().removeAll("exclamationCircleSolid");
+        urlTextField.getStyleClass().removeAll("emptyError");
+        urlTextField.getStyleClass().removeAll("exclamationCircleSolid");
+        portTextField.getStyleClass().removeAll("emptyError");
+        portTextField.getStyleClass().removeAll("exclamationCircleSolid");
+        clientIdTextField.getStyleClass().removeAll("emptyError");
+        clientIdTextField.getStyleClass().removeAll("exclamationCircleSolid");
     }
 
     private boolean confirmUnsavedConnectionSync() {
-        return AlertHelper.confirm(
+        boolean confirmed = AlertHelper.confirm(
                 resources.getString("connectionSettingsViewControllerUnsavedTitle"),
                 resources.getString("connectionSettingsViewControllerUnsavedHeader"),
                 resources.getString("connectionSettingsViewControllerUnsavedContent"),
                 resources.getString("commonSaveButton"),
                 resources.getString("commonDiscardButton")
         );
+
+        return confirmed;
     }
 
     @FXML

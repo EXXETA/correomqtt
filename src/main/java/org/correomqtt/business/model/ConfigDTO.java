@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 
 import java.util.List;
 

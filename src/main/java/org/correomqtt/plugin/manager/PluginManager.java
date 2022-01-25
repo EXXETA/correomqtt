@@ -79,6 +79,17 @@ public class PluginManager extends JarPluginManager {
         instance = new PluginManager();
     }
 
+    public <T> List<T> getConfiguredExtensions(Class<T> type) {
+        if (pluginProtocolParser == null) return Collections.emptyList();
+
+        List<ProtocolExtension> declaredExtensionsForClass = pluginProtocolParser.getProtocolExtensions(type);
+        if (declaredExtensionsForClass.isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            return createExtensions(type, declaredExtensionsForClass);
+        }
+    }
+
     @Override
     public <T> List<T> getExtensions(Class<T> type) {
         if (!extensionsCache.containsKey(type.getSimpleName())) {
@@ -191,7 +202,9 @@ public class PluginManager extends JarPluginManager {
                 LOGGER.info("Plugin {} declared for {} has no extension named: {}", pluginId, type.getSimpleName(), extensionId);
             }
         } else {
-            if (getPlugin(pluginId).getPluginState().equals(PluginState.STARTED)) {
+            PluginWrapper pluginWrapper = getPlugin(pluginId);
+
+            if (pluginWrapper != null && getPlugin(pluginId).getPluginState().equals(PluginState.STARTED)) {
                 LOGGER.warn("Plugin {} declared for {} has no valid extension", pluginId, type.getSimpleName());
             } else {
                 LOGGER.warn("Plugin {} declared for {} is not started", pluginId, type.getSimpleName());
@@ -199,7 +212,6 @@ public class PluginManager extends JarPluginManager {
         }
     }
 
-    @Override
     public void unloadPlugins() {
         LOGGER.debug("Unload Plugins");
         List<String> pluginIds = resolvedPlugins.stream().map(PluginWrapper::getPluginId).collect(Collectors.toList());

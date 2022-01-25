@@ -3,25 +3,24 @@ package org.correomqtt.business.model;
 import org.correomqtt.gui.model.GenericCellModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public enum TlsSsl implements GenericCellModel {
     OFF("tlsEnumOff"),
     KEYSTORE("tlsEnumKeystore");
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TlsSsl.class);
+    private final String tls;
 
-    private final String labelTranslationKey;
-
-    TlsSsl(String labelTranslationKey) {
-        this.labelTranslationKey = labelTranslationKey;
+    TlsSsl(String tls) {
+        this.tls = tls;
     }
 
+    public String getTls() {
+        return tls;
+    }
 
     @Override
     public String toString() {
-        return labelTranslationKey;
+        return tls;
     }
 
     @SuppressWarnings("unused")
@@ -30,7 +29,7 @@ public enum TlsSsl implements GenericCellModel {
         try {
             return TlsSsl.valueOf(value);
         } catch (IllegalArgumentException iae) {
-            LOGGER.warn("Exception reading from json value.", iae);
+            //TODO: Log
             return OFF;
         }
     }
@@ -43,6 +42,6 @@ public enum TlsSsl implements GenericCellModel {
 
     @Override
     public String getLabelTranslationKey() {
-        return labelTranslationKey;
+        return tls;
     }
 }

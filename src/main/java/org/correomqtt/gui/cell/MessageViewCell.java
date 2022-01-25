@@ -61,6 +61,10 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
 
     private FXMLLoader loader;
 
+    private MessagePropertiesDTO messageDTO;
+
+    private ContextMenu contextMenu;
+
     @FXML
     private ResourceBundle resources;
 
@@ -122,6 +126,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
         subscriptionLabel.setVisible(false);
         subscriptionLabel.setManaged(false);
 
+        this.messageDTO = messageDTO;
         topicLabel.setText(messageDTO.getTopic());
 
         if (messageDTO.getSubscription() != null) {

@@ -1,12 +1,12 @@
 package org.correomqtt;
 
 import javafx.stage.Stage;
-import org.junit.jupiter.api.BeforeEach;
-import org.testfx.framework.junit5.ApplicationTest;
+import org.junit.Before;
+import org.testfx.framework.junit.ApplicationTest;
 
 abstract class TestBaseClass extends ApplicationTest {
 
-    @BeforeEach
+    @Before
     public void setUpClass() throws Exception {
         ApplicationTest.launch(CorreoMqtt.class);
     }

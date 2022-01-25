@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 
 public abstract class BaseDispatcher<T extends BaseObserver> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BaseDispatcher.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BaseConnectionDispatcher.class);
 
     protected Set<T> observer = new HashSet<>();
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.keyring.Keyring;
 import org.correomqtt.business.model.ConfigDTO;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.SettingsDTO;
@@ -122,7 +123,7 @@ public class SettingsProvider extends BaseUserFileProvider {
             secretStoreProvider.setPassword(masterPassword, c, PASSWORD, c.getPassword());
             secretStoreProvider.setPassword(masterPassword,c, AUTH_PASSWORD,  c.getAuthPassword());
             secretStoreProvider.setPassword(masterPassword, c, SSL_KEYSTORE_PASSWORD, c.getSslKeystorePassword());
-        }
+        };
         secretStoreProvider.encryptAndSavePasswords(masterPassword);
 
         ConnectionHolder.getInstance().refresh();
@@ -183,7 +184,7 @@ public class SettingsProvider extends BaseUserFileProvider {
             c.setPassword(secretStoreProvider.getPassword(masterPassword,c,PASSWORD));
             c.setAuthPassword(secretStoreProvider.getPassword(masterPassword,c, AUTH_PASSWORD));
             c.setSslKeystorePassword(secretStoreProvider.getPassword(masterPassword,c, SSL_KEYSTORE_PASSWORD));
-        }
+        };
         saveConnections(connections, masterPassword);
     }
 }

@@ -70,7 +70,7 @@ public class PluginUpdateManager {
         }
     }
 
-    private void updateExisitingPlugins(UpdateManager updateManager) {
+    private void updateExisitingPlugins(UpdateManager updateManager) throws Exception {
         // check for updates
         if (updateManager.hasUpdates()) {
             List<PluginInfo> updates = updateManager.getUpdates();
@@ -84,7 +84,7 @@ public class PluginUpdateManager {
                 boolean updated;
                 try {
                     updated = updateManager.updatePlugin(plugin.id, lastVersion);
-                } catch (Exception t) {
+                } catch (Throwable t) {
                     updated = false;
                 }
                 if (updated) {

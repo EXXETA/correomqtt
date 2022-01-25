@@ -100,7 +100,9 @@ public class ControlBarController extends BaseConnectionController implements Co
 
         int indexToInsert = controllViewButtonHBox.getChildrenUnmodifiable().indexOf(controlViewSButton) + 1;
 
-        pluginSystem.getExtensions(MainToolbarHook.class).forEach(p -> p.onInstantiateMainToolbar(getConnectionId(), controllViewButtonHBox, indexToInsert));
+        pluginSystem.getExtensions(MainToolbarHook.class).forEach(p -> {
+            p.onInstantiateMainToolbar(getConnectionId(), controllViewButtonHBox, indexToInsert);
+        });
     }
 
     @FXML

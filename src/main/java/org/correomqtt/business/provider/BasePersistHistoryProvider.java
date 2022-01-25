@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 
 abstract class BasePersistHistoryProvider<D> extends BaseUserFileProvider {
@@ -18,11 +17,10 @@ abstract class BasePersistHistoryProvider<D> extends BaseUserFileProvider {
 
     public String getConnectionId() {
         return connectionId;
-    }
+    };
 
     abstract void setDTO(String id, D readValue);
-
-    private final String connectionId;
+    private String connectionId;
 
     BasePersistHistoryProvider(String id) {
         connectionId = id;
@@ -53,11 +51,10 @@ abstract class BasePersistHistoryProvider<D> extends BaseUserFileProvider {
                 .findFirst()
                 .ifPresentOrElse(c -> {
                 }, () -> {
-                    try {
-                        Files.delete(getFile().toPath());
-                        LOGGER.info("{} deleted successfully", getFile());
-                    } catch (IOException e) {
-                        LOGGER.info("Failed to delete {}", getFile(), e);
+                    if (getFile().delete()) {
+                        LOGGER.info(getFile() + " deleted successfully");
+                    } else {
+                        LOGGER.info("Failed to delete " + getFile());
                     }
                 });
     }
