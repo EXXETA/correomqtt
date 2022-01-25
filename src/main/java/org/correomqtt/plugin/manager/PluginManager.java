@@ -212,6 +212,7 @@ public class PluginManager extends JarPluginManager {
         }
     }
 
+    @Override
     public void unloadPlugins() {
         LOGGER.debug("Unload Plugins");
         List<String> pluginIds = resolvedPlugins.stream().map(PluginWrapper::getPluginId).collect(Collectors.toList());

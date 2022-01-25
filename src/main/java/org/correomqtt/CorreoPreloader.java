@@ -97,9 +97,7 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
 
     @Override
     public void onProgress(Double progress, String message) {
-        Platform.runLater(() -> {
-            preloaderViewController.getPreloaderStepLabel().setText(message);
-        });
+        Platform.runLater(() -> preloaderViewController.getPreloaderStepLabel().setText(message));
     }
 
 }

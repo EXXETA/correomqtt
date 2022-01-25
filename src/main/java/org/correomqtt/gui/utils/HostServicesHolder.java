@@ -7,7 +7,8 @@ public class HostServicesHolder {
     private static HostServicesHolder instance;
     private HostServices hostServices;
 
-    public HostServicesHolder() {
+    private HostServicesHolder() {
+        // empty constructor
     }
 
     public static synchronized HostServicesHolder getInstance() {

@@ -66,8 +66,6 @@ public class ConnectionLifecycleDispatcher extends BaseConnectionDispatcher<Conn
     }
 
     public void onReconnectFailed(String connectionId, AtomicInteger triedReconnects, int maxReconnects) {
-        triggerFiltered(connectionId,o -> {
-            o.onReconnectFailed(triedReconnects, maxReconnects);
-        });
+        triggerFiltered(connectionId,o -> o.onReconnectFailed(triedReconnects, maxReconnects));
     }
 }

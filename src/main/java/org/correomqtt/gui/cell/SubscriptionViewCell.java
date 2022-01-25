@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
+@SuppressWarnings("java:S110")
 public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionViewCell.class);

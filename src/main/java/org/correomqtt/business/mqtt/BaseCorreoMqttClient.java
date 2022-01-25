@@ -29,9 +29,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -51,7 +51,7 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
     private SSHClient sshClient;
     private LocalPortForwarder localPortforwarder;
 
-    public BaseCorreoMqttClient(ConnectionConfigDTO configDTO) {
+    protected BaseCorreoMqttClient(ConnectionConfigDTO configDTO) {
         this.configDTO = configDTO;
     }
 
@@ -72,9 +72,10 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
             try {
                 setupSsh();
             } catch (IOException e) {
-                getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "Error while creating ssh connection. ", e);
                 disconnect(false);
-                throw new CorreoMqttSshFailedException(e);
+                throw new CorreoMqttSshFailedException(
+                        MessageFormat.format("{0} Error while creating ssh connection.", MarkerFactory.getMarker(configDTO.getName())),
+                        e);
             }
         }
 
@@ -104,11 +105,15 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
         final Parameters parameters
                 = new Parameters("localhost", configDTO.getLocalPort(), configDTO.getUrl(), configDTO.getPort());
         Thread thread = new Thread(() -> {
-            try (ServerSocket serverSocket = new ServerSocket()) {
-                serverSocket.setReuseAddress(true);
-                serverSocket.bind(new InetSocketAddress(parameters.getLocalHost(), parameters.getLocalPort()));
-                localPortforwarder = sshClient.newLocalPortForwarder(parameters, serverSocket);
-                localPortforwarder.listen();
+
+            try{
+                ServerSocket serverSocket = new ServerSocket();
+                try (serverSocket) {
+                    serverSocket.setReuseAddress(true);
+                    serverSocket.bind(new InetSocketAddress(parameters.getLocalHost(), parameters.getLocalPort()));
+                    localPortforwarder = sshClient.newLocalPortForwarder(parameters, serverSocket);
+                    localPortforwarder.listen();
+                }
             } catch (Exception e) {
                 getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "SSH socket to {}:{} failed.", configDTO.getSshHost(), configDTO.getPort());
                 throw new CorreoMqttSshFailedException(e);

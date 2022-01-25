@@ -142,10 +142,9 @@ public class DetailViewController extends BaseConnectionController implements
     private List<Search> results;
     private int currentSearchResult;
     private String currentSearchString = null;
-    private String codeAreaText;
 
     private MessagePropertiesDTO messageDTO;
-    private DetailContextMenu contextMenu;
+
     private Task<DetailViewManipulatorHook> lastManipulatorTask;
 
     private DetailViewController(String connectionId, DetailViewDelegate delegate, boolean isInlineView) {
@@ -225,7 +224,7 @@ public class DetailViewController extends BaseConnectionController implements
         detailViewScrollPane.prefWidthProperty().bind(detailViewVBox.widthProperty());
         detailViewScrollPane.prefHeightProperty().bind(detailViewVBox.heightProperty());
 
-        contextMenu = new DetailContextMenu(this);
+        DetailContextMenu contextMenu = new DetailContextMenu(this);
 
         metaHolder.setOnContextMenuRequested(event -> {
             if (messageDTO != null) {
@@ -538,7 +537,7 @@ public class DetailViewController extends BaseConnectionController implements
         results = new ArrayList<>();
 
         if (!currentSearchString.isEmpty()) {
-            codeAreaText = codeArea.getText();
+            String codeAreaText = codeArea.getText();
 
             boolean ignoreCase = SettingsProvider.getInstance().getSettings().isUseIgnoreCase();
             boolean regex = SettingsProvider.getInstance().getSettings().isUseRegexForSearch();
@@ -706,30 +705,22 @@ public class DetailViewController extends BaseConnectionController implements
 
     @Override
     public void onExportStarted(File file, MessageDTO messageDTO) {
-        Platform.runLater(() -> {
-            detailViewVBox.setDisable(true);
-        });
+        Platform.runLater(() -> detailViewVBox.setDisable(true));
     }
 
     @Override
     public void onExportSucceeded() {
-        Platform.runLater(() -> {
-            detailViewVBox.setDisable(false);
-        });
+        Platform.runLater(() -> detailViewVBox.setDisable(false));
     }
 
     @Override
     public void onExportCancelled(File file, MessageDTO messageDTO) {
-        Platform.runLater(() -> {
-            detailViewVBox.setDisable(false);
-        });
+        Platform.runLater(() -> detailViewVBox.setDisable(false));
     }
 
     @Override
     public void onExportFailed(File file, MessageDTO messageDTO, Throwable exception) {
-        Platform.runLater(() -> {
-            detailViewVBox.setDisable(false);
-        });
+        Platform.runLater(() -> detailViewVBox.setDisable(false));
     }
 
     @Override

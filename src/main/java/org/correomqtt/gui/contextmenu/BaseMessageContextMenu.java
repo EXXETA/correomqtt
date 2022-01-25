@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
+@SuppressWarnings("java:S110")
 abstract class BaseMessageContextMenu<D extends BaseMessageContextMenuDelegate> extends BaseObjectContextMenu<MessagePropertiesDTO, D> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseMessageContextMenu.class);
