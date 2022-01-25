@@ -5,7 +5,7 @@ import org.correomqtt.business.keyring.Keyring;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.provider.PasswordRecoverableException;
+import org.correomqtt.business.provider.EncryptionRecoverableException;
 import org.correomqtt.business.provider.SecretStoreProvider;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.helper.AlertHelper;
@@ -111,7 +111,7 @@ public class KeyringHandler {
                 failed = false;
                 try {
                     consumer.apply(getMasterPassword());
-                } catch (PasswordRecoverableException e) {
+                } catch (EncryptionRecoverableException e) {
                     failed = true;
                 }
             } else {

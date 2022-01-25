@@ -5,6 +5,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.SecretStoreDispatcher;
+import org.correomqtt.business.encryption.Encryptor;
+import org.correomqtt.business.encryption.EncryptorAesCbc;
+import org.correomqtt.business.encryption.EncryptorAesGcm;
 import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ConnectionPasswordType;
@@ -12,25 +15,13 @@ import org.correomqtt.business.model.PasswordsDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -42,9 +33,6 @@ public class SecretStoreProvider extends BaseUserFileProvider {
 
     private static final String PASSWORD_FILE_NAME = "passwords.json";
     private static final String EX_MSG_PREPARE_CONFIG = "Exception preparing password file.";
-
-    private static final int ITERATION_COUNT = 40000;
-    private static final int KEY_LENGTH = 128;
 
     private PasswordsDTO passwordsDTO;
     private Map<String, String> decryptedPasswords;
@@ -79,9 +67,6 @@ public class SecretStoreProvider extends BaseUserFileProvider {
             SecretStoreDispatcher.getInstance().onPasswordFileUnreadable();
             passwordsDTO = new PasswordsDTO();
         }
-        if (passwordsDTO.getSalt() == null) {
-            passwordsDTO.setSalt(UUID.randomUUID().toString());
-        }
 
     }
 
@@ -94,80 +79,80 @@ public class SecretStoreProvider extends BaseUserFileProvider {
         }
     }
 
-    public void setPassword(String masterPassword, ConnectionConfigDTO connection, ConnectionPasswordType type, String password) throws PasswordRecoverableException {
-        getDecryptedPasswords(masterPassword).put(getPasswordKey(connection, type), password);
+    public void setPassword(String masterPassword, ConnectionConfigDTO connection, ConnectionPasswordType type, String password) throws EncryptionRecoverableException {
+        readDecryptedPasswords(getEncryptor(masterPassword)).put(getPasswordKey(connection, type), password);
     }
 
-    public String getPassword(String masterPassword, ConnectionConfigDTO connection, ConnectionPasswordType type) throws PasswordRecoverableException {
-        return getDecryptedPasswords(masterPassword).get(getPasswordKey(connection, type));
+    public String getPassword(String masterPassword, ConnectionConfigDTO connection, ConnectionPasswordType type) throws EncryptionRecoverableException {
+        return readDecryptedPasswords(getEncryptor(masterPassword)).get(getPasswordKey(connection, type));
     }
 
     private String getPasswordKey(ConnectionConfigDTO connection, ConnectionPasswordType type) {
         return connection.getId() + "_" + type.getLabel();
     }
 
-    public void encryptAndSavePasswords(String masterPassword) throws PasswordRecoverableException {
+    public void encryptAndSavePasswords(String masterPassword) throws EncryptionRecoverableException {
 
-        if (masterPassword == null || masterPassword.isEmpty()) {
-            LOGGER.error("Password must not be empty.");
-            throw new PasswordRecoverableException();
-        }
+        Encryptor encryptor = getEncryptor(masterPassword);
 
-        Map<String, String> localDecryptedPasswords = getDecryptedPasswords(masterPassword);
+        Map<String, String> localDecryptedPasswords = readDecryptedPasswords(encryptor);
 
         try {
             String encryptedPasswords = "";
             if (localDecryptedPasswords.size() != 0) {
-                encryptedPasswords = encrypt(new ObjectMapper().writeValueAsString(localDecryptedPasswords), createSecretKey(masterPassword));
+                encryptedPasswords = encryptor.encrypt(new ObjectMapper().writeValueAsString(localDecryptedPasswords));
             }
+            passwordsDTO.setSalt(null);
             passwordsDTO.setPasswords(encryptedPasswords);
+            passwordsDTO.setEncryptionType(encryptor.getEncryptionTranslation());
             new ObjectMapper().writeValue(getFile(), passwordsDTO);
-        } catch (GeneralSecurityException e) {
-            LOGGER.error("Could not encrypt passwords. ", e);
-            throw new PasswordRecoverableException();
         } catch (IOException e) {
             LOGGER.error("Could not save encrypted passwords. ", e);
-            throw new PasswordRecoverableException();
+            throw new EncryptionRecoverableException();
         }
     }
 
-    private Map<String, String> getDecryptedPasswords(String masterPassword) throws PasswordRecoverableException {
+    private Encryptor getEncryptor(String masterPassword) throws EncryptionRecoverableException {
+
+        if (masterPassword == null || masterPassword.isEmpty()) {
+            LOGGER.error("Password must not be empty.");
+            throw new EncryptionRecoverableException();
+        }
+
+        return new EncryptorAesGcm(masterPassword);
+    }
+
+    private Map<String, String> readDecryptedPasswords(Encryptor encryptor) throws EncryptionRecoverableException {
         if (decryptedPasswords == null) {
             if (passwordsDTO.getPasswords() == null) {
                 decryptedPasswords = new HashMap<>();
             } else {
-                decryptedPasswords = decryptPasswords(masterPassword);
+                decryptedPasswords = decryptPasswords(encryptor);
             }
         }
         return decryptedPasswords;
     }
 
-    private Map<String, String> decryptPasswords(String masterPassword) throws PasswordRecoverableException {
-        String encryptedPasswords = passwordsDTO.getPasswords();
-        if (masterPassword == null || masterPassword.isEmpty()) {
-            LOGGER.error("Password must not be empty.");
-            throw new PasswordRecoverableException();
-        }
+    private Map<String, String> decryptPasswords(Encryptor encryptor) throws EncryptionRecoverableException {
+        String encryptedPasswords = encryptor.passwordsDTOtoString(passwordsDTO);
 
         try {
             if (encryptedPasswords == null || encryptedPasswords.isEmpty()) {
                 return new HashMap<>();
             }
-            return new ObjectMapper().readValue(decrypt(encryptedPasswords, createSecretKey(masterPassword)), new TypeReference<HashMap<String, String>>() {
+            return new ObjectMapper().readValue(encryptor.decrypt(encryptedPasswords), new TypeReference<HashMap<String, String>>() {
             });
-        } catch (GeneralSecurityException e) {
-            LOGGER.error("Could not decrypt passwords. ", e);
-            throw new PasswordRecoverableException();
         } catch (JsonProcessingException e) {
             LOGGER.error("Could not read password file. ", e);
-            throw new PasswordRecoverableException();
+            throw new EncryptionRecoverableException();
         }
     }
 
     public void wipe() {
         decryptedPasswords = null;
-        passwordsDTO.setSalt(UUID.randomUUID().toString());
-        passwordsDTO.setPasswords("");
+        passwordsDTO.setSalt(null);
+        passwordsDTO.setPasswords(null);
+        passwordsDTO.setEncryptionType(null);
         Path path = getFile().toPath();
         if (Files.exists(path)) {
             try {
@@ -178,34 +163,22 @@ public class SecretStoreProvider extends BaseUserFileProvider {
         }
     }
 
-
-    private SecretKeySpec createSecretKey(String masterpassword) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
-        PBEKeySpec keySpec = new PBEKeySpec(masterpassword.toCharArray(), this.passwordsDTO.getSalt().getBytes(StandardCharsets.UTF_8), ITERATION_COUNT, KEY_LENGTH);
-        SecretKey keyTmp = keyFactory.generateSecret(keySpec);
-        return new SecretKeySpec(keyTmp.getEncoded(), "AES");
+    public void ensurePasswordsAreDecrypted(String masterPassword) throws EncryptionRecoverableException {
+        readDecryptedPasswords(getEncryptor(masterPassword));
     }
 
-    private String encrypt(String passwordToEncrypt, SecretKeySpec keyspec) throws GeneralSecurityException {
-        Cipher pbeCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        pbeCipher.init(Cipher.ENCRYPT_MODE, keyspec);
-        AlgorithmParameters parameters = pbeCipher.getParameters();
-        IvParameterSpec ivParameterSpec = parameters.getParameterSpec(IvParameterSpec.class);
-        byte[] cryptoText = pbeCipher.doFinal(passwordToEncrypt.getBytes(StandardCharsets.UTF_8));
-        byte[] iv = ivParameterSpec.getIV();
-        return Base64.getEncoder().encodeToString(iv) + ":" + Base64.getEncoder().encodeToString(cryptoText);
-    }
-
-
-    private String decrypt(String passwordToDecrypt, SecretKeySpec keyspec) throws GeneralSecurityException {
-        String iv = passwordToDecrypt.split(":")[0];
-        String property = passwordToDecrypt.split(":")[1];
-        Cipher pbeCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        pbeCipher.init(Cipher.DECRYPT_MODE, keyspec, new IvParameterSpec(Base64.getDecoder().decode(iv)));
-        return new String(pbeCipher.doFinal(Base64.getDecoder().decode(property)), StandardCharsets.UTF_8);
-    }
-
-    public void ensurePasswordsAreDecrypted(String masterPassword) throws PasswordRecoverableException {
-        getDecryptedPasswords(masterPassword);
+    public void migratePasswordEncryption(String masterPassword) throws EncryptionRecoverableException {
+        if(passwordsDTO != null && passwordsDTO.getPasswords() != null && (passwordsDTO.getEncryptionType() == null || EncryptorAesCbc.ENCRYPTION_TRANSFORMATION.equals(passwordsDTO.getEncryptionType()))){
+            LOGGER.info("Migrating password encryption from {} to {}", EncryptorAesCbc.ENCRYPTION_TRANSFORMATION, EncryptorAesGcm.ENCRYPTION_TRANSFORMATION);
+            readDecryptedPasswords(new EncryptorAesCbc(masterPassword));
+            encryptAndSavePasswords(masterPassword);
+        } else if (passwordsDTO != null && passwordsDTO.getPasswords() != null && (passwordsDTO.getEncryptionType() == null || EncryptorAesGcm.ENCRYPTION_TRANSFORMATION.equals(passwordsDTO.getEncryptionType()))){
+            LOGGER.info("Current password encryption is {}.", EncryptorAesGcm.ENCRYPTION_TRANSFORMATION);
+        } else if (passwordsDTO == null || passwordsDTO.getPasswords() == null){
+            LOGGER.info("No passwords are stored currently.");
+        } else {
+            LOGGER.warn("Unknown password encryption: {}", passwordsDTO.getEncryptionType());
+            throw new EncryptionRecoverableException("Unknown password encryption.");
+        }
     }
 }
