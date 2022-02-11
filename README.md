@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/exxeta/correomqtt.svg?branch=develop)](https://travis-ci.org/exxeta/correomqtt) 
+[![Build Status](https://github.com/EXXETA/correomqtt/actions/workflows/main.yml/badge.svg)](https://github.com/EXXETA/correomqtt/actions/workflows/main.yml)
 [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/exxeta/correomqtt?include_prereleases)](https://github.com/exxeta/correomqtt/releases/latest) 
 [![GitHub](https://img.shields.io/github/license/exxeta/correomqtt)](https://github.com/exxeta/correomqtt/blob/develop/LICENSE) 
 [![Maven Central](https://img.shields.io/maven-metadata/v.svg?label=Maven%20Central&metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Forg%2Fcorreomqtt%2Fcorreomqtt-client%2Fmaven-metadata.xml)](https://search.maven.org/search?q=g:%22org.correomqtt%22%20AND%20a:%22correomqtt-client%22)
