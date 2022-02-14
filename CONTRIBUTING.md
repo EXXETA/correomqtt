@@ -13,8 +13,6 @@ In the following we try to define some guidelines to get involved.
 [How to Contribute](#how-to-contribute)
 * [Report a bug](#report-a-bug)
 * [Suggest an enhancement](#suggest-an-enhancement)
-* [Write documentation](#write-documentation)
-* [Help others](#help-others)
 * [Contribute code](#contribute-code)
 
 ## Code of Conduct
@@ -37,10 +35,27 @@ Please use Github Discussions, you will find it here: [CorreoMQTT Github Discuss
 * Check the existing [issues](https://github.com/EXXETA/correomqtt/issues), if the problem is already reported.
 * Determine if it is a core or a plugin issue.
 
-#### Suggest an enhancement
+#### Submit the bug
 
-#### Write documentation
+* Submit the bug using the bug template in [issues](https://github.com/EXXETA/correomqtt/issues). If your bug belongs to a plugin, use the [plugin issues](https://github.com/EXXETA/correomqtt-plugins/issues).
 
-#### Help others
+### Suggest an enhancement
 
-#### Contribute code
+#### Before submitting an enhancement
+
+* Check the [discussions](https://github.com/EXXETA/correomqtt/discussions), if the idea is already on the table.
+* Check the existing [issues](https://github.com/EXXETA/correomqtt/issues), if a similiar feature is already submitted. Consider to add your idea there.
+* Determine if it is a core or a plugin issue.
+
+#### Submit the enhancement
+
+* Submit the enhancement using the feature template in [issues](https://github.com/EXXETA/correomqtt/issues). If your idea belongs to a plugin, use the [plugin issues](https://github.com/EXXETA/correomqtt-plugins/issues).
+
+
+### Contribute code
+
+* Search existing [issues](https://github.com/EXXETA/correomqtt/issues) or [plugin issues](https://github.com/EXXETA/correomqtt-plugins/issues) for something you want to contribute. If you want to implement something different consider to create a bug or enhancement before.
+* As soon as you decided to implement something, please comment the issue. If it fits we will assign you. 
+* Fork the repository and start implementing.
+* After you finsished with implementation and do all the checks e.g. coding guidlines, please file a PR.
+
