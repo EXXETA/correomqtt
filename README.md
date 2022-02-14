@@ -27,7 +27,7 @@ Since v0.14.1 the gatekeeper issue is less annoying. Start the app the first tim
 
 Feel free to contribute. 
 
-* [Check out our project board with open issues here](https://github.com/orgs/EXXETA/projects/2)
+* [Check out our project board with open issues here](https://github.com/orgs/EXXETA/projects/4)
 * [Learn how to build correo](https://github.com/EXXETA/correomqtt/wiki/Build-Correo)
 
 ## Plugins
