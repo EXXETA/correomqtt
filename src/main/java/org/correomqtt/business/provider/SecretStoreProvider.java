@@ -62,7 +62,7 @@ public class SecretStoreProvider extends BaseUserFileProvider {
         try {
             passwordsDTO = new ObjectMapper().readValue(this.getFile(), PasswordsDTO.class);
         } catch (IOException e) {
-            LOGGER.error("Password file can not be read. ", e);
+            LOGGER.error("Password file can not be read {}.", PASSWORD_FILE_NAME, e);
             SecretStoreDispatcher.getInstance().onPasswordFileUnreadable();
             passwordsDTO = new PasswordsDTO();
         }
@@ -167,13 +167,13 @@ public class SecretStoreProvider extends BaseUserFileProvider {
     }
 
     public void migratePasswordEncryption(String masterPassword) throws EncryptionRecoverableException {
-        if(passwordsDTO != null && passwordsDTO.getPasswords() != null && (passwordsDTO.getEncryptionType() == null || EncryptorAesCbc.ENCRYPTION_TRANSFORMATION.equals(passwordsDTO.getEncryptionType()))){
+        if (passwordsDTO != null && passwordsDTO.getPasswords() != null && (passwordsDTO.getEncryptionType() == null || EncryptorAesCbc.ENCRYPTION_TRANSFORMATION.equals(passwordsDTO.getEncryptionType()))) {
             LOGGER.info("Migrating password encryption from {} to {}", EncryptorAesCbc.ENCRYPTION_TRANSFORMATION, EncryptorAesGcm.ENCRYPTION_TRANSFORMATION);
             readDecryptedPasswords(new EncryptorAesCbc(masterPassword));
             encryptAndSavePasswords(masterPassword);
-        } else if (passwordsDTO != null && passwordsDTO.getPasswords() != null && (passwordsDTO.getEncryptionType() == null || EncryptorAesGcm.ENCRYPTION_TRANSFORMATION.equals(passwordsDTO.getEncryptionType()))){
+        } else if (passwordsDTO != null && passwordsDTO.getPasswords() != null && (passwordsDTO.getEncryptionType() == null || EncryptorAesGcm.ENCRYPTION_TRANSFORMATION.equals(passwordsDTO.getEncryptionType()))) {
             LOGGER.info("Current password encryption is {}.", EncryptorAesGcm.ENCRYPTION_TRANSFORMATION);
-        } else if (passwordsDTO == null || passwordsDTO.getPasswords() == null){
+        } else if (passwordsDTO == null || passwordsDTO.getPasswords() == null) {
             LOGGER.info("No passwords are stored currently.");
         } else {
             LOGGER.warn("Unknown password encryption: {}", passwordsDTO.getEncryptionType());

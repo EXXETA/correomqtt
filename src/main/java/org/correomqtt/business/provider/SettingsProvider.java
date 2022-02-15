@@ -70,7 +70,7 @@ public class SettingsProvider extends BaseUserFileProvider {
         try {
             configDTO = new ObjectMapper().readValue(getFile(), ConfigDTO.class);
         } catch (IOException e) {
-            LOGGER.error("Exception parsing config file.", e);
+            LOGGER.error("Exception parsing config file {}.", CONFIG_FILE_NAME, e);
             ConfigDispatcher.getInstance().onInvalidJsonFormat();
         }
 

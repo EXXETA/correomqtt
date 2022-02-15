@@ -1,6 +1,5 @@
 package org.correomqtt.plugin.manager;
 
-import org.correomqtt.business.provider.ConfigProvider;
 import org.pf4j.DefaultPluginFactory;
 import org.pf4j.Plugin;
 import org.pf4j.PluginWrapper;
@@ -29,11 +28,13 @@ public class PermissionPluginFactory extends DefaultPluginFactory {
     }
 
     private void addPluginPermissions(String pluginId, PermissionPlugin permissionPlugin) {
-        String pluginConfigFolder = ConfigProvider.getInstance().getPluginConfigPath(pluginId);
+
+        //TODO
+        /*String pluginConfigFolder = PluginConfigProvider.getInstance().getPluginConfigPath(pluginId);
         pluginSecurityPolicy.addPluginPermission(pluginId, getPluginConfigFolderPermission(pluginConfigFolder));
         permissionPlugin.setPluginConfigFolder(pluginConfigFolder);
 
-        pluginSecurityPolicy.addPluginPermissions(pluginId, permissionPlugin.getPermissions());
+        pluginSecurityPolicy.addPluginPermissions(pluginId, permissionPlugin.getPermissions());*/
     }
 
     private FilePermission getPluginConfigFolderPermission(String pluginConfigFolder) {

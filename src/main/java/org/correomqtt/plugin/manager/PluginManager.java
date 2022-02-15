@@ -1,10 +1,11 @@
 package org.correomqtt.plugin.manager;
 
-import org.correomqtt.business.provider.ConfigProvider;
-import org.correomqtt.plugin.spi.BaseExtensionPoint;
+import org.correomqtt.business.provider.PluginConfigProvider;
+import org.correomqtt.plugin.spi.DetailViewManipulatorHook;
 import org.correomqtt.plugin.spi.ExtensionId;
-import org.jdom2.Element;
-import org.jdom2.JDOMException;
+import org.correomqtt.plugin.spi.IncomingMessageHook;
+import org.correomqtt.plugin.spi.MessageValidatorHook;
+import org.correomqtt.plugin.spi.OutgoingMessageHook;
 import org.pf4j.ExtensionFactory;
 import org.pf4j.JarPluginManager;
 import org.pf4j.ManifestPluginDescriptorFinder;
@@ -16,10 +17,8 @@ import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,19 +30,9 @@ public class PluginManager extends JarPluginManager {
 
     private static PluginManager instance;
 
-    private PluginProtocolParser pluginProtocolParser;
-
-    private final HashMap<String, List> extensionsCache = new HashMap<>();
-    private final HashMap<String, List<Task>> taskCache = new HashMap<>();
-
     private PluginManager() {
         // private constructor
-        super(Path.of(ConfigProvider.getInstance().getPluginJarPath()));
-        try {
-            pluginProtocolParser = new PluginProtocolParser();
-        } catch (IOException | JDOMException e) {
-            LOGGER.error("Cant't parse the protocol, please check the protocol.xml file.");
-        }
+        super(Path.of(PluginConfigProvider.getInstance().getPluginPath()));
     }
 
     @Override
@@ -75,105 +64,82 @@ public class PluginManager extends JarPluginManager {
         return instance;
     }
 
+    // TODO obsolete ?
     public static void resetInstance() {
         instance = new PluginManager();
     }
 
-    public <T> List<T> getConfiguredExtensions(Class<T> type) {
-        if (pluginProtocolParser == null) return Collections.emptyList();
-
-        List<ProtocolExtension> declaredExtensionsForClass = pluginProtocolParser.getProtocolExtensions(type);
-        if (declaredExtensionsForClass.isEmpty()) {
-            return Collections.emptyList();
-        } else {
-            return createExtensions(type, declaredExtensionsForClass);
-        }
-    }
-
-    @Override
-    public <T> List<T> getExtensions(Class<T> type) {
-        if (!extensionsCache.containsKey(type.getSimpleName())) {
-            extensionsCache.put(type.getSimpleName(), loadUserDefinedExtensions(type));
-        }
-
-        return extensionsCache.get(type.getSimpleName());
-    }
-
-    /**
-     * plugins can use this method to load other plugins
-     *
-     * @param type
-     * @param root root element inside which plugins may be nested
-     * @param <T>
-     * @return list of declared extensions or an empty list if none were found
-     */
-    public <T> List<T> getExtensions(Class<T> type, Element root) {
-        if (pluginProtocolParser == null) return super.getExtensions(type);
-
-        List<ProtocolExtension> declaredExtensionsForClass = pluginProtocolParser.getProtocolExtensions(root);
-        if (declaredExtensionsForClass.isEmpty()) {
-            return Collections.emptyList();
-        } else {
-            return createExtensions(type, declaredExtensionsForClass);
-        }
-    }
-
-    private <T> List<T> loadUserDefinedExtensions(Class<T> type) {
-        if (pluginProtocolParser == null) return super.getExtensions(type);
-
-        List<ProtocolExtension> declaredExtensionsForClass = pluginProtocolParser.getProtocolExtensions(type);
-        if (declaredExtensionsForClass.isEmpty()) {
-            return super.getExtensions(type);
-        } else {
-            return createExtensions(type, declaredExtensionsForClass);
-        }
-    }
-
-    public <T> List<Task<T>> getTasks(Class<T> type) {
-        if (!taskCache.containsKey(type.getSimpleName())) {
-            if (pluginProtocolParser == null) {
-                taskCache.put(type.getSimpleName(), Collections.emptyList());
-            } else {
-                List<ProtocolTask> declaredTasks = pluginProtocolParser.getDeclaredTasks(type);
-                if (declaredTasks.isEmpty()) {
-                    taskCache.put(type.getSimpleName(), Collections.emptyList());
-                } else {
-                    taskCache.put(type.getSimpleName(), declaredTasks
-                            .stream()
-                            .map(t -> createTask(type, t))
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList()));
-                }
-            }
-        }
-
-        return taskCache.get(type.getSimpleName()).stream().map(t -> (Task<T>) t).collect(Collectors.toList());
-    }
-
-    private <T> Task<T> createTask(Class<T> type, ProtocolTask protocolTask) {
-        List<T> extensions = createExtensions(type, protocolTask.getTasks());
-        if (extensions.size() == protocolTask.getTasks().size()) {
-            return new Task<>(protocolTask.getId(), extensions);
-        } else {
-            LOGGER.warn("Can't find all declared extensions for task {} in {}", protocolTask.getId(), type.getSimpleName());
-            return null;
-        }
-    }
-
-    private <T> List<T> createExtensions(Class<T> type, List<ProtocolExtension> declaredExtensionsForClass) {
-        return declaredExtensionsForClass
+    public List<OutgoingMessageHook> getOutgoingMessageHooks() {
+        return PluginConfigProvider.getInstance().getOutgoingMessageHooks()
                 .stream()
-                .map(pe -> createExtensionWithConfig(type, pe))
-                .filter(Objects::nonNull)
+                .map(extensionDefinition -> {
+                    OutgoingMessageHook extension = getExtensionById(OutgoingMessageHook.class,
+                            extensionDefinition.getPluginId(),
+                            extensionDefinition.getId());
+                    extension.onConfigReceived(extensionDefinition.getConfig());
+                    return extension;
+                })
                 .collect(Collectors.toList());
     }
 
-    private <T> T createExtensionWithConfig(Class<T> type, ProtocolExtension pe) {
-        T baseExtensionPoint = getExtensionById(type, pe.getPluginName(), pe.getExtensionId());
-        if (baseExtensionPoint != null) {
-            ((BaseExtensionPoint) baseExtensionPoint).onConfigReceived(pe.getPluginConfig());
-        }
-        return baseExtensionPoint;
+    public List<IncomingMessageHook> getIncomingMessageHooks() {
+        return PluginConfigProvider.getInstance().getIncomingMessageHooks()
+                .stream()
+                .map(extensionDefinition -> {
+                    IncomingMessageHook extension = getExtensionById(IncomingMessageHook.class,
+                            extensionDefinition.getPluginId(),
+                            extensionDefinition.getId());
+                    extension.onConfigReceived(extensionDefinition.getConfig());
+                    return extension;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<DetailViewManipulatorTask> getDetailViewManipulatorTasks() {
+        return PluginConfigProvider.getInstance().getDetailViewTasks()
+                .stream()
+                .map(detailViewTaskDefinition -> {
+                    List<DetailViewManipulatorHook> hooks = detailViewTaskDefinition.getExtensions().stream()
+                            .map(extensionDefinition -> {
+                                String pluginId = extensionDefinition.getPluginId();
+                                String extensionId = extensionDefinition.getId();
+                                DetailViewManipulatorHook extension = getExtensionById(DetailViewManipulatorHook.class, pluginId, extensionId);
+                                if (extension == null) {
+                                    LOGGER.warn("Plugin extension {}:{} in detailViewTasks is configured, but does not exist.", pluginId, extensionId);
+                                    return null;
+                                }
+                                extension.onConfigReceived(extensionDefinition.getConfig());
+                                return extension;
+                            })
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+
+                    return DetailViewManipulatorTask.builder()
+                            .name(detailViewTaskDefinition.getName())
+                            .hooks(hooks)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<MessageValidatorHook> getMessageValidators(String topic) {
+        return PluginConfigProvider.getInstance().getMessageValidators()
+                .stream()
+                .filter(validatorDefinition -> validatorDefinition.getTopic().equals(topic))
+                .map(validatorDefinition -> validatorDefinition.getExtensions().stream()
+                        .map(extensionDefinition -> {
+                            String pluginId = extensionDefinition.getPluginId();
+                            String extensionId = extensionDefinition.getId();
+                            MessageValidatorHook extension = getExtensionById(MessageValidatorHook.class,pluginId, extensionId);
+                            if (extension == null) {
+                                LOGGER.warn("Plugin extension {}:{} in messageValidators is configured, but does not exist.", pluginId, extensionId);
+                                return null;
+                            }
+                            extension.onConfigReceived(extensionDefinition.getConfig());
+                            return extension;
+                        }).collect(Collectors.toList()))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     private <T> T getExtensionById(Class<T> type, String pluginId, String extensionId) {
