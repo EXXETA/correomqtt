@@ -9,7 +9,7 @@
       "username": null,
       "password": null,
       "cleanSession": false,
-      "mqttVersion": "V3",
+      "mqttVersion": "MQTT_5_0",
       "ssl": "OFF",
       "ssl_keystore": null,
       "ssl_keystore_password": null,
