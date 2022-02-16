@@ -8,7 +8,6 @@ export CORREO_VERSION
 echo "GITHUB_REF=$GITHUB_REF"
 
 if [[ "$GITHUB_REF" =~ ^refs\/tags\/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "tag set -> set version to tag version"
   CORREO_VERSION=$(echo "$GITHUB_REF" | cut -d "v" -f 2)
 else
   echo "Not a release version. Exit"
@@ -43,9 +42,5 @@ echo "==== SET CORREO VERSION ===="
 mvn -B versions:set -DnewVersion="$CORREO_VERSION"
 echo -n "$CORREO_VERSION" >./src/main/resources/org/correomqtt/business/utils/version.txt
 
-echo "==== BUILD CORREO ===="
-mvn -B clean install -DskipTests=true
-
 echo "==== DEPLOY TO MAVEN CENTRAL ===="
-echo "tag set -> deploy release to maven central only on linux"
-mvn -B deploy -P release -DskipTests=true --settings "${GITHUB_WORKSPACE}/.github/mvn-deploy.xml"
+mvn -B clean deploy -P release -DskipTests=true --settings "${GITHUB_WORKSPACE}/.github/mvn-deploy.xml"
