@@ -317,7 +317,6 @@
                         <configuration>
                             <useAgent>true</useAgent>
                             <keyname>${gpg.keyname}</keyname>
-                            <executable>${gpg.executable}</executable>
                             <passphraseServerId>${gpg.keyname}</passphraseServerId>
                             <passphrase>${gpg.passphrase}</passphrase>
                             <gpgArguments>
