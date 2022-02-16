@@ -7,7 +7,7 @@ export CORREO_VERSION
 
 echo "GITHUB_REF=$GITHUB_REF"
 
-if [[ "$GITHUB_REF" =~ [^refs/tags/v[0-9]+\.[0-9]+\.[0-9]$] ]]; then
+if [[ "$GITHUB_REF" =~ ^refs\/tags\/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "tag set -> set version to tag version"
   CORREO_VERSION=$(echo "$GITHUB_REF" | cut -d "v" -f 2)
 else
