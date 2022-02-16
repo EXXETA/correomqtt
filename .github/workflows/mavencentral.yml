@@ -9,6 +9,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Configure GPG Key
         run: |
+          export GPG_TTY=$(tty)
           echo -n "$GPG_PRIVATE_KEY" | base64 --decode | gpg2 --import
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
