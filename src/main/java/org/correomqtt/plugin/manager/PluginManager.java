@@ -1,6 +1,12 @@
 package org.correomqtt.plugin.manager;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.correomqtt.business.model.HooksDTO;
 import org.correomqtt.business.provider.PluginConfigProvider;
+import org.correomqtt.plugin.spi.BaseExtensionPoint;
 import org.correomqtt.plugin.spi.DetailViewManipulatorHook;
 import org.correomqtt.plugin.spi.ExtensionId;
 import org.correomqtt.plugin.spi.IncomingMessageHook;
@@ -17,6 +23,7 @@ import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.ParameterizedType;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -76,7 +83,7 @@ public class PluginManager extends JarPluginManager {
                     OutgoingMessageHook extension = getExtensionById(OutgoingMessageHook.class,
                             extensionDefinition.getPluginId(),
                             extensionDefinition.getId());
-                    extension.onConfigReceived(extensionDefinition.getConfig());
+                    enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                     return extension;
                 })
                 .collect(Collectors.toList());
@@ -89,7 +96,7 @@ public class PluginManager extends JarPluginManager {
                     IncomingMessageHook extension = getExtensionById(IncomingMessageHook.class,
                             extensionDefinition.getPluginId(),
                             extensionDefinition.getId());
-                    extension.onConfigReceived(extensionDefinition.getConfig());
+                    enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                     return extension;
                 })
                 .collect(Collectors.toList());
@@ -108,7 +115,7 @@ public class PluginManager extends JarPluginManager {
                                     LOGGER.warn("Plugin extension {}:{} in detailViewTasks is configured, but does not exist.", pluginId, extensionId);
                                     return null;
                                 }
-                                extension.onConfigReceived(extensionDefinition.getConfig());
+                                enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                                 return extension;
                             })
                             .filter(Objects::nonNull)
@@ -122,7 +129,7 @@ public class PluginManager extends JarPluginManager {
                 .collect(Collectors.toList());
     }
 
-    public List<MessageValidatorHook> getMessageValidators(String topic) {
+    public List<MessageValidatorHook<?>> getMessageValidators(String topic) {
         return PluginConfigProvider.getInstance().getMessageValidators()
                 .stream()
                 .filter(validatorDefinition -> validatorDefinition.getTopic().equals(topic))
@@ -130,19 +137,38 @@ public class PluginManager extends JarPluginManager {
                         .map(extensionDefinition -> {
                             String pluginId = extensionDefinition.getPluginId();
                             String extensionId = extensionDefinition.getId();
-                            MessageValidatorHook extension = getExtensionById(MessageValidatorHook.class,pluginId, extensionId);
+                            MessageValidatorHook<?> extension = getExtensionById(MessageValidatorHook.class, pluginId, extensionId);
                             if (extension == null) {
                                 LOGGER.warn("Plugin extension {}:{} in messageValidators is configured, but does not exist.", pluginId, extensionId);
                                 return null;
                             }
-                            extension.onConfigReceived(extensionDefinition.getConfig());
+                            enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                             return extension;
                         }).collect(Collectors.toList()))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }
 
-    private <T> T getExtensionById(Class<T> type, String pluginId, String extensionId) {
+    private <T> void enrichExtensionWithConfig(BaseExtensionPoint<T> extension, JsonNode configNode) {
+        try {
+            Class<T> configClass = extension.getConfigClass();
+            if (configClass != null) {
+                extension.onConfigReceived(new ObjectMapper().treeToValue(configNode, configClass));
+            }
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Exception parsing plugin configuration object for {}", extension.getConfigClass());
+        }
+    }
+
+    public <P extends BaseExtensionPoint<T>, T> P getExtensionByIdWithConfig(Class<P> type, String pluginId, String extensionId, T config) {
+        P extension = getExtensionById(type, pluginId, extensionId);
+        if (extension != null) {
+            extension.onConfigReceived(config);
+        }
+        return extension;
+    }
+
+    public <P extends BaseExtensionPoint<T>, T> P getExtensionById(Class<P> type, String pluginId, String extensionId) {
         return super.getExtensions(type, pluginId)
                 .stream()
                 .filter(e -> isExtensionIdResolved(e, extensionId))
@@ -151,6 +177,11 @@ public class PluginManager extends JarPluginManager {
                     logInvalidPluginDeclaration(type, pluginId, extensionId);
                     return null;
                 });
+    }
+
+    @Override
+    public <T> List<T> getExtensions(Class<T> type, String pluginId) {
+        return getExtensions(type);
     }
 
     private <T> boolean isExtensionIdResolved(T e, String id) {
@@ -187,5 +218,22 @@ public class PluginManager extends JarPluginManager {
             unloadPlugin(pluginId);
         }
 
+    }
+
+    public <P extends BaseExtensionPoint<T>, T> P getExtensionByDefinition(Class<P> clazz, HooksDTO.Extension extensionDefinition) {
+
+        P extension = PluginManager.getInstance()
+                .getExtensionById(clazz, extensionDefinition.getPluginId(), extensionDefinition.getId());
+        enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
+        return extension;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <P extends BaseExtensionPoint<T>, T> P getExtensionByDefinition(TypeReference<P> type, HooksDTO.Extension extensionDefinition) {
+
+        // https://stackoverflow.com/a/28615143
+        Class<P> clazz = (Class<P>) (type.getType() instanceof ParameterizedType ? ((ParameterizedType) type.getType()).getRawType() : type.getType());
+
+        return getExtensionByDefinition(clazz, extensionDefinition);
     }
 }

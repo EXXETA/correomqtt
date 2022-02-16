@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,6 +33,7 @@ public class CorreoUpdateRepository implements UpdateRepository {
     private final String id;
     private final URL url;
     private final Version apiLevel;
+    private final String originalUrl;
 
     private Map<String, PluginInfo> plugins;
 
@@ -39,9 +41,10 @@ public class CorreoUpdateRepository implements UpdateRepository {
      * @param id  the repository id
      * @param url the repository url
      */
-    public CorreoUpdateRepository(String id, URL url, String apiLevel) {
+    public CorreoUpdateRepository(String id, String url, String apiLevel) throws MalformedURLException {
         this.id = id;
-        this.url = url;
+        this.url = new URL(url);
+        this.originalUrl = url;
         this.apiLevel = Version.valueOf(apiLevel);
     }
 
@@ -101,7 +104,7 @@ public class CorreoUpdateRepository implements UpdateRepository {
             p.setReleases(releases);
             plugins.put(p.getId(), p.transformToPf4jInfo());
         }
-        log.info("Found {} plugins in repository '{}' compatible with api level {}", plugins.size(), url, apiLevel);
+        log.info("Found {} plugins in repository '{}' compatible with api level {}", plugins.size(), originalUrl, apiLevel);
     }
 
     private boolean fitApiLevel(CorreoPluginInfo.PluginRelease release) {

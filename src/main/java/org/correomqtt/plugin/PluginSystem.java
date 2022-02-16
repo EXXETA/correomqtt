@@ -3,6 +3,7 @@ package org.correomqtt.plugin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.utils.VendorConstants;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.repository.BundledPluginList;
@@ -51,8 +52,8 @@ public class PluginSystem {
     private void updateSystem(PluginManager pluginManager) throws IOException {
 
         List<UpdateRepository> repos = new ArrayList<>();
-       // repos.add(new CorreoUpdateRepository("bundled1", new URL(DEFAULT_REPO_URL), CURRENT_API_LEVEL));
-       // repos.add(new CorreoUpdateRepository("bundled2", new URL(DEFAULT_REPO_URL), CURRENT_API_LEVEL));
+        repos.add(new CorreoUpdateRepository("bundled1", DEFAULT_REPO_URL, CURRENT_API_LEVEL));
+        // repos.add(new CorreoUpdateRepository("bundled2", new URL(DEFAULT_REPO_URL), CURRENT_API_LEVEL));
 
         UpdateManager updateManager = new UpdateManager(pluginManager, repos);
 
@@ -78,7 +79,8 @@ public class PluginSystem {
             return bundledPlugins;
 
         } catch (IOException e) {
-            LOGGER.error("Unable to load bundled plugins.", e);
+            LOGGER.error("Unable to load bundled plugin list from {}.", BUNDLED_PLUGINS_URL);
+            LOGGER.debug("Unable to load bundled plugin list from {}.", BUNDLED_PLUGINS_URL, e);
             return BundledPluginList.BundledPlugins.builder().build();
         }
 

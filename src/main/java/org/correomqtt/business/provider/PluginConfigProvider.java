@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.util.Iterator;
 import java.util.List;
@@ -71,19 +72,19 @@ public class PluginConfigProvider extends BaseUserFileProvider {
         }
     }
 
-    public List<HooksDTO.Extension> getOutgoingMessageHooks(){
+    public List<HooksDTO.Extension> getOutgoingMessageHooks() {
         return hooksDTO.getOutgoingMessages();
     }
 
-    public List<HooksDTO.Extension> getIncomingMessageHooks(){
+    public List<HooksDTO.Extension> getIncomingMessageHooks() {
         return hooksDTO.getIncomingMessages();
     }
 
-    public List<HooksDTO.DetailViewTask> getDetailViewTasks(){
+    public List<HooksDTO.DetailViewTask> getDetailViewTasks() {
         return hooksDTO.getDetailViewTasks();
     }
 
-    public List<HooksDTO.MessageValidator> getMessageValidators(){
+    public List<HooksDTO.MessageValidator> getMessageValidators() {
         return hooksDTO.getMessageValidators();
     }
 
@@ -93,12 +94,22 @@ public class PluginConfigProvider extends BaseUserFileProvider {
         if (!pluginFolder.exists() && !pluginFolder.mkdir()) {
             LOGGER.error(EX_MSG_PREPARE_PLUGIN_FOLDER);
         }
-
-        migrateDeprectedJarFolder(pluginFolder);
     }
 
-    private void migrateDeprectedJarFolder(File pluginFolder) {
+    public boolean migrationRequired() {
         File oldJarFolder = new File(pluginPath + File.separator + "jars");
+        File oldConfigFolder = new File(pluginPath + File.separator + "config");
+        File oldProtocolXml = new File(pluginPath + File.separator + "protocol.xml");
+
+        return oldJarFolder.exists() || oldConfigFolder.exists() || oldProtocolXml.exists();
+    }
+
+    public void migratePluginFolder() {
+        File pluginFolder = new File(pluginPath);
+        File oldJarFolder = new File(pluginPath + File.separator + "jars");
+        File oldConfigFolder = new File(pluginPath + File.separator + "config");
+        File oldProtocolXml = new File(pluginPath + File.separator + "protocol.xml");
+
         if (oldJarFolder.exists()) {
             try {
                 Iterator<File> iterator = FileUtils.iterateFiles(oldJarFolder, new String[]{"jar"}, false);
@@ -110,7 +121,24 @@ public class PluginConfigProvider extends BaseUserFileProvider {
                 LOGGER.error("Unable to migrate jars folder. Skip.");
             }
         }
+
+        if (oldConfigFolder.exists()) {
+            try {
+                FileUtils.deleteDirectory(oldConfigFolder);
+            } catch (IOException e) {
+                LOGGER.error("Unable to delete plugin config folder. Skip.");
+            }
+        }
+
+        if (oldProtocolXml.exists()) {
+            try {
+                Files.delete(oldProtocolXml.toPath());
+            } catch (IOException e) {
+                LOGGER.error("Unable to delete obsolete protocol.xml. Skip.");
+            }
+        }
     }
+
 
     public String getPluginPath() {
         return pluginPath;
