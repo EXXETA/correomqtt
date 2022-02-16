@@ -320,6 +320,10 @@
                             <executable>${gpg.executable}</executable>
                             <passphraseServerId>${gpg.keyname}</passphraseServerId>
                             <passphrase>${gpg.passphrase}</passphrase>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
                         </configuration>
                         <executions>
                             <execution>
