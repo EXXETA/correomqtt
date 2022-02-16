@@ -1,0 +1,26 @@
+name: Maven Central CI
+on:
+  workflow_dispatch:
+jobs:
+  linuxbuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Configure GPG Key
+        run: |
+          echo -n "$GPG_PRIVATE_KEY" | base64 --decode | gpg2 --import
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      - name: Build
+        run: .github/build.bash linux
+        id: build
+        shell: bash
+      - name: Release 
+        uses: xresloader/upload-to-github-release@v1.3.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: false
+          file: target/*.deb;target/*.rpm
+          tags: true
