@@ -7,18 +7,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v4
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-      - name: Build and Upload
+      - name: Prepare
         run: .github/mavencentral.bash linux
         id: build
         shell: bash
-        env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-          GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      - name: Release Maven package
+        uses: samuelmeuli/action-maven-publish@v1
+        with:
+          gpg_private_key: ${{ secrets.GPG_KEYNAME }}
+          gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          nexus_username: ${{ secrets.SONATYPE_USERNAME }}
+          nexus_password: ${{ secrets.SONATYPE_PASSWORD }}

@@ -41,6 +41,3 @@ mvn -B -version
 echo "==== SET CORREO VERSION ===="
 mvn -B versions:set -DnewVersion="$CORREO_VERSION"
 echo -n "$CORREO_VERSION" >./src/main/resources/org/correomqtt/business/utils/version.txt
-
-echo "==== DEPLOY TO MAVEN CENTRAL ===="
-mvn -B clean deploy -P release -DskipTests=true --settings "${GITHUB_WORKSPACE}/.github/mvn-deploy.xml"
