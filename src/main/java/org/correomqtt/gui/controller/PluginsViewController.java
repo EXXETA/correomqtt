@@ -15,7 +15,7 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
-import org.correomqtt.business.provider.ConfigProvider;
+import org.correomqtt.business.provider.PluginConfigProvider;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.HostServicesHolder;
@@ -157,7 +157,7 @@ public class PluginsViewController extends BaseController {
 
     @FXML
     public void onOpenPluginFolder() {
-        HostServicesHolder.getInstance().getHostServices().showDocument(new File(ConfigProvider.getInstance().getPluginRootPath()).toURI().toString());
+        HostServicesHolder.getInstance().getHostServices().showDocument(new File(PluginConfigProvider.getInstance().getPluginPath()).toURI().toString());
     }
 
     private void setStatusRestartRequired() {

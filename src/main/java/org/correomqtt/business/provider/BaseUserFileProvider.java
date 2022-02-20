@@ -60,8 +60,8 @@ public class BaseUserFileProvider {
         this.file = targetFile;
     }
 
-    void prepareFile(String configFileName) throws IOException {
-        prepareFile(null, configFileName);
+    void prepareFile(String hookFile) throws IOException {
+        prepareFile(null, hookFile);
     }
 
     void saveToUserDirectory(String filename, String content) {

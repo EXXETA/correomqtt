@@ -3,7 +3,7 @@ package org.correomqtt.plugin.spi;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-public interface MessageValidatorHook extends BaseExtensionPoint {
+public interface MessageValidatorHook<T> extends BaseExtensionPoint<T> {
 
     @Getter
     @RequiredArgsConstructor
