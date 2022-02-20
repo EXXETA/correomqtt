@@ -305,9 +305,8 @@
     </build>
 
     <profiles>
-        <!-- Activate using the release property: mvn clean install -Prelease -->
         <profile>
-            <id>release</id>
+            <id>deploy</id>
             <build>
                 <plugins>
                     <!-- We want to sign the artifact, the POM, and all attached artifacts -->
