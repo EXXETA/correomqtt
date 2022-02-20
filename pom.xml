@@ -315,9 +315,6 @@
                         <artifactId>maven-gpg-plugin</artifactId>
                         <version>3.0.1</version>
                         <configuration>
-                            <useAgent>true</useAgent>
-                            <keyname>${gpg.keyname}</keyname>
-                            <passphraseServerId>${gpg.keyname}</passphraseServerId>
                             <gpgArguments>
                                 <arg>--pinentry-mode</arg>
                                 <arg>loopback</arg>
@@ -371,6 +368,17 @@
                             </execution>
                         </executions>
                     </plugin>
+                   <!-- <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.7</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>-->
                 </plugins>
             </build>
 

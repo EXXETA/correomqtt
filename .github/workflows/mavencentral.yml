@@ -11,17 +11,10 @@ jobs:
         run: .github/mavencentral.bash linux
         id: build
         shell: bash
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v4
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-      - name: List keys
-        run: gpg -K
       - name: Release Maven package
         uses: samuelmeuli/action-maven-publish@v1
         with:
-          gpg_private_key: ${{ secrets.GPG_KEYNAME }}
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
           nexus_username: ${{ secrets.SONATYPE_USERNAME }}
           nexus_password: ${{ secrets.SONATYPE_PASSWORD }}
