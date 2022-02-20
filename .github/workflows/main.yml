@@ -9,11 +9,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Configure GPG Key
-        run: |
-          echo -n "$GPG_PRIVATE_KEY" | base64 --decode | gpg2 --import
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       - name: Build
         run: .github/build.bash linux
         id: build

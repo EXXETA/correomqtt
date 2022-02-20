@@ -6,7 +6,7 @@
 
     <groupId>org.correomqtt</groupId>
     <artifactId>correomqtt-client</artifactId>
-    <version>0.15.0</version>
+    <version>0.14.99</version>
 
     <name>CorreoMQTT</name>
     <description>A modern graphical MQTT client using the HiveMQ client library.</description>
@@ -305,9 +305,8 @@
     </build>
 
     <profiles>
-        <!-- Activate using the release property: mvn clean install -Prelease -->
         <profile>
-            <id>release</id>
+            <id>deploy</id>
             <build>
                 <plugins>
                     <!-- We want to sign the artifact, the POM, and all attached artifacts -->
@@ -315,11 +314,10 @@
                         <artifactId>maven-gpg-plugin</artifactId>
                         <version>3.0.1</version>
                         <configuration>
-                            <useAgent>true</useAgent>
-                            <keyname>${gpg.keyname}</keyname>
-                            <executable>${gpg.executable}</executable>
-                            <passphraseServerId>${gpg.keyname}</passphraseServerId>
-                            <passphrase>${gpg.passphrase}</passphrase>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
                         </configuration>
                         <executions>
                             <execution>
@@ -369,6 +367,17 @@
                             </execution>
                         </executions>
                     </plugin>
+                   <!-- <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.7</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>-->
                 </plugins>
             </build>
 
