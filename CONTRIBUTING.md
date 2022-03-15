@@ -1,4 +1,4 @@
-# Contributing to Atom
+# Contributing to CorreoMQTT
 
 :1: Thank your for taking time to contribute.
 
