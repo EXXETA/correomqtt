@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.model.ConfigDTO;
 import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.model.ThemeSettingsDTO;
 import org.correomqtt.business.utils.ConnectionHolder;
@@ -96,6 +97,24 @@ public class SettingsProvider extends BaseUserFileProvider {
 
     public List<ConnectionConfigDTO> getConnectionConfigs() {
         return configDTO.getConnections();
+    }
+
+    public MessageListViewConfig produceSubscribeListViewConfig(String connectionId){
+        return configDTO.getConnections()
+                .stream()
+                .filter(c -> c.getId().equals(connectionId))
+                .findFirst()
+                .orElse(new ConnectionConfigDTO())
+                .produceSubscribeListViewConfig();
+    }
+
+    public MessageListViewConfig producePublishListViewConfig(String connectionId){
+        return configDTO.getConnections()
+                .stream()
+                .filter(c -> c.getId().equals(connectionId))
+                .findFirst()
+                .orElse(new ConnectionConfigDTO())
+                .producePublishListViewConfig();
     }
 
     public SettingsDTO getSettings() {
