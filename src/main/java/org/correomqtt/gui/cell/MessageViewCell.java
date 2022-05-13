@@ -1,7 +1,12 @@
 package org.correomqtt.gui.cell;
 
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Tooltip;
 import org.correomqtt.plugin.spi.MessageListHook;
 import org.correomqtt.plugin.spi.MessageValidatorHook;
+import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.plugin.manager.MessageValidator;
@@ -9,13 +14,13 @@ import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
+import java.util.function.Supplier;
 
 @SuppressWarnings("java:S110")
 public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
@@ -24,6 +29,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     private static final int MAX_PAYLOAD_LENGTH = 1000;
 
     private final ListView<MessagePropertiesDTO> listView;
+    private final Supplier<MessageListViewConfig> listViewConfigGetter;
 
     @SuppressWarnings("unused")
     @FXML
@@ -60,14 +66,17 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     @FXML
     private Label subscriptionLabel;
 
-    private FXMLLoader loader;
+    @FXML
+    private Label timestampLabel;
 
+    private FXMLLoader loader;
 
     @FXML
     private ResourceBundle resources;
 
-    public MessageViewCell(ListView<MessagePropertiesDTO> listView) {
+    public MessageViewCell(ListView<MessagePropertiesDTO> listView, Supplier<MessageListViewConfig> listViewConfigGetter) {
         this.listView = listView;
+        this.listViewConfigGetter = listViewConfigGetter;
     }
 
     @Override
@@ -132,9 +141,33 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
             subscriptionLabel.setText(messageDTO.getSubscription().getTopic());
         }
 
-        retainedLabel.setVisible(messageDTO.isRetained());
-        retainedLabel.setManaged(messageDTO.isRetained());
-        qosLabel.setText(messageDTO.getQos().toString());
+        Supplier<MessageListViewConfig> t1 = listViewConfigGetter;
+        MessageListViewConfig t2 = listViewConfigGetter.get();
+        boolean t3 = listViewConfigGetter.get().isVisible("retained");
+
+
+        if(listViewConfigGetter.get().isVisible("retained")){
+            //todo replace string with enum
+            retainedLabel.setText(messageDTO.isRetained() ? "Retained" : "Not Retained");
+            retainedLabel.setVisible(true);
+        }else{
+            retainedLabel.setVisible(false);
+        }
+
+        if(listViewConfigGetter.get().isVisible("qos")){
+            qosLabel.setText(messageDTO.getQos().toString());
+            qosLabel.setVisible(true);
+        }else{
+            qosLabel.setVisible(false);
+        }
+
+        if(listViewConfigGetter.get().isVisible("timestamp")){
+            timestampLabel.setText(messageDTO.getDateTime().toString());
+            timestampLabel.setVisible(true);
+        }else{
+            timestampLabel.setVisible(false);
+        }
+
         String payload = messageDTO.getPayload();
         payloadLabel.setText(payload.substring(0, Math.min(payload.length(), MAX_PAYLOAD_LENGTH))
                 .replace("\n", " ")

@@ -19,42 +19,73 @@ import lombok.Setter;
 public class ConnectionConfigDTO {
 
     private String id;
+
     private String name;
+
     private String url;
+
     @Builder.Default
     private int port = 1883;
+
     private String clientId;
+
     private String username;
+
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // do never save passwords
     private String password;
+
     private boolean cleanSession;
+
     @Builder.Default
     private CorreoMqttVersion mqttVersion = CorreoMqttVersion.MQTT_3_1_1;
+
     @Builder.Default
     private TlsSsl ssl = TlsSsl.OFF;
+
     private String sslKeystore;
+
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // do never save passwords
     private String sslKeystorePassword;
+
     @Builder.Default
     private Proxy proxy = Proxy.OFF;
+
     private String sshHost;
+
     @Builder.Default
     private int sshPort = 22;
+
     private int localPort;
+
     @Builder.Default
     private Auth auth = Auth.OFF;
+
     private String authUsername;
+
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // do never save passwords
     private String authPassword;
+
     private String authKeyfile;
+
     @Builder.Default
     private Lwt lwt = Lwt.OFF;
+
     private String lwtTopic;
+
     private Qos lwtQoS;
+
     private boolean lwtRetained;
+
     private String lwtPayload;
+
     @Builder.Default
     private ConnectionUISettings connectionUISettings = null;
+
+    @Builder.Default
+    private MessageListViewConfig publishListViewConfig = null;
+
+    @Builder.Default
+    private MessageListViewConfig subscribeListViewConfig = null;
 
     public ConnectionConfigDTO(ConnectionConfigDTO configDTO) {
         id = configDTO.id;
@@ -77,6 +108,16 @@ public class ConnectionConfigDTO {
         authPassword = configDTO.authPassword;
         authKeyfile = configDTO.authKeyfile;
         connectionUISettings = configDTO.connectionUISettings;
+        publishListViewConfig = configDTO.publishListViewConfig;
+        subscribeListViewConfig = configDTO.subscribeListViewConfig;
+    }
+
+    public MessageListViewConfig producePublishListViewConfig(){
+        return publishListViewConfig != null ? publishListViewConfig : new MessageListViewConfig();
+    }
+
+    public MessageListViewConfig produceSubscribeListViewConfig(){
+        return subscribeListViewConfig != null ? subscribeListViewConfig : new MessageListViewConfig();
     }
 
     public String getHostAndPort() {
