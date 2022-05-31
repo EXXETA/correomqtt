@@ -66,4 +66,8 @@ public class MessageTaskFactory {
                          ExportMessageService::exportMessage).start();
 
     }
+
+    public static void reconnect(String connectionId) {
+        new GuiService<>(new ConnectService(connectionId), ConnectService::reconnect).start();
+    }
 }

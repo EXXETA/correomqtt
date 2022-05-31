@@ -249,7 +249,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     public void unsubscribeAll() {
-
         ConnectionHolder.getInstance()
                         .getConnection(getConnectionId())
                         .getClient()
