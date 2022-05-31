@@ -6,7 +6,9 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Tooltip;
 import org.correomqtt.plugin.spi.MessageListHook;
 import org.correomqtt.plugin.spi.MessageValidatorHook;
+import org.correomqtt.business.model.LabelType;
 import org.correomqtt.business.model.MessageListViewConfig;
+import org.correomqtt.business.model.RetainedState;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.plugin.manager.MessageValidator;
@@ -19,11 +21,14 @@ import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 import java.util.function.Supplier;
 
 @SuppressWarnings("java:S110")
 public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
+
+    public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageViewCell.class);
     private static final int MAX_PAYLOAD_LENGTH = 1000;
@@ -70,6 +75,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     private Label timestampLabel;
 
     private FXMLLoader loader;
+
 
     @FXML
     private ResourceBundle resources;
@@ -141,31 +147,31 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
             subscriptionLabel.setText(messageDTO.getSubscription().getTopic());
         }
 
-        Supplier<MessageListViewConfig> t1 = listViewConfigGetter;
-        MessageListViewConfig t2 = listViewConfigGetter.get();
-        boolean t3 = listViewConfigGetter.get().isVisible("retained");
-
-
-        if(listViewConfigGetter.get().isVisible("retained")){
-            //todo replace string with enum
-            retainedLabel.setText(messageDTO.isRetained() ? "Retained" : "Not Retained");
+        if(listViewConfigGetter.get().isVisible(LabelType.RETAINED)){
+            retainedLabel.setText(messageDTO.isRetained() ? RetainedState.RETAINED.name() : RetainedState.NOT_RETAINED.name());
             retainedLabel.setVisible(true);
+            retainedLabel.setManaged(true);
         }else{
             retainedLabel.setVisible(false);
+            retainedLabel.setManaged(false);
         }
 
-        if(listViewConfigGetter.get().isVisible("qos")){
+        if(listViewConfigGetter.get().isVisible(LabelType.QOS)){
             qosLabel.setText(messageDTO.getQos().toString());
             qosLabel.setVisible(true);
+            qosLabel.setManaged(true);
         }else{
             qosLabel.setVisible(false);
+            qosLabel.setManaged(false);
         }
 
-        if(listViewConfigGetter.get().isVisible("timestamp")){
-            timestampLabel.setText(messageDTO.getDateTime().toString());
+        if(listViewConfigGetter.get().isVisible(LabelType.TIMESTAMP)){
+            timestampLabel.setText(messageDTO.getDateTime().format(FORMATTER));
             timestampLabel.setVisible(true);
+            timestampLabel.setManaged(true);
         }else{
             timestampLabel.setVisible(false);
+            timestampLabel.setManaged(false);
         }
 
         String payload = messageDTO.getPayload();

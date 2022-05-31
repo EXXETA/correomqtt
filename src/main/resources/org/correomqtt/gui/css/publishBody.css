@@ -16,6 +16,14 @@
     -fx-graphic: url('../icons/trash-alt-solid-white.png');
 }
 
+.black .eye-solid {
+    -fx-graphic: url('../icons/eye-solid-black.png');
+}
+
+.white .eye-solid {
+    -fx-graphic: url('../icons/eye-solid-white.png');
+}
+
 .black .folder-open-solid {
     -fx-graphic: url('../icons/folder-open-solid-black.png');
 }
