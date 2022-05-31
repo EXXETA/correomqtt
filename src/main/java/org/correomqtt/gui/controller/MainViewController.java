@@ -2,6 +2,7 @@ package org.correomqtt.gui.controller;
 
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
+import org.correomqtt.business.dispatcher.ShutdownDispatcher;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
@@ -27,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
@@ -35,6 +38,7 @@ import static org.correomqtt.business.utils.VendorConstants.WEBSITE;
 public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainViewController.class);
+    public static final String DIRTY_CLASS = "dirty";
 
     @FXML
     public TabPane tabPane;
@@ -74,6 +78,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private SelectionModel<Tab> selectionModel;
     private ResourceBundle resources;
+    private Map<String, ConnectionViewController> conntectionViewControllers;
 
     public MainViewController() {
         ConfigDispatcher.getInstance().addObserver(this);
@@ -86,6 +91,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
         setupAddTab();
         createLogTab();
+
+        conntectionViewControllers = new HashMap<>();
 
         final String os = System.getProperty("os.name");
         if (os != null && os.startsWith("Mac")) {
@@ -104,6 +111,10 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         });
 
         tabPane.widthProperty().addListener((a, b, c) -> calcTabWidth());
+    }
+
+    public Map<String, ConnectionViewController> getConntectionViewControllers() {
+        return conntectionViewControllers;
     }
 
     private void setupAddTab() {
@@ -126,23 +137,19 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     private void setMenuEventHandler() {
-        closeItem.setOnAction(event -> System.exit(0));
+        closeItem.setOnAction(event -> ShutdownDispatcher.getInstance().onShutdownRequested());
         connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this));
         settingsItem.setOnAction(event -> SettingsViewController.showAsDialog());
         aboutItem.setOnAction(event -> AboutViewController.showAsDialog());
         updateItem.setOnAction(event -> {
             try {
                 CheckNewVersionUtils.checkNewVersion(true);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (ParseException e) {
-                e.printStackTrace();
+            } catch (IOException | ParseException e) {
+                LOGGER.warn("Exception checking version", e);
             }
         });
-        websiteItem.setOnAction(event -> {
-            HostServicesHolder.getInstance().getHostServices().showDocument(
-                    new Hyperlink(WEBSITE).getText());
-        });
+        websiteItem.setOnAction(event -> HostServicesHolder.getInstance().getHostServices().showDocument(
+                new Hyperlink(WEBSITE).getText()));
         pluginSettingsItem.setOnAction(event -> openPluginSettings());
     }
 
@@ -179,19 +186,19 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             tab.setText(config.getName());
             tab.setOnSelectionChanged(event -> {
                 if (tab.isSelected()) {
-                    tab.getStyleClass().removeAll("dirty");
+                    tab.getStyleClass().removeAll(DIRTY_CLASS);
                 }
             });
             tab.getStyleClass().add("connection");
 
-            config.getNameProperty().addListener(((observableValue, s, t1) -> {
-                tab.setText(t1);
-            }));
+            config.getNameProperty().addListener(((observableValue, s, t1) -> tab.setText(t1)));
 
             LoaderResult<ConnectionViewController> result = ConnectionViewController.load(config.getId(), this);
             result.getController().setTabId(tabId);
             tab.setContent(result.getMainPane());
             tab.setOnCloseRequest(event -> result.getController().disconnect());
+
+            conntectionViewControllers.put(tabId, result.getController());
 
             tabPane.getTabs().add(tabPane.getTabs().size() - 1, tab);
             selectionModel = tabPane.getSelectionModel();
@@ -207,6 +214,34 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                     resources.getString("mainViewControllerAlreadyUsedContent"));
         }
 
+    }
+
+    @FXML
+    public void resetUISettings() {
+        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).resetConnectionUISettings();
+        }
+    }
+
+    @FXML
+    public void onClickP() {
+        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(true, false);
+        }
+    }
+
+    @FXML
+    public void onClickPS() {
+        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(true, true);
+        }
+    }
+
+    @FXML
+    public void onClickS() {
+        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(false, true);
+        }
     }
 
     private void calcTabWidth() {
@@ -226,8 +261,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                 .findFirst()
                 .ifPresent(t -> {
                     if (!t.isSelected()) {
-                        t.getStyleClass().removeAll("dirty");
-                        t.getStyleClass().add("dirty");
+                        t.getStyleClass().removeAll(DIRTY_CLASS);
+                        t.getStyleClass().add(DIRTY_CLASS);
                     }
                 });
     }
@@ -245,56 +280,57 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     @Override
     public void onConfigDirectoryEmpty() {
-
+        // nothing to do
     }
 
     @Override
     public void onConfigDirectoryNotAccessible() {
-
+        // nothing to do
     }
 
     @Override
     public void onAppDataNull() {
-
+        // nothing to do
     }
 
     @Override
     public void onUserHomeNull() {
-
+        // nothing to do
     }
 
     @Override
     public void onFileAlreadyExists() {
-
+        // nothing to do
     }
 
     @Override
     public void onInvalidPath() {
-
+        // nothing to do
     }
 
     @Override
     public void onInvalidJsonFormat() {
-
+        // nothing to do
     }
 
     @Override
     public void onSavingFailed() {
-
+        // nothing to do
     }
 
     @Override
-    public void onSettingsUpdated() {
-
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
+        // nothing to do
     }
 
     @Override
     public void onConnectionsUpdated() {
+        // nothing to do
     }
 
     @Override
     public void onConfigPrepareFailed() {
-
+        // nothing to do
     }
 
     @Override
@@ -302,9 +338,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         tabPane.getTabs().stream()
                 .filter(t -> connectionName.equals(t.getText()))
                 .findFirst()
-                .ifPresent(t -> {
-                    tabPane.getTabs().remove(t);
-                });
-        LOGGER.info("Closing tab for connection: " + connectionName);
+                .ifPresent(t -> tabPane.getTabs().remove(t));
+        LOGGER.info("Closing tab for connection: {}", connectionName);
     }
 }

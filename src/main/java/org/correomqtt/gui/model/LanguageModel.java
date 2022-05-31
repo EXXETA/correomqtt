@@ -30,4 +30,9 @@ public class LanguageModel implements GenericCellModel {
         return ((LanguageModel) language).getLocale().equals(locale);
     }
 
+    @Override
+    public int hashCode(){
+        return locale.hashCode();
+    }
+
 }

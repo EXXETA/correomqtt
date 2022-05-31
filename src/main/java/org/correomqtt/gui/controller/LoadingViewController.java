@@ -1,8 +1,5 @@
 package org.correomqtt.gui.controller;
 
-import org.correomqtt.gui.model.WindowProperty;
-import org.correomqtt.gui.model.WindowType;
-import org.correomqtt.gui.utils.WindowHelper;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -10,8 +7,9 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.correomqtt.gui.model.WindowProperty;
+import org.correomqtt.gui.model.WindowType;
+import org.correomqtt.gui.utils.WindowHelper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,8 +17,6 @@ import java.util.ResourceBundle;
 
 
 public class LoadingViewController extends BaseConnectionController {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(LoadingViewController.class);
 
     private final String message;
 
@@ -31,8 +27,6 @@ public class LoadingViewController extends BaseConnectionController {
 
     @FXML
     private Pane mainPane;
-
-    private static ResourceBundle resources;
 
     private LoadingViewController(String connectionId, String message) {
         super(connectionId);
@@ -51,7 +45,7 @@ public class LoadingViewController extends BaseConnectionController {
 
         LoaderResult<LoadingViewController> result = load(LoadingViewController.class, "loadingView.fxml",
                 () -> new LoadingViewController(connectionId, message));
-        resources = result.getResourceBundle();
+        ResourceBundle resources = result.getResourceBundle();
 
         showAsDialog(result,
                 resources.getString("loadingViewControllerWait"),

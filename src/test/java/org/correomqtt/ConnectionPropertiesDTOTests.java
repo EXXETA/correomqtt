@@ -1,20 +1,20 @@
 package org.correomqtt;
 
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class ConnectionPropertiesDTOTests {
+class ConnectionPropertiesDTOTests {
 
     @Test
-    public void testBuilder() {
+    void testBuilder() {
         ConnectionPropertiesDTO props = ConnectionPropertiesDTO.builder()
                                                                .name("test")
                                                                .build();
 
-        assertEquals(props.getName(), "test");
+        assertEquals("test", props.getName());
         assertNotNull(props.getUsernameProperty());
     }
 }

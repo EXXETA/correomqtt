@@ -1,12 +1,5 @@
 package org.correomqtt.gui.controller;
 
-import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
-import org.correomqtt.business.exception.CorreoMqttException;
-import org.correomqtt.business.model.ConnectionConfigDTO;
-import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.TaskFactory;
-import org.correomqtt.gui.model.ConnectionState;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -15,6 +8,16 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
+import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
+import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import org.correomqtt.business.exception.CorreoMqttException;
+import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.model.ConnectionState;
+import org.correomqtt.plugin.manager.PluginManager;
+import org.correomqtt.plugin.spi.MainToolbarHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,33 +26,46 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ControlBarController extends BaseConnectionController implements ConnectionLifecycleObserver {
     private static final Logger LOGGER = LoggerFactory.getLogger(ControlBarController.class);
+
     private final ControlBarDelegate delegate;
+
+    private final PluginManager pluginSystem = PluginManager.getInstance();
+
     @FXML
     public AnchorPane mainViewHBoxAnchorPane;
+
     @FXML
-    public HBox controllViewMainViewHBox;
+    public HBox controllViewButtonHBox;
+
     @FXML
     public Button connectBtn;
+
     @FXML
     public Button disconnectBtn;
+
     @FXML
     public ToggleButton controlViewPButton;
+
     @FXML
     public ToggleButton controlViewPSButton;
+
     @FXML
     public ToggleButton controlViewSButton;
+
     @FXML
     public Label statusLabel;
+
     @FXML
     public Label statusInfo;
+
     @FXML
     public Label brokerInfo;
-    @FXML
-    private Button sysButton;
+
     @FXML
     private ResourceBundle resources;
 
     boolean gracefulDisconnenct = false;
+    private ConnectionConfigDTO connectionConfigDTO;
 
     public ControlBarController(String connectionId, ControlBarDelegate delegate) {
         super(connectionId);
@@ -59,16 +75,32 @@ public class ControlBarController extends BaseConnectionController implements Co
 
     static LoaderResult<ControlBarController> load(String connectionId, ControlBarDelegate delegate) {
         return load(ControlBarController.class, "controlBarView.fxml",
-                    () -> new ControlBarController(connectionId, delegate)
+                () -> new ControlBarController(connectionId, delegate)
         );
     }
 
     @FXML
     public void initialize() {
-        controlViewPSButton.setSelected(true);
+        SettingsProvider.getInstance().getConnectionConfigs().stream()
+                .filter(c -> c.getId().equals(getConnectionId()))
+                .findFirst()
+                .ifPresent(c -> {
+                    connectionConfigDTO = c;
+                    if (connectionConfigDTO.getConnectionUISettings().isShowPublish() && c.getConnectionUISettings().isShowSubscribe()) {
+                        controlViewPSButton.setSelected(true);
+                    } else if (c.getConnectionUISettings().isShowSubscribe()) {
+                        controlViewSButton.setSelected(true);
+                    } else {
+                        controlViewPButton.setSelected(true);
+                    }
+                });
         brokerInfo.setText("");
         disconnectBtn.setVisible(false);
         disconnectBtn.setManaged(false);
+
+        int indexToInsert = controllViewButtonHBox.getChildrenUnmodifiable().indexOf(controlViewSButton) + 1;
+
+        pluginSystem.getExtensions(MainToolbarHook.class).forEach(p -> p.onInstantiateMainToolbar(getConnectionId(), controllViewButtonHBox, indexToInsert));
     }
 
     @FXML
@@ -96,7 +128,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Show only publish clicked: {}", getConnectionId());
         }
 
-        delegate.setLayout(true,false);
+        delegate.setLayout(true, false);
         controlViewPButton.setSelected(true);
         controlViewPSButton.setSelected(false);
         controlViewSButton.setSelected(false);
@@ -108,7 +140,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Show publish AND subscribe clicked: {}", getConnectionId());
         }
 
-        delegate.setLayout(true,true);
+        delegate.setLayout(true, true);
         controlViewPButton.setSelected(false);
         controlViewPSButton.setSelected(true);
         controlViewSButton.setSelected(false);
@@ -120,15 +152,35 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Show only subscribe clicked: {}", getConnectionId());
         }
 
-        delegate.setLayout(false,true);
+        delegate.setLayout(false, true);
         controlViewPButton.setSelected(false);
         controlViewPSButton.setSelected(false);
         controlViewSButton.setSelected(true);
     }
 
     @FXML
-    public void onSysClicked() {
-        SysTopicViewController.showAsDialog(getConnectionId());
+    public void saveUISettings() {
+        if (controlViewPButton.isSelected()) {
+            connectionConfigDTO.getConnectionUISettings().setShowPublish(true);
+            connectionConfigDTO.getConnectionUISettings().setShowSubscribe(false);
+        } else if (controlViewSButton.isSelected()) {
+            connectionConfigDTO.getConnectionUISettings().setShowPublish(false);
+            connectionConfigDTO.getConnectionUISettings().setShowSubscribe(true);
+        } else {
+            connectionConfigDTO.getConnectionUISettings().setShowPublish(true);
+            connectionConfigDTO.getConnectionUISettings().setShowSubscribe(true);
+        }
+
+        delegate.saveConnectionUISettings();
+    }
+
+    @FXML
+    public void resetUISettings() {
+        controlViewPButton.setSelected(false);
+        controlViewPSButton.setSelected(true);
+        controlViewSButton.setSelected(false);
+
+        delegate.resetConnectionUISettings();
     }
 
     private void setGuiDisconnected() {
@@ -158,7 +210,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         controlViewPSButton.setDisable(true);
         controlViewPButton.setDisable(true);
         controlViewSButton.setDisable(true);
-        sysButton.setDisable(true);
+
     }
 
     private void updateBrokerInfo() {
@@ -187,7 +239,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         controlViewPSButton.setDisable(false);
         controlViewPButton.setDisable(false);
         controlViewSButton.setDisable(false);
-        sysButton.setDisable(false);
+
     }
 
     private void setGuiConnecting() {
@@ -205,7 +257,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         controlViewPSButton.setDisable(true);
         controlViewPButton.setDisable(true);
         controlViewSButton.setDisable(true);
-        sysButton.setDisable(true);
+
     }
 
     private void setGuiDisconnecting() {
@@ -223,7 +275,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         controlViewPSButton.setDisable(true);
         controlViewPButton.setDisable(true);
         controlViewSButton.setDisable(true);
-        sysButton.setDisable(true);
+
     }
 
     @Override

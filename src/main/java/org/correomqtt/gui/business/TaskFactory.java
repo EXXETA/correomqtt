@@ -1,5 +1,6 @@
 package org.correomqtt.gui.business;
 
+import lombok.extern.slf4j.Slf4j;
 import org.correomqtt.business.services.*;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
@@ -7,10 +8,11 @@ import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.transformer.SubscriptionTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
-import org.correomqtt.plugin.spi.PublishMessageHook;
+import org.correomqtt.plugin.spi.OutgoingMessageHook;
 
 import java.io.File;
 
+@Slf4j
 public class TaskFactory {
 
     private TaskFactory() {
@@ -27,7 +29,8 @@ public class TaskFactory {
 
     private static MessagePropertiesDTO executeOnPublishMessageExtensions(String connectionId, MessagePropertiesDTO messagePropertiesDTO) {
         MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messagePropertiesDTO);
-        for (PublishMessageHook p : PluginManager.getInstance().getExtensions(PublishMessageHook.class)) {
+        for (OutgoingMessageHook p : PluginManager.getInstance().getOutgoingMessageHooks()) {
+            log.info("Publish {}", p);
             messageExtensionDTO = p.onPublishMessage(connectionId, messageExtensionDTO);
         }
         return messageExtensionDTO.merge(messagePropertiesDTO);

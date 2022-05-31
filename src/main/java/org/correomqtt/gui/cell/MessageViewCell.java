@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
+@SuppressWarnings("java:S110")
 public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageViewCell.class);
@@ -67,6 +68,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     private MessagePropertiesDTO messageDTO;
 
     private ContextMenu contextMenu;
+
     @FXML
     private ResourceBundle resources;
 
@@ -127,9 +129,9 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
 
         subscriptionLabel.setVisible(false);
         subscriptionLabel.setManaged(false);
-
-
+      
         this.messageDTO = messageDTO;
+      
         topicLabel.setText(messageDTO.getTopic());
 
         if (messageDTO.getSubscription() != null) {

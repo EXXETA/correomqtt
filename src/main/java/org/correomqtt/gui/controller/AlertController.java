@@ -13,7 +13,10 @@ public class AlertController extends BaseController implements
         PersistPublishHistoryObserver,
         PersistSubscriptionHistoryObserver {
 
-    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+    public static final String ALERT_CONTROLLER_WARN_TITLE = "alertControllerWarnTitle";
+    public static final String ALERT_EXCEPTION_TITLE = "Exception";
+
+    private final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
     private static AlertController instance;
 
     private AlertController() {
@@ -32,28 +35,28 @@ public class AlertController extends BaseController implements
 
     @Override
     public void onConfigDirectoryEmpty() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerWarnTitle"),
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 resources.getString("alertControllerOnConfigDirectoryEmptyContent")
         ));
     }
 
     @Override
     public void onConfigDirectoryNotAccessible() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerWarnTitle"),
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 resources.getString("alertControllerOnConfigDirectoryNotAccessibleContent")
         ));
     }
 
     @Override
     public void onAppDataNull() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerWarnTitle"),
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 resources.getString("alertControllerOnAppDataNullContent")
         ));
     }
 
     @Override
     public void onUserHomeNull() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerWarnTitle"),
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 resources.getString("alertControllerOnUserHomeNullContent")
         ));
     }
@@ -88,21 +91,23 @@ public class AlertController extends BaseController implements
 
     @Override
     public void onConnectionsUpdated() {
-
+        // nothing to do
     }
 
     @Override
     public void onConfigPrepareFailed() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn("Exception",
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(ALERT_EXCEPTION_TITLE,
                 resources.getString("alertControllerOnConfigPrepareFailedContent")
         ));
     }
 
     @Override
-    public void onSettingsUpdated() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.info(resources.getString("alertControllerOnSettingsUpdatedTitle"),
-                resources.getString("alertControllerOnSettingsUpdatedContent")
-        ));
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
+        if (showRestartRequiredDialog) {
+            PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.info(resources.getString("alertControllerOnSettingsUpdatedTitle"),
+                    resources.getString("alertControllerOnSettingsUpdatedContent")
+            ));
+        }
     }
 
     @Override
@@ -112,7 +117,7 @@ public class AlertController extends BaseController implements
 
     @Override
     public void errorReadingSubscriptionHistory(Throwable exception) {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn("Exception",
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(ALERT_EXCEPTION_TITLE,
                 resources.getString("alertControllerErrorReadingSubscriptionHistoryContent") + exception.getLocalizedMessage()
         ));
     }
@@ -124,26 +129,26 @@ public class AlertController extends BaseController implements
 
     @Override
     public void errorReadingPublishHistory(Throwable exception) {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn("Exception",
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(ALERT_EXCEPTION_TITLE,
                 resources.getString("alertControllerErrorReadingPublishHistoryContent") + exception.getLocalizedMessage()
         ));
     }
 
     @Override
     public void errorWritingPublishHistory(Throwable exception) {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn("Exception",
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(ALERT_EXCEPTION_TITLE,
                 resources.getString("alertControllerErrorWritingPublishHistoryContent") + exception.getLocalizedMessage()
         ));
     }
 
     @Override
     public void updatedPublishes(String connectionId) {
-
+        // nothing to do
     }
 
     @Override
     public void errorWritingSubscriptionHistory(Throwable exception) {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn("Exception",
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(ALERT_EXCEPTION_TITLE,
                 resources.getString("alertControllerErrorWritingSubscriptionHistoryContent") + exception.getLocalizedMessage()
         ));
     }

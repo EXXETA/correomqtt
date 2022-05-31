@@ -1,14 +1,16 @@
 package org.correomqtt;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.testfx.matcher.base.NodeMatchers;
 
 import static org.testfx.api.FxAssert.verifyThat;
 
-public class LogAreaTests extends TestBaseClass{
+@Disabled
+class LogAreaTests extends TestBaseClass{
 
     @Test
-    public void logAreaVisibleTest(){
+    void logAreaVisibleTest(){
         verifyThat("#logTextArea",NodeMatchers.isVisible());
     }
 }

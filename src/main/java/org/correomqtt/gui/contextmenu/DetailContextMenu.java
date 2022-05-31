@@ -1,12 +1,9 @@
 package org.correomqtt.gui.contextmenu;
 
 import javafx.scene.control.SeparatorMenuItem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("java:S110")
 public class DetailContextMenu extends BaseMessageContextMenu<DetailContextMenuDelegate> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(DetailContextMenu.class);
 
     private SeparatorMenuItem separator;
 

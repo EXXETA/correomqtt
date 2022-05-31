@@ -3,6 +3,7 @@ package org.correomqtt.gui.controller;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.business.provider.SettingsProvider;
@@ -14,7 +15,7 @@ import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.utils.MessageUtils;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
-import org.correomqtt.plugin.spi.MessageIncomingHook;
+import org.correomqtt.plugin.spi.IncomingMessageHook;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -57,7 +58,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     @FXML
     Button showDetailsButton;
     @FXML
-    private SplitPane splitPane;
+    protected SplitPane splitPane;
     @FXML
     private VBox messagesVBox;
     @FXML
@@ -71,7 +72,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     @Getter
     public ToggleButton FavoriteButton;
     @FXML
-    private ToggleButton showDetailViewButton;
+    protected ToggleButton showDetailViewButton;
 
     private ObservableList<MessagePropertiesDTO> messages;
 
@@ -82,7 +83,9 @@ public class MessageListViewController extends BaseConnectionController implemen
     private DetailViewController detailViewController;
 
 
-    public MessageListViewController(String connectionId, MessageListViewDelegate delegate ) {
+    protected ControllerType controllerType = null;
+
+    public MessageListViewController(String connectionId, MessageListViewDelegate delegate) {
         super(connectionId);
         ConnectionLifecycleDispatcher.getInstance().addObserver(this);
         this.delegate = delegate;
@@ -114,37 +117,45 @@ public class MessageListViewController extends BaseConnectionController implemen
 
         listView.setItems(filteredMessages);
         listView.setCellFactory(this::createCell);
-
-        splitPane.widthProperty().addListener((observable, oldValue, newValue) -> {
-            Platform.runLater(() -> {
-                if (newValue.intValue() <= 670) {
-                    closeDetailView();
-                    showDetailViewButton.setDisable(true);
-                } else {
-                    showDetailViewButton.setDisable(false);
-
-                    if (showDetailViewButton.isSelected()) {
-                        showDetailView();
-                    }
-                }
-            });
-        });
+        splitPane.widthProperty().addListener((observable, oldValue, newValue) -> Platform.runLater(() -> calculateDetailView(newValue)));
         messageSearchTextField.textProperty().addListener((observable, oldValue, newValue) -> searchInMessages(newValue));
+    }
+
+    public void calculateDetailView(Number newValue) {
+        if (newValue.intValue() <= 670) {
+            closeDetailView();
+            showDetailViewButton.setDisable(true);
+        } else {
+            showDetailViewButton.setDisable(false);
+
+            if (showDetailViewButton.isSelected()) {
+                showDetailView();
+            }
+        }
+    }
+
+    public double getDetailDividerPosition() {
+        if (!splitPane.getDividers().isEmpty()) {
+            return splitPane.getDividers().get(0).getPosition();
+        } else {
+            return 0.5;
+        }
+    }
+
+    public boolean isDetailActive() {
+        return showDetailViewButton.isSelected();
     }
 
     private void searchInMessages(String newValue) {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Search for " + newValue + " in messages: {}", getConnectionId());
+            LOGGER.debug("Search for {} in messages: {}", newValue, getConnectionId());
         }
 
         filteredMessages.setPredicate(message -> {
             if (newValue == null || newValue.isEmpty()) {
                 return true;
             }
-            if (message.getTopic().contains(newValue)) {
-                return true;
-            }
-            return false;
+            return message.getTopic().contains(newValue);
         });
     }
 
@@ -161,7 +172,7 @@ public class MessageListViewController extends BaseConnectionController implemen
         cell.itemProperty().addListener((observable, oldValue, newValue) -> contextMenu.setObject(newValue));
         cell.setOnMouseClicked(event -> onCellClicked(event, cell.getItem()));
         cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue) {
+            if (Boolean.TRUE.equals(newValue)) {
                 copyToFormButton.setDisable(false);
                 showDetailsButton.setDisable(false);
                 if (detailViewController != null) {
@@ -253,31 +264,19 @@ public class MessageListViewController extends BaseConnectionController implemen
             messages.stream()
                     .filter(m -> m.getMessageId().equals(messageDTO.getMessageId()))
                     .findFirst()
-                    .ifPresentOrElse(m -> {
-                        m.setPublishStatus(PublishStatus.PUBLISEHD);
-                    }, () -> {
-                        addMessage(messageDTO);
-                    });
+                    .ifPresentOrElse(m -> m.setPublishStatus(PublishStatus.PUBLISEHD), () -> addMessage(messageDTO));
             return;
         } else if (messageDTO.getPublishStatus() != null && messageDTO.getPublishStatus().equals(PublishStatus.SUCCEEDED)) {
             messages.stream()
                     .filter(m -> m.getMessageId().equals(messageDTO.getMessageId()))
                     .findFirst()
-                    .ifPresentOrElse(m -> {
-                        m.setPublishStatus(PublishStatus.SUCCEEDED);
-                    }, () -> {
-                        addMessage(messageDTO);
-                    });
+                    .ifPresentOrElse(m -> m.setPublishStatus(PublishStatus.SUCCEEDED), () -> addMessage(messageDTO));
             return;
         } else if (messageDTO.getPublishStatus() != null && messageDTO.getPublishStatus().equals(PublishStatus.FAILED)) {
             messages.stream()
                     .filter(m -> m.getMessageId().equals(messageDTO.getMessageId()))
                     .findFirst()
-                    .ifPresentOrElse(m -> {
-                        m.setPublishStatus(PublishStatus.FAILED);
-                    }, () -> {
-                        addMessage(messageDTO);
-                    });
+                    .ifPresentOrElse(m -> m.setPublishStatus(PublishStatus.FAILED), () -> addMessage(messageDTO));
             return;
         }
 
@@ -296,7 +295,8 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     private MessagePropertiesDTO executeOnMessageIncomingExtensions(MessagePropertiesDTO messageDTO) {
         MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
-        for (MessageIncomingHook p : PluginManager.getInstance().getExtensions(MessageIncomingHook.class)) {
+        for (IncomingMessageHook p : PluginManager.getInstance().getExtensions(IncomingMessageHook.class)) {
+            LOGGER.info("Incoming {}", p);
             messageExtensionDTO = p.onMessageIncoming(getConnectionId(), messageExtensionDTO);
         }
         return messageExtensionDTO.merge(messageDTO);
@@ -322,19 +322,32 @@ public class MessageListViewController extends BaseConnectionController implemen
         }
     }
 
-    private void closeDetailView() {
+    protected void closeDetailView() {
         if (this.detailViewController != null) {
             splitPane.getItems().remove(detailViewController.getMainNode());
             this.detailViewController = null;
         }
     }
 
-    private void showDetailView() {
+    protected void showDetailView() {
 
         if (detailViewController == null) {
             LoaderResult<DetailViewController> result = DetailViewController.load(getSelectedMessage(), getConnectionId(), this, true);
             detailViewController = result.getController();
             splitPane.getItems().add(result.getMainPane());
+
+            SettingsProvider.getInstance().getConnectionConfigs().stream()
+                    .filter(c -> c.getId().equals(getConnectionId()))
+                    .findFirst()
+                    .ifPresent(c -> {
+                        if (!splitPane.getDividers().isEmpty()) {
+                            if (controllerType == ControllerType.SUBSCRIBE) {
+                                splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDetailDividerPosition());
+                            } else if (controllerType == ControllerType.PUBLISH) {
+                                splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDetailDividerPosition());
+                            }
+                        }
+                    });
         }
     }
     @FXML

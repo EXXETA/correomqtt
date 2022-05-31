@@ -11,10 +11,12 @@ import org.correomqtt.business.dispatcher.SubscribeObserver;
 import org.correomqtt.business.dispatcher.UnsubscribeDispatcher;
 import org.correomqtt.business.dispatcher.UnsubscribeObserver;
 import org.correomqtt.business.exception.CorreoMqttException;
+import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.SubscriptionDTO;
 import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.cell.QosCell;
@@ -42,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -125,6 +128,21 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
             }
         });
 
+        SettingsProvider.getInstance().getConnectionConfigs().stream()
+                .filter(c -> c.getId().equals(getConnectionId()))
+                .findFirst()
+                .ifPresent(c -> {
+                    if (!splitPane.getDividers().isEmpty()) {splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDividerPosition());}
+                    super.messageListViewController.showDetailViewButton.setSelected(c.getConnectionUISettings().isSubscribeDetailActive());
+                    super.messageListViewController.controllerType = ControllerType.SUBSCRIBE;
+                    if (c.getConnectionUISettings().isSubscribeDetailActive()) {
+                        super.messageListViewController.showDetailView();
+                        if (!super.messageListViewController.splitPane.getDividers().isEmpty()) {
+                            super.messageListViewController.splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDetailDividerPosition());
+                        }
+                    }
+                });
+
         initTopicComboBox();
 
     }
@@ -140,12 +158,9 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         SubscriptionViewCell cell = new SubscriptionViewCell(listView);
         SubscriptionListMessageContextMenu contextMenu = new SubscriptionListMessageContextMenu(this);
         cell.setContextMenu(contextMenu);
-        cell.itemProperty().addListener((observable, oldValue, newValue) -> {
-            contextMenu.setObject(cell.getItem());
-        });
-        //cell.setOnMouseClicked(event -> onSubscriptionListClicked(event, cell.getItem()));
+        cell.itemProperty().addListener((observable, oldValue, newValue) -> contextMenu.setObject(cell.getItem()));
         cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue) {
+            if (Boolean.TRUE.equals(newValue)) {
                 onSubscriptionSelected(cell.getItem());
             }
         });
@@ -244,7 +259,9 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         selectNoneButton.setDisable(true);
     }
 
-
+    /**
+     * @param actionEvent The event given by JavaFX.
+     */
     public void onClickSubscribe(@SuppressWarnings("unused") ActionEvent actionEvent) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Subscribe to topic clicked: {}", getConnectionId());
@@ -296,7 +313,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         selectNoneButton.setDisable(false); //TODO disable on demand
 
         subscriptionPropertiesDTO.getFilteredProperty().addListener((observable, oldValue, newValue) -> {
-            if (oldValue != newValue) {
+            if (!Objects.equals(oldValue, newValue)) {
                 updateFilter();
             }
         });
@@ -304,7 +321,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
 
     @Override
     public void onSubscribedCanceled(SubscriptionDTO subscriptionDTO) {
-
+        // nothing to do
     }
 
     @Override
@@ -336,7 +353,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         });
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Filter updated", getConnectionId());
+            LOGGER.debug("Filter updated {}", getConnectionId());
         }
     }
 

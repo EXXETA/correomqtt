@@ -54,6 +54,8 @@ public class ConnectionConfigDTO {
     private Qos lwtQoS;
     private boolean lwtRetained;
     private String lwtPayload;
+    @Builder.Default
+    private ConnectionUISettings connectionUISettings = null;
 
     public ConnectionConfigDTO(ConnectionConfigDTO configDTO) {
         id = configDTO.id;
@@ -75,6 +77,7 @@ public class ConnectionConfigDTO {
         auth = configDTO.auth;
         authPassword = configDTO.authPassword;
         authKeyfile = configDTO.authKeyfile;
+        connectionUISettings = configDTO.connectionUISettings;
     }
 
     public String getHostAndPort() {

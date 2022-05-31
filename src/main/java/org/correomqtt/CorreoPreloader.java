@@ -70,6 +70,8 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        com.sun.glass.ui.Application.GetApplication().setName("org.correomqtt.CorreoMqtt");
+
         this.preloaderStage = primaryStage;
         preloaderStage.setScene(scene);
         preloaderStage.initStyle(StageStyle.UNDECORATED);
@@ -95,9 +97,7 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
 
     @Override
     public void onProgress(Double progress, String message) {
-        Platform.runLater(() -> {
-            preloaderViewController.getPreloaderStepLabel().setText(message);
-        });
+        Platform.runLater(() -> preloaderViewController.getPreloaderStepLabel().setText(message));
     }
 
 }

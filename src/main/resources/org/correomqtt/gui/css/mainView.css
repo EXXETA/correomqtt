@@ -70,3 +70,35 @@
 .white .tab.addConnectionTab .tab-label {
     -fx-background-image: url('../icons/plus-solid-white.png');
 }
+
+.black #publish-item > .label {
+    -fx-graphic: url('../icons/columns-solid-left-black.png');
+}
+
+.white #publish-item > .label {
+    -fx-graphic: url('../icons/columns-solid-left-white.png');
+}
+
+.black #subscribe-item > .label {
+    -fx-graphic: url('../icons/columns-solid-right-black.png');
+}
+
+.white #subscribe-item > .label {
+    -fx-graphic: url('../icons/columns-solid-right-white.png');
+}
+
+.black #publish-subscribe-item > .label {
+    -fx-graphic: url('../icons/columns-solid-black.png');
+}
+
+.white #publish-subscribe-item > .label {
+    -fx-graphic: url('../icons/columns-solid-white.png');
+}
+
+.black #reset-current-item > .label {
+    -fx-graphic: url('../icons/trash-restore-alt-solid-black.png');
+}
+
+.white #reset-current-item > .label {
+    -fx-graphic: url('../icons/trash-restore-alt-solid-white.png');
+}

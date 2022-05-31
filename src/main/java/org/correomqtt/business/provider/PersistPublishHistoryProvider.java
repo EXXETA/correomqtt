@@ -40,15 +40,11 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
     }
 
     public static void activate(String id) {
-        if (instances.get(id) == null) {
-            instances.put(id, new PersistPublishHistoryProvider(id));
-        }
+        instances.computeIfAbsent(id, PersistPublishHistoryProvider::new);
     }
 
     public static synchronized PersistPublishHistoryProvider getInstance(String id) {
-        if (instances.get(id) == null) {
-            instances.put(id, new PersistPublishHistoryProvider(id));
-        }
+        instances.computeIfAbsent(id, PersistPublishHistoryProvider::new);
         return instances.get(id);
     }
 
@@ -119,7 +115,7 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
 
     @Override
     public void onDisconnectFromConnectionDeleted(String connectionId) {
-
+        // nothing to do
     }
 
     @Override
@@ -209,7 +205,7 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
     }
 
     @Override
-    public void onSettingsUpdated() {
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
         // nothing to do
     }
 
