@@ -70,7 +70,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
         historyDTOs.put(id, dto);
     }
 
-    public List<MessageDTO> getMessages(String connectionId) {
+    public LinkedList<MessageDTO> getMessages(String connectionId) {
         return historyDTOs.get(connectionId).getMessages();
     }
 
