@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.exception.CorreoMqttConfigurationMissingException;
 import org.correomqtt.business.model.ConfigDTO;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.MessageListViewConfig;
@@ -104,7 +105,7 @@ public class SettingsProvider extends BaseUserFileProvider {
                 .stream()
                 .filter(c -> c.getId().equals(connectionId))
                 .findFirst()
-                .orElse(new ConnectionConfigDTO())
+                .orElseThrow(CorreoMqttConfigurationMissingException::new)
                 .produceSubscribeListViewConfig();
     }
 
@@ -113,7 +114,7 @@ public class SettingsProvider extends BaseUserFileProvider {
                 .stream()
                 .filter(c -> c.getId().equals(connectionId))
                 .findFirst()
-                .orElse(new ConnectionConfigDTO())
+                .orElseThrow(CorreoMqttConfigurationMissingException::new)
                 .producePublishListViewConfig();
     }
 

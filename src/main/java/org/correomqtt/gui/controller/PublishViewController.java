@@ -75,11 +75,8 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         PersistPublishHistoryObserver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishViewController.class);
-
     private static ResourceBundle resources;
-
     private final PublishViewDelegate delegate;
-
     private final PluginManager pluginSystem = PluginManager.getInstance();
 
     @FXML
@@ -110,7 +107,6 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     private ToggleButton publishViewFormatToggleButton;
 
     private LoadingViewController loadingViewController;
-
     private ChangeListener<String> payloadCodeAreaChangeListener;
 
     public PublishViewController(String connectionId, PublishViewDelegate delegate) {
@@ -126,7 +122,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
 
     static LoaderResult<PublishViewController> load(String connectionId, PublishViewDelegate delegate) {
         LoaderResult<PublishViewController> result = load(PublishViewController.class, "publishView.fxml",
-                                                          () -> new PublishViewController(connectionId, delegate));
+                () -> new PublishViewController(connectionId, delegate));
         resources = result.getResourceBundle();
         return result;
     }
@@ -146,10 +142,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
             p.onInstantiatePublishMenu(getConnectionId(), pluginBox);
         });
 
-        topicComboBox.getEditor()
-                .lengthProperty()
-                .addListener(((observable, oldValue, newValue) -> CheckTopicHelper.checkPublishTopic(topicComboBox,
-                                                                                                     false)));
+        topicComboBox.getEditor().lengthProperty().addListener(((observable, oldValue, newValue) -> CheckTopicHelper.checkPublishTopic(topicComboBox, false)));
 
         codeAreaScrollPane.getChildren().add(new VirtualizedScrollPane<>(payloadCodeArea));
         payloadCodeArea.prefWidthProperty().bind(codeAreaScrollPane.widthProperty());
@@ -172,19 +165,14 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 .findFirst()
                 .ifPresent(c -> {
                     if (!splitPane.getDividers().isEmpty()) {
-                        splitPane.getDividers()
-                                .get(0)
-                                .setPosition(c.getConnectionUISettings().getPublishDividerPosition());
+                        splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDividerPosition());
                     }
-                    super.messageListViewController.showDetailViewButton.setSelected(c.getConnectionUISettings()
-                                                                                             .isPublishDetailActive());
+                    super.messageListViewController.showDetailViewButton.setSelected(c.getConnectionUISettings().isPublishDetailActive());
                     super.messageListViewController.controllerType = ControllerType.PUBLISH;
                     if (c.getConnectionUISettings().isPublishDetailActive()) {
                         super.messageListViewController.showDetailView();
                         if (!super.messageListViewController.splitPane.getDividers().isEmpty()) {
-                            super.messageListViewController.splitPane.getDividers()
-                                    .get(0)
-                                    .setPosition(c.getConnectionUISettings().getPublishDetailDividerPosition());
+                            super.messageListViewController.splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getPublishDetailDividerPosition());
                         }
                     }
                 });
@@ -193,11 +181,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     }
 
     private void checkFormat() {
-        AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(),
-                                            publishViewFormatToggleButton.isSelected(),
-                                            getConnectionId(),
-                                            payloadCodeArea,
-                                            payloadCodeAreaChangeListener);
+        AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, payloadCodeAreaChangeListener);
     }
 
     private void initTopicComboBox() {
@@ -274,10 +258,9 @@ public class PublishViewController extends BaseMessageBasedViewController implem
 
         // reverse order, because first message in history must be last one to add
         new LinkedList<>(PersistPublishMessageHistoryProvider.getInstance(getConnectionId())
-                                 .getMessages(getConnectionId()))
+                .getMessages(getConnectionId()))
                 .descendingIterator()
-                .forEachRemaining(messageDTO -> messageListViewController.onNewMessage(MessageTransformer.dtoToProps(
-                        messageDTO)));
+                .forEachRemaining(messageDTO -> messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO)));
     }
 
     @Override
@@ -462,11 +445,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
             msg = "Exception in business layer: " + exception.getMessage();
         }
         AlertHelper.warn(resources.getString("publishViewControllerPublishFailedTitle"),
-                         resources.getString("publishViewControllerPublishFailedContent") +
-                                 ": " +
-                                 messageDTO.getTopic() +
-                                 ": " +
-                                 msg);
+                resources.getString("publishViewControllerPublishFailedContent") + ": " + messageDTO.getTopic() + ": " + msg);
     }
 
     @Override
@@ -484,10 +463,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     public void onImportStarted(File file) {
         Platform.runLater(() -> {
             loadingViewController = LoadingViewController.showAsDialog(getConnectionId(),
-                                                                       resources.getString(
-                                                                               "publishViewControllerOpenFileTitle") +
-                                                                               ": " +
-                                                                               file.getAbsolutePath());
+                    resources.getString("publishViewControllerOpenFileTitle") + ": " + file.getAbsolutePath());
             loadingViewController.setProgress(1);
         });
     }
@@ -514,7 +490,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 loadingViewController = null;
             }
             AlertHelper.warn(resources.getString("publishViewControllerImportCancelledTitle"),
-                             resources.getString("publishViewControllerImportFileCancelledContent"));
+                    resources.getString("publishViewControllerImportFileCancelledContent"));
         });
 
     }
@@ -527,7 +503,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 loadingViewController = null;
             }
             AlertHelper.warn(resources.getString("publishViewControllerImportFileFailedTitle"),
-                             resources.getString("publishViewControllerImportFileFailedContent"));
+                    resources.getString("publishViewControllerImportFileFailedContent"));
         });
     }
 

@@ -26,19 +26,6 @@
                         <Tooltip text="%messageListViewShowDetailsTooltip" />
                     </tooltip>
                 </Button>
-                <MenuButton fx:id="showLabelsButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#showLabelsInListView" styleClass="window-maximize-regular">
-                    <tooltip>
-                        <Tooltip text="%messageListViewShowDetailsTooltip" />
-                    </tooltip>
-                    <items>
-                        <CheckMenuItem fx:id="changeDisplayRetain" mnemonicParsing="false" onAction="#changeRetainDisplay" styleClass="menuItem" text="%retainedMenuItem" />
-                        <CheckMenuItem fx:id="changeDisplayQos" mnemonicParsing="false" onAction="#changeQosDisplay" styleClass="menuItem" text="%qosMenuItem" />
-                        <CheckMenuItem fx:id="changeDisplayTimestamp" mnemonicParsing="false" onAction="#changeTimestampDisplay" styleClass="menuItem" text="%timestampMenuItem" />
-                    </items>
-                    <HBox.margin>
-                        <Insets />
-                    </HBox.margin>
-                </MenuButton>
                 <Pane HBox.hgrow="ALWAYS" />
             <TextField fx:id="messageSearchTextField" promptText="Search topics .." styleClass="messageSearchTextField">
                <HBox.margin>
@@ -61,6 +48,19 @@
                   <Insets left="5.0" />
                </HBox.margin>
                 </Button>
+                <MenuButton fx:id="showLabelsButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#showLabelsInListView" styleClass="eye-solid">
+                    <tooltip>
+                        <Tooltip text="%messageListViewShowDetailsTooltip" />
+                    </tooltip>
+                    <items>
+                        <CheckMenuItem fx:id="changeDisplayRetained" mnemonicParsing="false" onAction="#changeRetainDisplay" styleClass="menuItem" text="%retainedMenuItem" />
+                        <CheckMenuItem fx:id="changeDisplayQos" mnemonicParsing="false" onAction="#changeQosDisplay" styleClass="menuItem" text="%qosMenuItem" />
+                        <CheckMenuItem fx:id="changeDisplayTimestamp" mnemonicParsing="false" onAction="#changeTimestampDisplay" styleClass="menuItem" text="%timestampMenuItem" />
+                    </items>
+                    <HBox.margin>
+                        <Insets left="5.0" />
+                    </HBox.margin>
+                </MenuButton>
                 <ToggleButton fx:id="showDetailViewButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#toggleDetailView" styleClass="columns-solid-without-toolbar">
                     <tooltip>
                         <Tooltip text="%messageListViewMessageSplitButton" />
