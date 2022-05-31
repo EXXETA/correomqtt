@@ -1,9 +1,5 @@
 package org.correomqtt;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.util.ContextInitializer;
-import ch.qos.logback.core.joran.spi.JoranException;
-import ch.qos.logback.core.util.StatusPrinter;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -15,7 +11,13 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import org.apache.maven.artifact.versioning.ComparableVersion;
-import org.correomqtt.business.dispatcher.*;
+import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
+import org.correomqtt.business.dispatcher.PreloadingDispatcher;
+import org.correomqtt.business.dispatcher.ShortcutDispatcher;
+import org.correomqtt.business.dispatcher.ShutdownDispatcher;
+import org.correomqtt.business.dispatcher.ShutdownObserver;
+import org.correomqtt.business.dispatcher.StartupDispatcher;
+import org.correomqtt.business.dispatcher.StartupObserver;
 import org.correomqtt.business.model.GlobalUISettings;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.provider.SettingsProvider;
@@ -26,6 +28,7 @@ import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
+import org.correomqtt.gui.utils.PluginCheckUtils;
 import org.correomqtt.plugin.PluginSystem;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.json.simple.parser.ParseException;
@@ -71,6 +74,7 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
 
         if (settings.isSearchUpdates()) {
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderSearchingUpdates"));
+            PluginCheckUtils.checkMigration();
             new PluginSystem().start();
             checkForUpdates();
         }
@@ -181,9 +185,7 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
             primaryStage.show();
         }
 
-        primaryStage.setOnCloseRequest(t -> {
-            onShutdownRequested();
-        });
+        primaryStage.setOnCloseRequest(t -> onShutdownRequested());
 
         setupShortcut();
     }
@@ -203,8 +205,8 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
 
     private void saveConnectionUISettings() {
         mainViewController.tabPane.getTabs().forEach(tab -> {
-            if (mainViewController.conntectionViewControllers.get(tab.getId()) != null) {
-                mainViewController.conntectionViewControllers.get(tab.getId()).saveConnectionUISettings();
+            if (mainViewController.getConntectionViewControllers().get(tab.getId()) != null) {
+                mainViewController.getConntectionViewControllers().get(tab.getId()).saveConnectionUISettings();
             }
         });
     }
@@ -231,25 +233,6 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
                     //TODO rest
                 }
         );
-    }
-
-    private void setLoggerFilePath() {
-
-
-        // Set the path for file logging to user directory.
-        System.setProperty("correomqtt-logfile", SettingsProvider.getInstance().getLogPath());
-
-        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
-        ContextInitializer ci = new ContextInitializer(lc);
-        lc.reset();
-        try {
-            //I prefer autoConfig() over JoranConfigurator.doConfigure() so I wouldn't need to find the file myself.
-            ci.autoConfig();
-        } catch (JoranException e) {
-            // StatusPrinter will try to log this
-            e.printStackTrace(); //TODO
-        }
-        StatusPrinter.printInCaseOfErrorsOrWarnings(lc);
     }
 
     @Override

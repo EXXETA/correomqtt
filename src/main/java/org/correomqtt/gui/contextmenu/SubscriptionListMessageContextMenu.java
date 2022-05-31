@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
+@SuppressWarnings("java:S110")
 public class SubscriptionListMessageContextMenu extends BaseObjectContextMenu<SubscriptionPropertiesDTO, SubscriptionListMessageContextMenuDelegate> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionListMessageContextMenu.class);
@@ -17,13 +18,8 @@ public class SubscriptionListMessageContextMenu extends BaseObjectContextMenu<Su
     private MenuItem unsubscribe;
     private MenuItem filter;
     private MenuItem filterOnly;
-    private MenuItem selectAll;
-    private MenuItem selectNone;
-    private MenuItem unsubscribeAll;
 
     private SeparatorMenuItem separator1;
-    private SeparatorMenuItem separator2;
-    private ResourceBundle resources;
 
     public SubscriptionListMessageContextMenu(SubscriptionListMessageContextMenuDelegate dispatcher) {
         super(dispatcher);
@@ -31,7 +27,7 @@ public class SubscriptionListMessageContextMenu extends BaseObjectContextMenu<Su
 
     @Override
     protected void initializeItems() {
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
         super.initializeItems();
 
@@ -44,26 +40,26 @@ public class SubscriptionListMessageContextMenu extends BaseObjectContextMenu<Su
         filterOnly = new MenuItem(resources.getString("subscriptionListMessageContextMenuFilterOnlyMenuItem"));
         filterOnly.setOnAction(this::filterOnly);
 
-        selectAll = new MenuItem(resources.getString("subscriptionListMessageContextMenuSelectAllMenuItem"));
+        MenuItem selectAll = new MenuItem(resources.getString("subscriptionListMessageContextMenuSelectAllMenuItem"));
         selectAll.setOnAction(this::selectAll);
 
-        selectNone = new MenuItem(resources.getString("subscriptionListMessageContextMenuSelectNoneMenuItem"));
+        MenuItem selectNone = new MenuItem(resources.getString("subscriptionListMessageContextMenuSelectNoneMenuItem"));
         selectNone.setOnAction(this::selectNone);
 
-        unsubscribeAll = new MenuItem(resources.getString("subscriptionListMessageContextMenuUnsubscribeAllMenuItem"));
+        MenuItem unsubscribeAll = new MenuItem(resources.getString("subscriptionListMessageContextMenuUnsubscribeAllMenuItem"));
         unsubscribeAll.setOnAction(this::unsubscribeAll);
 
         separator1 = new SeparatorMenuItem();
-        separator2 = new SeparatorMenuItem();
+        SeparatorMenuItem separator2 = new SeparatorMenuItem();
 
         this.getItems().addAll(unsubscribe,
                                filter,
                                filterOnly,
                                separator1,
-                               selectAll,
-                               selectNone,
-                               separator2,
-                               unsubscribeAll);
+                selectAll,
+                selectNone,
+                separator2,
+                unsubscribeAll);
     }
 
     @Override

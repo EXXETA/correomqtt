@@ -1,6 +1,7 @@
 package org.correomqtt.business.services;
 
 import org.correomqtt.business.dispatcher.SubscribeDispatcher;
+import org.correomqtt.business.exception.CorreoMqttExecutionException;
 import org.correomqtt.business.model.SubscriptionDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.slf4j.Logger;
@@ -25,12 +26,18 @@ public class SubscribeService extends BaseService {
         callSafeOnClient(client -> subscribe(client, subscriptionDTO));
     }
 
-    private void subscribe(CorreoMqttClient client, SubscriptionDTO subscriptionDTO)
-            throws InterruptedException, ExecutionException, TimeoutException {
+    private void subscribe(CorreoMqttClient client, SubscriptionDTO subscriptionDTO) {
 
-        client.subscribe(subscriptionDTO, (messageDTO ->
-                SubscribeDispatcher.getInstance().onMessageIncoming(connectionId, messageDTO, subscriptionDTO))
-        );
+        try {
+            client.subscribe(subscriptionDTO, (messageDTO ->
+                    SubscribeDispatcher.getInstance().onMessageIncoming(connectionId, messageDTO, subscriptionDTO))
+            );
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CorreoMqttExecutionException(e);
+        } catch (ExecutionException | TimeoutException e) {
+            throw new CorreoMqttExecutionException(e);
+        }
 
     }
 

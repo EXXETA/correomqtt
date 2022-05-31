@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
+@SuppressWarnings("java:S110")
 public class GenericCell<T extends GenericCellModel> extends ListCell<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GenericCell.class);

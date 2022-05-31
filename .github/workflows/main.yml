@@ -7,9 +7,10 @@ jobs:
   linuxbuild:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout master
+      - name: Checkout
         uses: actions/checkout@v2
-      - run: .github/build.bash linux
+      - name: Build
+        run: .github/build.bash linux
         id: build
         shell: bash
       - name: Release 
@@ -23,9 +24,10 @@ jobs:
   winbuild:
     runs-on: windows-2019
     steps:
-      - name: Checkout master
+      - name: Checkout
         uses: actions/checkout@v2
-      - run: .github/build.bash windows
+      - name: Build
+        run: .github/build.bash windows
         id: build
         shell: bash
       - name: Release 
@@ -39,9 +41,10 @@ jobs:
   macbuild:
     runs-on: macos-11
     steps:    
-      - name: Checkout master
+      - name: Checkout
         uses: actions/checkout@v2
-      - run: .github/build.bash osx
+      - name: Build
+        run: .github/build.bash osx
         id: build
         shell: bash
       - name: Release 

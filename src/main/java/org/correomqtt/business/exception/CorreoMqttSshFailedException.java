@@ -6,6 +6,10 @@ public class CorreoMqttSshFailedException extends CorreoMqttException {
         super(e);
     }
 
+    public CorreoMqttSshFailedException(String message, Exception e) {
+        super(message, e);
+    }
+
     @Override
     public String getInfo() {
         return resources.getString("correoMqttSshFailedExceptionInfo") + ": " + getCause().getMessage();

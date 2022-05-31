@@ -1,14 +1,16 @@
 package org.correomqtt;
 
-import com.sun.javafx.application.LauncherImpl;
 import org.correomqtt.plugin.manager.PluginSecurityPolicy;
 
 import java.security.Policy;
 
+import static javafx.application.Application.launch;
+
 public class Launcher {
     public static void main(String[] args) {
         enablePluginSandbox();
-        LauncherImpl.launchApplication(CorreoMqtt.class, CorreoPreloader.class, args);
+        System.setProperty("javafx.preloader", CorreoPreloader.class.getCanonicalName());
+        launch(CorreoMqtt.class, args);
     }
 
     private static void enablePluginSandbox() {

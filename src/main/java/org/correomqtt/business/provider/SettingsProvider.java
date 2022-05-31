@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.keyring.Keyring;
 import org.correomqtt.business.model.ConfigDTO;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.SettingsDTO;
@@ -71,7 +70,7 @@ public class SettingsProvider extends BaseUserFileProvider {
         try {
             configDTO = new ObjectMapper().readValue(getFile(), ConfigDTO.class);
         } catch (IOException e) {
-            LOGGER.error("Exception parsing config file.", e);
+            LOGGER.error("Exception parsing config file {}.", CONFIG_FILE_NAME, e);
             ConfigDispatcher.getInstance().onInvalidJsonFormat();
         }
 
@@ -114,7 +113,7 @@ public class SettingsProvider extends BaseUserFileProvider {
         ConfigDispatcher.getInstance().onSettingsUpdated(showRestartRequiredDialog);
     }
 
-    public void saveConnections(List<ConnectionConfigDTO> connections, String masterPassword) throws PasswordRecoverableException {
+    public void saveConnections(List<ConnectionConfigDTO> connections, String masterPassword) throws EncryptionRecoverableException {
         configDTO.setConnections(connections);
         saveDTO();
 
@@ -123,7 +122,7 @@ public class SettingsProvider extends BaseUserFileProvider {
             secretStoreProvider.setPassword(masterPassword, c, PASSWORD, c.getPassword());
             secretStoreProvider.setPassword(masterPassword,c, AUTH_PASSWORD,  c.getAuthPassword());
             secretStoreProvider.setPassword(masterPassword, c, SSL_KEYSTORE_PASSWORD, c.getSslKeystorePassword());
-        };
+        }
         secretStoreProvider.encryptAndSavePasswords(masterPassword);
 
         ConnectionHolder.getInstance().refresh();
@@ -146,7 +145,7 @@ public class SettingsProvider extends BaseUserFileProvider {
         }
     }
 
-    public void wipeSecretData(String masterPassword) throws PasswordRecoverableException {
+    public void wipeSecretData(String masterPassword) throws EncryptionRecoverableException {
         KeyringHandler.getInstance().wipe();
         List<ConnectionConfigDTO> connections = this.getConnectionConfigs();
         connections.forEach(c -> {
@@ -177,14 +176,17 @@ public class SettingsProvider extends BaseUserFileProvider {
         return configDTO.getThemesSettings().getActiveTheme().getIconMode().toString();
     }
 
-    public void initializePasswords(String masterPassword) throws PasswordRecoverableException {
+    public void initializePasswords(String masterPassword) throws EncryptionRecoverableException {
         SecretStoreProvider secretStoreProvider = SecretStoreProvider.getInstance();
+
+        secretStoreProvider.migratePasswordEncryption(masterPassword);
+
         List<ConnectionConfigDTO> connections = this.getConnectionConfigs();
         for(ConnectionConfigDTO c: connections){
             c.setPassword(secretStoreProvider.getPassword(masterPassword,c,PASSWORD));
             c.setAuthPassword(secretStoreProvider.getPassword(masterPassword,c, AUTH_PASSWORD));
             c.setSslKeystorePassword(secretStoreProvider.getPassword(masterPassword,c, SSL_KEYSTORE_PASSWORD));
-        };
+        }
         saveConnections(connections, masterPassword);
     }
 }

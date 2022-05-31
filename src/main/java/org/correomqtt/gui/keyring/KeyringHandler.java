@@ -5,16 +5,20 @@ import org.correomqtt.business.keyring.Keyring;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.provider.PasswordRecoverableException;
+import org.correomqtt.business.provider.EncryptionRecoverableException;
 import org.correomqtt.business.provider.SecretStoreProvider;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.helper.AlertHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
 public class KeyringHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeyringHandler.class);
 
     private static KeyringHandler instance = null;
     private ResourceBundle resources;
@@ -38,7 +42,7 @@ public class KeyringHandler {
     public void migrate(String newKeyringIdentifier) {
 
         retryWithMasterPassword(
-                masterPassword -> SecretStoreProvider.getInstance().ensurePasswordsAreDecrypted(masterPassword),
+                pw -> SecretStoreProvider.getInstance().ensurePasswordsAreDecrypted(pw),
                 resources.getString("onPasswordSaveFailedTitle"),
                 resources.getString("onPasswordSaveFailedHeader"),
                 resources.getString("onPasswordSaveFailedContent"),
@@ -50,7 +54,7 @@ public class KeyringHandler {
         if (keyring == null) {
             AlertHelper.warn(
                     resources.getString("couldNotCreateNewKeyringBackendTitle"),
-                    resources.getString("couldNotCreateNewKeyringBackendContent") + keyring.getIdentifier()
+                    resources.getString("couldNotCreateNewKeyringBackendContent")
             );
         } else {
             masterPassword = null;
@@ -61,7 +65,7 @@ public class KeyringHandler {
 
             List<ConnectionConfigDTO> connections = SettingsProvider.getInstance().getConnectionConfigs();
             retryWithMasterPassword(
-                    masterPassword -> SettingsProvider.getInstance().saveConnections(connections, masterPassword),
+                    pw -> SettingsProvider.getInstance().saveConnections(connections, pw),
                     resources.getString("onPasswordSaveFailedTitle"),
                     resources.getString("onPasswordSaveFailedHeader"),
                     resources.getString("onPasswordSaveFailedContent"),
@@ -111,7 +115,8 @@ public class KeyringHandler {
                 failed = false;
                 try {
                     consumer.apply(getMasterPassword());
-                } catch (PasswordRecoverableException e) {
+                } catch (EncryptionRecoverableException e) {
+                    LOGGER.error("Error de/encrypt passwords. ", e);
                     failed = true;
                 }
             } else {
@@ -124,7 +129,7 @@ public class KeyringHandler {
     public void init() {
         SettingsDTO settings = SettingsProvider.getInstance().getSettings();
         String oldKeyringIdentifier = settings.getKeyringIdentifier();
-        Keyring keyring = null;
+        keyring = null;
 
         if (oldKeyringIdentifier != null) {
             keyring = KeyringFactory.createKeyringByIdentifier(oldKeyringIdentifier);
@@ -139,7 +144,7 @@ public class KeyringHandler {
         ComparableVersion createdVersion = new ComparableVersion(settings.getConfigCreatedWithCorreoVersion().replaceAll("[^0-9\\.]", ""));
         ComparableVersion keyringSupportVersion = new ComparableVersion("0.13.0");
 
-        if (oldKeyringIdentifier == null && keyringSupportVersion.compareTo(createdVersion) > 0) {
+        if (oldKeyringIdentifier == null && keyringSupportVersion.compareTo(createdVersion) < 0) {
             AlertHelper.info(
                     resources.getString("newKeyringTitle"),
                     resources.getString("newKeyringContent") + newKeyringIdentifier,
@@ -157,11 +162,10 @@ public class KeyringHandler {
             settings.setKeyringIdentifier(newKeyringIdentifier); // This is called during init phase, so no need to save here.
         }
 
-        this.keyring = keyring;
     }
 
     public void wipe() {
-        masterPassword=null;
+        masterPassword = null;
         SecretStoreProvider.getInstance().wipe();
     }
 }
