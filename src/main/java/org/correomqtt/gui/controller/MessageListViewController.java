@@ -234,6 +234,11 @@ public class MessageListViewController extends BaseConnectionController implemen
         MessageUtils.saveMessage(getConnectionId(), messageDTO, stage);
     }
 
+    @Override
+    public void markMessageAsFavorite(MessagePropertiesDTO dto) {
+        changeFavoriteStatus(dto);
+    }
+
 
     void setFilterPredicate(Predicate<MessagePropertiesDTO> filterPredicate) {
         filteredMessages.setPredicate(filterPredicate);

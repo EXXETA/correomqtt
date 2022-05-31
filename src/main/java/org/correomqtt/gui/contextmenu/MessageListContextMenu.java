@@ -15,6 +15,7 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
     private MenuItem removeMessage;
     private MenuItem saveMessage;
     private MenuItem timeInfo;
+    private MenuItem markAsFavorite;
 
     private SeparatorMenuItem separator1;
     private SeparatorMenuItem separator2;
@@ -34,6 +35,9 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
         saveMessage = new MenuItem(getResources().getString("messageListContextMenuSaveMenuItem"));
         saveMessage.setOnAction(this::saveMessage);
 
+        markAsFavorite = new MenuItem(getResources().getString("messageListContextMenuMarkAsFavorite"));
+        markAsFavorite.setOnAction(this::markMessageAsFavorite);
+
         timeInfo = new MenuItem();
         timeInfo.setVisible(false);
         timeInfo.setDisable(true);
@@ -49,6 +53,7 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
                                showDetails,
                                removeMessage,
                                saveMessage,
+                               markAsFavorite,
                                separator1,
                                copyTopicToClipboard,
                                copyTimeToClipboard,
@@ -66,6 +71,14 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
             delegate.saveMessage(dto);
         } else {
             LOGGER.warn("Call to {}::saveMessage with empty message.", getClassName());
+        }
+    }
+
+    private void markMessageAsFavorite(ActionEvent actionEvent){
+        if (dto != null) {
+            delegate.markMessageAsFavorite(dto);
+        } else {
+            LOGGER.warn("Call to {}::removeMessage with empty message.", getClassName());
         }
     }
 
