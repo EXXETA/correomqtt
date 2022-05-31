@@ -44,6 +44,9 @@ public class ControlBarController extends BaseConnectionController implements Co
     public Button disconnectBtn;
 
     @FXML
+    public Button reconnectBtn;
+
+    @FXML
     public ToggleButton controlViewPButton;
 
     @FXML
@@ -97,10 +100,21 @@ public class ControlBarController extends BaseConnectionController implements Co
         brokerInfo.setText("");
         disconnectBtn.setVisible(false);
         disconnectBtn.setManaged(false);
+        reconnectBtn.setVisible(false);
+        reconnectBtn.setManaged(false);
 
         int indexToInsert = controllViewButtonHBox.getChildrenUnmodifiable().indexOf(controlViewSButton) + 1;
 
         pluginSystem.getExtensions(MainToolbarHook.class).forEach(p -> p.onInstantiateMainToolbar(getConnectionId(), controllViewButtonHBox, indexToInsert));
+    }
+
+    @FXML
+    public void onClickReconnect(ActionEvent actionEvent) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Reconnect in control bar clicked for connection: {}", getConnectionId());
+        }
+
+        TaskFactory.reconnect(getConnectionId());
     }
 
     @FXML
@@ -194,7 +208,13 @@ public class ControlBarController extends BaseConnectionController implements Co
             statusLabel.getStyleClass().add("grayStatus");
             delegate.setConnectionState(ConnectionState.DISCONNECTED_GRACEFUL);
             gracefulDisconnenct = false;
+            connectBtn.setVisible(true);
+            connectBtn.setManaged(true);
         } else {
+            reconnectBtn.setVisible(true);
+            reconnectBtn.setManaged(true);
+            connectBtn.setVisible(false);
+            connectBtn.setManaged(false);
             statusLabel.getStyleClass().add("redStatus");
             delegate.setConnectionState(ConnectionState.DISCONNECTED_UNGRACEFUL);
         }
@@ -202,8 +222,6 @@ public class ControlBarController extends BaseConnectionController implements Co
         statusInfo.setVisible(true);
         statusInfo.setManaged(true);
         updateBrokerInfo();
-        connectBtn.setVisible(true);
-        connectBtn.setManaged(true);
         connectBtn.setDisable(false);
         disconnectBtn.setVisible(false);
         disconnectBtn.setManaged(false);
@@ -230,6 +248,8 @@ public class ControlBarController extends BaseConnectionController implements Co
         updateBrokerInfo();
         connectBtn.setVisible(false);
         connectBtn.setManaged(false);
+        reconnectBtn.setVisible(false);
+        reconnectBtn.setManaged(false);
         disconnectBtn.setVisible(true);
         disconnectBtn.setManaged(true);
         disconnectBtn.setDisable(false);

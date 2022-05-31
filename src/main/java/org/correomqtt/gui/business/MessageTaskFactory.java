@@ -76,7 +76,6 @@ public class MessageTaskFactory {
 
     }
 
-
     public static void exportConnection(String connectionId, File file, ConnectionExportDTO connectionExportDTO) {
         new GuiService<>(new ExportConnectionService(connectionId,file, connectionExportDTO),
                 ExportConnectionService::exportConnection).start();
@@ -89,4 +88,7 @@ public class MessageTaskFactory {
 
     }
 
+    public static void reconnect(String connectionId) {
+        new GuiService<>(new ConnectService(connectionId), ConnectService::reconnect).start();
+    }
 }

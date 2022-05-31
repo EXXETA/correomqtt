@@ -55,6 +55,14 @@
                 <Tooltip text="%commonConnectTooltip" />
             </tooltip>
         </Button>
+        <Button fx:id="reconnectBtn" minHeight="25.0" mnemonicParsing="false" onAction="#onClickReconnect" text="%commonReconnectButton">
+            <HBox.margin>
+                <Insets right="5.0" />
+            </HBox.margin>
+            <tooltip>
+                <Tooltip text="%commonReconnectButton" />
+            </tooltip>
+        </Button>
         <Button fx:id="disconnectBtn" minHeight="25.0" mnemonicParsing="false" onAction="#onClickDisconnect" text="%commonDisconnectButton">
             <HBox.margin>
                 <Insets />

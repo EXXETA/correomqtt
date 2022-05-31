@@ -198,7 +198,6 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
     public synchronized void unsubscribe(SubscriptionDTO subscriptionDTO) {
         doUnsubscribe(subscriptionDTO);
         subscriptions.remove(subscriptionDTO);
-
     }
 
     abstract void doUnsubscribe(SubscriptionDTO subscriptionDTO);
@@ -217,7 +216,6 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
     @Override
     public synchronized void subscribe(SubscriptionDTO subscriptionDTO, Consumer<MessageDTO> incomingCallback)
             throws InterruptedException, ExecutionException, TimeoutException {
-
         if (subscriptions.contains(subscriptionDTO)) {
             throw new CorreoMqttAlreadySubscribedException(getConfigDTO().getId(), subscriptionDTO);
         }
