@@ -109,6 +109,11 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
     }
 
     @Override
+    public void onPublishChangeFavoriteStatus(String connectionId, MessageDTO messageDTO) {
+        // nothing to do
+    }
+
+    @Override
     public void onDisconnectFromConnectionDeleted(String connectionId) {
         // nothing to do
     }

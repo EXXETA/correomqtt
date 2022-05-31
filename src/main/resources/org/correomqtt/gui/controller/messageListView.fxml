@@ -27,26 +27,31 @@
                     </tooltip>
                 </Button>
                 <Pane HBox.hgrow="ALWAYS" />
-            <TextField fx:id="messageSearchTextField" promptText="Search topics .." styleClass="messageSearchTextField">
-               <HBox.margin>
-                  <Insets left="5.0" />
-               </HBox.margin></TextField>
-            <Button fx:id="messageSearchClearButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#resetMessageSearchTextField">
-               <HBox.margin>
-                  <Insets left="-1.0" />
-               </HBox.margin>
-               <styleClass>
-                  <String fx:value="broom-solid" />
-                  <String fx:value="messageSearchClear" />
-               </styleClass></Button>
+                <TextField fx:id="messageSearchTextField" promptText="Search topics .." styleClass="messageSearchTextField" />
+                <Button fx:id="messageSearchClearButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#resetMessageSearchTextField">
+                    <HBox.margin>
+                        <Insets />
+                    </HBox.margin>
+                    <styleClass>
+                        <String fx:value="broom-solid" />
+                        <String fx:value="messageSearchClear" />
+                    </styleClass>
+            </Button>
+                <ToggleButton fx:id="FavoritesFilterButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="20.0" mnemonicParsing="false" onAction="#OnClickedFavoritesFilter" prefHeight="25.0" prefWidth="20.0" stylesheets="@../css/FavoritesList.css">
+                    <HBox.margin>
+                        <Insets left="5.0" />
+                    </HBox.margin>
+                </ToggleButton>
+                <ToggleButton fx:id="FavoriteButton" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="25.0" mnemonicParsing="false" onAction="#OnClickedChangeFavoriteStatus" prefHeight="25.0" prefWidth="25.0" stylesheets="@../css/FavoritesList.css">
+                    <HBox.margin>
+                        <Insets />
+                    </HBox.margin>
+            </ToggleButton>
 
                 <Button fx:id="clearMessagesButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#clearList" styleClass="trash-alt-solid">
-                    <tooltip>
-                        <Tooltip text="%messageListViewClearMessagesButton" />
-                    </tooltip>
-               <HBox.margin>
-                  <Insets left="5.0" />
-               </HBox.margin>
+                    <HBox.margin>
+                        <Insets left="5.0" />
+                    </HBox.margin>
                 </Button>
                 <ToggleButton fx:id="showDetailViewButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#toggleDetailView" styleClass="columns-solid-without-toolbar">
                     <tooltip>
@@ -56,6 +61,9 @@
                         <Insets left="5.0" />
                     </HBox.margin>
                 </ToggleButton>
+                <VBox.margin>
+                    <Insets />
+                </VBox.margin>
             </HBox>
             <ListView fx:id="listView" styleClass="noBorder" VBox.vgrow="ALWAYS">
             </ListView>

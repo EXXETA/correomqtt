@@ -28,6 +28,7 @@ public class MessageDTO implements Comparable<MessageDTO> {
     private String topic;
     private String payload;
     private boolean isRetained;
+    private boolean isFavorited;
     private Qos qos;
     @MessageDateTimeFormatter
     private LocalDateTime dateTime;
