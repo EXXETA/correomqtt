@@ -1,6 +1,5 @@
 package org.correomqtt.gui.controller;
 
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
@@ -8,20 +7,11 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import org.correomqtt.business.keyring.KeyringFactory;
-import org.correomqtt.business.model.*;
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.gui.cell.GenericCell;
-import org.correomqtt.gui.helper.CheckTopicHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.WindowHelper;
-import org.correomqtt.plugin.manager.PluginManager;
-import org.correomqtt.plugin.spi.LwtSettingsHook;
-import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,8 +25,8 @@ public class ConnectionExportViewController  extends BaseController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
 
 
-    @FXML
-    private ListView<ConnectionPropertiesDTO> connectionsListView;
+//    @FXML
+//    private ListView<ConnectionPropertiesDTO> connectionsListView;
     @FXML
     private Button exportButton;
     @FXML
@@ -77,6 +67,7 @@ public class ConnectionExportViewController  extends BaseController {
     @FXML
     public void initialize() {
 
+        exportButton.setDisable(true);
         containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
 
 
