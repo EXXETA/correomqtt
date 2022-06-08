@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane fx:id="containerAnchorPane" prefHeight="450.0" prefWidth="800.0" stylesheets="@../css/connections.css" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ConnectionExportViewController">
+
+    <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+    <VBox>
+        <ListView fx:id="connectionsListView" minHeight="320.0" prefWidth="193.0" />
+        <Label>TEST LABEL</Label>
+    </VBox>
+    </HBox>
+</AnchorPane>

@@ -48,6 +48,24 @@
                   <HBox.margin>
                      <Insets left="3.0" />
                   </HBox.margin></Label>
+                    <Label fx:id="exportLabel" onMouseClicked="#openExport">
+                        <styleClass>
+                            <String fx:value="connectionListActions" />
+                            <String fx:value="upDown" />
+                            <String fx:value="file-export-solid" />
+                        </styleClass>
+                        <HBox.margin>
+                            <Insets left="3.0" />
+                        </HBox.margin></Label>
+                    <Label fx:id="importLabel" onMouseClicked="#importConnections">
+                        <styleClass>
+                            <String fx:value="connectionListActions" />
+                            <String fx:value="upDown" />
+                            <String fx:value="file-upload-solid" />
+                        </styleClass>
+                        <HBox.margin>
+                            <Insets left="3.0" />
+                        </HBox.margin></Label>
                 </children>
             </HBox>
         </VBox>

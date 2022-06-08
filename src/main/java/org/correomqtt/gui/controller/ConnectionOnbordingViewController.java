@@ -52,18 +52,21 @@ public class ConnectionOnbordingViewController extends BaseController implements
     public HBox noConnectionsButtonBar;
     private ConnectionOnboardingDelegate connectionsOnboardingDelegate;
     private ConnectionSettingsViewDelegate connectionsSettingsViewDelegate;
+    private ConnectionExportViewDelegate connectionExportViewDelegate;
 
-    public ConnectionOnbordingViewController(ConnectionOnboardingDelegate connectionsOnboardingDelegate, ConnectionSettingsViewDelegate connectionSettingsViewDelegate) {
+    public ConnectionOnbordingViewController(ConnectionOnboardingDelegate connectionsOnboardingDelegate, ConnectionSettingsViewDelegate connectionSettingsViewDelegate, ConnectionExportViewDelegate connectionExportViewDelegate) {
         super();
         this.connectionsOnboardingDelegate = connectionsOnboardingDelegate;
         this.connectionsSettingsViewDelegate = connectionSettingsViewDelegate;
+        this.connectionExportViewDelegate = connectionExportViewDelegate;
         ConfigDispatcher.getInstance().addObserver(this);
     }
 
     public static LoaderResult<ConnectionOnbordingViewController> load(ConnectionOnboardingDelegate connectionsOnboardingDelegate,
-                                                                       ConnectionSettingsViewDelegate connectionSettingsViewDelegate) {
+                                                                       ConnectionSettingsViewDelegate connectionSettingsViewDelegate,
+                                                                       ConnectionExportViewDelegate connectionExportViewDelegate) {
         return load(ConnectionOnbordingViewController.class, "connectionOnboardingView.fxml",
-                () -> new ConnectionOnbordingViewController(connectionsOnboardingDelegate, connectionSettingsViewDelegate));
+                () -> new ConnectionOnbordingViewController(connectionsOnboardingDelegate, connectionSettingsViewDelegate, connectionExportViewDelegate));
     }
 
     public void setDelegate(ConnectionOnboardingDelegate delegate) {
@@ -210,7 +213,7 @@ public class ConnectionOnbordingViewController extends BaseController implements
     }
 
     public void openSettings(boolean autoNew) {
-        ConnectionSettingsViewController.showAsDialog(connectionsSettingsViewDelegate);
+        ConnectionSettingsViewController.showAsDialog(connectionsSettingsViewDelegate, connectionExportViewDelegate);
         if (autoNew) {
             //result.getController().onAddClicked(); TODO
             LOGGER.debug("Open settings with new default connection");

@@ -53,6 +53,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
     public static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
     public static final String EMPTY_ERROR_CLASS = "emptyError";
     private final ConnectionSettingsViewDelegate delegate;
+    private final ConnectionExportViewDelegate connectionExportViewDelegate;
 
     @FXML
     private ListView<ConnectionPropertiesDTO> connectionsListView;
@@ -111,6 +112,10 @@ public class ConnectionSettingsViewController extends BaseController implements 
     @FXML
     private Label downLabel;
     @FXML
+    private Label exportLabel;
+    @FXML
+    private Label importLabel;
+    @FXML
     private Button applyButton;
     @FXML
     private Button saveButton;
@@ -143,18 +148,21 @@ public class ConnectionSettingsViewController extends BaseController implements 
     private boolean dragging;
     Map<String, Integer> waitForDisconnectIds = new HashMap<>();
 
-    public ConnectionSettingsViewController(ConnectionSettingsViewDelegate delegate) {
+    public ConnectionSettingsViewController(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate) {
         this.delegate = delegate;
+        this.connectionExportViewDelegate = exportViewDelegate;
         ConfigDispatcher.getInstance().addObserver(this);
         ConnectionLifecycleDispatcher.getInstance().addObserver(this);
     }
 
-    public static LoaderResult<ConnectionSettingsViewController> load(ConnectionSettingsViewDelegate delegate) {
+    public static LoaderResult<ConnectionSettingsViewController> load(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate) {
         return load(ConnectionSettingsViewController.class, "connectionSettingsView.fxml",
-                () -> new ConnectionSettingsViewController(delegate));
+                () -> new ConnectionSettingsViewController(delegate,exportViewDelegate));
     }
 
-    public static void showAsDialog(ConnectionSettingsViewDelegate delegate) {
+
+
+    public static void showAsDialog(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate connectionExportViewDelegate) {
 
 
         Map<Object, Object> properties = new HashMap<>();
@@ -163,7 +171,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
             return;
         }
-        LoaderResult<ConnectionSettingsViewController> result = load(delegate);
+        LoaderResult<ConnectionSettingsViewController> result = load(delegate,connectionExportViewDelegate);
         resources = result.getResourceBundle();
 
         showAsDialog(result, resources.getString("connectionSettingsViewControllerTitle"), properties, false, false, null,
@@ -1032,6 +1040,22 @@ public class ConnectionSettingsViewController extends BaseController implements 
         saveConnection();
         showConnection(current);
     }
+    public void openExport(boolean autoNew) {
+        ConnectionExportViewController.showAsDialog(connectionExportViewDelegate);
+        if (autoNew) {
+            //result.getController().onAddClicked(); TODO
+            LOGGER.debug("Open settings with new default connection");
+        } else {
+            LOGGER.debug("Open settings for existing connections");
+        }
+    }
+
+    @FXML
+    public void openExport() {
+        openExport(false);
+
+    }
+
 
     @Override
     public void onConfigDirectoryEmpty() {
@@ -1149,5 +1173,15 @@ public class ConnectionSettingsViewController extends BaseController implements 
     @Override
     public String getConnectionId() {
         return null;
+    }
+
+
+    public void exportConnections() {
+        LOGGER.info("Export Clicked");
+    }
+
+    public void importConnections() {
+        LOGGER.info("Import Clicked");
+
     }
 }
