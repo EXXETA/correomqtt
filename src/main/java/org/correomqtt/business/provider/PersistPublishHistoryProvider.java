@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +80,7 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
         List<String> topicsSet = getTopics(connectionId);
         String topic = messageDTO.getTopic();
         topicsSet.remove(topic);
-        topicsSet.add(topic);
+        topicsSet.add(0,topic);
         while (topicsSet.size() > MAX_ENTRIES) {
             LOGGER.info("Removing last entry from publish history, cause limit of {} is reached.", MAX_ENTRIES);
             topicsSet.remove(topicsSet.iterator().next());
@@ -105,6 +106,11 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
 
     @Override
     public void onPublishesCleared(String connectionId) {
+        // nothing to do
+    }
+
+    @Override
+    public void onPublishChangeFavoriteStatus(String connectionId, MessageDTO messageDTO) {
         // nothing to do
     }
 

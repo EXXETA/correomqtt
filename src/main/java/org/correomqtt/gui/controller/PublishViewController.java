@@ -131,6 +131,9 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         qosComboBox.getSelectionModel().selectFirst();
         qosComboBox.setCellFactory(QosCell::new);
 
+        messageListViewController.getFavoritesFilterButton().setVisible(true);
+        messageListViewController.getFavoriteButton().setVisible(true);
+
         pluginSystem.getExtensions(PublishMenuHook.class).forEach(p -> {
             HBox pluginBox = new HBox();
             pluginBox.setAlignment(Pos.CENTER_RIGHT);
@@ -327,6 +330,11 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Message copied to form: {}", getConnectionId());
         }
+    }
+
+    @Override
+    public void changeFavoriteStatus(MessagePropertiesDTO messageDTO) {
+        PublishGlobalDispatcher.getInstance().onPublishChangeFavoriteStatus(getConnectionId(), MessageTransformer.propsToDTO(messageDTO));
     }
 
     private void executeOnCopyMessageToFormExtensions(MessagePropertiesDTO messageDTO) {

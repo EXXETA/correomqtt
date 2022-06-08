@@ -1,5 +1,4 @@
 package org.correomqtt.business.provider;
-
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
@@ -7,17 +6,20 @@ import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.dispatcher.PersistPublishHistoryDispatcher;
 import org.correomqtt.business.dispatcher.PublishGlobalDispatcher;
 import org.correomqtt.business.dispatcher.PublishGlobalObserver;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.PublishMessageHistoryListDTO;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProvider<PublishMessageHistoryListDTO>
         implements PublishGlobalObserver,
@@ -68,7 +70,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
         historyDTOs.put(id, dto);
     }
 
-    public List<MessageDTO> getMessages(String connectionId) {
+    public LinkedList<MessageDTO> getMessages(String connectionId) {
         return historyDTOs.get(connectionId).getMessages();
     }
 
@@ -76,12 +78,19 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     public void onPublishSucceeded(String connectionId, MessageDTO messageDTO) {
         LOGGER.info("Persisting new publish history entry: {}", messageDTO.getTopic());
 
-        List<MessageDTO> messageList = getMessages(connectionId);
-        messageList.add(0,messageDTO);
-        while (messageList.size() > MAX_ENTRIES) {
+        LinkedList<MessageDTO> messageList = getMessages(connectionId);
+        messageList.addFirst(messageDTO);
+
+        LinkedList<MessageDTO> nonFavorites = messageList.stream()
+                                            .filter(m->m.isFavorited()!=true)
+                                            .collect(Collectors.toCollection(LinkedList::new));
+
+        while (messageList.size() > MAX_ENTRIES){
             LOGGER.info("Removing last entry from publish history, cause limit of {} is reached.", MAX_ENTRIES);
-            messageList.remove(messageList.size()-1);
+            messageList.remove(nonFavorites.getLast());
+            nonFavorites.clear();
         }
+
         saveHistory(connectionId);
     }
 
@@ -101,12 +110,25 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
         messageList.remove(messageDTO);
         saveHistory(connectionId);
     }
+    @Override
+    public void onPublishChangeFavoriteStatus(String connectionId, MessageDTO messageDTO) {
+        LOGGER.info("change {} in fervorites list for {}.", messageDTO.getTopic(), connectionId);
+        LinkedList<MessageDTO> messageList = getMessages(connectionId);
+        for(int i =0; i<messageList.size();i++){
+             if(messageList.get(i).getMessageId()==messageDTO.getMessageId()){
+                  messageDTO.setFavorited(!messageList.get(i).isFavorited());
+                  messageList.set(i,messageDTO);
+             }
+        }
+       saveHistory(connectionId);
+    }
 
     @Override
     public void onPublishesCleared(String connectionId) {
         LOGGER.info("Clearing publish history for {}.", connectionId);
-        List<MessageDTO> messageList = getMessages(connectionId);
-        messageList.clear();
+        LinkedList<MessageDTO> messageList = getMessages(connectionId);
+        List<MessageDTO> nonFavoriteMessages =messageList.stream().filter(m-> !m.isFavorited()).collect(Collectors.toList());
+        messageList.removeAll(nonFavoriteMessages);
         saveHistory(connectionId);
     }
 

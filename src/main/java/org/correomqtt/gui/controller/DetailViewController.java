@@ -139,6 +139,8 @@ public class DetailViewController extends BaseConnectionController implements
     private Label emptyLabel;
     @FXML
     private VBox metaHolder;
+    @FXML
+    private ToggleButton FavoriteStar;
     private List<Search> results;
     private int currentSearchResult;
     private String currentSearchString = null;
@@ -214,6 +216,8 @@ public class DetailViewController extends BaseConnectionController implements
 
             }
         });
+
+        FavoriteStar.setVisible(false );
 
         detailViewVBox.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
             if (event.isShortcutDown() && KeyCode.F == event.getCode()) {
@@ -319,6 +323,9 @@ public class DetailViewController extends BaseConnectionController implements
         emptyLabel.setManaged(false);
         messageGroup.setVisible(true);
         messageGroup.setManaged(true);
+        FavoriteStar.setVisible(messageDTO!=null && messageDTO.isFavorited());
+
+
 
         detailViewTopicLabel.setText(messageDTO.getTopic());
         detailViewTime.setText(messageDTO.getDateTime().toString()); //TODO formatter
