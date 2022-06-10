@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ExportMessageDispatcher;
 import org.correomqtt.business.exception.CorreoMqttExportMessageException;
 import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.ExportConnectionView;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.slf4j.Logger;
@@ -30,7 +31,7 @@ public class ExportConnectionService extends BaseService{
     public void exportConnection() {
         LOGGER.info( "Start exporting connections to file {}.", file.getAbsolutePath());
         try {
-            new ObjectMapper().writeValue(file,connectionConfigDTOS);
+            new ObjectMapper().writerWithView(ExportConnectionView.class).writeValue(file,connectionConfigDTOS);
         } catch (IOException e) {
             throw new CorreoMqttExportMessageException(e);
         }

@@ -1,11 +1,10 @@
 package org.correomqtt.gui.cell;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
+import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
 import org.correomqtt.business.model.CorreoMqttVersion;
 import org.correomqtt.business.model.Lwt;
@@ -53,6 +52,7 @@ public class ExportConnectionCell extends ListCell<ConnectionPropertiesDTO> {
     @FXML
     public void initialize() {
         mainNode.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
+
     }
 
     public ExportConnectionCell(ListView<ConnectionPropertiesDTO> listView) {

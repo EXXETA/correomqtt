@@ -7,6 +7,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -86,7 +87,9 @@ public class ConnectionExportViewController  extends BaseController {
         exportButton.setDisable(false);
         containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
         loadConnectionListFromBackground();
+        connectionsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         connectionsListView.setCellFactory(this::createCell);
+
 
     }
 
@@ -103,9 +106,13 @@ public class ConnectionExportViewController  extends BaseController {
 
     private ListCell<ConnectionPropertiesDTO> createCell(ListView<ConnectionPropertiesDTO> connectionListView) {
         ExportConnectionCell cell = new ExportConnectionCell(connectionListView);
+//        cell.setOnMouseClicked(mouseEvent -> {
+//            connectionsListView.getSelectionModel().select();
+//
+//        });
         cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
 
-            ConnectionPropertiesDTO selectedItem = connectionsListView.getSelectionModel().getSelectedItem();
+            List<ConnectionPropertiesDTO> selectedItem = connectionsListView.getSelectionModel().getSelectedItems();
 
             if (selectedItem == activeConnectionConfigDTO) {
                 return;
@@ -153,4 +160,11 @@ public class ConnectionExportViewController  extends BaseController {
             TaskFactory.exportConnection(null, file, connectionConfigDTOS);
         }
     }
+
+    @FXML
+    public void onCancelClicked() {
+        Stage stage = (Stage) exportButton.getScene().getWindow();
+        stage.close();
+    }
+
 }
