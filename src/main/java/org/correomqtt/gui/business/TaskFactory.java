@@ -1,9 +1,13 @@
 package org.correomqtt.gui.business;
 
+import javafx.collections.ObservableList;
 import lombok.extern.slf4j.Slf4j;
+import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.services.*;
+import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
+import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.transformer.SubscriptionTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
@@ -11,6 +15,7 @@ import org.correomqtt.plugin.model.MessageExtensionDTO;
 import org.correomqtt.plugin.spi.OutgoingMessageHook;
 
 import java.io.File;
+import java.util.List;
 
 @Slf4j
 public class TaskFactory {
@@ -66,4 +71,13 @@ public class TaskFactory {
                          ExportMessageService::exportMessage).start();
 
     }
+
+
+    public static void exportConnection(String connectionId, File file, List<ConnectionConfigDTO> connectionConfigDTOS) {
+        new GuiService<>(new ExportConnectionService(connectionId,file, connectionConfigDTOS),
+                ExportConnectionService::exportConnection).start();
+
+    }
+
+
 }

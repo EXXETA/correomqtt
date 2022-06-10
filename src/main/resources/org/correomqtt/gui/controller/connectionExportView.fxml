@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.control.ListView?>
 <AnchorPane fx:id="containerAnchorPane" styleClass="dialog" prefHeight="450.0" prefWidth="800.0"
             stylesheets="@../css/connections.css" xmlns="http://javafx.com/javafx/10.0.2-internal"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -11,9 +12,12 @@
 
     <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
           AnchorPane.topAnchor="0.0">
+        <ListView fx:id="connectionsListView" minHeight="320.0" prefWidth="193.0" />
+
         <VBox>
             <Label>TEST LABEL</Label>
-            <Button fx:id="exportButton">TEST</Button>
+            <Button fx:id="exportButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onExportClicked"  text="%connectionExportSelectionButton"></Button>
+
         </VBox>
     </HBox>
 </AnchorPane>
