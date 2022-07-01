@@ -79,5 +79,10 @@ public class TaskFactory {
 
     }
 
+    public static void importConnection(String connectionId, File file) {
+        new GuiService<>(new ImportConnectionService(connectionId,file),
+                ImportConnectionService::importConnection).start();
+
+    }
 
 }

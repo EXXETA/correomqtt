@@ -57,7 +57,7 @@
                         <HBox.margin>
                             <Insets left="3.0" />
                         </HBox.margin></Label>
-                    <Label fx:id="importLabel" onMouseClicked="#importConnections">
+                    <Label fx:id="importLabel" onMouseClicked="#openImport">
                         <styleClass>
                             <String fx:value="connectionListActions" />
                             <String fx:value="upDown" />

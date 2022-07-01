@@ -35,7 +35,7 @@ import java.util.UUID;
 
 import static org.correomqtt.business.utils.VendorConstants.WEBSITE;
 
-public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConnectionExportViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
+public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConnectionExportViewDelegate, ConnectionImportViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainViewController.class);
     public static final String DIRTY_CLASS = "dirty";
@@ -119,7 +119,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void setupAddTab() {
         addTab.setClosable(false);
-        LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this, this,this);
+        LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this, this,this,this);
         addTab.setContent(loadResult.getMainPane());
         resources = loadResult.getResourceBundle();
 
@@ -138,7 +138,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void setMenuEventHandler() {
         closeItem.setOnAction(event -> ShutdownDispatcher.getInstance().onShutdownRequested());
-        connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this, this));
+        connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this, this, this));
         settingsItem.setOnAction(event -> SettingsViewController.showAsDialog());
         aboutItem.setOnAction(event -> AboutViewController.showAsDialog());
         updateItem.setOnAction(event -> {

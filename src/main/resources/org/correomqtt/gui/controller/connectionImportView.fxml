@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import org.controlsfx.control.CheckListView?>
+<?import javafx.geometry.Insets?>
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.correomqtt.gui.controller.ConnectionImportViewController"
+            prefHeight="400.0" prefWidth="600.0">
+
+    <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <VBox>
+
+            <!--            <ListView fx:id="connectionsListView" minHeight="320.0" prefWidth="193.0" />-->
+            <CheckListView fx:id="connectionsListView" minHeight="320.0" prefWidth="193.0" />
+        </VBox>
+        <VBox>
+            <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
+                <Button fx:id="cancelButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">
+                    <HBox.margin>
+                        <Insets right="5.0" />
+                    </HBox.margin>
+                    <tooltip>
+                        <Tooltip text="%commonCancelTooltip" />
+                    </tooltip>
+                </Button>
+                <Button fx:id="importButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onImportClicked" text="%connectionExportSelectionButton">
+                    <HBox.margin>
+                        <Insets right="5.0" />
+                    </HBox.margin>
+                    <tooltip>
+                        <Tooltip text="%commonApplyTooltip" />
+                    </tooltip>
+                </Button>
+                <VBox.margin>
+                    <Insets bottom="10.0" right="10.0" />
+                </VBox.margin>
+            </HBox>
+        </VBox>
+
+    </HBox>
+
+</AnchorPane>

@@ -54,6 +54,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
     public static final String EMPTY_ERROR_CLASS = "emptyError";
     private final ConnectionSettingsViewDelegate delegate;
     private final ConnectionExportViewDelegate connectionExportViewDelegate;
+    private final ConnectionImportViewDelegate connectionImportViewDelegate;
 
     @FXML
     private ListView<ConnectionPropertiesDTO> connectionsListView;
@@ -148,21 +149,22 @@ public class ConnectionSettingsViewController extends BaseController implements 
     private boolean dragging;
     Map<String, Integer> waitForDisconnectIds = new HashMap<>();
 
-    public ConnectionSettingsViewController(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate) {
+    public ConnectionSettingsViewController(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate, ConnectionImportViewDelegate importViewDelegate) {
         this.delegate = delegate;
         this.connectionExportViewDelegate = exportViewDelegate;
+        this.connectionImportViewDelegate = importViewDelegate;
         ConfigDispatcher.getInstance().addObserver(this);
         ConnectionLifecycleDispatcher.getInstance().addObserver(this);
     }
 
-    public static LoaderResult<ConnectionSettingsViewController> load(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate) {
+    public static LoaderResult<ConnectionSettingsViewController> load(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate, ConnectionImportViewDelegate importViewDelegate) {
         return load(ConnectionSettingsViewController.class, "connectionSettingsView.fxml",
-                () -> new ConnectionSettingsViewController(delegate,exportViewDelegate));
+                () -> new ConnectionSettingsViewController(delegate,exportViewDelegate,importViewDelegate));
     }
 
 
 
-    public static void showAsDialog(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate connectionExportViewDelegate) {
+    public static void showAsDialog(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate, ConnectionImportViewDelegate importViewDelegate) {
 
 
         Map<Object, Object> properties = new HashMap<>();
@@ -171,7 +173,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
             return;
         }
-        LoaderResult<ConnectionSettingsViewController> result = load(delegate,connectionExportViewDelegate);
+        LoaderResult<ConnectionSettingsViewController> result = load(delegate,exportViewDelegate, importViewDelegate);
         resources = result.getResourceBundle();
 
         showAsDialog(result, resources.getString("connectionSettingsViewControllerTitle"), properties, false, false, null,
@@ -1054,6 +1056,29 @@ public class ConnectionSettingsViewController extends BaseController implements 
     public void openExport() {
         openExport(false);
 
+
+    }
+
+    public void openImport(boolean autoNew){
+        Stage stage = (Stage) containerAnchorPane.getScene().getWindow();
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(resources.getString("importUtilsTitle"));
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(resources.getString("importUtilsDescription"), "*.json");
+        fileChooser.getExtensionFilters().add(extFilter);
+
+        File file = fileChooser.showOpenDialog(stage);
+        if (file != null) {
+            TaskFactory.importConnection(getConnectionId(), file);
+            ConnectionImportViewController.showAsDialog(connectionImportViewDelegate);
+        }
+    }
+
+    @FXML
+    public void openImport() {
+        LOGGER.info("Import Clicked");
+        openImport(false);
+
     }
 
 
@@ -1176,12 +1201,5 @@ public class ConnectionSettingsViewController extends BaseController implements 
     }
 
 
-    public void exportConnections() {
-        LOGGER.info("Export Clicked");
-    }
 
-    public void importConnections() {
-        LOGGER.info("Import Clicked");
-
-    }
 }

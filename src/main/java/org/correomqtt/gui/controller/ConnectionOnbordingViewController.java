@@ -53,8 +53,9 @@ public class ConnectionOnbordingViewController extends BaseController implements
     private ConnectionOnboardingDelegate connectionsOnboardingDelegate;
     private ConnectionSettingsViewDelegate connectionsSettingsViewDelegate;
     private ConnectionExportViewDelegate connectionExportViewDelegate;
+    private ConnectionImportViewDelegate connectionImportViewDelegate;
 
-    public ConnectionOnbordingViewController(ConnectionOnboardingDelegate connectionsOnboardingDelegate, ConnectionSettingsViewDelegate connectionSettingsViewDelegate, ConnectionExportViewDelegate connectionExportViewDelegate) {
+    public ConnectionOnbordingViewController(ConnectionOnboardingDelegate connectionsOnboardingDelegate, ConnectionSettingsViewDelegate connectionSettingsViewDelegate, ConnectionExportViewDelegate connectionExportViewDelegate, ConnectionImportViewDelegate connectionImportViewDelegate) {
         super();
         this.connectionsOnboardingDelegate = connectionsOnboardingDelegate;
         this.connectionsSettingsViewDelegate = connectionSettingsViewDelegate;
@@ -64,9 +65,10 @@ public class ConnectionOnbordingViewController extends BaseController implements
 
     public static LoaderResult<ConnectionOnbordingViewController> load(ConnectionOnboardingDelegate connectionsOnboardingDelegate,
                                                                        ConnectionSettingsViewDelegate connectionSettingsViewDelegate,
-                                                                       ConnectionExportViewDelegate connectionExportViewDelegate) {
+                                                                       ConnectionExportViewDelegate connectionExportViewDelegate,
+                                                                       ConnectionImportViewDelegate connectionImportViewDelegate) {
         return load(ConnectionOnbordingViewController.class, "connectionOnboardingView.fxml",
-                () -> new ConnectionOnbordingViewController(connectionsOnboardingDelegate, connectionSettingsViewDelegate, connectionExportViewDelegate));
+                () -> new ConnectionOnbordingViewController(connectionsOnboardingDelegate, connectionSettingsViewDelegate, connectionExportViewDelegate, connectionImportViewDelegate));
     }
 
     public void setDelegate(ConnectionOnboardingDelegate delegate) {
@@ -213,7 +215,7 @@ public class ConnectionOnbordingViewController extends BaseController implements
     }
 
     public void openSettings(boolean autoNew) {
-        ConnectionSettingsViewController.showAsDialog(connectionsSettingsViewDelegate, connectionExportViewDelegate);
+        ConnectionSettingsViewController.showAsDialog(connectionsSettingsViewDelegate, connectionExportViewDelegate, connectionImportViewDelegate);
         if (autoNew) {
             //result.getController().onAddClicked(); TODO
             LOGGER.debug("Open settings with new default connection");
