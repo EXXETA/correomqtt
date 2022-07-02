@@ -1,12 +1,11 @@
 package org.correomqtt.business.dispatcher;
 
 import org.correomqtt.business.model.ConnectionConfigDTO;
-import org.correomqtt.business.model.MessageDTO;
 
 import java.io.File;
 import java.util.List;
 
-public class ImportConnectionDispatcher extends BaseConnectionDispatcher<ImportConnectionObserver>{
+public class ImportConnectionDispatcher extends BaseConnectionDispatcher<ImportConnectionObserver> {
 
     private static ImportConnectionDispatcher instance;
 
@@ -17,28 +16,28 @@ public class ImportConnectionDispatcher extends BaseConnectionDispatcher<ImportC
         return instance;
     }
 
-    public void onImportStarted(String connectionId, File file) {
-        triggerFiltered(connectionId, o -> o.onImportStarted(connectionId,file));
+    public void onImportStarted(File file) {
+        trigger(o -> o.onImportStarted(file));
     }
 
-    public void onImportSucceeded(String connectionId, List<ConnectionConfigDTO> connectionConfigDTOS) {
-        triggerFiltered(connectionId, o -> o.onImportSucceeded(connectionConfigDTOS));
+    public void onImportSucceeded( List<ConnectionConfigDTO> connectionConfigDTOS) {
+        trigger(o -> o.onImportSucceeded(connectionConfigDTOS));
     }
 
-    public void onImportCancelled(String connectionId, File file) {
-        triggerFiltered(connectionId, o -> o.onImportCancelled(file));
+    public void onImportCancelled( File file) {
+        trigger(o -> o.onImportCancelled(file));
     }
 
-    public void onImportFailed(String connectionId, File file, Throwable exception) {
-        triggerFiltered(connectionId, o -> o.onImportFailed(file, exception));
+    public void onImportFailed( File file, Throwable exception) {
+        trigger(o -> o.onImportFailed(file, exception));
     }
 
-    public void onImportRunning(String connectionId) {
-        triggerFiltered(connectionId, ImportConnectionObserver::onImportRunning);
+    public void onImportRunning() {
+        trigger(ImportConnectionObserver::onImportRunning);
     }
 
-    public void onImportScheduled(String connectionId) {
-        triggerFiltered(connectionId, ImportConnectionObserver::onImportScheduled);
+    public void onImportScheduled() {
+        trigger(ImportConnectionObserver::onImportScheduled);
     }
 
 }

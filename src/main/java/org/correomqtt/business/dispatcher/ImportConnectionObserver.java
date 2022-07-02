@@ -21,7 +21,7 @@ public interface ImportConnectionObserver extends BaseConnectionObserver{
         // nothing to do
     }
 
-    default void onImportStarted(String connectionId,File file) {
+    default void onImportStarted(File file) {
         // nothing to do
     }
 }

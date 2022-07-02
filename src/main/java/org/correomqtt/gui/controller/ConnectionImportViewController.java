@@ -11,10 +11,10 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import org.controlsfx.control.CheckListView;
+import org.correomqtt.business.dispatcher.ImportConnectionDispatcher;
 import org.correomqtt.business.dispatcher.ImportConnectionObserver;
 import org.correomqtt.business.dispatcher.LogObserver;
 import org.correomqtt.business.model.ConnectionConfigDTO;
-import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
@@ -31,6 +31,9 @@ import java.util.ResourceBundle;
 public class ConnectionImportViewController extends BaseController implements LogObserver, ImportConnectionObserver {
     private final ConnectionImportViewDelegate delegate;
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
+    private ObservableList<ConnectionConfigDTO> connectionConfigDTOS = FXCollections.observableArrayList();
+    private ConnectionPropertiesDTO activeConnectionConfigDTO;
+    private static ResourceBundle resources;
 
     @FXML
     private CheckListView<ConnectionConfigDTO> connectionsListView;
@@ -39,14 +42,12 @@ public class ConnectionImportViewController extends BaseController implements Lo
     @FXML
     private AnchorPane containerAnchorPane;
 
-    private ObservableList<ConnectionConfigDTO> connectionConfigDTOS = FXCollections.observableArrayList();
-    private ConnectionPropertiesDTO activeConnectionConfigDTO;
 
-    private static ResourceBundle resources;
 
 
     public ConnectionImportViewController(ConnectionImportViewDelegate delegate) {
         this.delegate = delegate;
+        ImportConnectionDispatcher.getInstance().addObserver(this);
 
     }
 
@@ -76,7 +77,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
     @FXML
     public void initialize() {
         importButton.setDisable(false);
-        containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
+//        containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
         connectionsListView.setCellFactory(lv -> new CheckBoxListCell<ConnectionConfigDTO>(connectionsListView::getItemBooleanProperty) {
             @Override
             public void updateItem(ConnectionConfigDTO connectionConfigDTO, boolean empty) {
@@ -105,7 +106,8 @@ public class ConnectionImportViewController extends BaseController implements Lo
 
     @Override
     public void onImportSucceeded(List<ConnectionConfigDTO> connectionConfigDTOS) {
-
+        this.connectionConfigDTOS.addAll(connectionConfigDTOS);
+        connectionsListView.setItems(this.connectionConfigDTOS);
     }
 
     @Override

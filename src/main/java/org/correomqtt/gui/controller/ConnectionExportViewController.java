@@ -32,6 +32,11 @@ public class ConnectionExportViewController extends BaseController {
 
     private final ConnectionExportViewDelegate delegate;
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
+    private ObservableList<ConnectionConfigDTO> connectionConfigDTOS = FXCollections.observableArrayList();
+    private ConnectionPropertiesDTO activeConnectionConfigDTO;
+
+    private static ResourceBundle resources;
+
 
     @FXML
     private CheckListView<ConnectionConfigDTO> connectionsListView;
@@ -40,10 +45,6 @@ public class ConnectionExportViewController extends BaseController {
     @FXML
     private AnchorPane containerAnchorPane;
 
-    private ObservableList<ConnectionConfigDTO> connectionConfigDTOS = FXCollections.observableArrayList();
-    private ConnectionPropertiesDTO activeConnectionConfigDTO;
-
-    private static ResourceBundle resources;
 
 
     public ConnectionExportViewController(ConnectionExportViewDelegate delegate) {
