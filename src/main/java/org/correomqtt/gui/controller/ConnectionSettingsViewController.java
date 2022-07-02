@@ -1076,7 +1076,6 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
     @FXML
     public void openImport() {
-        LOGGER.info("Import Clicked");
         openImport(false);
 
     }

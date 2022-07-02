@@ -15,6 +15,9 @@ import org.correomqtt.business.dispatcher.ImportConnectionDispatcher;
 import org.correomqtt.business.dispatcher.ImportConnectionObserver;
 import org.correomqtt.business.dispatcher.LogObserver;
 import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
@@ -41,8 +44,6 @@ public class ConnectionImportViewController extends BaseController implements Lo
     private Button importButton;
     @FXML
     private AnchorPane containerAnchorPane;
-
-
 
 
     public ConnectionImportViewController(ConnectionImportViewDelegate delegate) {
@@ -126,9 +127,30 @@ public class ConnectionImportViewController extends BaseController implements Lo
     }
 
     public void onImportClicked() {
+        importConnections();
     }
 
     public void onCancelClicked(ActionEvent actionEvent) {
         closeDialog();
+    }
+
+    public void importConnections() {
+        List<ConnectionConfigDTO> connections = ConnectionHolder.getInstance().getSortedConnections();
+        connectionsListView.getCheckModel().getCheckedItems().forEach(connectionConfigDTO -> {
+            if (!connections.contains(connectionConfigDTO)) {
+                connections.add(connectionConfigDTO);
+            }
+        });
+        KeyringHandler.getInstance().retryWithMasterPassword(
+                masterPassword -> SettingsProvider.getInstance().saveConnections(connections, masterPassword),
+                resources.getString("onPasswordSaveFailedTitle"),
+                resources.getString("onPasswordSaveFailedHeader"),
+                resources.getString("onPasswordSaveFailedContent"),
+                resources.getString("onPasswordSaveFailedGiveUp"),
+                resources.getString("onPasswordSaveFailedTryAgain")
+        );
+        closeDialog();
+
+
     }
 }

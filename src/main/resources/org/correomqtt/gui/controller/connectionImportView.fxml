@@ -29,7 +29,7 @@
                         <Tooltip text="%commonCancelTooltip" />
                     </tooltip>
                 </Button>
-                <Button fx:id="importButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onImportClicked" text="%connectionExportSelectionButton">
+                <Button fx:id="importButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onImportClicked" text="%connectionImportSelectionButton">
                     <HBox.margin>
                         <Insets right="5.0" />
                     </HBox.margin>
