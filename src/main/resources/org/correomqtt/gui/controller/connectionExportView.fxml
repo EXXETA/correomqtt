@@ -15,6 +15,16 @@
         </VBox>
         <VBox>
             <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
+                <CheckBox fx:id="passwordCheckBox" alignment="CENTER_RIGHT" mnemonicParsing="false" text="%exportWithPassword">
+
+                </CheckBox>
+                <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="5">
+                    <GridPane.margin>
+                        <Insets />
+                    </GridPane.margin>
+                </PasswordField>
+            </HBox>
+            <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
                 <Button fx:id="cancelButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">
                     <HBox.margin>
                         <Insets right="5.0" />
@@ -31,10 +41,12 @@
                         <Tooltip text="%commonApplyTooltip" />
                     </tooltip>
                 </Button>
+
                 <VBox.margin>
                     <Insets bottom="10.0" right="10.0" />
                 </VBox.margin>
             </HBox>
+
         </VBox>
 
     </HBox>

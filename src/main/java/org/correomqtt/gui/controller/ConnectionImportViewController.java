@@ -79,7 +79,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
     public void initialize() {
         importButton.setDisable(false);
 //        containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
-        connectionsListView.setCellFactory(lv -> new CheckBoxListCell<ConnectionConfigDTO>(connectionsListView::getItemBooleanProperty) {
+        connectionsListView.setCellFactory(lv -> new CheckBoxListCell<>(connectionsListView::getItemBooleanProperty) {
             @Override
             public void updateItem(ConnectionConfigDTO connectionConfigDTO, boolean empty) {
                 super.updateItem(connectionConfigDTO, empty);
@@ -106,9 +106,9 @@ public class ConnectionImportViewController extends BaseController implements Lo
     }
 
     @Override
-    public void onImportSucceeded(List<ConnectionConfigDTO> connectionConfigDTOS) {
-        this.connectionConfigDTOS.addAll(connectionConfigDTOS);
-        connectionsListView.setItems(this.connectionConfigDTOS);
+    public void onImportSucceeded(List<ConnectionConfigDTO> connectionConfigDTOList) {
+        connectionConfigDTOS.addAll(connectionConfigDTOList);
+        connectionsListView.setItems(connectionConfigDTOS);
     }
 
     @Override
@@ -120,6 +120,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
     public void onImportFailed(File file, Throwable exception) {
         closeDialog();
     }
+
 
     @Override
     public void updateLog(String message) {
@@ -149,6 +150,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
                 resources.getString("onPasswordSaveFailedGiveUp"),
                 resources.getString("onPasswordSaveFailedTryAgain")
         );
+        ImportConnectionDispatcher.getInstance().onImportSucceeded(connections);
         closeDialog();
 
 

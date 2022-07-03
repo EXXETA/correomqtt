@@ -1,10 +1,17 @@
 package org.correomqtt.gui.controller;
 
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.dispatcher.ConfigObserver;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.scene.input.*;
+import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import javafx.util.StringConverter;
+import org.correomqtt.business.dispatcher.*;
 import org.correomqtt.business.keyring.KeyringFactory;
+import org.correomqtt.business.model.*;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
@@ -23,16 +30,6 @@ import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
 import org.correomqtt.plugin.spi.LwtSettingsHook;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.scene.input.*;
-import javafx.scene.layout.*;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
-import javafx.util.StringConverter;
-import org.correomqtt.business.model.*;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
@@ -43,7 +40,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConnectionSettingsViewController extends BaseController implements ConfigObserver, ConnectionLifecycleObserver,
+public class ConnectionSettingsViewController extends BaseController implements ConfigObserver, ImportConnectionObserver, ConnectionLifecycleObserver,
         LwtSettingsHook.OnSettingsChangedListener {
 
     private static final String TEXT_FIELD = "text-field";
@@ -155,13 +152,14 @@ public class ConnectionSettingsViewController extends BaseController implements 
         this.connectionImportViewDelegate = importViewDelegate;
         ConfigDispatcher.getInstance().addObserver(this);
         ConnectionLifecycleDispatcher.getInstance().addObserver(this);
+        ImportConnectionDispatcher.getInstance().addObserver(this);
+
     }
 
     public static LoaderResult<ConnectionSettingsViewController> load(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate, ConnectionImportViewDelegate importViewDelegate) {
         return load(ConnectionSettingsViewController.class, "connectionSettingsView.fxml",
-                () -> new ConnectionSettingsViewController(delegate,exportViewDelegate,importViewDelegate));
+                () -> new ConnectionSettingsViewController(delegate, exportViewDelegate, importViewDelegate));
     }
-
 
 
     public static void showAsDialog(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate, ConnectionImportViewDelegate importViewDelegate) {
@@ -173,7 +171,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
             return;
         }
-        LoaderResult<ConnectionSettingsViewController> result = load(delegate,exportViewDelegate, importViewDelegate);
+        LoaderResult<ConnectionSettingsViewController> result = load(delegate, exportViewDelegate, importViewDelegate);
         resources = result.getResourceBundle();
 
         showAsDialog(result, resources.getString("connectionSettingsViewControllerTitle"), properties, false, false, null,
@@ -1042,6 +1040,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         saveConnection();
         showConnection(current);
     }
+
     public void openExport(boolean autoNew) {
         ConnectionExportViewController.showAsDialog(connectionExportViewDelegate);
         if (autoNew) {
@@ -1059,7 +1058,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
     }
 
-    public void openImport(boolean autoNew){
+    public void openImport(boolean autoNew) {
         Stage stage = (Stage) containerAnchorPane.getScene().getWindow();
 
         FileChooser fileChooser = new FileChooser();
@@ -1069,7 +1068,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
         File file = fileChooser.showOpenDialog(stage);
         if (file != null) {
-            TaskFactory.importConnection( file);
+            TaskFactory.importConnection(file);
             ConnectionImportViewController.showAsDialog(connectionImportViewDelegate);
         }
     }
@@ -1200,5 +1199,20 @@ public class ConnectionSettingsViewController extends BaseController implements 
     }
 
 
+    @Override
+    public void onImportSucceeded(List<ConnectionConfigDTO> connectionConfigDTOS) {
+        // TODO Triggered twice, fix to only trigger once after import is completed
+        loadConnectionListFromBackground();
+    }
 
+
+    @Override
+    public void onImportCancelled(File file) {
+
+    }
+
+    @Override
+    public void onImportFailed(File file, Throwable exception) {
+
+    }
 }

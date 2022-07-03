@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-
-<?import org.controlsfx.control.CheckListView?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.CheckListView?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="org.correomqtt.gui.controller.ConnectionImportViewController"
@@ -16,7 +13,6 @@
     <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <VBox>
 
-            <!--            <ListView fx:id="connectionsListView" minHeight="320.0" prefWidth="193.0" />-->
             <CheckListView fx:id="connectionsListView" minHeight="320.0" prefWidth="193.0" />
         </VBox>
         <VBox>

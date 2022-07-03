@@ -1,9 +1,13 @@
 package org.correomqtt.gui.controller;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -44,7 +48,10 @@ public class ConnectionExportViewController extends BaseController {
     private Button exportButton;
     @FXML
     private AnchorPane containerAnchorPane;
-
+    @FXML
+    private CheckBox passwordCheckBox;
+    @FXML
+    private PasswordField passwordField;
 
 
     public ConnectionExportViewController(ConnectionExportViewDelegate delegate) {
@@ -77,9 +84,21 @@ public class ConnectionExportViewController extends BaseController {
     @FXML
     public void initialize() {
         exportButton.setDisable(false);
+        passwordCheckBox.setSelected(false);
+        passwordField.setDisable(true);
+        passwordField.setVisible(false);
+        passwordCheckBox.selectedProperty().addListener((observableValue, oldValue, newValue) -> {
+            if (newValue) {
+                passwordField.setVisible(true);
+                passwordField.setDisable(false);
+            } else {
+                passwordField.setVisible(false);
+                passwordField.setDisable(true);
+            }
+        });
         containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
         loadConnectionListFromBackground();
-        connectionsListView.setCellFactory(lv -> new CheckBoxListCell<ConnectionConfigDTO>(connectionsListView::getItemBooleanProperty) {
+        connectionsListView.setCellFactory(lv -> new CheckBoxListCell<>(connectionsListView::getItemBooleanProperty) {
             @Override
             public void updateItem(ConnectionConfigDTO connectionConfigDTO, boolean empty) {
                 super.updateItem(connectionConfigDTO, empty);
@@ -104,7 +123,7 @@ public class ConnectionExportViewController extends BaseController {
     private void loadConnectionListFromBackground() {
 
         List<ConnectionConfigDTO> connectionList = ConnectionHolder.getInstance().getSortedConnections();
-        connectionList.forEach(c -> connectionConfigDTOS.add(c));
+        connectionConfigDTOS.addAll(connectionList);
         connectionsListView.setItems(connectionConfigDTOS);
         LOGGER.debug("Loading connection list from background");
     }
