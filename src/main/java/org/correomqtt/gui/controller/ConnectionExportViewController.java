@@ -15,6 +15,8 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.CheckListView;
+import org.correomqtt.business.dispatcher.ExportConnectionDispatcher;
+import org.correomqtt.business.dispatcher.ExportConnectionObserver;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
@@ -32,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-public class ConnectionExportViewController extends BaseController {
+public class ConnectionExportViewController extends BaseController implements ExportConnectionObserver {
 
     private final ConnectionExportViewDelegate delegate;
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
@@ -56,6 +58,7 @@ public class ConnectionExportViewController extends BaseController {
 
     public ConnectionExportViewController(ConnectionExportViewDelegate delegate) {
         this.delegate = delegate;
+        ExportConnectionDispatcher.getInstance().addObserver(this);
 
     }
 
@@ -149,4 +152,8 @@ public class ConnectionExportViewController extends BaseController {
         stage.close();
     }
 
+    @Override
+    public void onExportSucceeded() {
+        closeDialog();
+    }
 }

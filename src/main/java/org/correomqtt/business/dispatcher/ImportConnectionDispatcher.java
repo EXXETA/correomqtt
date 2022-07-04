@@ -5,7 +5,7 @@ import org.correomqtt.business.model.ConnectionConfigDTO;
 import java.io.File;
 import java.util.List;
 
-public class ImportConnectionDispatcher extends BaseConnectionDispatcher<ImportConnectionObserver> {
+public class ImportConnectionDispatcher extends BaseDispatcher<ImportConnectionObserver> {
 
     private static ImportConnectionDispatcher instance;
 
