@@ -2,12 +2,14 @@ package org.correomqtt.gui.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -17,9 +19,11 @@ import org.controlsfx.control.CheckListView;
 import org.correomqtt.business.dispatcher.ImportConnectionDispatcher;
 import org.correomqtt.business.dispatcher.ImportConnectionObserver;
 import org.correomqtt.business.dispatcher.LogObserver;
+import org.correomqtt.business.encryption.EncryptorAesGcm;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ConnectionExportDTO;
 import org.correomqtt.business.model.ExportConnectionView;
+import org.correomqtt.business.provider.EncryptionRecoverableException;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.keyring.KeyringHandler;
@@ -40,8 +44,8 @@ public class ConnectionImportViewController extends BaseController implements Lo
     private final ConnectionImportViewDelegate delegate;
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
     private ObservableList<ConnectionConfigDTO> connectionConfigDTOS = FXCollections.observableArrayList();
-    private ConnectionPropertiesDTO activeConnectionConfigDTO;
     private static ResourceBundle resources;
+    private ConnectionExportDTO connectionExportDTO;
 
     @FXML
     private CheckListView<ConnectionConfigDTO> connectionsListView;
@@ -49,6 +53,8 @@ public class ConnectionImportViewController extends BaseController implements Lo
     private Button importButton;
     @FXML
     private AnchorPane containerAnchorPane;
+    @FXML
+    private PasswordField passwordField;
 
 
     public ConnectionImportViewController(ConnectionImportViewDelegate delegate) {
@@ -83,6 +89,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
     @FXML
     public void initialize() {
         importButton.setDisable(false);
+        passwordField.setVisible(false);
         connectionsListView.setCellFactory(lv -> new CheckBoxListCell<>(connectionsListView::getItemBooleanProperty) {
             @Override
             public void updateItem(ConnectionConfigDTO connectionConfigDTO, boolean empty) {
@@ -113,7 +120,8 @@ public class ConnectionImportViewController extends BaseController implements Lo
     public void onImportSucceeded(ConnectionExportDTO connectionExportDTO) {
         List<ConnectionConfigDTO> configDTOList;
         if(connectionExportDTO.getEncryptionType()!=null){
-
+            passwordField.setVisible(true);
+            this.connectionExportDTO = connectionExportDTO;
         }else {
             try {
                 configDTOList = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>(){}).readValue(connectionExportDTO.getConnectionConfigDTOS());
@@ -169,5 +177,22 @@ public class ConnectionImportViewController extends BaseController implements Lo
         closeDialog();
 
 
+    }
+
+    public void onDecryptClicked() {
+        if(passwordField.getText()!=null){
+            try {
+                String connectionsString = new EncryptorAesGcm(passwordField.getText()).decrypt(this.connectionExportDTO.getEncryptedData());
+                List<ConnectionConfigDTO> connectionConfigDTOList = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>(){}).readValue(connectionsString);
+                connectionConfigDTOS.addAll(connectionConfigDTOList);
+                connectionsListView.setItems(connectionConfigDTOS);
+            } catch (EncryptionRecoverableException e) {
+                e.printStackTrace();
+            } catch (JsonMappingException e) {
+                e.printStackTrace();
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

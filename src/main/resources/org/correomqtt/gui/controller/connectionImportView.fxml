@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.CheckListView?>
+<?import javafx.scene.control.PasswordField?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             stylesheets="@../css/connections.css"
@@ -17,6 +18,22 @@
             <CheckListView fx:id="connectionsListView" minHeight="320.0" prefWidth="250.0" />
         </VBox>
         <VBox>
+            <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
+
+                <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="5">
+                    <GridPane.margin>
+                        <Insets />
+                    </GridPane.margin>
+                </PasswordField>
+                <Button fx:id="decryptButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onDecryptClicked" text="%commonApplyButton">
+                    <HBox.margin>
+                        <Insets right="5.0" />
+                    </HBox.margin>
+                    <tooltip>
+                        <Tooltip text="%commonCancelTooltip" />
+                    </tooltip>
+                </Button>
+            </HBox>
             <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="550.0">
                 <Button fx:id="cancelButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">
                     <HBox.margin>
