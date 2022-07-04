@@ -78,7 +78,6 @@ public class ConnectionImportViewController extends BaseController implements Lo
     @FXML
     public void initialize() {
         importButton.setDisable(false);
-//        containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
         connectionsListView.setCellFactory(lv -> new CheckBoxListCell<>(connectionsListView::getItemBooleanProperty) {
             @Override
             public void updateItem(ConnectionConfigDTO connectionConfigDTO, boolean empty) {

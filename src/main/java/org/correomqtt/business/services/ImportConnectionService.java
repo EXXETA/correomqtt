@@ -37,7 +37,8 @@ public class ImportConnectionService extends BaseService {
             LOGGER.info("Start importing connections from file {}.", file.getAbsolutePath());
 
         } catch (IOException e) {
-            throw new CorreoMqttExportMessageException(e);
+            LOGGER.error("Importing Connections failed");
+            ImportConnectionDispatcher.getInstance().onImportFailed(file,e);
         }
     }
 
