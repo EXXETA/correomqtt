@@ -3,7 +3,6 @@ package org.correomqtt.business.services;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ImportConnectionDispatcher;
-import org.correomqtt.business.exception.CorreoMqttExportMessageException;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ExportConnectionView;
 import org.slf4j.Logger;
