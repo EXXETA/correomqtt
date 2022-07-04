@@ -3,6 +3,7 @@ package org.correomqtt.gui.business;
 import javafx.collections.ObservableList;
 import lombok.extern.slf4j.Slf4j;
 import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.ConnectionExportDTO;
 import org.correomqtt.business.services.*;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
@@ -73,8 +74,8 @@ public class TaskFactory {
     }
 
 
-    public static void exportConnection(String connectionId, File file, List<ConnectionConfigDTO> connectionConfigDTOS) {
-        new GuiService<>(new ExportConnectionService(connectionId,file, connectionConfigDTOS),
+    public static void exportConnection(String connectionId, File file, ConnectionExportDTO connectionExportDTO) {
+        new GuiService<>(new ExportConnectionService(connectionId,file, connectionExportDTO),
                 ExportConnectionService::exportConnection).start();
 
     }

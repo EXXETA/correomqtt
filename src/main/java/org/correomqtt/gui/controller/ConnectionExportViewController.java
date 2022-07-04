@@ -1,7 +1,7 @@
 package org.correomqtt.gui.controller;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -17,7 +17,11 @@ import javafx.stage.Stage;
 import org.controlsfx.control.CheckListView;
 import org.correomqtt.business.dispatcher.ExportConnectionDispatcher;
 import org.correomqtt.business.dispatcher.ExportConnectionObserver;
+import org.correomqtt.business.encryption.EncryptorAesGcm;
 import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.ConnectionExportDTO;
+import org.correomqtt.business.model.ExportConnectionView;
+import org.correomqtt.business.provider.EncryptionRecoverableException;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.TaskFactory;
@@ -33,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+
 
 public class ConnectionExportViewController extends BaseController implements ExportConnectionObserver {
 
@@ -142,7 +147,28 @@ public class ConnectionExportViewController extends BaseController implements Ex
 
         File file = fileChooser.showSaveDialog(stage);
         if (file != null) {
-            TaskFactory.exportConnection(null, file, connectionsListView.getCheckModel().getCheckedItems());
+            if (passwordCheckBox.isSelected() && !passwordField.getText().isEmpty()) {
+                try {
+                    String connectionsJSON = new ObjectMapper().writerWithView(ExportConnectionView.class).writeValueAsString(connectionsListView.getCheckModel().getCheckedItems());
+                    String encryptedData = new EncryptorAesGcm(passwordField.getText()).encrypt(connectionsJSON);
+                    ConnectionExportDTO connectionExportDTO = new ConnectionExportDTO(EncryptorAesGcm.ENCRYPTION_TRANSFORMATION, encryptedData);
+                    TaskFactory.exportConnection(null, file, connectionExportDTO);
+
+                } catch (JsonProcessingException | EncryptionRecoverableException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                try {
+                    String connectionsJSON = new ObjectMapper().writerWithView(ExportConnectionView.class).writeValueAsString(connectionsListView.getCheckModel().getCheckedItems());
+                    ConnectionExportDTO connectionExportDTO = new ConnectionExportDTO(connectionsJSON);
+                    TaskFactory.exportConnection(null, file, connectionExportDTO);
+
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
         }
     }
 

@@ -2,31 +2,30 @@ package org.correomqtt.business.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ExportConnectionDispatcher;
-import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.ConnectionExportDTO;
 import org.correomqtt.business.model.ExportConnectionView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 public class ExportConnectionService extends BaseService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExportConnectionService.class);
 
     private final File file;
-    private final List<ConnectionConfigDTO> connectionConfigDTOS;
+    private final ConnectionExportDTO connectionExportDTO;
 
-    public ExportConnectionService(String connectionId, File file, List<ConnectionConfigDTO> connectionConfigDTOS) {
+    public ExportConnectionService(String connectionId, File file, ConnectionExportDTO connectionExportDTO) {
         super(connectionId);
         this.file = file;
-        this.connectionConfigDTOS = connectionConfigDTOS;
+        this.connectionExportDTO = connectionExportDTO;
     }
 
     public void exportConnection() {
         try {
-            new ObjectMapper().writerWithView(ExportConnectionView.class).writeValue(file, connectionConfigDTOS);
+                new ObjectMapper().writeValue(file, connectionExportDTO);
         } catch (IOException e) {
             ExportConnectionDispatcher.getInstance().onExportFailed(file,e);
         }
