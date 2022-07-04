@@ -1200,7 +1200,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
 
     @Override
-    public void onImportSucceeded(List<ConnectionConfigDTO> connectionConfigDTOS) {
+    public void onImportSucceeded(ConnectionExportDTO connectionExportDTO) {
         // TODO Triggered twice, fix to only trigger once after import is completed
         loadConnectionListFromBackground();
     }

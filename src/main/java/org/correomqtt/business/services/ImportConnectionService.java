@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ImportConnectionDispatcher;
 import org.correomqtt.business.model.ConnectionConfigDTO;
-import org.correomqtt.business.model.ExportConnectionView;
+import org.correomqtt.business.model.ConnectionExportDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,20 +19,18 @@ public class ImportConnectionService extends BaseService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ImportConnectionService.class);
 
     private final File file;
-    private List<ConnectionConfigDTO> connectionConfigDTOS;
+    private ConnectionExportDTO connectionExportDTO;
 
     public ImportConnectionService(File file) {
         super(null);
         this.file = file;
-        this.connectionConfigDTOS = new ArrayList<>();
     }
 
     public void importConnection() {
         ImportConnectionDispatcher.getInstance().onImportStarted(file);
         LOGGER.info("Start importing connections from file {}.", file.getAbsolutePath());
         try {
-            connectionConfigDTOS = new ObjectMapper().readerWithView(ExportConnectionView.class).forType(new TypeReference<List<ConnectionConfigDTO>>() {
-            }).readValue(file);
+            connectionExportDTO= new ObjectMapper().readerFor(ConnectionExportDTO.class).readValue(file);
             LOGGER.info("Start importing connections from file {}.", file.getAbsolutePath());
 
         } catch (IOException e) {
@@ -45,7 +43,7 @@ public class ImportConnectionService extends BaseService {
     @Override
     public void onSucceeded() {
         LOGGER.info("Importing connections from file {} succeeded", file.getAbsolutePath());
-        ImportConnectionDispatcher.getInstance().onImportSucceeded(connectionConfigDTOS);
+        ImportConnectionDispatcher.getInstance().onImportSucceeded(connectionExportDTO);
     }
 
     @Override

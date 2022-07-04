@@ -1,5 +1,8 @@
 package org.correomqtt.gui.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -15,6 +18,8 @@ import org.correomqtt.business.dispatcher.ImportConnectionDispatcher;
 import org.correomqtt.business.dispatcher.ImportConnectionObserver;
 import org.correomqtt.business.dispatcher.LogObserver;
 import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.ConnectionExportDTO;
+import org.correomqtt.business.model.ExportConnectionView;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.keyring.KeyringHandler;
@@ -105,9 +110,20 @@ public class ConnectionImportViewController extends BaseController implements Lo
     }
 
     @Override
-    public void onImportSucceeded(List<ConnectionConfigDTO> connectionConfigDTOList) {
-        connectionConfigDTOS.addAll(connectionConfigDTOList);
-        connectionsListView.setItems(connectionConfigDTOS);
+    public void onImportSucceeded(ConnectionExportDTO connectionExportDTO) {
+        List<ConnectionConfigDTO> configDTOList;
+        if(connectionExportDTO.getEncryptionType()!=null){
+
+        }else {
+            try {
+                configDTOList = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>(){}).readValue(connectionExportDTO.getConnectionConfigDTOS());
+                connectionConfigDTOS.addAll(configDTOList);
+                connectionsListView.setItems(connectionConfigDTOS);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     @Override
@@ -149,7 +165,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
                 resources.getString("onPasswordSaveFailedGiveUp"),
                 resources.getString("onPasswordSaveFailedTryAgain")
         );
-        ImportConnectionDispatcher.getInstance().onImportSucceeded(connections);
+//        ImportConnectionDispatcher.getInstance().onImportSucceeded(connections);
         closeDialog();
 
 

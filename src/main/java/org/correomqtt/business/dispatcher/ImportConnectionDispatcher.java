@@ -1,6 +1,7 @@
 package org.correomqtt.business.dispatcher;
 
 import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.ConnectionExportDTO;
 
 import java.io.File;
 import java.util.List;
@@ -20,8 +21,8 @@ public class ImportConnectionDispatcher extends BaseDispatcher<ImportConnectionO
         trigger(o -> o.onImportStarted(file));
     }
 
-    public void onImportSucceeded( List<ConnectionConfigDTO> connectionConfigDTOS) {
-        trigger(o -> o.onImportSucceeded(connectionConfigDTOS));
+    public void onImportSucceeded( ConnectionExportDTO connectionExportDTO) {
+        trigger(o -> o.onImportSucceeded(connectionExportDTO));
     }
 
     public void onImportCancelled( File file) {
