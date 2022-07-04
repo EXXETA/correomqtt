@@ -58,6 +58,8 @@ public class ConnectionImportViewController extends BaseController implements Lo
     private AnchorPane containerAnchorPane;
     @FXML
     private PasswordField passwordField;
+    @FXML
+    private Button decryptButton;
 
 
     public ConnectionImportViewController(ConnectionImportViewDelegate delegate) {
@@ -92,6 +94,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
     @FXML
     public void initialize() {
         importButton.setDisable(false);
+        decryptButton.setVisible(false);
         passwordField.setVisible(false);
         connectionsListView.setCellFactory(lv -> new CheckBoxListCell<>(connectionsListView::getItemBooleanProperty) {
             @Override
@@ -124,6 +127,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
         List<ConnectionConfigDTO> configDTOList;
         if(connectionExportDTO.getEncryptionType()!=null){
             passwordField.setVisible(true);
+            decryptButton.setVisible(true);
             this.connectionExportDTO = connectionExportDTO;
         }else {
             try {
@@ -163,6 +167,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
 
     public void importConnections() {
         List<ConnectionConfigDTO> connections = ConnectionHolder.getInstance().getSortedConnections();
+        // TODO Check name and ID
         connectionsListView.getCheckModel().getCheckedItems().forEach(connectionConfigDTO -> {
             if (!connections.contains(connectionConfigDTO)) {
                 connections.add(connectionConfigDTO);
