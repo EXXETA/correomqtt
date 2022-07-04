@@ -10,6 +10,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -39,6 +40,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+
+import static org.correomqtt.gui.controller.ConnectionSettingsViewController.EXCLAMATION_CIRCLE_SOLID;
 
 public class ConnectionImportViewController extends BaseController implements LogObserver, ImportConnectionObserver {
     private final ConnectionImportViewDelegate delegate;
@@ -186,13 +189,12 @@ public class ConnectionImportViewController extends BaseController implements Lo
                 List<ConnectionConfigDTO> connectionConfigDTOList = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>(){}).readValue(connectionsString);
                 connectionConfigDTOS.addAll(connectionConfigDTOList);
                 connectionsListView.setItems(connectionConfigDTOS);
-            } catch (EncryptionRecoverableException e) {
-                e.printStackTrace();
-            } catch (JsonMappingException e) {
-                e.printStackTrace();
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
+            } catch (EncryptionRecoverableException | JsonProcessingException e ) {
+                ImportConnectionDispatcher.getInstance().onImportFailed(null,e);
             }
+        }else {
+            passwordField.setTooltip(new Tooltip(resources.getString("passwordEmpty")));
+            passwordField.getStyleClass().add(EXCLAMATION_CIRCLE_SOLID);
         }
     }
 }

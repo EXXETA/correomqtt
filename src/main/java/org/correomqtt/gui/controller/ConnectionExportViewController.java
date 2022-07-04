@@ -8,6 +8,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -37,6 +38,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+
+import static org.correomqtt.gui.controller.ConnectionSettingsViewController.EXCLAMATION_CIRCLE_SOLID;
 
 
 public class ConnectionExportViewController extends BaseController implements ExportConnectionObserver {
@@ -140,6 +143,11 @@ public class ConnectionExportViewController extends BaseController implements Ex
     public void onExportClicked() {
         Stage stage = (Stage) containerAnchorPane.getScene().getWindow();
 
+        if (passwordCheckBox.isSelected() && passwordField.getText().isEmpty()) {
+            passwordField.setTooltip(new Tooltip(resources.getString("passwordEmpty")));
+            passwordField.getStyleClass().add(EXCLAMATION_CIRCLE_SOLID);
+            return;
+        }
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(resources.getString("exportUtilsTitle"));
         FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(resources.getString("exportUtilsDescription"), "*.json");
@@ -147,7 +155,7 @@ public class ConnectionExportViewController extends BaseController implements Ex
 
         File file = fileChooser.showSaveDialog(stage);
         if (file != null) {
-            if (passwordCheckBox.isSelected() && !passwordField.getText().isEmpty()) {
+            if (passwordCheckBox.isSelected()) {
                 try {
                     String connectionsJSON = new ObjectMapper().writerWithView(ExportConnectionView.class).writeValueAsString(connectionsListView.getCheckModel().getCheckedItems());
                     String encryptedData = new EncryptorAesGcm(passwordField.getText()).encrypt(connectionsJSON);
@@ -155,8 +163,9 @@ public class ConnectionExportViewController extends BaseController implements Ex
                     TaskFactory.exportConnection(null, file, connectionExportDTO);
 
                 } catch (JsonProcessingException | EncryptionRecoverableException e) {
-                    e.printStackTrace();
+                    ExportConnectionDispatcher.getInstance().onExportFailed(file, e);
                 }
+
             } else {
                 try {
                     String connectionsJSON = new ObjectMapper().writerWithView(ExportConnectionView.class).writeValueAsString(connectionsListView.getCheckModel().getCheckedItems());
@@ -164,7 +173,7 @@ public class ConnectionExportViewController extends BaseController implements Ex
                     TaskFactory.exportConnection(null, file, connectionExportDTO);
 
                 } catch (JsonProcessingException e) {
-                    e.printStackTrace();
+                    ExportConnectionDispatcher.getInstance().onExportFailed(file, e);
                 }
 
             }
