@@ -14,7 +14,7 @@ import java.util.List;
 public class ConnectionExportDTO {
     private String encryptionType;
     private String encryptedData;
-    private String connectionConfigDTOS;
+    private List<ConnectionConfigDTO> connectionConfigDTOS;
 
 
     public ConnectionExportDTO(String encryptionType, String encryptedData) {
@@ -22,7 +22,7 @@ public class ConnectionExportDTO {
         this.encryptedData = encryptedData;
     }
 
-    public ConnectionExportDTO(String connectionConfigDTOS) {
+    public ConnectionExportDTO(List<ConnectionConfigDTO> connectionConfigDTOS) {
         this.connectionConfigDTOS = connectionConfigDTOS;
     }
 

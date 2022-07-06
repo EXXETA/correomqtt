@@ -167,14 +167,11 @@ public class ConnectionExportViewController extends BaseController implements Ex
                 }
 
             } else {
-                try {
-                    String connectionsJSON = new ObjectMapper().writerWithView(ExportConnectionView.class).writeValueAsString(connectionsListView.getCheckModel().getCheckedItems());
-                    ConnectionExportDTO connectionExportDTO = new ConnectionExportDTO(connectionsJSON);
+//                    String connectionsJSON = new ObjectMapper().writerWithView(ExportConnectionView.class).writeValueAsString(connectionsListView.getCheckModel().getCheckedItems());
+                    List<ConnectionConfigDTO>  connectionConfigDTOS = connectionsListView.getCheckModel().getCheckedItems();
+                    ConnectionExportDTO connectionExportDTO = new ConnectionExportDTO(connectionConfigDTOS);
                     TaskFactory.exportConnection(null, file, connectionExportDTO);
 
-                } catch (JsonProcessingException e) {
-                    ExportConnectionDispatcher.getInstance().onExportFailed(file, e);
-                }
 
             }
 

@@ -139,15 +139,13 @@ public class ConnectionImportViewController extends BaseController implements Lo
             decryptButton.setVisible(true);
             this.connectionExportDTO = connectionExportDTO;
         } else {
-            try {
-                importedConnections = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>() {
-                }).readValue(connectionExportDTO.getConnectionConfigDTOS());
+//                importedConnections = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>() {
+//                }).readValue(connectionExportDTO.getConnectionConfigDTOS());
+                importedConnections = connectionExportDTO.getConnectionConfigDTOS();
                 connectionConfigDTOS.addAll(importedConnections);
                 connectionsListView.setItems(connectionConfigDTOS);
                 setUpCells(ConnectionHolder.getInstance().getSortedConnections());
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }
+
         }
 
     }
@@ -188,7 +186,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
                 resources.getString("onPasswordSaveFailedGiveUp"),
                 resources.getString("onPasswordSaveFailedTryAgain")
         );
-//        ImportConnectionDispatcher.getInstance().onImportSucceeded(connections);
+//        ImportConnectionDispatcher.getInstance().onImportSucceeded(connectionExportDTO);
         closeDialog();
 
 
@@ -202,6 +200,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
                 }).readValue(connectionsString);
                 connectionConfigDTOS.addAll(connectionConfigDTOList);
                 connectionsListView.setItems(connectionConfigDTOS);
+                setUpCells(ConnectionHolder.getInstance().getSortedConnections());
             } catch (EncryptionRecoverableException | JsonProcessingException e) {
                 ImportConnectionDispatcher.getInstance().onImportFailed(null, e);
             }
