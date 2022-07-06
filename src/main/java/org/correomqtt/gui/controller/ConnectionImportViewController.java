@@ -2,7 +2,6 @@ package org.correomqtt.gui.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -23,12 +22,10 @@ import org.correomqtt.business.dispatcher.LogObserver;
 import org.correomqtt.business.encryption.EncryptorAesGcm;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ConnectionExportDTO;
-import org.correomqtt.business.model.ExportConnectionView;
 import org.correomqtt.business.provider.EncryptionRecoverableException;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.keyring.KeyringHandler;
-import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.WindowHelper;
@@ -96,14 +93,26 @@ public class ConnectionImportViewController extends BaseController implements Lo
         importButton.setDisable(false);
         decryptButton.setVisible(false);
         passwordField.setVisible(false);
+        setUpCells(null);
+
+    }
+
+    private void setUpCells(List<ConnectionConfigDTO> existingConnections) {
         connectionsListView.setCellFactory(lv -> new CheckBoxListCell<>(connectionsListView::getItemBooleanProperty) {
             @Override
-            public void updateItem(ConnectionConfigDTO connectionConfigDTO, boolean empty) {
-                super.updateItem(connectionConfigDTO, empty);
-                setText(connectionConfigDTO == null ? "" : connectionConfigDTO.getName());
+            public void updateItem(ConnectionConfigDTO newConnection, boolean empty) {
+                super.updateItem(newConnection, empty);
+                setText(newConnection == null ? "" : newConnection.getName());
+                if (existingConnections != null) {
+
+                    setDisable(existingConnections.stream().anyMatch(existingConnection -> newConnection != null && (
+                            existingConnection.getId().equals(newConnection.getId())
+                                    || existingConnection.getName().equals(newConnection.getName()))));
+
+                } else setDisable(false);
+
             }
         });
-
     }
 
     private void keyHandling(KeyEvent event) {
@@ -124,22 +133,25 @@ public class ConnectionImportViewController extends BaseController implements Lo
 
     @Override
     public void onImportSucceeded(ConnectionExportDTO connectionExportDTO) {
-        List<ConnectionConfigDTO> configDTOList;
-        if(connectionExportDTO.getEncryptionType()!=null){
+        List<ConnectionConfigDTO> importedConnections;
+        if (connectionExportDTO.getEncryptionType() != null) {
             passwordField.setVisible(true);
             decryptButton.setVisible(true);
             this.connectionExportDTO = connectionExportDTO;
-        }else {
+        } else {
             try {
-                configDTOList = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>(){}).readValue(connectionExportDTO.getConnectionConfigDTOS());
-                connectionConfigDTOS.addAll(configDTOList);
+                importedConnections = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>() {
+                }).readValue(connectionExportDTO.getConnectionConfigDTOS());
+                connectionConfigDTOS.addAll(importedConnections);
                 connectionsListView.setItems(connectionConfigDTOS);
+                setUpCells(ConnectionHolder.getInstance().getSortedConnections());
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
         }
 
     }
+
 
     @Override
     public void onImportCancelled(File file) {
@@ -167,12 +179,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
 
     public void importConnections() {
         List<ConnectionConfigDTO> connections = ConnectionHolder.getInstance().getSortedConnections();
-        // TODO Check name and ID
-        connectionsListView.getCheckModel().getCheckedItems().forEach(connectionConfigDTO -> {
-            if (!connections.contains(connectionConfigDTO)) {
-                connections.add(connectionConfigDTO);
-            }
-        });
+        connections.addAll(connectionsListView.getCheckModel().getCheckedItems());
         KeyringHandler.getInstance().retryWithMasterPassword(
                 masterPassword -> SettingsProvider.getInstance().saveConnections(connections, masterPassword),
                 resources.getString("onPasswordSaveFailedTitle"),
@@ -188,16 +195,17 @@ public class ConnectionImportViewController extends BaseController implements Lo
     }
 
     public void onDecryptClicked() {
-        if(passwordField.getText()!=null){
+        if (passwordField.getText() != null) {
             try {
                 String connectionsString = new EncryptorAesGcm(passwordField.getText()).decrypt(this.connectionExportDTO.getEncryptedData());
-                List<ConnectionConfigDTO> connectionConfigDTOList = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>(){}).readValue(connectionsString);
+                List<ConnectionConfigDTO> connectionConfigDTOList = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>() {
+                }).readValue(connectionsString);
                 connectionConfigDTOS.addAll(connectionConfigDTOList);
                 connectionsListView.setItems(connectionConfigDTOS);
-            } catch (EncryptionRecoverableException | JsonProcessingException e ) {
-                ImportConnectionDispatcher.getInstance().onImportFailed(null,e);
+            } catch (EncryptionRecoverableException | JsonProcessingException e) {
+                ImportConnectionDispatcher.getInstance().onImportFailed(null, e);
             }
-        }else {
+        } else {
             passwordField.setTooltip(new Tooltip(resources.getString("passwordEmpty")));
             passwordField.getStyleClass().add(EXCLAMATION_CIRCLE_SOLID);
         }
