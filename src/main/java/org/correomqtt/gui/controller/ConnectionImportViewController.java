@@ -8,6 +8,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxListCell;
@@ -57,6 +58,11 @@ public class ConnectionImportViewController extends BaseController implements Lo
     private PasswordField passwordField;
     @FXML
     private Button decryptButton;
+    @FXML
+    private Label passwordRequiredLabel;
+    @FXML
+    private Label passwordIncorrectLabel;
+
 
 
     public ConnectionImportViewController(ConnectionImportViewDelegate delegate) {
@@ -93,6 +99,8 @@ public class ConnectionImportViewController extends BaseController implements Lo
         importButton.setDisable(false);
         decryptButton.setVisible(false);
         passwordField.setVisible(false);
+        passwordRequiredLabel.setVisible(false);
+        passwordIncorrectLabel.setVisible(false);
         setUpCells(null);
 
     }
@@ -139,6 +147,8 @@ public class ConnectionImportViewController extends BaseController implements Lo
             if (connectionExportDTO.getEncryptionType() != null) {
                 passwordField.setVisible(true);
                 decryptButton.setVisible(true);
+                importButton.setDisable(true);
+                passwordRequiredLabel.setVisible(true);
                 this.connectionExportDTO = connectionExportDTO;
             } else {
 //                importedConnections = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>() {
@@ -204,8 +214,15 @@ public class ConnectionImportViewController extends BaseController implements Lo
                 connectionConfigDTOS.addAll(connectionConfigDTOList);
                 connectionsListView.setItems(connectionConfigDTOS);
                 setUpCells(ConnectionHolder.getInstance().getSortedConnections());
-            } catch (EncryptionRecoverableException | JsonProcessingException e) {
+                importButton.setDisable(false);
+                decryptButton.setVisible(false);
+                passwordField.setVisible(false);
+                passwordRequiredLabel.setVisible(false);
+                passwordIncorrectLabel.setVisible(false);
+            } catch (JsonProcessingException e) {
                 ImportConnectionDispatcher.getInstance().onImportFailed(null, e);
+            } catch (EncryptionRecoverableException e) {
+                passwordIncorrectLabel.setVisible(true);
             }
         } else {
             passwordField.setTooltip(new Tooltip(resources.getString("passwordEmpty")));
