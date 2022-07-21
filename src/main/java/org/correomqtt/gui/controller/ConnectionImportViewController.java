@@ -134,11 +134,13 @@ public class ConnectionImportViewController extends BaseController implements Lo
     @Override
     public void onImportSucceeded(ConnectionExportDTO connectionExportDTO) {
         List<ConnectionConfigDTO> importedConnections;
-        if (connectionExportDTO.getEncryptionType() != null) {
-            passwordField.setVisible(true);
-            decryptButton.setVisible(true);
-            this.connectionExportDTO = connectionExportDTO;
-        } else {
+        if(connectionExportDTO!=null){
+
+            if (connectionExportDTO.getEncryptionType() != null) {
+                passwordField.setVisible(true);
+                decryptButton.setVisible(true);
+                this.connectionExportDTO = connectionExportDTO;
+            } else {
 //                importedConnections = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>() {
 //                }).readValue(connectionExportDTO.getConnectionConfigDTOS());
                 importedConnections = connectionExportDTO.getConnectionConfigDTOS();
@@ -146,6 +148,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
                 connectionsListView.setItems(connectionConfigDTOS);
                 setUpCells(ConnectionHolder.getInstance().getSortedConnections());
 
+            }
         }
 
     }
@@ -186,7 +189,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
                 resources.getString("onPasswordSaveFailedGiveUp"),
                 resources.getString("onPasswordSaveFailedTryAgain")
         );
-//        ImportConnectionDispatcher.getInstance().onImportSucceeded(connectionExportDTO);
+        ImportConnectionDispatcher.getInstance().onImportSucceeded(connectionExportDTO);
         closeDialog();
 
 
