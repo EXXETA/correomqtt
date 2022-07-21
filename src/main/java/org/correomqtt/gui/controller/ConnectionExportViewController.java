@@ -20,8 +20,8 @@ import org.correomqtt.business.dispatcher.ExportConnectionDispatcher;
 import org.correomqtt.business.dispatcher.ExportConnectionObserver;
 import org.correomqtt.business.encryption.EncryptorAesGcm;
 import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.ConnectionConfigDTOMixin;
 import org.correomqtt.business.model.ConnectionExportDTO;
-import org.correomqtt.business.model.ExportConnectionView;
 import org.correomqtt.business.provider.EncryptionRecoverableException;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
@@ -157,7 +157,7 @@ public class ConnectionExportViewController extends BaseController implements Ex
         if (file != null) {
             if (passwordCheckBox.isSelected()) {
                 try {
-                    String connectionsJSON = new ObjectMapper().writerWithView(ExportConnectionView.class).writeValueAsString(connectionsListView.getCheckModel().getCheckedItems());
+                    String connectionsJSON = new ObjectMapper().addMixIn(ConnectionConfigDTO.class, ConnectionConfigDTOMixin.class).writeValueAsString(connectionsListView.getCheckModel().getCheckedItems());
                     String encryptedData = new EncryptorAesGcm(passwordField.getText()).encrypt(connectionsJSON);
                     ConnectionExportDTO connectionExportDTO = new ConnectionExportDTO(EncryptorAesGcm.ENCRYPTION_TRANSFORMATION, encryptedData);
                     TaskFactory.exportConnection(null, file, connectionExportDTO);
@@ -167,7 +167,6 @@ public class ConnectionExportViewController extends BaseController implements Ex
                 }
 
             } else {
-//                    String connectionsJSON = new ObjectMapper().writerWithView(ExportConnectionView.class).writeValueAsString(connectionsListView.getCheckModel().getCheckedItems());
                     List<ConnectionConfigDTO>  connectionConfigDTOS = connectionsListView.getCheckModel().getCheckedItems();
                     ConnectionExportDTO connectionExportDTO = new ConnectionExportDTO(connectionConfigDTOS);
                     TaskFactory.exportConnection(null, file, connectionExportDTO);

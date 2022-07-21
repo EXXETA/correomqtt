@@ -1,7 +1,6 @@
 package org.correomqtt.business.model;
 
 
-import com.fasterxml.jackson.annotation.JsonView;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,5 +24,6 @@ public class ConnectionExportDTO {
     public ConnectionExportDTO(List<ConnectionConfigDTO> connectionConfigDTOS) {
         this.connectionConfigDTOS = connectionConfigDTOS;
     }
+
 
 }
