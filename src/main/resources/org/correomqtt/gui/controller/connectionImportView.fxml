@@ -3,22 +3,22 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import org.controlsfx.control.CheckListView?>
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            stylesheets="@../css/connections.css"
-            fx:controller="org.correomqtt.gui.controller.ConnectionImportViewController"
-            prefHeight="400.0" prefWidth="600.0">
+<?import org.controlsfx.control.*?>
+
+<AnchorPane prefHeight="450.0" prefWidth="800.0" stylesheets="@../css/connections.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ConnectionImportViewController">
 
     <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <VBox>
 
-            <CheckListView fx:id="connectionsListView" minHeight="320.0" prefWidth="250.0" />
+            <CheckListView fx:id="connectionsListView" minHeight="320.0" prefHeight="450.0" prefWidth="350.0" />
         </VBox>
         <VBox>
             <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
+                <Label fx:id="passwordRequiredLabel" text="%importPasswordRequired" textAlignment="CENTER" />
+            </HBox>
+            <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
 
-                <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="5">
+                      <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="5">
                     <GridPane.margin>
                         <Insets />
                     </GridPane.margin>
@@ -32,14 +32,10 @@
                     </tooltip>
                 </Button>
             </HBox>
-            <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
-                <Label fx:id="passwordRequiredLabel" textAlignment="CENTER" text="%importPasswordRequired"/>
+            <HBox alignment="TOP_CENTER" prefHeight="404.0" prefWidth="602.0">
+                <Label fx:id="passwordIncorrectLabel" style="-fx-text-fill: #ff0000" text="%importPasswordIncorrect" textAlignment="CENTER" />
             </HBox>
-            <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
-                <Label fx:id="passwordIncorrectLabel" textAlignment="CENTER" style="-fx-text-fill: #ff0000"
-                       text="%importPasswordIncorrect"/>
-            </HBox>
-            <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="550.0">
+            <HBox alignment="CENTER" prefHeight="404.0" prefWidth="550.0">
                 <Button fx:id="cancelButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">
                     <HBox.margin>
                         <Insets right="5.0" />

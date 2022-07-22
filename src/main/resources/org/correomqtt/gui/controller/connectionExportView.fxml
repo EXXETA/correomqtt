@@ -3,28 +3,31 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.*?>
 
-<?import org.controlsfx.control.CheckListView?>
 <AnchorPane fx:id="containerAnchorPane" prefHeight="450.0" prefWidth="800.0" styleClass="dialog" stylesheets="@../css/connections.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ConnectionExportViewController">
 
     <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <VBox>
 
 <!--            <ListView fx:id="connectionsListView" minHeight="320.0" prefWidth="193.0" />-->
-            <CheckListView fx:id="connectionsListView" minHeight="320.0" prefWidth="193.0" />
+            <CheckListView fx:id="connectionsListView" minHeight="320.0" prefHeight="450.0" prefWidth="350.0" />
         </VBox>
         <VBox>
-            <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
-                <CheckBox fx:id="passwordCheckBox" alignment="CENTER_RIGHT" mnemonicParsing="false" text="%exportWithPassword">
+            <HBox alignment="BOTTOM_CENTER" prefHeight="150.0" prefWidth="200.0">
+                <CheckBox fx:id="passwordCheckBox" alignment="CENTER_RIGHT" mnemonicParsing="false"
+                          text="%exportWithPassword">
 
-                </CheckBox>
+             </CheckBox>
+            </HBox>
+            <HBox alignment="CENTER" prefHeight="150.0" prefWidth="602.0">
                 <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="5">
                     <GridPane.margin>
                         <Insets />
                     </GridPane.margin>
                 </PasswordField>
             </HBox>
-            <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
+            <HBox alignment="CENTER" prefHeight="150.0" prefWidth="602.0">
                 <Button fx:id="cancelButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">
                     <HBox.margin>
                         <Insets right="5.0" />

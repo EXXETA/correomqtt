@@ -114,8 +114,13 @@ public class ConnectionExportViewController extends BaseController implements Ex
             public void updateItem(ConnectionConfigDTO connectionConfigDTO, boolean empty) {
                 super.updateItem(connectionConfigDTO, empty);
                 setText(connectionConfigDTO == null ? "" : connectionConfigDTO.getName());
+                setStyle( "-fx-pref-height: 39;" +
+                        "-fx-padding: 10");
+
+
             }
         });
+//        connectionsListView.setFixedCellSize(39);
 
     }
 

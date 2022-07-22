@@ -7,10 +7,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -101,6 +98,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
         passwordField.setVisible(false);
         passwordRequiredLabel.setVisible(false);
         passwordIncorrectLabel.setVisible(false);
+        connectionsListView.setFixedCellSize(5);
         setUpCells(null);
 
     }
@@ -111,6 +109,8 @@ public class ConnectionImportViewController extends BaseController implements Lo
             public void updateItem(ConnectionConfigDTO newConnection, boolean empty) {
                 super.updateItem(newConnection, empty);
                 setText(newConnection == null ? "" : newConnection.getName());
+                setStyle( "-fx-pref-height: 39;" +
+                        "-fx-padding: 2,10,2,5");
                 if (existingConnections != null) {
 
                     setDisable(existingConnections.stream().anyMatch(existingConnection -> newConnection != null && (
@@ -151,8 +151,6 @@ public class ConnectionImportViewController extends BaseController implements Lo
                 passwordRequiredLabel.setVisible(true);
                 this.connectionExportDTO = connectionExportDTO;
             } else {
-//                importedConnections = new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>() {
-//                }).readValue(connectionExportDTO.getConnectionConfigDTOS());
                 importedConnections = connectionExportDTO.getConnectionConfigDTOS();
                 connectionConfigDTOS.addAll(importedConnections);
                 connectionsListView.setItems(connectionConfigDTOS);
