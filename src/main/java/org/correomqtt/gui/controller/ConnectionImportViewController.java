@@ -86,7 +86,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
         LoaderResult<ConnectionImportViewController> result = load(delegate);
         resources = result.getResourceBundle();
 
-        showAsDialog(result, resources.getString("connectionExportViewControllerTitle"), properties, false, false, null,
+        showAsDialog(result, resources.getString("connectionImportViewControllerTitle"), properties, false, false, null,
                 event -> result.getController().keyHandling(event));
     }
 
@@ -98,7 +98,6 @@ public class ConnectionImportViewController extends BaseController implements Lo
         passwordField.setVisible(false);
         passwordRequiredLabel.setVisible(false);
         passwordIncorrectLabel.setVisible(false);
-        connectionsListView.setFixedCellSize(5);
         setUpCells(null);
 
     }
@@ -110,7 +109,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
                 super.updateItem(newConnection, empty);
                 setText(newConnection == null ? "" : newConnection.getName());
                 setStyle( "-fx-pref-height: 39;" +
-                        "-fx-padding: 2,10,2,5");
+                        "-fx-padding: 10");
                 if (existingConnections != null) {
 
                     setDisable(existingConnections.stream().anyMatch(existingConnection -> newConnection != null && (
