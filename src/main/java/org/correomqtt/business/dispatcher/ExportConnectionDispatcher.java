@@ -2,7 +2,7 @@ package org.correomqtt.business.dispatcher;
 
 import java.io.File;
 
-public class ExportConnectionDispatcher extends BaseDispatcher<ExportConnectionObserver>{
+public class ExportConnectionDispatcher extends BaseDispatcher<ExportConnectionObserver> {
     private static ExportConnectionDispatcher instance;
 
     public static synchronized ExportConnectionDispatcher getInstance() {
@@ -12,15 +12,15 @@ public class ExportConnectionDispatcher extends BaseDispatcher<ExportConnectionO
         return instance;
     }
 
-    public void onExportSucceeded( ) {
-        trigger(o -> o.onExportSucceeded());
+    public void onExportSucceeded() {
+        trigger(ExportConnectionObserver::onExportSucceeded);
     }
 
-    public void onExportCancelled( File file) {
+    public void onExportCancelled(File file) {
         trigger(o -> o.onExportCancelled(file));
     }
 
-    public void onExportFailed( File file, Throwable exception) {
+    public void onExportFailed(File file, Throwable exception) {
         trigger(o -> o.onExportFailed(exception));
     }
 
@@ -32,5 +32,7 @@ public class ExportConnectionDispatcher extends BaseDispatcher<ExportConnectionO
         trigger(ExportConnectionObserver::onExportScheduled);
     }
 
-    public void onExportStarted(){trigger(ExportConnectionObserver::onExportStarted);}
+    public void onExportStarted() {
+        trigger(ExportConnectionObserver::onExportStarted);
+    }
 }

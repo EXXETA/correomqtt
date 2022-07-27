@@ -1,11 +1,8 @@
 package org.correomqtt.business.dispatcher;
 
-import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ConnectionExportDTO;
-import org.correomqtt.business.model.MessageDTO;
 
 import java.io.File;
-import java.util.List;
 
 public interface ImportConnectionObserver extends BaseConnectionObserver{
     void onImportSucceeded(ConnectionExportDTO connectionExportDTO);

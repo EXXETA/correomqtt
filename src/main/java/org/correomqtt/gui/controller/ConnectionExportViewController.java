@@ -114,13 +114,12 @@ public class ConnectionExportViewController extends BaseController implements Ex
             public void updateItem(ConnectionConfigDTO connectionConfigDTO, boolean empty) {
                 super.updateItem(connectionConfigDTO, empty);
                 setText(connectionConfigDTO == null ? "" : connectionConfigDTO.getName());
-                setStyle( "-fx-pref-height: 39;" +
+                setStyle("-fx-pref-height: 39;" +
                         "-fx-padding: 10");
 
 
             }
         });
-//        connectionsListView.setFixedCellSize(39);
 
     }
 
@@ -172,9 +171,9 @@ public class ConnectionExportViewController extends BaseController implements Ex
                 }
 
             } else {
-                    List<ConnectionConfigDTO>  connectionConfigDTOS = connectionsListView.getCheckModel().getCheckedItems();
-                    ConnectionExportDTO connectionExportDTO = new ConnectionExportDTO(connectionConfigDTOS);
-                    TaskFactory.exportConnection(null, file, connectionExportDTO);
+                List<ConnectionConfigDTO> connectionConfigDTOS = connectionsListView.getCheckModel().getCheckedItems();
+                ConnectionExportDTO connectionExportDTO = new ConnectionExportDTO(connectionConfigDTOS);
+                TaskFactory.exportConnection(null, file, connectionExportDTO);
 
 
             }

@@ -7,7 +7,10 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -63,7 +66,6 @@ public class ConnectionImportViewController extends BaseController implements Lo
     private Label importConnectionsExists;
 
 
-
     public ConnectionImportViewController(ConnectionImportViewDelegate delegate) {
         this.delegate = delegate;
         ImportConnectionDispatcher.getInstance().addObserver(this);
@@ -111,13 +113,13 @@ public class ConnectionImportViewController extends BaseController implements Lo
             public void updateItem(ConnectionConfigDTO newConnection, boolean empty) {
                 super.updateItem(newConnection, empty);
                 setText(newConnection == null ? "" : newConnection.getName());
-                setStyle( "-fx-pref-height: 39;" +
+                setStyle("-fx-pref-height: 39;" +
                         "-fx-padding: 10");
                 if (existingConnections != null) {
 
-                    if(existingConnections.stream().anyMatch(existingConnection -> newConnection != null && (
+                    if (existingConnections.stream().anyMatch(existingConnection -> newConnection != null && (
                             existingConnection.getId().equals(newConnection.getId())
-                                    || existingConnection.getName().equals(newConnection.getName())))){
+                                    || existingConnection.getName().equals(newConnection.getName())))) {
                         setDisable(true);
                         importConnectionsExists.setVisible(true);
                     }
@@ -147,7 +149,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
     @Override
     public void onImportSucceeded(ConnectionExportDTO connectionExportDTO) {
         List<ConnectionConfigDTO> importedConnections;
-        if(connectionExportDTO!=null){
+        if (connectionExportDTO != null) {
 
             if (connectionExportDTO.getEncryptionType() != null) {
                 passwordField.setVisible(true);
