@@ -18,7 +18,7 @@
             </HBox>
             <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
 
-                      <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="5">
+                <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="5">
                     <GridPane.margin>
                         <Insets />
                     </GridPane.margin>
@@ -33,7 +33,12 @@
                 </Button>
             </HBox>
             <HBox alignment="TOP_CENTER" prefHeight="404.0" prefWidth="602.0">
-                <Label fx:id="passwordIncorrectLabel" style="-fx-text-fill: #ff0000" text="%importPasswordIncorrect" textAlignment="CENTER" />
+                <VBox alignment="TOP_CENTER" prefHeight="110.0">
+                    <Label fx:id="importConnectionsExists" alignment="CENTER" contentDisplay="CENTER"
+                           text="%importConnectionExists" textAlignment="CENTER"/>
+                    <Label fx:id="passwordIncorrectLabel" style="-fx-text-fill: #ff0000" text="%importPasswordIncorrect"
+                           textAlignment="CENTER"/>
+                </VBox>
             </HBox>
             <HBox alignment="CENTER" prefHeight="404.0" prefWidth="550.0">
                 <Button fx:id="cancelButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">

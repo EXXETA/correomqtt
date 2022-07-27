@@ -59,6 +59,8 @@ public class ConnectionImportViewController extends BaseController implements Lo
     private Label passwordRequiredLabel;
     @FXML
     private Label passwordIncorrectLabel;
+    @FXML
+    private Label importConnectionsExists;
 
 
 
@@ -98,6 +100,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
         passwordField.setVisible(false);
         passwordRequiredLabel.setVisible(false);
         passwordIncorrectLabel.setVisible(false);
+        importConnectionsExists.setVisible(false);
         setUpCells(null);
 
     }
@@ -112,9 +115,12 @@ public class ConnectionImportViewController extends BaseController implements Lo
                         "-fx-padding: 10");
                 if (existingConnections != null) {
 
-                    setDisable(existingConnections.stream().anyMatch(existingConnection -> newConnection != null && (
+                    if(existingConnections.stream().anyMatch(existingConnection -> newConnection != null && (
                             existingConnection.getId().equals(newConnection.getId())
-                                    || existingConnection.getName().equals(newConnection.getName()))));
+                                    || existingConnection.getName().equals(newConnection.getName())))){
+                        setDisable(true);
+                        importConnectionsExists.setVisible(true);
+                    }
 
                 } else setDisable(false);
 
