@@ -3,7 +3,6 @@ package org.correomqtt.plugin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.business.utils.VendorConstants;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.repository.BundledPluginList;
@@ -15,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -25,9 +25,9 @@ import static org.correomqtt.business.utils.VendorConstants.BUNDLED_PLUGINS_URL;
 import static org.correomqtt.business.utils.VendorConstants.DEFAULT_REPO_URL;
 import static org.correomqtt.plugin.ApiLevel.CURRENT_API_LEVEL;
 
-public class PluginSystem {
+public class PluginLauncher {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PluginSystem.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluginLauncher.class);
 
     private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
@@ -39,7 +39,7 @@ public class PluginSystem {
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLoadPlugins"));
             pluginManager.loadPlugins();
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderUpdatePlugins"));
-            updateSystem(pluginManager);
+            updateSystem();
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderStartPlugins"));
             pluginManager.startPlugins();
         } catch (UnknownHostException ue) {
@@ -49,14 +49,10 @@ public class PluginSystem {
         }
     }
 
-    private void updateSystem(PluginManager pluginManager) throws IOException {
+    private void updateSystem() throws IOException {
 
-        List<UpdateRepository> repos = new ArrayList<>();
-        repos.add(new CorreoUpdateRepository("bundled1", DEFAULT_REPO_URL, CURRENT_API_LEVEL));
-        // repos.add(new CorreoUpdateRepository("bundled2", new URL(DEFAULT_REPO_URL), CURRENT_API_LEVEL));
-
-        UpdateManager updateManager = new UpdateManager(pluginManager, repos);
-
+        PluginManager pluginManager = PluginManager.getInstance();
+        UpdateManager updateManager = pluginManager.getUpdateManager();
         BundledPluginList.BundledPlugins bundledPlugins = getBundledPlugins();
 
         int updatedPlugins = updateExisitingPlugins(updateManager, pluginManager);

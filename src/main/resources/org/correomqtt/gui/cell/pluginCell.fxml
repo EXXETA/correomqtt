@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane fx:id="mainNode" stylesheets="@../css/pluginView.css" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1">
+    <styleClass>
+        <String fx:value="basicColors" />
+        <String fx:value="messageView" />
+    </styleClass>
+    <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <HBox alignment="CENTER_LEFT" styleClass="firstLine">
+            <Label fx:id="nameLabel" styleClass="topic" text="Name" HBox.hgrow="NEVER">
+            </Label>
+            <Region HBox.hgrow="SOMETIMES" />
+            <Label fx:id="disabledLabel" alignment="CENTER" minWidth="80.0" styleClass="tag" text="%disabled" />
+            <Label fx:id="installedLabel" alignment="CENTER" minWidth="80.0" styleClass="tag" text="%installed" />
+        </HBox>
+        <Label fx:id="descriptionLabel" text="Description">
+            <styleClass>
+                <String fx:value="secondLine" />
+                <String fx:value="secondaryText" />
+            </styleClass>
+        </Label>
+    </VBox>
+</AnchorPane>

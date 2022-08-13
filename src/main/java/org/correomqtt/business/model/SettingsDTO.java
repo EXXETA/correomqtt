@@ -8,7 +8,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -24,6 +26,7 @@ public class SettingsDTO {
     private Locale savedLocale = null;
     private Locale currentLocale = null;
     private boolean searchUpdates;
+    private Map<String, String> customPluginRepositories = new HashMap<>();
     private boolean firstStart = true;
     private String keyringIdentifier;
     @Builder.Default

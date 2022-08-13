@@ -120,6 +120,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         LoaderResult<PublishViewController> result = load(PublishViewController.class, "publishView.fxml",
                 () -> new PublishViewController(connectionId, delegate));
         resources = result.getResourceBundle();
+
         return result;
     }
 

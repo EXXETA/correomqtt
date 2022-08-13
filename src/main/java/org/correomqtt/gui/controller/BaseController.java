@@ -66,6 +66,19 @@ abstract class BaseController {
                                                         boolean alwaysOnTop,
                                                         final EventHandler<WindowEvent> closeHandler,
                                                         final EventHandler<KeyEvent> keyHandler) {
+        showAsDialog(result, title, windowProperties,resizable, alwaysOnTop, closeHandler, keyHandler, 300, 400);
+
+    }
+
+    static <Z extends BaseController> void showAsDialog(LoaderResult<Z> result,
+                                                        String title,
+                                                        Map<Object, Object> windowProperties,
+                                                        boolean resizable,
+                                                        boolean alwaysOnTop,
+                                                        final EventHandler<WindowEvent> closeHandler,
+                                                        final EventHandler<KeyEvent> keyHandler,
+                                                        int minWidth,
+                                                        int minHeight) {
 
         Scene scene = new Scene(result.getMainPane());
         String cssPath = SettingsProvider.getInstance().getCssPath();
@@ -76,6 +89,8 @@ abstract class BaseController {
         stage.setTitle(title);
         stage.setScene(scene);
         stage.setResizable(resizable);
+        stage.setMinWidth(minWidth);
+        stage.setMinHeight(minHeight);
         stage.setAlwaysOnTop(alwaysOnTop);
         stage.show();
         if (closeHandler != null) {

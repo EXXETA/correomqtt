@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CorreoPluginInfo {
+public class RepoPluginInfoDTO {
 
     private String id;
     private String name;
