@@ -13,9 +13,9 @@ import org.correomqtt.plugin.spi.OutgoingMessageHook;
 import java.io.File;
 
 @Slf4j
-public class TaskFactory {
+public class MessageTaskFactory {
 
-    private TaskFactory() {
+    private MessageTaskFactory() {
         // private constructor
     }
 

@@ -39,7 +39,7 @@ import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.AutoFormatPayload;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.QosCell;
 import org.correomqtt.gui.cell.TopicCell;
 import org.correomqtt.gui.helper.AlertHelper;
@@ -218,7 +218,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 .dateTime(LocalDateTime.now())
                 .build();
 
-        TaskFactory.publish(getConnectionId(), messagePropertiesDTO);
+        MessageTaskFactory.publish(getConnectionId(), messagePropertiesDTO);
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Publishing to topic: {}: {}", messagePropertiesDTO.getTopic(), getConnectionId());
@@ -238,7 +238,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         File file = fileChooser.showOpenDialog(stage);
 
         if (file != null) {
-            TaskFactory.importMessage(getConnectionId(), file);
+            MessageTaskFactory.importMessage(getConnectionId(), file);
         }
     }
 

@@ -8,7 +8,7 @@ import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.ConnectionCell;
 import org.correomqtt.gui.cell.GenericCell;
 import org.correomqtt.gui.helper.AlertHelper;
@@ -748,7 +748,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
                 if (confirmed) {
                     LOGGER.info("Disconnect");
-                    TaskFactory.disconnect(selectedItem.getId());
+                    MessageTaskFactory.disconnect(selectedItem.getId());
 
                     waitForDisconnectIds.put(selectedItem.getId(), selectedIndex);
                 }

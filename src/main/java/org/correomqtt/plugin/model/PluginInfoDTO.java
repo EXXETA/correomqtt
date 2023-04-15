@@ -26,4 +26,7 @@ public class PluginInfoDTO {
     private String licence;
     private Path path;
     private boolean disabled;
+    private boolean bundled;
+
+    private boolean upgradeable;
 }

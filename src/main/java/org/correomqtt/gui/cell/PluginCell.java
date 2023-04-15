@@ -29,6 +29,10 @@ public class PluginCell extends ListCell<PluginInfoPropertiesDTO> {
     @FXML
     Label disabledLabel;
     @FXML
+    Label upgradeableLabel;
+    @FXML
+    Label bundledLabel;
+    @FXML
     ResourceBundle resources;
 
     private final ListView<PluginInfoPropertiesDTO> listView;
@@ -83,13 +87,30 @@ public class PluginCell extends ListCell<PluginInfoPropertiesDTO> {
         }
         descriptionLabel.setText(pluginInfoPropertiesDTO.getDescription());
         if (pluginInfoPropertiesDTO.getRepositoryId() == null) {
+            boolean disabled = Boolean.TRUE.equals(pluginInfoPropertiesDTO.getDisabled());
+            upgradeableLabel.setVisible(false);
+            upgradeableLabel.setManaged(false);
             installedLabel.setVisible(false);
             installedLabel.setManaged(false);
-            disabledLabel.setVisible(Boolean.TRUE.equals(pluginInfoPropertiesDTO.getDisabled()));
+            disabledLabel.setVisible(disabled);
+            disabledLabel.setManaged(disabled);
         } else {
-            installedLabel.setVisible(pluginInfoPropertiesDTO.getInstalledVersion() != null);
+            boolean upgradeable = pluginInfoPropertiesDTO.getUpgradeable();
+            upgradeableLabel.setVisible(upgradeable);
+            upgradeableLabel.setManaged(upgradeable);
+            boolean installed = pluginInfoPropertiesDTO.getInstalledVersion() != null;
+            installedLabel.setVisible(installed);
+            installedLabel.setManaged(installed);
             disabledLabel.setVisible(false);
             disabledLabel.setManaged(false);
+        }
+
+        if (Boolean.TRUE.equals(pluginInfoPropertiesDTO.getBundled())) {
+            bundledLabel.setVisible(true);
+            bundledLabel.setManaged(true);
+        } else {
+            bundledLabel.setVisible(false);
+            bundledLabel.setManaged(false);
         }
     }
 

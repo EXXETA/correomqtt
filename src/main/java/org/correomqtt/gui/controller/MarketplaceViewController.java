@@ -9,19 +9,30 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import lombok.extern.slf4j.Slf4j;
+import org.correomqtt.business.dispatcher.PluginDisableObserver;
+import org.correomqtt.business.dispatcher.PluginEnableDispatcher;
+import org.correomqtt.business.dispatcher.PluginEnableObserver;
+import org.correomqtt.business.dispatcher.PluginInstallDispatcher;
+import org.correomqtt.business.dispatcher.PluginInstallObserver;
+import org.correomqtt.business.dispatcher.PluginUninstallDispatcher;
+import org.correomqtt.business.dispatcher.PluginUninstallObserver;
 import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.gui.business.PluginTaskFactory;
 import org.correomqtt.gui.cell.PluginCell;
+import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.transformer.PluginTransformer;
-import org.correomqtt.gui.utils.PlatformUtils;
 import org.correomqtt.plugin.manager.PluginManager;
-import org.pf4j.Plugin;
 
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 @Slf4j
-public class MarketplaceViewController extends BaseController {
+public class MarketplaceViewController extends BaseController implements
+        PluginInstallObserver,
+        PluginUninstallObserver,
+        PluginDisableObserver,
+        PluginEnableObserver {
 
     @FXML
     Pane marketplaceRootPane;
@@ -55,6 +66,12 @@ public class MarketplaceViewController extends BaseController {
 
     private final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
+    public MarketplaceViewController(){
+        super();
+        PluginInstallDispatcher.getInstance().addObserver(this);
+        PluginUninstallDispatcher.getInstance().addObserver(this);
+    }
+
     public static LoaderResult<MarketplaceViewController> load() {
         return load(MarketplaceViewController.class, "marketplaceView.fxml", MarketplaceViewController::new);
     }
@@ -71,10 +88,7 @@ public class MarketplaceViewController extends BaseController {
     @FXML
     public void onInstall(){
         PluginInfoPropertiesDTO selectedPlugin = marketplacePluginList.getSelectionModel().getSelectedItem();
-        PluginManager.getInstance().getUpdateManager().installPlugin(selectedPlugin.getId(),selectedPlugin.getInstallableVersion());
-        //TODO async event
-        selectedPlugin.getInstallableVersionProperty().set(selectedPlugin.getInstallableVersion());
-        Platform.runLater(() -> marketplacePluginList.refresh());
+        PluginTaskFactory.install(selectedPlugin.getId(),selectedPlugin.getInstallableVersion());
     }
 
     private ListCell<PluginInfoPropertiesDTO> createCell(ListView<PluginInfoPropertiesDTO> pluginInfoDTOListView) {
@@ -130,4 +144,107 @@ public class MarketplaceViewController extends BaseController {
         }
     }
 
+    @Override
+    public void onPluginInstallSucceeded(String pluginId, String version) {
+        reloadData(pluginId);
+        Platform.runLater(() -> {
+            AlertHelper.info(resources.getString("pluginChangeTitle"), resources.getString("pluginChangeContent"));
+        });
+    }
+
+    private void reloadData(String pluginId) {
+        marketplacePluginList.setItems(FXCollections.observableArrayList(
+                PluginTransformer.dtoListToPropList(PluginManager.getInstance().getAllPluginsAvailableFromRepos())
+        ));
+        Platform.runLater(() -> {
+            marketplaceRootPane.setDisable(false);
+            marketplacePluginList.refresh();
+            PluginInfoPropertiesDTO currentPlugin = marketplacePluginList.getItems().stream()
+                    .filter(p -> p.getId().equals(pluginId))
+                    .findFirst()
+                    .orElse(null);
+            setCurrentPlugin(currentPlugin);
+            marketplacePluginList.getSelectionModel().select(currentPlugin);
+        });
+    }
+
+    @Override
+    public void onPluginInstallCancelled(String pluginId, String version) {
+        showFail();
+    }
+
+    private void showFail() {
+        AlertHelper.warn(resources.getString("pluginOperationFailedTitle"),resources.getString("pluginOperationFailedContent"), true);
+        Platform.runLater(() -> marketplaceRootPane.setDisable(false));
+    }
+
+    @Override
+    public void onPluginInstallFailed(String pluginId, String version, Throwable exception) {
+        showFail();
+    }
+
+    @Override
+    public void onPluginInstallStarted(String pluginId, String version) {
+        marketplaceRootPane.setDisable(true);
+    }
+
+    @Override
+    public void onPluginUninstallSucceeded(String pluginId) {
+        reloadData(pluginId);
+    }
+
+    @Override
+    public void onPluginUninstallCancelled(String pluginId) {
+        Platform.runLater(() -> marketplaceRootPane.setDisable(false));
+    }
+
+    @Override
+    public void onPluginUninstallFailed(String pluginId, Throwable exception) {
+        Platform.runLater(() -> marketplaceRootPane.setDisable(false));
+    }
+
+    @Override
+    public void onPluginUninstallStarted(String pluginId) {
+        marketplaceRootPane.setDisable(true);
+    }
+
+    @Override
+    public void onPluginDisableStarted(String pluginId) {
+        marketplaceRootPane.setDisable(true);
+    }
+
+    @Override
+    public void onPluginDisableSucceeded(String pluginId) {
+        reloadData(pluginId);
+    }
+
+    @Override
+    public void onPluginDisableCancelled(String pluginId) {
+        Platform.runLater(() -> marketplaceRootPane.setDisable(false));
+    }
+
+    @Override
+    public void onPluginDisableFailed(String pluginId, Throwable exception) {
+        Platform.runLater(() -> marketplaceRootPane.setDisable(false));
+    }
+
+    @Override
+    public void onPluginEnableStarted(String pluginId) {
+        marketplaceRootPane.setDisable(true);
+    }
+
+    @Override
+    public void onPluginEnableSucceeded(String pluginId) {
+        reloadData(pluginId);
+    }
+
+    @Override
+    public void onPluginEnableCancelled(String pluginId) {
+        Platform.runLater(() -> marketplaceRootPane.setDisable(false));
+    }
+
+    @Override
+    public void onPluginEnableFailed(String pluginId, Throwable exception) {
+        Platform.runLater(() -> marketplaceRootPane.setDisable(false));
+    }
 }

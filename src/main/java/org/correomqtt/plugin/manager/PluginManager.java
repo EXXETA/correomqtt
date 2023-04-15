@@ -8,7 +8,9 @@ import org.correomqtt.business.model.HooksDTO;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.provider.PluginConfigProvider;
 import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.model.PluginInfoDTO;
+import org.correomqtt.plugin.repository.BundledPluginList;
 import org.correomqtt.plugin.repository.CorreoUpdateRepository;
 import org.correomqtt.plugin.spi.BaseExtensionPoint;
 import org.correomqtt.plugin.spi.DetailViewManipulatorHook;
@@ -31,8 +33,10 @@ import org.pf4j.update.UpdateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,6 +46,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.correomqtt.business.utils.VendorConstants.BUNDLED_PLUGINS_URL;
 import static org.correomqtt.business.utils.VendorConstants.DEFAULT_REPO_URL;
 import static org.correomqtt.plugin.ApiLevel.CURRENT_API_LEVEL;
 
@@ -96,9 +101,35 @@ public class PluginManager extends JarPluginManager {
 
     public List<PluginInfoDTO> getInstalledPlugins() {
         return this.getPlugins().stream()
-                .map(wrapper -> PluginInfoTransformer.wrapperToDTO(wrapper, wrapper.getDescriptor().getVersion(), isPluginDisabled(wrapper.getPluginId())))
+                .map(wrapper -> PluginInfoTransformer.wrapperToDTO(wrapper, wrapper.getDescriptor().getVersion(),
+                        isPluginDisabled(wrapper.getPluginId()),
+                        isPluginBundled(wrapper.getPluginId())))
                 .sorted(Comparator.comparing(PluginInfoDTO::getName))
                 .collect(Collectors.toList());
+    }
+
+    public BundledPluginList.BundledPlugins getBundledPlugins() {
+
+        try {
+            LOGGER.info("Read bundled plugins '{}'", BUNDLED_PLUGINS_URL);
+            BundledPluginList bundledPluginList = new ObjectMapper().readValue(new URL(BUNDLED_PLUGINS_URL), BundledPluginList.class);
+
+            BundledPluginList.BundledPlugins bundledPlugins = bundledPluginList.getVersions().get(VersionUtils.getVersion().trim());
+            if (bundledPlugins == null) {
+                return BundledPluginList.BundledPlugins.builder().build();
+            }
+            return bundledPlugins;
+
+        } catch (IOException e) {
+            LOGGER.warn("Unable to load bundled plugin list from {}.", BUNDLED_PLUGINS_URL);
+            return BundledPluginList.BundledPlugins.builder().build();
+        }
+
+    }
+
+    private boolean isPluginBundled(String pluginId) {
+        BundledPluginList.BundledPlugins bundledPlugins = getBundledPlugins();
+        return bundledPlugins.getInstall().stream().anyMatch(p -> p.equals(pluginId));
     }
 
     public List<PluginInfoDTO> getAllPluginsAvailableFromRepos() {

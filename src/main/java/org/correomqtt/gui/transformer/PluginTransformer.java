@@ -30,6 +30,8 @@ public class PluginTransformer {
                 .installableVersion(dto.getInstallableVersion())
                 .license(dto.getLicence())
                 .disabled(dto.isDisabled())
+                .bundled(dto.isBundled())
+                .upgradeable(dto.isUpgradeable())
                 .path(dto.getPath())
                 .build();
     }

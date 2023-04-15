@@ -36,6 +36,9 @@ public class PluginInfoPropertiesDTO {
     private final StringProperty licenseProperty;
     private final ObjectProperty<Path> pathProperty;
     private final BooleanProperty disabledProperty;
+    private final BooleanProperty bundledProperty;
+
+    private final BooleanProperty upgradeableProperty;
 
     public static Callback<PluginInfoPropertiesDTO, Observable[]> extractor() {
         return (PluginInfoPropertiesDTO c) -> new Observable[]{
@@ -49,7 +52,8 @@ public class PluginInfoPropertiesDTO {
                 c.installableVersionProperty,
                 c.licenseProperty,
                 c.pathProperty,
-                c.disabledProperty
+                c.disabledProperty,
+                c.bundledProperty
         };
     }
 
@@ -89,12 +93,20 @@ public class PluginInfoPropertiesDTO {
         return installableVersionProperty.getValue();
     }
 
+    public Boolean getUpgradeable(){
+        return upgradeableProperty.getValue();
+    }
+
     public Path getPath() {
         return pathProperty.getValue();
     }
 
     public Boolean getDisabled(){
         return disabledProperty.getValue();
+    }
+
+    public Boolean getBundled() {
+        return bundledProperty.getValue();
     }
 
     @Override
@@ -116,6 +128,8 @@ public class PluginInfoPropertiesDTO {
         private StringProperty licenseProperty = new SimpleStringProperty();
         private ObjectProperty<Path> pathProperty = new SimpleObjectProperty<>();
         private BooleanProperty disabledProperty = new SimpleBooleanProperty();
+        private BooleanProperty bundledProperty = new SimpleBooleanProperty();
+        private BooleanProperty upgradeableProperty = new SimpleBooleanProperty();
 
         public PluginInfoPropertiesDTOBuilder id(String id) {
             this.idProperty.set(id);
@@ -172,6 +186,17 @@ public class PluginInfoPropertiesDTO {
             return this;
         }
 
+        public PluginInfoPropertiesDTOBuilder bundled(boolean bundled){
+            this.bundledProperty.set(bundled);
+            return this;
+        }
+
+
+        public PluginInfoPropertiesDTOBuilder upgradeable(boolean upgradeable){
+            this.upgradeableProperty.set(upgradeable);
+            return this;
+        }
+
         public PluginInfoPropertiesDTO build() {
             return new PluginInfoPropertiesDTO(idProperty,
                     nameProperty,
@@ -183,7 +208,9 @@ public class PluginInfoPropertiesDTO {
                     installableVersionProperty,
                     licenseProperty,
                     pathProperty,
-                    disabledProperty
+                    disabledProperty,
+                    bundledProperty,
+                    upgradeableProperty
             );
         }
     }

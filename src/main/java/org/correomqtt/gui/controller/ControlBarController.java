@@ -14,7 +14,7 @@ import org.correomqtt.business.exception.CorreoMqttException;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.model.ConnectionState;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.spi.MainToolbarHook;
@@ -109,7 +109,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Connect in control bar clicked for connection: {}", getConnectionId());
         }
 
-        TaskFactory.connect(getConnectionId());
+        MessageTaskFactory.connect(getConnectionId());
     }
 
     @FXML
@@ -119,7 +119,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         }
 
         gracefulDisconnenct = true;
-        TaskFactory.disconnect(getConnectionId());
+        MessageTaskFactory.disconnect(getConnectionId());
     }
 
     @FXML

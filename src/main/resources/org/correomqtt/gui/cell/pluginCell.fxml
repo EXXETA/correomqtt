@@ -15,7 +15,9 @@
             </Label>
             <Region HBox.hgrow="SOMETIMES" />
             <Label fx:id="disabledLabel" alignment="CENTER" minWidth="80.0" styleClass="tag" text="%disabled" />
+            <Label fx:id="upgradeableLabel" alignment="CENTER" minWidth="80.0" styleClass="tag" text="%upgradeable" />
             <Label fx:id="installedLabel" alignment="CENTER" minWidth="80.0" styleClass="tag" text="%installed" />
+            <Label fx:id="bundledLabel" alignment="CENTER" minWidth="80.0" styleClass="tag" text="%bundled" />
         </HBox>
         <Label fx:id="descriptionLabel" text="Description">
             <styleClass>
