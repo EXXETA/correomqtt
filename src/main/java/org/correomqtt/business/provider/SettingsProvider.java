@@ -87,6 +87,11 @@ public class SettingsProvider extends BaseUserFileProvider {
 
     private ThemeProvider getActiveTheme() {
         if (activeThemeProvider == null) {
+            if(configDTO.getThemesSettings().getNextTheme() != null) {
+                configDTO.getThemesSettings().setActiveTheme(configDTO.getThemesSettings().getNextTheme());
+                configDTO.getThemesSettings().setNextTheme(null);
+                saveDTO();
+            }
             String activeThemeName = configDTO.getThemesSettings().getActiveTheme().getName();
             ArrayList<ThemeProvider> themes = new ArrayList<>(PluginManager.getInstance().getExtensions(ThemeProviderHook.class));
             activeThemeProvider = themes.stream().filter(t -> t.getName().equals(activeThemeName)).findFirst().orElse(new LightThemeProvider());
@@ -107,7 +112,6 @@ public class SettingsProvider extends BaseUserFileProvider {
     }
 
     public void saveSettings(boolean showRestartRequiredDialog) {
-        this.activeThemeProvider = null;
         saveDTO();
         saveToUserDirectory(CSS_FILE_NAME, getActiveTheme().getCss());
         ConfigDispatcher.getInstance().onSettingsUpdated(showRestartRequiredDialog);

@@ -158,7 +158,12 @@ public class SettingsViewController extends BaseController {
 
         themeComboBox.getSelectionModel().select(themes.
                 stream()
-                .filter(t -> t.getName().equals(SettingsProvider.getInstance().getThemeSettings().getActiveTheme().getName()))
+                .filter(t -> {
+                    if(SettingsProvider.getInstance().getThemeSettings().getNextTheme() != null) {
+                        return t.getName().equals(SettingsProvider.getInstance().getThemeSettings().getNextTheme().getName());
+                    }
+                    return t.getName().equals(SettingsProvider.getInstance().getThemeSettings().getActiveTheme().getName());
+                })
                 .findFirst()
                 .orElse(new LightThemeProvider()));
 
@@ -253,7 +258,7 @@ public class SettingsViewController extends BaseController {
         settings.setSearchUpdates(searchUpdatesCheckbox.isSelected());
         ThemeProvider selectedTheme = themeComboBox.getSelectionModel().getSelectedItem();
         settings.setSavedLocale(languageComboBox.getSelectionModel().getSelectedItem().getLocale());
-        SettingsProvider.getInstance().getThemeSettings().setActiveTheme(new ThemeDTO(selectedTheme.getName(), selectedTheme.getIconMode()));
+        SettingsProvider.getInstance().getThemeSettings().setNextTheme(new ThemeDTO(selectedTheme.getName(), selectedTheme.getIconMode()));
         SettingsProvider.getInstance().saveSettings(true);
     }
 
