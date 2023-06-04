@@ -1,7 +1,7 @@
 package org.correomqtt.gui.utils;
 
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -25,7 +25,7 @@ public class MessageUtils {
 
         File file = fileChooser.showSaveDialog(stage);
         if (file != null) {
-            TaskFactory.exportMessage(connectionId, file, messageDTO);
+            MessageTaskFactory.exportMessage(connectionId, file, messageDTO);
         }
     }
 }

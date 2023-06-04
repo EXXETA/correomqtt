@@ -27,7 +27,7 @@ public class ExportMessageService extends BaseService {
         ExportMessageDispatcher.getInstance().onExportStarted(connectionId, file, messageDTO);
         LOGGER.info(getConnectionMarker(), "Start exporting message {} to file {}.", messageDTO.getMessageId(), file.getAbsolutePath());
         try {
-            new ObjectMapper().writeValue(file, messageDTO);
+            new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, messageDTO);
         } catch (IOException e) {
             throw new CorreoMqttExportMessageException(e);
         }

@@ -11,6 +11,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
+import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.model.ThemeDTO;
@@ -25,7 +26,6 @@ import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.theme.ThemeProvider;
 import org.correomqtt.gui.theme.light.LightThemeProvider;
 import org.correomqtt.plugin.manager.PluginManager;
-import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
