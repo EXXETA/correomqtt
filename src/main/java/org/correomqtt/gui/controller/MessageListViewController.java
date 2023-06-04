@@ -2,6 +2,7 @@ package org.correomqtt.gui.controller;
 
 import org.correomqtt.plugin.spi.IncomingMessageHook;
 import javafx.event.ActionEvent;
+import org.correomqtt.plugin.spi.IncomingMessageHook;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.model.ControllerType;

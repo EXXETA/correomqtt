@@ -9,6 +9,8 @@ import org.correomqtt.plugin.spi.MessageValidatorHook;
 import org.correomqtt.business.model.LabelType;
 import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.RetainedState;
+import org.correomqtt.plugin.spi.MessageListHook;
+import org.correomqtt.plugin.spi.MessageValidatorHook;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.plugin.manager.MessageValidator;

@@ -7,6 +7,7 @@ public class VendorConstants {
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     public static final String BUNDLED_PLUGINS_URL = "https://github.com/EXXETA/correomqtt-pluginrepo/blob/master/bundled.json";
     public static final String DEFAULT_REPO_URL = "https://github.com/EXXETA/correomqtt-pluginrepo/blob/master/default-repo.json";
 =======
@@ -22,6 +23,10 @@ public class VendorConstants {
     public static final String BUNDLED_PLUGINS_URL = "file:///opt/private/projects/concrete9test/www/public/correo-bundled.json";
     public static final String DEFAULT_REPO_URL = "file:///opt/private/projects/concrete9test/www/public/correo-local.json";
 >>>>>>> 2ea6000 (reverted path changes in VendorConstraints)
+=======
+    public static final String BUNDLED_PLUGINS_URL = "https://github.com/EXXETA/correomqtt-pluginrepo/blob/master/bundled.json";
+    public static final String DEFAULT_REPO_URL = "https://github.com/EXXETA/correomqtt-pluginrepo/blob/master/default-repo.json";
+>>>>>>> 0ae0f0c (Plugin repos (#145))
     public static final String WEBSITE = "http://correomqtt.org";
     public static final String GITHUB_API_LATEST = "https://api.github.com/repos/exxeta/correomqtt/releases/latest";
     public static final String GITHUB_LATEST = "https://github.com/EXXETA/correomqtt/releases/latest";
