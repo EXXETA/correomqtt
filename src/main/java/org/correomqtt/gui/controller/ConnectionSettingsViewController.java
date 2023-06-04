@@ -1104,7 +1104,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
         File file = fileChooser.showOpenDialog(stage);
         if (file != null) {
-            TaskFactory.importConnection(file);
+            MessageTaskFactory.importConnection(file);
             ConnectionImportViewController.showAsDialog(connectionImportViewDelegate);
         }
     }

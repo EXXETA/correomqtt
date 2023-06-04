@@ -25,6 +25,7 @@ import org.correomqtt.business.model.ConnectionExportDTO;
 import org.correomqtt.business.provider.EncryptionRecoverableException;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
@@ -164,7 +165,7 @@ public class ConnectionExportViewController extends BaseController implements Ex
                     String connectionsJSON = new ObjectMapper().addMixIn(ConnectionConfigDTO.class, ConnectionConfigDTOMixin.class).writeValueAsString(connectionsListView.getCheckModel().getCheckedItems());
                     String encryptedData = new EncryptorAesGcm(passwordField.getText()).encrypt(connectionsJSON);
                     ConnectionExportDTO connectionExportDTO = new ConnectionExportDTO(EncryptorAesGcm.ENCRYPTION_TRANSFORMATION, encryptedData);
-                    TaskFactory.exportConnection(null, file, connectionExportDTO);
+                    MessageTaskFactory.exportConnection(null, file, connectionExportDTO);
 
                 } catch (JsonProcessingException | EncryptionRecoverableException e) {
                     ExportConnectionDispatcher.getInstance().onExportFailed(file, e);
@@ -173,7 +174,7 @@ public class ConnectionExportViewController extends BaseController implements Ex
             } else {
                 List<ConnectionConfigDTO> connectionConfigDTOS = connectionsListView.getCheckModel().getCheckedItems();
                 ConnectionExportDTO connectionExportDTO = new ConnectionExportDTO(connectionConfigDTOS);
-                TaskFactory.exportConnection(null, file, connectionExportDTO);
+                MessageTaskFactory.exportConnection(null, file, connectionExportDTO);
 
 
             }
