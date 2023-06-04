@@ -64,9 +64,12 @@ public class MarketplaceViewController extends BaseController implements
     @FXML
     Button pluginInstallBtn;
 
+    @FXML
+    Label pluginUpdateLabel;
+
     private final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
-    public MarketplaceViewController(){
+    public MarketplaceViewController() {
         super();
         PluginInstallDispatcher.getInstance().addObserver(this);
         PluginUninstallDispatcher.getInstance().addObserver(this);
@@ -86,9 +89,9 @@ public class MarketplaceViewController extends BaseController implements
     }
 
     @FXML
-    public void onInstall(){
+    public void onInstall() {
         PluginInfoPropertiesDTO selectedPlugin = marketplacePluginList.getSelectionModel().getSelectedItem();
-        PluginTaskFactory.install(selectedPlugin.getId(),selectedPlugin.getInstallableVersion());
+        PluginTaskFactory.install(selectedPlugin.getId(), selectedPlugin.getInstallableVersion());
     }
 
     private ListCell<PluginInfoPropertiesDTO> createCell(ListView<PluginInfoPropertiesDTO> pluginInfoDTOListView) {
@@ -122,6 +125,9 @@ public class MarketplaceViewController extends BaseController implements
         this.setOrHide(pluginInstalledVersion, plugin.getInstalledVersion(), "pluginInstalledVersion");
         this.setOrHide(pluginInstallableVersion, plugin.getInstallableVersion(), "pluginInstallableVersion");
         pluginInstallBtn.setVisible(plugin.getInstalledVersion() == null);
+        pluginUpdateLabel.setVisible(plugin.getInstalledVersion() != null &&
+                plugin.getInstallableVersion() != null &&
+                plugin.getInstalledVersion().compareTo(plugin.getInstallableVersion()) < 0);
     }
 
 
@@ -174,7 +180,7 @@ public class MarketplaceViewController extends BaseController implements
     }
 
     private void showFail() {
-        AlertHelper.warn(resources.getString("pluginOperationFailedTitle"),resources.getString("pluginOperationFailedContent"), true);
+        AlertHelper.warn(resources.getString("pluginOperationFailedTitle"), resources.getString("pluginOperationFailedContent"), true);
         Platform.runLater(() -> marketplaceRootPane.setDisable(false));
     }
 

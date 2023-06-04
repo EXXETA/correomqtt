@@ -1,5 +1,8 @@
 package org.correomqtt.gui.controller;
 
+import org.correomqtt.business.model.Lwt;
+import org.correomqtt.business.model.Qos;
+import org.correomqtt.plugin.spi.LwtSettingsHook;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
@@ -15,14 +18,13 @@ import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.helper.CheckTopicHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import org.correomqtt.gui.model.GenericCellModel;
+import org.correomqtt.business.model.GenericTranslatable;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
-import org.correomqtt.plugin.spi.LwtSettingsHook;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -293,7 +295,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         connectionSettingsViewHint.setText(connectionSettingsViewHint.getText() + " (" + keyringName + ").");
     }
 
-    private <T extends GenericCellModel> StringConverter<T> getStringConverter() {
+    private <T extends GenericTranslatable> StringConverter<T> getStringConverter() {
         return new StringConverter<T>() {
             @Override
             public String toString(T object) {
@@ -423,11 +425,12 @@ public class ConnectionSettingsViewController extends BaseController implements 
     private void executeOnLoadSettingsExtensions() {
         connectionsListView.getItems().forEach(c -> {
             decodeLwtPayload(c);
-            LwtConnectionExtensionDTO connectionExtensionDTO = new LwtConnectionExtensionDTO(c);
+            LwtConnectionExtensionDTO lwtDTO = new LwtConnectionExtensionDTO(c);
             for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
-                connectionExtensionDTO = p.onLoadConnection(connectionExtensionDTO);
+                lwtDTO = p.onLoadConnection(lwtDTO);
             }
-            connectionExtensionDTO.merge(c);
+
+            ConnectionTransformer.mergeProps(lwtDTO, c);
         });
     }
 
@@ -675,7 +678,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
             lwtConnectionExtensionDTO = p.onShowConnection(lwtConnectionExtensionDTO);
         }
-        activeConnectionConfigDTO = lwtConnectionExtensionDTO.merge(activeConnectionConfigDTO);
+        ConnectionTransformer.mergeProps(lwtConnectionExtensionDTO, activeConnectionConfigDTO);
     }
 
     @Override
@@ -860,20 +863,20 @@ public class ConnectionSettingsViewController extends BaseController implements 
     }
 
     private ConnectionPropertiesDTO executeOnSaveSettingsExtensions(ConnectionPropertiesDTO activeConnectionConfigDTO) {
-        LwtConnectionExtensionDTO activeExtensionConnectionConfigDTO = new LwtConnectionExtensionDTO(activeConnectionConfigDTO);
+        LwtConnectionExtensionDTO lwtDTO = new LwtConnectionExtensionDTO(activeConnectionConfigDTO);
         for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
-            activeExtensionConnectionConfigDTO = p.onSaveConnection(activeExtensionConnectionConfigDTO);
+            lwtDTO = p.onSaveConnection(lwtDTO);
         }
-        return activeExtensionConnectionConfigDTO.merge(activeConnectionConfigDTO);
+        return ConnectionTransformer.mergeProps(lwtDTO, activeConnectionConfigDTO);
     }
 
     private void executeOnUnloadSettingsExtensions() {
         connectionsListView.getItems().forEach(c -> {
-            LwtConnectionExtensionDTO activeExtensionConnectionConfigDTO = new LwtConnectionExtensionDTO(c);
+            LwtConnectionExtensionDTO lwtDTO = new LwtConnectionExtensionDTO(c);
             for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
-                activeExtensionConnectionConfigDTO = p.onUnloadConnection(activeExtensionConnectionConfigDTO);
+                lwtDTO = p.onUnloadConnection(lwtDTO);
             }
-            activeExtensionConnectionConfigDTO.merge(c);
+            ConnectionTransformer.mergeProps(lwtDTO, c);
             encodeLwtPayload(c);
         });
     }

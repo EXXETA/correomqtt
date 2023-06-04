@@ -5,6 +5,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.model.HooksDTO;
+import org.correomqtt.plugin.spi.BaseExtensionPoint;
+import org.correomqtt.plugin.spi.DetailViewManipulatorHook;
+import org.correomqtt.plugin.spi.ExtensionId;
+import org.correomqtt.plugin.spi.IncomingMessageHook;
+import org.correomqtt.plugin.spi.MessageValidatorHook;
+import org.correomqtt.plugin.spi.OutgoingMessageHook;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.provider.PluginConfigProvider;
 import org.correomqtt.business.provider.SettingsProvider;
@@ -12,12 +18,6 @@ import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.model.PluginInfoDTO;
 import org.correomqtt.plugin.repository.BundledPluginList;
 import org.correomqtt.plugin.repository.CorreoUpdateRepository;
-import org.correomqtt.plugin.spi.BaseExtensionPoint;
-import org.correomqtt.plugin.spi.DetailViewManipulatorHook;
-import org.correomqtt.plugin.spi.ExtensionId;
-import org.correomqtt.plugin.spi.IncomingMessageHook;
-import org.correomqtt.plugin.spi.MessageValidatorHook;
-import org.correomqtt.plugin.spi.OutgoingMessageHook;
 import org.correomqtt.plugin.transformer.PluginInfoTransformer;
 import org.pf4j.ExtensionFactory;
 import org.pf4j.JarPluginManager;
@@ -27,7 +27,6 @@ import org.pf4j.PluginFactory;
 import org.pf4j.PluginLoader;
 import org.pf4j.PluginState;
 import org.pf4j.PluginWrapper;
-import org.pf4j.update.PluginInfo;
 import org.pf4j.update.UpdateManager;
 import org.pf4j.update.UpdateRepository;
 import org.slf4j.Logger;
@@ -48,7 +47,6 @@ import java.util.stream.Collectors;
 
 import static org.correomqtt.business.utils.VendorConstants.BUNDLED_PLUGINS_URL;
 import static org.correomqtt.business.utils.VendorConstants.DEFAULT_REPO_URL;
-import static org.correomqtt.plugin.ApiLevel.CURRENT_API_LEVEL;
 
 public class PluginManager extends JarPluginManager {
 
@@ -110,18 +108,32 @@ public class PluginManager extends JarPluginManager {
 
     public BundledPluginList.BundledPlugins getBundledPlugins() {
 
-        try {
-            LOGGER.info("Read bundled plugins '{}'", BUNDLED_PLUGINS_URL);
-            BundledPluginList bundledPluginList = new ObjectMapper().readValue(new URL(BUNDLED_PLUGINS_URL), BundledPluginList.class);
+        SettingsDTO settings = SettingsProvider.getInstance().getSettings();
 
-            BundledPluginList.BundledPlugins bundledPlugins = bundledPluginList.getVersions().get(VersionUtils.getVersion().trim());
-            if (bundledPlugins == null) {
+        if(settings.isInstallBundledPlugins()) {
+
+            String bundledPluginUrl = settings.getBundledPluginsUrl();
+
+            if(bundledPluginUrl == null){
+                bundledPluginUrl = BUNDLED_PLUGINS_URL;
+            }
+
+            try {
+                LOGGER.info("Read bundled plugins '{}'", bundledPluginUrl);
+                BundledPluginList bundledPluginList = new ObjectMapper().readValue(new URL(bundledPluginUrl), BundledPluginList.class);
+
+                BundledPluginList.BundledPlugins bundledPlugins = bundledPluginList.getVersions().get(VersionUtils.getVersion().trim());
+                if (bundledPlugins == null) {
+                    return BundledPluginList.BundledPlugins.builder().build();
+                }
+                return bundledPlugins;
+
+            } catch (IOException e) {
+                LOGGER.warn("Unable to load bundled plugin list from {}.", bundledPluginUrl);
                 return BundledPluginList.BundledPlugins.builder().build();
             }
-            return bundledPlugins;
-
-        } catch (IOException e) {
-            LOGGER.warn("Unable to load bundled plugin list from {}.", BUNDLED_PLUGINS_URL);
+        }else {
+            LOGGER.info("Do not install bundled plugins.");
             return BundledPluginList.BundledPlugins.builder().build();
         }
 
@@ -145,20 +157,21 @@ public class PluginManager extends JarPluginManager {
         final SettingsDTO settings = SettingsProvider.getInstance().getSettings();
 
         if (settings.isSearchUpdates()) {
-            try {
-                repos.add(new CorreoUpdateRepository(DEFAULT_REPO_ID, DEFAULT_REPO_URL, CURRENT_API_LEVEL));
-            } catch (MalformedURLException e) {
-                LOGGER.error("Invalid url for repo {} with url {}", DEFAULT_REPO_ID, DEFAULT_REPO_URL);
+            if (settings.isUseDefaultRepo()) {
+                try {
+                    repos.add(new CorreoUpdateRepository(DEFAULT_REPO_ID, DEFAULT_REPO_URL));
+                } catch (MalformedURLException e) {
+                    LOGGER.error("Invalid url for repo {} with url {}", DEFAULT_REPO_ID, DEFAULT_REPO_URL);
+                }
             }
+            settings.getPluginRepositories().forEach((id, url) -> {
+                try {
+                    repos.add(new CorreoUpdateRepository(id, url));
+                } catch (MalformedURLException e) {
+                    LOGGER.error("Invalid url for repo {} with url {}", id, url);
+                }
+            });
         }
-
-        settings.getCustomPluginRepositories().forEach((id, url) -> {
-            try {
-                repos.add(new CorreoUpdateRepository(id, url, CURRENT_API_LEVEL));
-            } catch (MalformedURLException e) {
-                LOGGER.error("Invalid url for repo {} with url {}", id, url);
-            }
-        });
 
         return new UpdateManager(pluginManager, repos);
     }

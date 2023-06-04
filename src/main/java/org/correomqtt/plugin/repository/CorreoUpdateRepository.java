@@ -1,7 +1,7 @@
 package org.correomqtt.plugin.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.zafarkhaja.semver.Version;
+import org.correomqtt.business.utils.VersionUtils;
 import org.pf4j.update.FileDownloader;
 import org.pf4j.update.FileVerifier;
 import org.pf4j.update.PluginInfo;
@@ -26,7 +26,6 @@ public class CorreoUpdateRepository implements UpdateRepository {
 
     private final String id;
     private final URL url;
-    private final Version apiLevel;
     private final String originalUrl;
 
     private Map<String, PluginInfo> plugins;
@@ -35,11 +34,10 @@ public class CorreoUpdateRepository implements UpdateRepository {
      * @param id  the repository id
      * @param url the repository url
      */
-    public CorreoUpdateRepository(String id, String url, String apiLevel) throws MalformedURLException {
+    public CorreoUpdateRepository(String id, String url) throws MalformedURLException {
         this.id = id;
         this.url = new URL(url);
         this.originalUrl = url;
-        this.apiLevel = Version.valueOf(apiLevel);
     }
 
     @Override
@@ -69,11 +67,11 @@ public class CorreoUpdateRepository implements UpdateRepository {
     private void initPlugins() {
         RepoPluginInfoDTO[] items;
         try {
-            log.debug("Read plugins of '{}' repository from '{}'", id, url);
+            log.info("Read plugins of '{}' repository from '{}'", id, originalUrl);
             items = new ObjectMapper().readValue(url, RepoPluginInfoDTO[].class);
         } catch (IOException e) {
             //TODO event for UI
-            log.error("Unable to read plugin repository '{}'", url, e);
+            log.error("Unable to read plugin repository '{}'", originalUrl, e);
             plugins = Collections.emptyMap();
             return;
         }
@@ -82,7 +80,7 @@ public class CorreoUpdateRepository implements UpdateRepository {
         for (RepoPluginInfoDTO p : items) {
             List<RepoPluginInfoDTO.PluginRelease> releases = new ArrayList<>();
             for (RepoPluginInfoDTO.PluginRelease r : p.getReleases()) {
-                if (fitApiLevel(r)) {
+                if (isPluginCompatible(r)) {
                     if (r.getDate().getTime() == 0) {
                         log.warn("Illegal release date when parsing {}@{}, setting to epoch", p.getId(), r.getVersion());
                     }
@@ -92,6 +90,7 @@ public class CorreoUpdateRepository implements UpdateRepository {
 
             // Skip if plugin has no compatible releases
             if(releases.isEmpty()){
+                log.info("Plugin {} is not compatible to this CorreoMQTT version.", p.getName());
                 continue;
             }
 
@@ -99,13 +98,14 @@ public class CorreoUpdateRepository implements UpdateRepository {
             p.setReleases(releases);
             plugins.put(p.getId(), p.transformToPf4jInfo());
         }
-        log.info("Found {} plugins in repository '{}' compatible with api level {}", plugins.size(), originalUrl, apiLevel);
+        log.info("Found {} plugins in repository '{}' compatible with version {}",
+                plugins.size(), originalUrl, VersionUtils.getVersion());
     }
 
-    private boolean fitApiLevel(RepoPluginInfoDTO.PluginRelease release) {
-        Version releaseApiLevel = Version.valueOf(release.getPluginApiLevel());
-        // ApiLevel of release is greater or equal than the supported one, but has the same major version.
-        return releaseApiLevel.compareTo(apiLevel) >= 0 && releaseApiLevel.getMajorVersion() == apiLevel.getMajorVersion();
+    private boolean isPluginCompatible(RepoPluginInfoDTO.PluginRelease release) {
+        List<String> compatibleCorreoVersions = release.getCompatibleCorreoVersions();
+        return compatibleCorreoVersions != null &&
+                release.getCompatibleCorreoVersions().contains(VersionUtils.getVersion());
     }
 
 

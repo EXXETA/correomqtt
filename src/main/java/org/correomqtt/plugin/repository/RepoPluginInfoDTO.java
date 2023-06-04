@@ -64,7 +64,7 @@ public class RepoPluginInfoDTO {
         private String requires;
         private String url;
         private String sha512sum;
-        private String pluginApiLevel;
+        private List<String> compatibleCorreoVersions;
 
     }
 }

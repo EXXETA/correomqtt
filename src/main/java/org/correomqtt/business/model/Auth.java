@@ -1,12 +1,11 @@
 package org.correomqtt.business.model;
 
-import org.correomqtt.gui.model.GenericCellModel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public enum Auth implements GenericCellModel {
+public enum Auth implements GenericTranslatable {
     OFF("authEnumOff"),
     PASSWORD("authEnumPassword"),
     KEYFILE("authEnumKeyfile");

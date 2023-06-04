@@ -1,9 +1,7 @@
 package org.correomqtt.plugin;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.repository.BundledPluginList;
 import org.pf4j.update.PluginInfo;
@@ -12,10 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.ResourceBundle;
-
-import static org.correomqtt.business.utils.VendorConstants.BUNDLED_PLUGINS_URL;
 
 public class PluginLauncher {
 
@@ -59,7 +54,7 @@ public class PluginLauncher {
 
             // Already installed?
             if (pluginManager.getPlugin(pluginId) != null) {
-                LOGGER.debug("Skip installing bundled plugin '{}', as it is already installed.", pluginId);
+                LOGGER.info("Skip installing bundled plugin '{}', as it is already installed.", pluginId);
                 continue;
             }
 

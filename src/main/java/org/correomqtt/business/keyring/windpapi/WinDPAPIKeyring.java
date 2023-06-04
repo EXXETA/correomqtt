@@ -6,10 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.windpapi4j.InitializationFailedException;
 import com.github.windpapi4j.WinAPICallFailedException;
 import com.github.windpapi4j.WinDPAPI;
+import org.correomqtt.plugin.spi.KeyringHook;
 import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.plugin.spi.KeyringHook;
 import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +68,7 @@ public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
             if(LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Write encoded string {}", Base64.getEncoder().encodeToString(protect(data)));
             }
-            new ObjectMapper().writeValue(file,
+            new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file,
                     WinDPAPIKeyringDTO
                             .builder()
                             .data(Base64.getEncoder().encodeToString(protect(data)))
@@ -82,7 +82,7 @@ public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
 
     private byte[] protect(Map<String, String> data) {
         try {
-            String unprotectedData = new ObjectMapper().writeValueAsString(data);
+            String unprotectedData = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(data);
             WinDPAPI winDPAPI = WinDPAPI.newInstance(WinDPAPI.CryptProtectFlag.CRYPTPROTECT_UI_FORBIDDEN);
             return winDPAPI.protectData(unprotectedData.getBytes(STD_CHAR_SET));
         } catch (InitializationFailedException | WinAPICallFailedException e) {

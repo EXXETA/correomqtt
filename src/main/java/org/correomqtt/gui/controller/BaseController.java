@@ -1,5 +1,9 @@
 package org.correomqtt.gui.controller;
 
+import javafx.scene.control.Dialog;
+import javafx.stage.Modality;
+import javafx.stage.StageStyle;
+import javafx.stage.Window;
 import org.correomqtt.business.provider.SettingsProvider;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
@@ -86,12 +90,14 @@ abstract class BaseController {
             scene.getStylesheets().add(cssPath);
         }
         Stage stage = new Stage();
+        stage.initStyle(StageStyle.UTILITY);
         stage.setTitle(title);
         stage.setScene(scene);
         stage.setResizable(resizable);
         stage.setMinWidth(minWidth);
         stage.setMinHeight(minHeight);
         stage.setAlwaysOnTop(alwaysOnTop);
+        stage.initModality(Modality.WINDOW_MODAL);
         stage.show();
         if (closeHandler != null) {
             stage.getScene().getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, closeHandler);

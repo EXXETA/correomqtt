@@ -8,6 +8,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
+import org.correomqtt.plugin.spi.MainToolbarHook;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.exception.CorreoMqttException;
@@ -17,7 +18,6 @@ import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.model.ConnectionState;
 import org.correomqtt.plugin.manager.PluginManager;
-import org.correomqtt.plugin.spi.MainToolbarHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
