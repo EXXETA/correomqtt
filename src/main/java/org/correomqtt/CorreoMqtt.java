@@ -29,7 +29,7 @@ import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.PluginCheckUtils;
-import org.correomqtt.plugin.PluginSystem;
+import org.correomqtt.plugin.PluginLauncher;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
@@ -53,6 +53,7 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
 
     @Override
     public void init() throws IOException {
+
         LOGGER.info("Application started.");
         LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
         LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
@@ -75,7 +76,7 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         if (settings.isSearchUpdates()) {
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderSearchingUpdates"));
             PluginCheckUtils.checkMigration();
-            new PluginSystem().start();
+            new PluginLauncher().start();
             checkForUpdates();
         }
 
@@ -168,6 +169,7 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
             scene.getStylesheets().add(cssPath);
         }
         primaryStage.setScene(scene);
+        primaryStage.sizeToScene();
         primaryStage.setMinHeight(400);
         primaryStage.setMinWidth(850);
 

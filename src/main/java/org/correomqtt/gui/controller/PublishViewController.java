@@ -16,6 +16,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.correomqtt.plugin.spi.MessageContextMenuHook;
+import org.correomqtt.plugin.spi.PublishMenuHook;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
@@ -41,7 +43,7 @@ import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.AutoFormatPayload;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.QosCell;
 import org.correomqtt.gui.cell.TopicCell;
 import org.correomqtt.gui.helper.AlertHelper;
@@ -50,8 +52,6 @@ import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
-import org.correomqtt.plugin.spi.MessageContextMenuHook;
-import org.correomqtt.plugin.spi.PublishMenuHook;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
@@ -124,6 +124,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         LoaderResult<PublishViewController> result = load(PublishViewController.class, "publishView.fxml",
                 () -> new PublishViewController(connectionId, delegate));
         resources = result.getResourceBundle();
+
         return result;
     }
 
@@ -221,7 +222,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 .dateTime(LocalDateTime.now())
                 .build();
 
-        TaskFactory.publish(getConnectionId(), messagePropertiesDTO);
+        MessageTaskFactory.publish(getConnectionId(), messagePropertiesDTO);
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Publishing to topic: {}: {}", messagePropertiesDTO.getTopic(), getConnectionId());
@@ -241,7 +242,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         File file = fileChooser.showOpenDialog(stage);
 
         if (file != null) {
-            TaskFactory.importMessage(getConnectionId(), file);
+            MessageTaskFactory.importMessage(getConnectionId(), file);
         }
     }
 

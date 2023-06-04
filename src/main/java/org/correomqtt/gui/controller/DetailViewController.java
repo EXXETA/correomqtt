@@ -9,6 +9,10 @@ import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
+import org.correomqtt.plugin.spi.DetailViewFormatHook;
+import org.correomqtt.plugin.spi.DetailViewHook;
+import org.correomqtt.plugin.spi.DetailViewManipulatorHook;
+import org.correomqtt.plugin.spi.MessageValidatorHook;
 import org.correomqtt.business.dispatcher.ExportMessageDispatcher;
 import org.correomqtt.business.dispatcher.ExportMessageObserver;
 import org.correomqtt.business.dispatcher.ImportMessageDispatcher;
@@ -32,10 +36,6 @@ import org.correomqtt.plugin.manager.MessageValidator;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.manager.DetailViewManipulatorTask;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
-import org.correomqtt.plugin.spi.DetailViewFormatHook;
-import org.correomqtt.plugin.spi.DetailViewHook;
-import org.correomqtt.plugin.spi.DetailViewManipulatorHook;
-import org.correomqtt.plugin.spi.MessageValidatorHook;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -67,7 +67,6 @@ import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
 
 public class DetailViewController extends BaseConnectionController implements
         DetailContextMenuDelegate,

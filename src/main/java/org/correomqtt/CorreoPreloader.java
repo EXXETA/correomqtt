@@ -74,7 +74,15 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
 
         this.preloaderStage = primaryStage;
         preloaderStage.setScene(scene);
-        preloaderStage.initStyle(StageStyle.UNDECORATED);
+
+        String xdgCurrentDesktop = System.getenv("XDG_CURRENT_DESKTOP");
+
+        if("i3".equals(xdgCurrentDesktop) || "sway".equals(xdgCurrentDesktop)) {
+            preloaderStage.setTitle("CorreoMQTT");
+            preloaderStage.initStyle(StageStyle.UTILITY);
+        }else{
+            preloaderStage.initStyle(StageStyle.UNDECORATED);
+        }
 
         RotateTransition rotateTransition = new RotateTransition();
         rotateTransition.setAxis(Rotate.Z_AXIS);

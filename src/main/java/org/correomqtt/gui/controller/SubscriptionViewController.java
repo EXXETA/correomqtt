@@ -20,7 +20,7 @@ import org.correomqtt.business.model.SubscriptionDTO;
 import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.QosCell;
 import org.correomqtt.gui.cell.SubscriptionViewCell;
 import org.correomqtt.gui.cell.TopicCell;
@@ -185,7 +185,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         }
 
         Qos selectedQos = qosComboBox.getSelectionModel().getSelectedItem();
-        TaskFactory.subscribe(getConnectionId(), SubscriptionPropertiesDTO.builder()
+        MessageTaskFactory.subscribe(getConnectionId(), SubscriptionPropertiesDTO.builder()
                                                                           .topic(topic)
                                                                           .qos(selectedQos)
                                                                           .build());
@@ -213,7 +213,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     public void unsubscribe(SubscriptionPropertiesDTO subscriptionDTO) {
-        TaskFactory.unsubscribe(getConnectionId(), subscriptionDTO);
+        MessageTaskFactory.unsubscribe(getConnectionId(), subscriptionDTO);
     }
 
     @FXML
@@ -254,7 +254,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
                         .getConnection(getConnectionId())
                         .getClient()
                         .getSubscriptions()
-                        .forEach(s -> TaskFactory.unsubscribe(getConnectionId(), SubscriptionTransformer.dtoToProps(s)));
+                        .forEach(s -> MessageTaskFactory.unsubscribe(getConnectionId(), SubscriptionTransformer.dtoToProps(s)));
 
         subscriptionListView.getItems().clear();
 

@@ -1,6 +1,7 @@
 package org.correomqtt.gui.controller;
 
 import javafx.event.ActionEvent;
+import org.correomqtt.plugin.spi.IncomingMessageHook;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.model.ControllerType;
@@ -17,7 +18,6 @@ import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.utils.MessageUtils;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
-import org.correomqtt.plugin.spi.IncomingMessageHook;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -306,7 +306,7 @@ public class MessageListViewController extends BaseConnectionController implemen
             LOGGER.info("Incoming {}", p);
             messageExtensionDTO = p.onMessageIncoming(getConnectionId(), messageExtensionDTO);
         }
-        return messageExtensionDTO.merge(messageDTO);
+        return MessageTransformer.mergeProps(messageExtensionDTO, messageDTO);
     }
 
     @FXML

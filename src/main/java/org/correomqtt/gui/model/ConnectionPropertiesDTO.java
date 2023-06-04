@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.correomqtt.business.model.Lwt;
+import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.*;
 
 import java.util.HashMap;
