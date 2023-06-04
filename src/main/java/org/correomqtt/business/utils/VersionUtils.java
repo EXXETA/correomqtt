@@ -54,6 +54,9 @@ public class VersionUtils {
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setRequestProperty("charset", "utf-8");
+        connection.setConnectTimeout(5000);
+        connection.setReadTimeout(5000);
+
         try {
             connection.connect();
             InputStream inputStream = connection.getInputStream();

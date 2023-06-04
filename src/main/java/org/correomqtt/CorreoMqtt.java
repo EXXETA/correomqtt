@@ -73,12 +73,14 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
             initUpdatesOnFirstStart(settings);
         }
 
+        boolean doPluginUpdates  = false;
         if (settings.isSearchUpdates()) {
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderSearchingUpdates"));
-            PluginCheckUtils.checkMigration();
-            new PluginLauncher().start();
-            checkForUpdates();
+            doPluginUpdates = checkForUpdates();
         }
+
+        PluginCheckUtils.checkMigration();
+        new PluginLauncher().start(doPluginUpdates);
 
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderKeyring"));
 
@@ -137,11 +139,13 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
     }
 
-    private void checkForUpdates() {
+    private boolean checkForUpdates() {
         try {
             CheckNewVersionUtils.checkNewVersion(false);
+            return true;
         } catch (IOException | ParseException e) {
             LOGGER.warn("Version check failed.", e);
+            return false;
         }
     }
 
