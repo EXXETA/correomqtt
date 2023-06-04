@@ -50,11 +50,19 @@
 }
 
 .black .file-upload-solid {
-    -fx-graphic: url('../icons/file-upload-solid-black.png');
+    -fx-background-image: url('../icons/file-upload-solid-black.png');
 }
 
 .black .file-export-solid {
-    -fx-graphic: url('../icons/file-export-solid-black.png');
+    -fx-background-image: url('../icons/file-export-solid-black.png');
+}
+
+.white .file-upload-solid {
+    -fx-background-image: url('../icons/file-upload-solid-white.png');
+}
+
+.white .file-export-solid {
+    -fx-background-image: url('../icons/file-export-solid-white.png');
 }
 
 .black .folder-open-solid {

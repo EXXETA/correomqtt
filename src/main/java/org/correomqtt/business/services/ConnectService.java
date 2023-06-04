@@ -7,7 +7,6 @@ import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.mqtt.CorreoMqttClientFactory;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.business.utils.CorreoMqttConnection;
-import org.correomqtt.gui.business.TaskFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
