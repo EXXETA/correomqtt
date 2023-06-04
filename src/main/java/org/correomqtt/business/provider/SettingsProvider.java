@@ -3,6 +3,7 @@ package org.correomqtt.business.provider;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.model.ConfigDTO;
 import org.correomqtt.business.model.ConnectionConfigDTO;
@@ -13,7 +14,6 @@ import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.theme.ThemeProvider;
 import org.correomqtt.gui.theme.light.LightThemeProvider;
 import org.correomqtt.plugin.manager.PluginManager;
-import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,7 +136,7 @@ public class SettingsProvider extends BaseUserFileProvider {
     private void saveDTO() {
 
         try {
-            new ObjectMapper().writeValue(getFile(), configDTO);
+            new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(getFile(), configDTO);
         } catch (FileNotFoundException e) {
             LOGGER.error(EX_MSG_WRITE_CONFIG, e);
             ConfigDispatcher.getInstance().onConfigDirectoryEmpty();

@@ -9,7 +9,7 @@ import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ConnectionUISettings;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -286,7 +286,7 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     public void disconnect() {
         saveConnectionUISettings();
-        TaskFactory.disconnect(getConnectionId());
+        MessageTaskFactory.disconnect(getConnectionId());
     }
 
     public Pane getMainNode() {
@@ -296,7 +296,7 @@ public class ConnectionViewController extends BaseConnectionController implement
     public void connect(ConnectionPropertiesDTO config) {
         splitPane.setDisable(true);
         this.setConnectionId(config.getId());
-        TaskFactory.connect(getConnectionId());
+        MessageTaskFactory.connect(getConnectionId());
     }
 
     @Override

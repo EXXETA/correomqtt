@@ -1,7 +1,7 @@
 package org.correomqtt.business.keyring;
 
-import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.spi.KeyringHook;
+import org.correomqtt.plugin.manager.PluginManager;
 
 import java.util.Comparator;
 import java.util.List;

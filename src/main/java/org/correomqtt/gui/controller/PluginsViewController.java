@@ -7,6 +7,8 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
@@ -16,6 +18,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.correomqtt.business.provider.PluginConfigProvider;
+import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.HostServicesHolder;
@@ -65,6 +68,15 @@ public class PluginsViewController extends BaseController {
     @FXML
     private Label statusText;
 
+    @FXML
+    private ListView<PluginInfoPropertiesDTO> marketplacePluginList;
+
+    @FXML
+    private Tab marketplaceTab;
+
+    @FXML
+    private Tab installedPluginsTab;
+
     private boolean isRestartRequired;
 
     private PluginManager pluginSystem;
@@ -79,13 +91,23 @@ public class PluginsViewController extends BaseController {
 
         LoaderResult<PluginsViewController> result = load(PluginsViewController.class, "pluginsView.fxml");
         ResourceBundle resources = result.getResourceBundle();
-        showAsDialog(result, resources.getString("pluginsViewControllerTitle"), properties, true, false, null, null);
+        showAsDialog(result,
+                resources.getString("pluginsViewControllerTitle"),
+                properties,
+                true,
+                false,
+                null,
+                null,
+                500,
+                400);
     }
 
     @FXML
     public void initialize() {
         this.pluginSystem = PluginManager.getInstance();
-        setUpTable();
+        //setUpTable();
+        setupInstalledPluginTab();
+        setupMarketplaceTab();
     }
 
     private void setUpTable() {
@@ -100,6 +122,16 @@ public class PluginsViewController extends BaseController {
         permissionColumn.setCellValueFactory(this::getPermissionCellData);
         fileColumn.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getPluginPath().toString()));
         pluginsTableView.setRowFactory(this::getRowFactory);
+    }
+
+    private void setupInstalledPluginTab(){
+        LoaderResult<InstalledPluginsViewController> result = InstalledPluginsViewController.load();
+        installedPluginsTab.setContent(result.getMainPane());
+    }
+
+    private void setupMarketplaceTab(){
+        LoaderResult<MarketplaceViewController> result = MarketplaceViewController.load();
+        marketplaceTab.setContent(result.getMainPane());
     }
 
     private SimpleObjectProperty<CheckBox> getIsEnabledCellData(TableColumn.CellDataFeatures<PluginWrapper, CheckBox> cellData) {

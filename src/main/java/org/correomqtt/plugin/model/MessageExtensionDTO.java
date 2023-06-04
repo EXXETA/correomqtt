@@ -1,6 +1,5 @@
 package org.correomqtt.plugin.model;
 
-import javafx.collections.FXCollections;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.business.model.Qos;
@@ -13,7 +12,7 @@ import java.util.HashMap;
 
 @Setter
 @Getter
-public class MessageExtensionDTO {
+public class MessageExtensionDTO  {
 
     private String topic;
     private String payload;
@@ -35,18 +34,5 @@ public class MessageExtensionDTO {
         this.messageType = messagePropertiesDTO.getMessageType();
         this.publishStatus = messagePropertiesDTO.getPublishStatus();
         this.customFields = new HashMap<>(messagePropertiesDTO.getExtraProperties());
-    }
-
-    public MessagePropertiesDTO merge(MessagePropertiesDTO messageDTO) {
-        messageDTO.getTopicProperty().setValue(topic);
-        messageDTO.getPayloadProperty().setValue(payload);
-        messageDTO.getIsRetainedProperty().setValue(isRetained);
-        messageDTO.getQosProperty().setValue(qos);
-        messageDTO.getDateTimeProperty().setValue(dateTime);
-        messageDTO.getMessageIdProperty().setValue(messageId);
-        messageDTO.getMessageTypeProperty().setValue(messageType);
-        messageDTO.getPublishStatusProperty().setValue(publishStatus);
-        messageDTO.getExtraProperties().setValue(FXCollections.observableMap(customFields));
-        return messageDTO;
     }
 }

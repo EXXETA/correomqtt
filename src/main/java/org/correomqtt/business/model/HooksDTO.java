@@ -18,14 +18,6 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class HooksDTO {
 
-    private List<Extension> outgoingMessages;
-
-    private List<Extension> incomingMessages;
-
-    private List<DetailViewTask> detailViewTasks;
-
-    private List<MessageValidator> messageValidators;
-
     @Data
     @Builder
     @NoArgsConstructor
@@ -48,7 +40,6 @@ public class HooksDTO {
         private List<Extension> extensions;
     }
 
-
     @Data
     @Builder
     @NoArgsConstructor
@@ -60,4 +51,15 @@ public class HooksDTO {
         private String pluginId;
         private JsonNode config;
     }
+
+
+    private List<Extension> outgoingMessages;
+
+    private List<Extension> incomingMessages;
+
+    private List<DetailViewTask> detailViewTasks;
+
+    private List<MessageValidator> messageValidators;
+
+
 }
