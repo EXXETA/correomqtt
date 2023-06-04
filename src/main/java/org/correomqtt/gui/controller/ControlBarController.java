@@ -114,7 +114,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Reconnect in control bar clicked for connection: {}", getConnectionId());
         }
 
-        TaskFactory.reconnect(getConnectionId());
+        MessageTaskFactory.reconnect(getConnectionId());
     }
 
     @FXML
