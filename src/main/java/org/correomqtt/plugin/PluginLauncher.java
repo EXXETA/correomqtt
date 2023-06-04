@@ -1,33 +1,20 @@
 package org.correomqtt.plugin;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.business.utils.VendorConstants;
-import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.repository.BundledPluginList;
-import org.correomqtt.plugin.repository.CorreoUpdateRepository;
 import org.pf4j.update.PluginInfo;
 import org.pf4j.update.UpdateManager;
-import org.pf4j.update.UpdateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.ResourceBundle;
 
-import static org.correomqtt.business.utils.VendorConstants.BUNDLED_PLUGINS_URL;
-import static org.correomqtt.business.utils.VendorConstants.DEFAULT_REPO_URL;
-import static org.correomqtt.plugin.ApiLevel.CURRENT_API_LEVEL;
+public class PluginLauncher {
 
-public class PluginSystem {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PluginSystem.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluginLauncher.class);
 
     private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
@@ -39,51 +26,25 @@ public class PluginSystem {
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLoadPlugins"));
             pluginManager.loadPlugins();
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderUpdatePlugins"));
-            updateSystem(pluginManager);
+            updateSystem();
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderStartPlugins"));
             pluginManager.startPlugins();
-        } catch (UnknownHostException ue) {
-            LOGGER.info("No internet connection for updating plugins");
         } catch (Exception e) {
             LOGGER.error("Error or Exception during loading plugins ", e);
         }
     }
 
-    private void updateSystem(PluginManager pluginManager) throws IOException {
+    private void updateSystem() {
 
-        List<UpdateRepository> repos = new ArrayList<>();
-        repos.add(new CorreoUpdateRepository("bundled1", DEFAULT_REPO_URL, CURRENT_API_LEVEL));
-        // repos.add(new CorreoUpdateRepository("bundled2", new URL(DEFAULT_REPO_URL), CURRENT_API_LEVEL));
-
-        UpdateManager updateManager = new UpdateManager(pluginManager, repos);
-
-        BundledPluginList.BundledPlugins bundledPlugins = getBundledPlugins();
+        PluginManager pluginManager = PluginManager.getInstance();
+        UpdateManager updateManager = pluginManager.getUpdateManager();
+        BundledPluginList.BundledPlugins bundledPlugins = pluginManager.getBundledPlugins();
 
         int updatedPlugins = updateExisitingPlugins(updateManager, pluginManager);
         int installedPlugins = installBundledPlugins(updateManager, pluginManager, bundledPlugins);
         int uninstalledPlugins = uninstallBundledPlugins(pluginManager, bundledPlugins);
 
         LOGGER.info("Plugin Update: Updated({}), Installed({}), Uninstalled({})", updatedPlugins, installedPlugins, uninstalledPlugins);
-    }
-
-    private BundledPluginList.BundledPlugins getBundledPlugins() {
-
-        try {
-            LOGGER.info("Read bundled plugins '{}'", BUNDLED_PLUGINS_URL);
-            BundledPluginList bundledPluginList = new ObjectMapper().readValue(new URL(BUNDLED_PLUGINS_URL), BundledPluginList.class);
-
-            BundledPluginList.BundledPlugins bundledPlugins = bundledPluginList.getVersions().get(VersionUtils.getVersion().trim());
-            if (bundledPlugins == null) {
-                return BundledPluginList.BundledPlugins.builder().build();
-            }
-            return bundledPlugins;
-
-        } catch (IOException e) {
-            LOGGER.error("Unable to load bundled plugin list from {}.", BUNDLED_PLUGINS_URL);
-            LOGGER.debug("Unable to load bundled plugin list from {}.", BUNDLED_PLUGINS_URL, e);
-            return BundledPluginList.BundledPlugins.builder().build();
-        }
-
     }
 
     private int installBundledPlugins(UpdateManager updateManager, PluginManager pluginManager, BundledPluginList.BundledPlugins bundledPlugins) {
@@ -93,7 +54,7 @@ public class PluginSystem {
 
             // Already installed?
             if (pluginManager.getPlugin(pluginId) != null) {
-                LOGGER.debug("Skip installing bundled plugin '{}', as it is already installed.", pluginId);
+                LOGGER.info("Skip installing bundled plugin '{}', as it is already installed.", pluginId);
                 continue;
             }
 

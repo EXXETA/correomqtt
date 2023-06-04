@@ -1,0 +1,5 @@
+@import "global.css";
+
+#disabledLabel {
+    -fx-background-color: #990000;
+}

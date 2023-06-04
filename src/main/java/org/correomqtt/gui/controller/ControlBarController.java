@@ -8,16 +8,16 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
+import org.correomqtt.plugin.spi.MainToolbarHook;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.exception.CorreoMqttException;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.model.ConnectionState;
 import org.correomqtt.plugin.manager.PluginManager;
-import org.correomqtt.plugin.spi.MainToolbarHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,7 +109,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Connect in control bar clicked for connection: {}", getConnectionId());
         }
 
-        TaskFactory.connect(getConnectionId());
+        MessageTaskFactory.connect(getConnectionId());
     }
 
     @FXML
@@ -119,7 +119,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         }
 
         gracefulDisconnenct = true;
-        TaskFactory.disconnect(getConnectionId());
+        MessageTaskFactory.disconnect(getConnectionId());
     }
 
     @FXML

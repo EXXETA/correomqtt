@@ -1,7 +1,9 @@
 package org.correomqtt.gui.transformer;
 
+import javafx.collections.FXCollections;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.plugin.model.MessageExtensionDTO;
 
 public class MessageTransformer {
 
@@ -33,5 +35,18 @@ public class MessageTransformer {
                 .messageType(messagePropertiesDTO.getMessageType())
                 .publishStatus(messagePropertiesDTO.getPublishStatus())
                 .build();
+    }
+
+    public static MessagePropertiesDTO mergeProps(MessageExtensionDTO from, MessagePropertiesDTO to) {
+        to.getTopicProperty().setValue(from.getTopic());
+        to.getPayloadProperty().setValue(from.getPayload());
+        to.getIsRetainedProperty().setValue(from.isRetained());
+        to.getQosProperty().setValue(from.getQos());
+        to.getDateTimeProperty().setValue(from.getDateTime());
+        to.getMessageIdProperty().setValue(from.getMessageId());
+        to.getMessageTypeProperty().setValue(from.getMessageType());
+        to.getPublishStatusProperty().setValue(from.getPublishStatus());
+        to.getExtraProperties().setValue(FXCollections.observableMap(from.getCustomFields()));
+        return to;
     }
 }

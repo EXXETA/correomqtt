@@ -1,5 +1,6 @@
 package org.correomqtt.plugin.repository;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +19,8 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CorreoPluginInfo {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class RepoPluginInfoDTO {
 
     private String id;
     private String name;
@@ -54,6 +56,7 @@ public class CorreoPluginInfo {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class PluginRelease implements Serializable {
 
         private String version;
@@ -61,7 +64,7 @@ public class CorreoPluginInfo {
         private String requires;
         private String url;
         private String sha512sum;
-        private String pluginApiLevel;
+        private List<String> compatibleCorreoVersions;
 
     }
 }

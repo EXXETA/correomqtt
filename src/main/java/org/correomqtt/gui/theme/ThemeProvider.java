@@ -1,8 +1,9 @@
 package org.correomqtt.gui.theme;
 
-import org.correomqtt.gui.model.GenericCellModel;
 
-public interface ThemeProvider extends GenericCellModel {
+import org.correomqtt.business.model.GenericTranslatable;
+
+public interface ThemeProvider extends GenericTranslatable {
 
     String getName();
 

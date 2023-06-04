@@ -5,11 +5,16 @@ import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.stage.Window;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.utils.PlatformUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,13 +40,14 @@ public class AlertHelper {
                 dialogPane.getStylesheets().add(cssPath);
             }
             alert.setTitle(title);
+            alert.initOwner(Stage.getWindows().stream().filter(Window::isShowing).findFirst().orElse(null));
             alert.setHeaderText(null);
             alert.setContentText(content);
             alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
             if (buttonType != null) {
                 alert.getButtonTypes().setAll(buttonType);
             }
-
+            alert.initStyle(StageStyle.UTILITY);
             alert.showAndWait();
             if (countDownLatch != null) {
                 countDownLatch.countDown();
@@ -72,6 +78,7 @@ public class AlertHelper {
             alert.setHeaderText(header);
             alert.setContentText(content);
             alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+            alert.initStyle(StageStyle.UTILITY);
             ButtonType no = new ButtonType(noButton);
             ButtonType yes = new ButtonType(yesButton);
 
