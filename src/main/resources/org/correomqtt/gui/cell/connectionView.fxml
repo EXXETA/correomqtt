@@ -7,6 +7,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.control.CheckBox?>
 <AnchorPane fx:id="mainNode" stylesheets="@../css/messageView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1">
     <styleClass>
         <String fx:value="basicColors" />
@@ -47,6 +48,7 @@
                <String fx:value="skull-crossbones-solid" />
                <String fx:value="connectionIconTag" />
             </styleClass></Label>
+            <CheckBox fx:id="exportCheckbox" visible="false" alignment="CENTER" disable="true"></CheckBox>
         </HBox>
         <Label fx:id="descriptionLabel" text="127.0.0.1:1883">
          <styleClass>

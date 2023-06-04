@@ -1,14 +1,23 @@
 package org.correomqtt.gui.business;
 
 import lombok.extern.slf4j.Slf4j;
-import org.correomqtt.plugin.spi.OutgoingMessageHook;
-import org.correomqtt.business.services.*;
+import org.correomqtt.business.model.ConnectionExportDTO;
+import org.correomqtt.business.services.ConnectService;
+import org.correomqtt.business.services.DisconnectService;
+import org.correomqtt.business.services.ExportConnectionService;
+import org.correomqtt.business.services.ExportMessageService;
+import org.correomqtt.business.services.ImportConnectionService;
+import org.correomqtt.business.services.ImportMessageService;
+import org.correomqtt.business.services.PublishService;
+import org.correomqtt.business.services.SubscribeService;
+import org.correomqtt.business.services.UnsubscribeService;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.transformer.SubscriptionTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
+import org.correomqtt.plugin.spi.OutgoingMessageHook;
 
 import java.io.File;
 
@@ -64,6 +73,18 @@ public class MessageTaskFactory {
     public static void exportMessage(String connectionId, File file, MessagePropertiesDTO messageDTO) {
         new GuiService<>(new ExportMessageService(connectionId, file, MessageTransformer.propsToDTO(messageDTO)),
                          ExportMessageService::exportMessage).start();
+
+    }
+
+    public static void exportConnection(String connectionId, File file, ConnectionExportDTO connectionExportDTO) {
+        new GuiService<>(new ExportConnectionService(connectionId,file, connectionExportDTO),
+                ExportConnectionService::exportConnection).start();
+
+    }
+
+    public static void importConnection( File file) {
+        new GuiService<>(new ImportConnectionService(file),
+                ImportConnectionService::importConnection).start();
 
     }
 
