@@ -32,8 +32,10 @@ import org.correomqtt.business.dispatcher.PublishObserver;
 import org.correomqtt.business.dispatcher.ShortcutDispatcher;
 import org.correomqtt.business.dispatcher.ShortcutObserver;
 import org.correomqtt.business.exception.CorreoMqttException;
+import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.business.model.Qos;
@@ -57,11 +59,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 public class PublishViewController extends BaseMessageBasedViewController implements ConnectionLifecycleObserver,
         PublishObserver,
@@ -328,6 +332,21 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Message copied to form: {}", getConnectionId());
         }
+    }
+
+    @Override
+    public Supplier<MessageListViewConfig> produceListViewConfig() {
+        return () -> {
+            ConnectionConfigDTO config = SettingsProvider.getInstance()
+                    .getConnectionConfigs()
+                    .stream()
+                    .filter(c -> c.getId().equals(getConnectionId()))
+                    .findFirst()
+                    .orElse(ConnectionConfigDTO.builder().publishListViewConfig(new MessageListViewConfig()).build());
+
+            return config.producePublishListViewConfig() != null ? config.producePublishListViewConfig() : new MessageListViewConfig();
+        };
+
     }
 
     private void executeOnCopyMessageToFormExtensions(MessagePropertiesDTO messageDTO) {
