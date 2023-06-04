@@ -1,6 +1,7 @@
 package org.correomqtt.gui.business;
 
 import lombok.extern.slf4j.Slf4j;
+import org.correomqtt.plugin.spi.OutgoingMessageHook;
 import org.correomqtt.business.services.*;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
@@ -8,14 +9,13 @@ import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.transformer.SubscriptionTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
-import org.correomqtt.plugin.spi.OutgoingMessageHook;
 
 import java.io.File;
 
 @Slf4j
-public class TaskFactory {
+public class MessageTaskFactory {
 
-    private TaskFactory() {
+    private MessageTaskFactory() {
         // private constructor
     }
 
@@ -33,7 +33,7 @@ public class TaskFactory {
             log.info("Publish {}", p);
             messageExtensionDTO = p.onPublishMessage(connectionId, messageExtensionDTO);
         }
-        return messageExtensionDTO.merge(messagePropertiesDTO);
+        return MessageTransformer.mergeProps(messageExtensionDTO, messagePropertiesDTO);
     }
 
     public static void subscribe(String connectionId, SubscriptionPropertiesDTO subscriptionDTO) {
@@ -65,5 +65,9 @@ public class TaskFactory {
         new GuiService<>(new ExportMessageService(connectionId, file, MessageTransformer.propsToDTO(messageDTO)),
                          ExportMessageService::exportMessage).start();
 
+    }
+
+    public static void reconnect(String connectionId) {
+        new GuiService<>(new ConnectService(connectionId), ConnectService::reconnect).start();
     }
 }
