@@ -1,18 +1,16 @@
 package org.correomqtt.gui.controller;
 
-import javafx.scene.control.Dialog;
-import javafx.stage.Modality;
-import javafx.stage.StageStyle;
-import javafx.stage.Window;
-import org.correomqtt.business.provider.SettingsProvider;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,17 +1,20 @@
 package org.correomqtt.gui.cell;
 
-import org.correomqtt.plugin.spi.MessageListHook;
-import org.correomqtt.plugin.spi.MessageValidatorHook;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.plugin.manager.MessageValidator;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
+import org.correomqtt.plugin.spi.MessageListHook;
+import org.correomqtt.plugin.spi.MessageValidatorHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

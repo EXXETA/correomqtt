@@ -1,15 +1,13 @@
 package org.correomqtt.gui.controller;
 
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.dispatcher.ConfigObserver;
-import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.cell.ConnectionCell;
-import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import org.correomqtt.gui.transformer.ConnectionTransformer;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -17,6 +15,12 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.dispatcher.ConfigObserver;
+import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.gui.cell.ConnectionCell;
+import org.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

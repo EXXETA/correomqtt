@@ -10,7 +10,6 @@ import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import lombok.extern.slf4j.Slf4j;
 import org.correomqtt.business.dispatcher.PluginDisableObserver;
-import org.correomqtt.business.dispatcher.PluginEnableDispatcher;
 import org.correomqtt.business.dispatcher.PluginEnableObserver;
 import org.correomqtt.business.dispatcher.PluginInstallDispatcher;
 import org.correomqtt.business.dispatcher.PluginInstallObserver;

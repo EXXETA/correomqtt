@@ -1,9 +1,9 @@
 package org.correomqtt.gui.theme.light;
 
-import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.correomqtt.gui.theme.BaseThemeProvider;
 import org.correomqtt.gui.theme.IconMode;
 import org.correomqtt.gui.theme.ThemeProvider;
+import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.pf4j.Extension;
 
 @Extension

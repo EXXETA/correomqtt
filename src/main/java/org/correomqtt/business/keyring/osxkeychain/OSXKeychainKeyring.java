@@ -4,10 +4,10 @@ import net.east301.keyring.BackendNotSupportedException;
 import net.east301.keyring.PasswordRetrievalException;
 import net.east301.keyring.PasswordSaveException;
 import net.east301.keyring.osx.OSXKeychainBackend;
-import org.correomqtt.plugin.spi.KeyringHook;
 import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.plugin.spi.KeyringHook;
 import org.pf4j.Extension;
 
 import java.util.ResourceBundle;

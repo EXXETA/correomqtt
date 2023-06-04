@@ -1,9 +1,9 @@
 package org.correomqtt.gui.transformer;
 
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import javafx.collections.ObservableList;
 import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
 
 import java.util.List;
