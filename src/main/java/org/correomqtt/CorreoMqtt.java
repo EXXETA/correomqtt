@@ -18,6 +18,7 @@ import org.correomqtt.business.dispatcher.ShutdownDispatcher;
 import org.correomqtt.business.dispatcher.ShutdownObserver;
 import org.correomqtt.business.dispatcher.StartupDispatcher;
 import org.correomqtt.business.dispatcher.StartupObserver;
+import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.business.model.GlobalUISettings;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.provider.SettingsProvider;
@@ -76,7 +77,10 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         boolean doPluginUpdates  = false;
         if (settings.isSearchUpdates()) {
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderSearchingUpdates"));
-            doPluginUpdates = checkForUpdates();
+            try {
+                doPluginUpdates = checkForUpdates();
+            } catch (CorreoMqttUnableToCheckVersionException ignored) {
+            }
         }
 
         PluginCheckUtils.checkMigration();
@@ -139,7 +143,7 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
     }
 
-    private boolean checkForUpdates() {
+    private boolean checkForUpdates() throws CorreoMqttUnableToCheckVersionException {
         try {
             CheckNewVersionUtils.checkNewVersion(false);
             return true;
