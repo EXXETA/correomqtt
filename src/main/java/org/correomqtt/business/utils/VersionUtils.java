@@ -1,10 +1,8 @@
 package org.correomqtt.business.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +45,7 @@ public class VersionUtils {
      *
      * @return The name of the tag on github if a new version exists, null otherwise.
      */
-    public static String isNewerVersionAvailable() throws IOException, ParseException {
+    public static String isNewerVersionAvailable() throws IOException {
 
         URL url = new URL(GITHUB_API_LATEST);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -57,16 +55,17 @@ public class VersionUtils {
         try {
             connection.connect();
             InputStream inputStream = connection.getInputStream();
-            JSONParser jsonParser = new JSONParser();
-            JSONObject jsonObject = (JSONObject)jsonParser.parse(
-                    new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
-            ComparableVersion latestGithubVersion = new ComparableVersion(jsonObject.get("tag_name").toString().replaceAll("[^0-9\\.]",""));
+            GithubApiLatestDTO latestDTO = new ObjectMapper().readValue(
+                    new InputStreamReader(inputStream, StandardCharsets.UTF_8),
+                    GithubApiLatestDTO.class);
+            String tagName = latestDTO.getTagName();
+            ComparableVersion latestGithubVersion = new ComparableVersion(tagName.replaceAll("[^0-9.]",""));
             ComparableVersion currentLocalVersion = new ComparableVersion(getVersion());
 
             if (latestGithubVersion.compareTo(currentLocalVersion) > 0) {
                 LOGGER.info("There is a new release available on github!");
-                return jsonObject.get("tag_name").toString();
+                return tagName;
             } else {
                 LOGGER.info("Version is up to date or newer!");
                 return null;

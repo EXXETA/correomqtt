@@ -60,6 +60,7 @@ public class PluginManager extends JarPluginManager {
         super(Path.of(PluginConfigProvider.getInstance().getPluginPath()));
     }
 
+    /*
     @Override
     protected PluginFactory createPluginFactory() {
         return new PermissionPluginFactory();
@@ -80,7 +81,7 @@ public class PluginManager extends JarPluginManager {
     @Override
     protected ExtensionFactory createExtensionFactory() {
         return new PluginExtensionFactory();
-    }
+    }*/
 
     public static PluginManager getInstance() {
         if (instance == null) {
