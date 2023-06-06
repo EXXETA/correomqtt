@@ -18,6 +18,7 @@ import org.correomqtt.business.dispatcher.ShutdownDispatcher;
 import org.correomqtt.business.dispatcher.ShutdownObserver;
 import org.correomqtt.business.dispatcher.StartupDispatcher;
 import org.correomqtt.business.dispatcher.StartupObserver;
+import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.business.model.GlobalUISettings;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.provider.SettingsProvider;
@@ -73,12 +74,17 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
             initUpdatesOnFirstStart(settings);
         }
 
+        boolean doPluginUpdates  = false;
         if (settings.isSearchUpdates()) {
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderSearchingUpdates"));
-            PluginCheckUtils.checkMigration();
-            new PluginLauncher().start();
-            checkForUpdates();
+            try {
+                doPluginUpdates = checkForUpdates();
+            } catch (CorreoMqttUnableToCheckVersionException ignored) {
+            }
         }
+
+        PluginCheckUtils.checkMigration();
+        new PluginLauncher().start(doPluginUpdates);
 
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderKeyring"));
 
@@ -137,11 +143,13 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
     }
 
-    private void checkForUpdates() {
+    private boolean checkForUpdates() throws CorreoMqttUnableToCheckVersionException {
         try {
             CheckNewVersionUtils.checkNewVersion(false);
+            return true;
         } catch (IOException | ParseException e) {
             LOGGER.warn("Version check failed.", e);
+            return false;
         }
     }
 
