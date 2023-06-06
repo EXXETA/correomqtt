@@ -15,6 +15,7 @@ import javafx.scene.layout.AnchorPane;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ShutdownDispatcher;
+import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
 import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
@@ -146,8 +147,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         updateItem.setOnAction(event -> {
             try {
                 CheckNewVersionUtils.checkNewVersion(true);
-            } catch (IOException e) {
-                LOGGER.warn("Exception checking version", e);
+            } catch (IOException | CorreoMqttUnableToCheckVersionException e) {
+                LOGGER.warn("Exception checking version", e); //TODO UI?
             }
         });
         websiteItem.setOnAction(event -> HostServicesHolder.getInstance().getHostServices().showDocument(
