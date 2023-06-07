@@ -1,6 +1,5 @@
 package org.correomqtt.plugin.transformer;
 
-import com.github.zafarkhaja.semver.Version;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.plugin.model.PluginInfoDTO;
 import org.pf4j.PluginDescriptor;
@@ -35,7 +34,7 @@ public class PluginInfoTransformer {
     public static PluginInfoDTO pf4jToDTO(PluginInfo pluginInfo, String installedVersion, boolean disabled) {
 
         PluginInfo.PluginRelease installableRelease = pluginInfo.releases.stream()
-                .max(Comparator.comparing(r -> Version.valueOf(r.version)))
+                .max(Comparator.comparing(r -> new ComparableVersion(r.version)))
                 .orElse(null);
 
         String installableVersion = null;

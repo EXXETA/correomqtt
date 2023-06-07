@@ -60,6 +60,7 @@ public class PluginManager extends JarPluginManager {
         super(Path.of(PluginConfigProvider.getInstance().getPluginPath()));
     }
 
+    /*
     @Override
     protected PluginFactory createPluginFactory() {
         return new PermissionPluginFactory();
@@ -80,7 +81,7 @@ public class PluginManager extends JarPluginManager {
     @Override
     protected ExtensionFactory createExtensionFactory() {
         return new PluginExtensionFactory();
-    }
+    }*/
 
     public static PluginManager getInstance() {
         if (instance == null) {
@@ -181,16 +182,21 @@ public class PluginManager extends JarPluginManager {
         instance = new PluginManager();
     }
 
-    public List<OutgoingMessageHook> getOutgoingMessageHooks() {
+    public List<OutgoingMessageHook<?>> getOutgoingMessageHooks() {
         return PluginConfigProvider.getInstance().getOutgoingMessageHooks()
                 .stream()
                 .map(extensionDefinition -> {
-                    OutgoingMessageHook extension = getExtensionById(OutgoingMessageHook.class,
+                    OutgoingMessageHook<?> extension = getExtensionById(OutgoingMessageHook.class,
                             extensionDefinition.getPluginId(),
                             extensionDefinition.getId());
+                    if(extension == null){
+                        LOGGER.warn("Extension for Outgoing Message Hook with id {} from plugin {} not found.",extensionDefinition.getId(), extensionDefinition.getPluginId());
+                        return null;
+                    }
                     enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                     return extension;
                 })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -201,9 +207,14 @@ public class PluginManager extends JarPluginManager {
                     IncomingMessageHook extension = getExtensionById(IncomingMessageHook.class,
                             extensionDefinition.getPluginId(),
                             extensionDefinition.getId());
+                    if(extension == null){
+                        LOGGER.warn("Extension for Incoming Message Hook with id {} from plugin {} not found.",extensionDefinition.getId(), extensionDefinition.getPluginId());
+                        return null;
+                    }
                     enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                     return extension;
                 })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 

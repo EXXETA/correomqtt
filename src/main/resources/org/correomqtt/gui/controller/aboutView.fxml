@@ -40,11 +40,7 @@
                   <Label prefHeight="23.0" text="© 2018 dc-square and the HiveMQ MQTT Client Project"/>
                   <Hyperlink fx:id="hiveMqttClientLicense" text="Apache 2.0"/>
                </HBox>
-               <HBox layoutX="10.0" layoutY="56.0" prefHeight="23.0">
-                  <Hyperlink fx:id="jsonSimpleRepo" text="JSON.simple"/>
-                  <Label prefHeight="23.0" text="by Yidong Fang"/>
-                  <Hyperlink fx:id="jsonSimpleLicense" text="Apache 2.0"/>
-               </HBox>
+
                <HBox layoutX="10.0" layoutY="102.0" prefHeight="23.0">
                   <Hyperlink fx:id="jacksonDatabindRepo" text="Jackson Databind"/>
                   <Label prefHeight="23.0" text="by FasterXML"/>

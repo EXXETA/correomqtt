@@ -59,7 +59,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -456,7 +455,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
 
     @Override
     public void onPublishScheduled(MessageDTO messageDTO) {
-        messageDTO.setPublishStatus(PublishStatus.PUBLISEHD);
+        messageDTO.setPublishStatus(PublishStatus.PUBLISHED);
         messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO));
     }
 

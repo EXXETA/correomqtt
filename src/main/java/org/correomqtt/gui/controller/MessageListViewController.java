@@ -35,9 +35,6 @@ import org.correomqtt.gui.contextmenu.MessageListContextMenuDelegate;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.utils.MessageUtils;
-import org.correomqtt.plugin.manager.PluginManager;
-import org.correomqtt.plugin.model.MessageExtensionDTO;
-import org.correomqtt.plugin.spi.IncomingMessageHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -272,25 +269,34 @@ public class MessageListViewController extends BaseConnectionController implemen
 
         delegate.setTabDirty();
 
-        if (messageDTO.getPublishStatus() != null && messageDTO.getPublishStatus().equals(PublishStatus.PUBLISEHD)) {
+        if (messageDTO.getPublishStatus() != null && messageDTO.getPublishStatus().equals(PublishStatus.PUBLISHED)) {
             messages.stream()
                     .filter(m -> m.getMessageId().equals(messageDTO.getMessageId()))
                     .findFirst()
-                    .ifPresentOrElse(m -> m.setPublishStatus(PublishStatus.PUBLISEHD), () -> addMessage(messageDTO));
+                    .ifPresentOrElse(m -> {
+                        m.update(messageDTO);
+                        m.setPublishStatus(PublishStatus.PUBLISHED);
+                    }, () -> addMessage(messageDTO));
             return;
         } else if (messageDTO.getPublishStatus() != null &&
                 messageDTO.getPublishStatus().equals(PublishStatus.SUCCEEDED)) {
             messages.stream()
                     .filter(m -> m.getMessageId().equals(messageDTO.getMessageId()))
                     .findFirst()
-                    .ifPresentOrElse(m -> m.setPublishStatus(PublishStatus.SUCCEEDED), () -> addMessage(messageDTO));
+                    .ifPresentOrElse(m -> {
+                        m.update(messageDTO);
+                        m.setPublishStatus(PublishStatus.SUCCEEDED);
+                    }, () -> addMessage(messageDTO));
             return;
         } else if (messageDTO.getPublishStatus() != null &&
                 messageDTO.getPublishStatus().equals(PublishStatus.FAILED)) {
             messages.stream()
                     .filter(m -> m.getMessageId().equals(messageDTO.getMessageId()))
                     .findFirst()
-                    .ifPresentOrElse(m -> m.setPublishStatus(PublishStatus.FAILED), () -> addMessage(messageDTO));
+                    .ifPresentOrElse(m -> {
+                        m.update(messageDTO);
+                        m.setPublishStatus(PublishStatus.FAILED);
+                    }, () -> addMessage(messageDTO));
             return;
         }
 
@@ -300,20 +306,10 @@ public class MessageListViewController extends BaseConnectionController implemen
     }
 
     private void addMessage(MessagePropertiesDTO messageDTO) {
-        final MessagePropertiesDTO updatedMessageDTO = executeOnMessageIncomingExtensions(messageDTO);
         Platform.runLater(() -> {
-            messages.add(0, updatedMessageDTO);
+            messages.add(0, messageDTO);
             clearMessagesButton.setDisable(false);
         });
-    }
-
-    private MessagePropertiesDTO executeOnMessageIncomingExtensions(MessagePropertiesDTO messageDTO) {
-        MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
-        for (IncomingMessageHook p : PluginManager.getInstance().getExtensions(IncomingMessageHook.class)) {
-            LOGGER.info("Incoming {}", p);
-            messageExtensionDTO = p.onMessageIncoming(getConnectionId(), messageExtensionDTO);
-        }
-        return MessageTransformer.mergeProps(messageExtensionDTO, messageDTO);
     }
 
     @FXML

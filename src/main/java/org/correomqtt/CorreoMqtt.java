@@ -32,7 +32,6 @@ import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.PluginCheckUtils;
 import org.correomqtt.plugin.PluginLauncher;
 import org.correomqtt.plugin.manager.PluginManager;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,7 +146,7 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         try {
             CheckNewVersionUtils.checkNewVersion(false);
             return true;
-        } catch (IOException | ParseException e) {
+        } catch (IOException e) {
             LOGGER.warn("Version check failed.", e);
             return false;
         }

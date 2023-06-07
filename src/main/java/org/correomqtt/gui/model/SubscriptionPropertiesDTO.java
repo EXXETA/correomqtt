@@ -1,6 +1,5 @@
 package org.correomqtt.gui.model;
 
-import org.correomqtt.business.model.Qos;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.Property;
@@ -12,6 +11,7 @@ import javafx.util.Callback;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import org.correomqtt.business.model.Qos;
 
 @Getter
 @AllArgsConstructor

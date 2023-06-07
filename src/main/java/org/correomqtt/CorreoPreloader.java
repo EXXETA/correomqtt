@@ -70,7 +70,7 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        com.sun.glass.ui.Application.GetApplication().setName("org.correomqtt.CorreoMqtt");
+       // com.sun.glass.ui.Application.GetApplication().setName("org.correomqtt.CorreoMqtt");
 
         this.preloaderStage = primaryStage;
         preloaderStage.setScene(scene);

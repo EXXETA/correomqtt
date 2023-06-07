@@ -19,10 +19,6 @@ public class AboutViewController extends BaseController {
     @FXML
     private Hyperlink hiveMqttClientLicense;
     @FXML
-    private Hyperlink jsonSimpleRepo;
-    @FXML
-    private Hyperlink jsonSimpleLicense;
-    @FXML
     private Hyperlink jacksonDatabindRepo;
     @FXML
     private Hyperlink jacksonDatabindLicense;
@@ -105,8 +101,6 @@ public class AboutViewController extends BaseController {
 
         hiveMqttClientRepo.getProperties().put("link", "https://github.com/hivemq/hivemq-mqtt-client/tree/v1.1.1");
         hiveMqttClientLicense.getProperties().put("link", "https://github.com/hivemq/hivemq-mqtt-client/blob/v1.1.1/LICENSE");
-        jsonSimpleRepo.getProperties().put("link", "https://github.com/fangyidong/json-simple/tree/tag_release_1_1_1");
-        jsonSimpleLicense.getProperties().put("link", "https://github.com/fangyidong/json-simple/blob/tag_release_1_1_1/LICENSE.txt");
         jacksonDatabindRepo.getProperties().put("link", "https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.9.7");
         jacksonDatabindLicense.getProperties().put("link", "https://github.com/FasterXML/jackson-databind/blob/jackson-databind-2.9.7/src/main/resources/META-INF/LICENSE");
         gsonRepo.getProperties().put("link", "https://github.com/google/gson/tree/gson-parent-2.8.5");
@@ -137,7 +131,6 @@ public class AboutViewController extends BaseController {
 
         links.addAll(Arrays.asList(
                 hiveMqttClientRepo, hiveMqttClientLicense,
-                jsonSimpleRepo, jsonSimpleLicense,
                 jacksonDatabindRepo, jacksonDatabindLicense,
                 gsonRepo, gsonLicense,
                 richTextFXRepo, richTextFXLicense,

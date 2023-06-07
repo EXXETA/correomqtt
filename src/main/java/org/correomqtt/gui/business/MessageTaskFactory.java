@@ -29,20 +29,9 @@ public class MessageTaskFactory {
     }
 
     public static void publish(String connectionId, MessagePropertiesDTO messagePropertiesDTO) {
-        messagePropertiesDTO = executeOnPublishMessageExtensions(connectionId, messagePropertiesDTO);
-
         new GuiService<>(new PublishService(connectionId,
                                             MessageTransformer.propsToDTO(messagePropertiesDTO)),
                          PublishService::publish).start();
-    }
-
-    private static MessagePropertiesDTO executeOnPublishMessageExtensions(String connectionId, MessagePropertiesDTO messagePropertiesDTO) {
-        MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messagePropertiesDTO);
-        for (OutgoingMessageHook p : PluginManager.getInstance().getOutgoingMessageHooks()) {
-            log.info("Publish {}", p);
-            messageExtensionDTO = p.onPublishMessage(connectionId, messageExtensionDTO);
-        }
-        return MessageTransformer.mergeProps(messageExtensionDTO, messagePropertiesDTO);
     }
 
     public static void subscribe(String connectionId, SubscriptionPropertiesDTO subscriptionDTO) {

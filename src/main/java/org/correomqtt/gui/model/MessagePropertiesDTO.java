@@ -137,6 +137,18 @@ public class MessagePropertiesDTO implements Comparable<MessagePropertiesDTO> {
         return messageTypeProperty.getValue();
     }
 
+    public void update(MessagePropertiesDTO messageDTO) {
+        this.topicProperty.setValue(messageDTO.getTopic());
+        this.payloadProperty.setValue(messageDTO.getPayload());
+        this.isRetainedProperty.setValue(messageDTO.isRetained());
+        this.qosProperty.setValue(messageDTO.getQos());
+        this.dateTimeProperty.setValue(messageDTO.getDateTime());
+        this.messageTypeProperty.setValue(messageDTO.getMessageType());
+        this.publishStatusProperty.setValue(messageDTO.getPublishStatus());
+        this.subscriptionDTOProperty.setValue(messageDTO.getSubscription());
+        this.extraProperties.setValue(messageDTO.getExtraProperties());
+    }
+
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     public static class MessagePropertiesDTOBuilder {
 

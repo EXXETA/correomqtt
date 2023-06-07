@@ -1,13 +1,25 @@
 package org.correomqtt.gui.controller;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionModel;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.AnchorPane;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ShutdownDispatcher;
 import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
-import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
 import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -15,16 +27,6 @@ import org.correomqtt.gui.model.ConnectionState;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.*;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.AnchorPane;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,7 +147,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         updateItem.setOnAction(event -> {
             try {
                 CheckNewVersionUtils.checkNewVersion(true);
-            } catch (IOException | ParseException | CorreoMqttUnableToCheckVersionException e) {
+            } catch (IOException | CorreoMqttUnableToCheckVersionException e) {
                 LOGGER.warn("Exception checking version", e); //TODO UI?
             }
         });
