@@ -8,5 +8,9 @@ public interface BaseExtensionPoint<T> extends ExtensionPoint {
         return null;
     }
 
+    default T getConfig(){
+        return null;
+    }
+
     default void onConfigReceived(T config) {}
 }

@@ -120,7 +120,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
 
         if (messageDTO.getPublishStatus() != null) {
             switch (messageDTO.getPublishStatus()) {
-                case PUBLISEHD:
+                case PUBLISHED:
                     topicLabel.getStyleClass().add("published");
                     break;
                 case SUCCEEDED:

@@ -37,6 +37,17 @@ public class MessageTransformer {
                 .build();
     }
 
+    public static MessageDTO mergeDTO(MessageExtensionDTO from, MessageDTO to) {
+        to.setTopic(from.getTopic());
+        to.setPayload(from.getPayload());
+        to.setRetained(from.isRetained());
+        to.setQos(from.getQos());
+        to.setDateTime(from.getDateTime());
+        to.setMessageId(from.getMessageId());
+        to.setMessageType(from.getMessageType());
+        to.setPublishStatus(from.getPublishStatus());
+        return to;
+    }
     public static MessagePropertiesDTO mergeProps(MessageExtensionDTO from, MessagePropertiesDTO to) {
         to.getTopicProperty().setValue(from.getTopic());
         to.getPayloadProperty().setValue(from.getPayload());
