@@ -133,7 +133,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         }
 
         gracefulDisconnenct = true;
-        MessageTaskFactory.disconnect(getConnectionId());
+        MessageTaskFactory.disconnect(getConnectionId(), false);
     }
 
     @FXML
@@ -387,5 +387,10 @@ public class ControlBarController extends BaseConnectionController implements Co
             statusInfo.setText(resources.getString("controlBarControllerReconnecting") + " " + triedReconnects + "/" + maxReconnects);
             setGuiConnecting();
         });
+    }
+
+    @Override
+    public void onCleanUp(String connectinId) {
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
     }
 }

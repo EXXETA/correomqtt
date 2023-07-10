@@ -792,7 +792,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
                 if (confirmed) {
                     LOGGER.info("Disconnect");
-                    MessageTaskFactory.disconnect(selectedItem.getId());
+                    MessageTaskFactory.disconnect(selectedItem.getId(), false);
 
                     waitForDisconnectIds.put(selectedItem.getId(), selectedIndex);
                 }
@@ -1227,6 +1227,13 @@ public class ConnectionSettingsViewController extends BaseController implements 
     @Override
     public void onReconnectFailed(AtomicInteger triedReconnects, int maxReconnects) {
         // do nothing
+    }
+
+    @Override
+    public void onCleanUp(String connectinId) {
+        ConfigDispatcher.getInstance().removeObserver(this);
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        ImportConnectionDispatcher.getInstance().removeObserver(this);
     }
 
     @Override

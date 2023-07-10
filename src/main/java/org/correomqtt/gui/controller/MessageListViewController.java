@@ -471,6 +471,11 @@ public class MessageListViewController extends BaseConnectionController implemen
     }
 
     @Override
+    public void onCleanUp(String connectinId) {
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+    }
+
+    @Override
     public void showDetailsInSeparateWindow(MessagePropertiesDTO messageDTO) {
         // do nothing
     }

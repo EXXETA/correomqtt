@@ -224,7 +224,6 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     @Override
     public void onConnectRunning() {
-
         Platform.runLater(() -> splitPane.setDisable(true));
     }
 
@@ -284,9 +283,17 @@ public class ConnectionViewController extends BaseConnectionController implement
         // do nothing
     }
 
-    public void disconnect() {
+    @Override
+    public void onCleanUp(String connectinId) {
+        LogDispatcher.getInstance().removeObserver(this);
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        ExportMessageDispatcher.getInstance().removeObserver(this);
+        ImportMessageDispatcher.getInstance().removeObserver(this);
+    }
+
+    public void disconnect(boolean isTabClose) {
         saveConnectionUISettings();
-        MessageTaskFactory.disconnect(getConnectionId());
+        MessageTaskFactory.disconnect(getConnectionId(), isTabClose);
     }
 
     public Pane getMainNode() {

@@ -2,6 +2,8 @@ package org.correomqtt.gui.controller;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Menu;
@@ -199,9 +201,10 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             LoaderResult<ConnectionViewController> result = ConnectionViewController.load(config.getId(), this);
             result.getController().setTabId(tabId);
             tab.setContent(result.getMainPane());
-            tab.setOnCloseRequest(event -> result.getController().disconnect());
+            tab.setOnCloseRequest(event -> this.onTabClose(tabId, result));
 
             conntectionViewControllers.put(tabId, result.getController());
+            System.out.println("Main connect: " + conntectionViewControllers.toString());
 
             tabPane.getTabs().add(tabPane.getTabs().size() - 1, tab);
             selectionModel = tabPane.getSelectionModel();
@@ -217,6 +220,12 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                     resources.getString("mainViewControllerAlreadyUsedContent"));
         }
 
+    }
+
+    private void onTabClose(String tabId, LoaderResult<ConnectionViewController> result) {
+        result.getController().disconnect(true);
+        ConfigDispatcher.getInstance().removeObserver(this);
+        conntectionViewControllers.remove(tabId);
     }
 
     @FXML

@@ -2,6 +2,7 @@ package org.correomqtt.gui.business;
 
 import lombok.extern.slf4j.Slf4j;
 import org.correomqtt.business.model.ConnectionExportDTO;
+import org.correomqtt.business.services.CleanUpService;
 import org.correomqtt.business.services.ConnectService;
 import org.correomqtt.business.services.DisconnectService;
 import org.correomqtt.business.services.ExportConnectionService;
@@ -50,8 +51,8 @@ public class MessageTaskFactory {
         new GuiService<>(new ConnectService(connectionId), ConnectService::connect).start();
     }
 
-    public static void disconnect(String connectionId) {
-        new GuiService<>(new DisconnectService(connectionId),
+    public static void disconnect(String connectionId, boolean isFinalClose) {
+        new GuiService<>(new DisconnectService(connectionId, isFinalClose),
                          DisconnectService::disconnect).start();
     }
 
@@ -79,5 +80,9 @@ public class MessageTaskFactory {
 
     public static void reconnect(String connectionId) {
         new GuiService<>(new ConnectService(connectionId), ConnectService::reconnect).start();
+    }
+
+    public static void cleanUp(String connectionId) {
+        new GuiService<>(new CleanUpService(connectionId), CleanUpService::cleanUp).start();
     }
 }

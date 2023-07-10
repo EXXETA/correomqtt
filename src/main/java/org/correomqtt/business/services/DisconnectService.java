@@ -8,8 +8,11 @@ public class DisconnectService extends BaseService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DisconnectService.class);
 
-    public DisconnectService(String connectionId) {
+    private static boolean isFinalClose;
+
+    public DisconnectService(String connectionId, boolean isFinalClose) {
         super(connectionId);
+        this.isFinalClose = isFinalClose;
     }
 
     public void disconnect() {
@@ -22,6 +25,11 @@ public class DisconnectService extends BaseService {
         LOGGER.info(getConnectionMarker(), "Disconnected.");
         getConnection().setClient(null);
         ConnectionLifecycleDispatcher.getInstance().onDisconnect(connectionId);
+
+        if (isFinalClose) {
+            LOGGER.info(getConnectionMarker(), "Start cleanup for connectionId: ", connectionId);
+            ConnectionLifecycleDispatcher.getInstance().onCleanUp(connectionId);
+        }
     }
 
     @Override
@@ -46,5 +54,8 @@ public class DisconnectService extends BaseService {
     public void onScheduled() {
         LOGGER.debug(getConnectionMarker(), "Disconnect scheduled.");
         ConnectionLifecycleDispatcher.getInstance().onDisconnectScheduled(connectionId);
+    }
+
+    public void cleanUp() {
     }
 }
