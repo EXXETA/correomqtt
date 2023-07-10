@@ -1,6 +1,5 @@
 package org.correomqtt.business.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -57,6 +56,12 @@ public class ConnectionConfigDTO {
     @Builder.Default
     private ConnectionUISettings connectionUISettings = null;
 
+    @Builder.Default
+    private MessageListViewConfig publishListViewConfig = null;
+
+    @Builder.Default
+    private MessageListViewConfig subscribeListViewConfig = null;
+
     public ConnectionConfigDTO(ConnectionConfigDTO configDTO) {
         id = configDTO.id;
         name = configDTO.name;
@@ -78,6 +83,24 @@ public class ConnectionConfigDTO {
         authPassword = configDTO.authPassword;
         authKeyfile = configDTO.authKeyfile;
         connectionUISettings = configDTO.connectionUISettings;
+        publishListViewConfig = configDTO.publishListViewConfig;
+        subscribeListViewConfig = configDTO.subscribeListViewConfig;
+    }
+
+    public MessageListViewConfig producePublishListViewConfig(){
+        if(publishListViewConfig == null){
+            publishListViewConfig = new MessageListViewConfig();
+        }
+
+        return publishListViewConfig;
+    }
+
+    public MessageListViewConfig produceSubscribeListViewConfig(){
+        if(subscribeListViewConfig == null){
+          subscribeListViewConfig = new MessageListViewConfig();
+        }
+
+        return subscribeListViewConfig;
     }
 
     public String getHostAndPort() {

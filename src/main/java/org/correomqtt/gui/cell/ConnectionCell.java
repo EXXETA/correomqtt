@@ -1,5 +1,6 @@
 package org.correomqtt.gui.cell;
 
+import javafx.scene.control.CheckBox;
 import org.correomqtt.business.model.CorreoMqttVersion;
 import org.correomqtt.business.model.Lwt;
 import org.correomqtt.business.model.Proxy;
@@ -45,6 +46,8 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
     private Label mqtt5Tag;
     @FXML
     private ResourceBundle resources;
+    @FXML
+    private CheckBox exportCheckbox;
 
     private FXMLLoader loader;
 
@@ -116,6 +119,10 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
 
             lwtTag.getStyleClass().removeAll(INACTIVE_CLASS);
             lwtTag.getStyleClass().add(INACTIVE_CLASS);
+
+            exportCheckbox.getStyleClass().removeAll(INACTIVE_CLASS);
+            exportCheckbox.getStyleClass().add(INACTIVE_CLASS);
+
         } else {
             nameLabel.setText(connectionDTO.getName());
             nameLabel.getStyleClass().removeAll(DIRTY_CLASS);

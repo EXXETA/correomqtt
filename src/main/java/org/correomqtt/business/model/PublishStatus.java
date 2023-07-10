@@ -1,7 +1,7 @@
 package org.correomqtt.business.model;
 
-public enum PublishStatus {
-    PUBLISEHD("published"),
+public enum PublishStatus implements GenericTranslatable {
+    PUBLISHED("published"),
     SUCCEEDED("succeeded"),
     FAILED("failed");
 

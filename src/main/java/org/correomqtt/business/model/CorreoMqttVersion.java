@@ -3,11 +3,10 @@ package org.correomqtt.business.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.hivemq.client.mqtt.MqttVersion;
-import org.correomqtt.gui.model.GenericCellModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public enum CorreoMqttVersion implements GenericCellModel {
+public enum CorreoMqttVersion implements GenericTranslatable {
     MQTT_3_1_1(MqttVersion.MQTT_3_1_1, "MQTT v3.1.1"),
     MQTT_5_0(MqttVersion.MQTT_5_0, "MQTT v5.0");
 

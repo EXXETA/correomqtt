@@ -10,135 +10,115 @@
 <?import javafx.scene.layout.VBox?>
 
 <AnchorPane styleClass="aboutView" stylesheets="@../css/aboutView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.AboutViewController">
-   <VBox alignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-      <children>
-         <Label fx:id="appNameLabel" alignment="CENTER" maxWidth="1.7976931348623157E308" styleClass="appIconAndName" text="CorreoMQTT" VBox.vgrow="ALWAYS">
-   </Label>
-         <ScrollPane VBox.vgrow="ALWAYS">
-            <AnchorPane minHeight="0.0" minWidth="0.0">
-               <VBox styleClass="noBorder" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
-                  <HBox prefHeight="23.0">
-                     <Label prefHeight="23.0" styleClass="aboutHeadline" text="Contributors">
-                        <HBox.margin>
-                           <Insets left="5.0" />
-                        </HBox.margin>
-                     </Label>
-                  </HBox>
-                  <HBox prefHeight="23.0">
-                     <Hyperlink fx:id="exxetaLink" text="EXXETA AG" />
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="10.0" prefHeight="23.0">
-                     <Label prefHeight="23.0" styleClass="aboutHeadline" text="Libraries">
-                        <HBox.margin>
-                           <Insets left="5.0" />
-                        </HBox.margin>
-                     </Label>
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="10.0" prefHeight="23.0">
-                     <Hyperlink fx:id="hiveMqttClientRepo" text="HiveMQ MQTT Client" />
-                     <Label prefHeight="23.0" text="© 2018 dc-square and the HiveMQ MQTT Client Project" />
-                     <Hyperlink fx:id="hiveMqttClientLicense" text="Apache 2.0" />
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="56.0" prefHeight="23.0">
-                     <Hyperlink fx:id="JSONSimpleRepo" text="JSON.simple" />
-                     <Label prefHeight="23.0" text="by Yidong Fang" />
-                     <Hyperlink fx:id="JSONSimpleLicense" text="Apache 2.0" />
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="102.0" prefHeight="23.0">
-                     <Hyperlink fx:id="jacksonDatabindRepo" text="Jackson Databind" />
-                     <Label prefHeight="23.0" text="by FasterXML" />
-                     <Hyperlink fx:id="jacksonDatabindLicense" text="Apache 2.0" />
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="171.0" prefHeight="23.0">
-                     <Hyperlink fx:id="gsonRepo" text="Gson" />
-                     <Label prefHeight="23.0" text="by Google" />
-                     <Hyperlink fx:id="gsonLicense" text="Apache 2.0" />
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="194.0" prefHeight="23.0">
-                     <Hyperlink fx:id="richTextFXRepo" text="RichTextFX" />
-                     <Label prefHeight="23.0" text="© 2013-2017, Tomas Mikula and contributors" />
-                     <Hyperlink fx:id="richTextFXLicense" text="BSD 2-Clause" />
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="217.0" prefHeight="23.0">
-                     <Hyperlink fx:id="flowlessRepo" text="Flowless" />
-                     <Label prefHeight="23.0" text="© 2014, Tomas Mikula" />
-                     <Hyperlink fx:id="flowlessLicense" text="BSD 2-Clause" />
-                  </HBox>
-                  <HBox prefHeight="23.0">
-                     <children>
-                        <Hyperlink fx:id="lombokRepo" text="Project Lombok" />
-                        <Label prefHeight="23.0" text="© 2009-2015 The Project Lombok Authors" />
-                        <Hyperlink fx:id="lombokLicense" text="MIT" />
-                     </children>
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="221.0" prefHeight="23.0">
-                     <children>
-                        <Hyperlink fx:id="langRepo" text="Apache Commons Lang" />
-                        <Label prefHeight="23.0" text="© 2001-2019 The Apache Software Foundation" />
-                        <Hyperlink fx:id="langLicense" text="Apache 2.0" />
-                     </children>
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="254.0" prefHeight="23.0">
-                     <children>
-                        <Hyperlink fx:id="ioRepo" text="Apache Commons IO" />
-                        <Label prefHeight="23.0" text="© 2002-2019 The Apache Software Foundation" />
-                        <Hyperlink fx:id="ioLicense" text="Apache 2.0" />
-                     </children>
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="278.0" prefHeight="23.0">
-                     <children>
-                        <Hyperlink fx:id="logbackRepo" text="Logback" />
-                        <Label prefHeight="23.0" text="© 1999-2015, QOS.ch. All rights reserved" />
-                        <Hyperlink fx:id="logbackLicense" text="EPL 1.0 / LGPL 2.1" />
-                     </children>
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="290.0" prefHeight="23.0">
-                     <children>
-                        <Hyperlink fx:id="sshjRepo" text="sshj" />
-                        <Label prefHeight="23.0" text="© 2009 - SSHJ Contributors" />
-                        <Hyperlink fx:id="sshjLicense" text="Apache 2.0" />
-                     </children>
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="290.0" prefHeight="23.0">
-                     <children>
-                        <Hyperlink fx:id="javaKeyring" text="java-keyring" />
-                        <Label prefHeight="23.0" text="© 2012, east301" />
-                        <Hyperlink fx:id="javaKeyringLicense" text="Modified BSD" />
-                     </children>
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="290.0" prefHeight="23.0">
-                     <children>
-                        <Hyperlink fx:id="secretService" text="Secret Service" />
-                        <Label prefHeight="23.0" text="© 2019 Sebastian Wiesendahl" />
-                        <Hyperlink fx:id="secretServiceLicense" text="MIT" />
-                     </children>
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="290.0" prefHeight="23.0">
-                     <children>
-                        <Hyperlink fx:id="windpapi4j" text="WinDPAPI4J" />
-                        <Label prefHeight="23.0" text="by Peter G. Horvath" />
-                        <Hyperlink fx:id="windpapi4jLicense" text="LGPL-3.0" />
-                     </children>
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="10.0" prefHeight="23.0">
-                     <Label prefHeight="23.0" styleClass="aboutHeadline" text="Icons">
-                        <HBox.margin>
-                           <Insets left="5.0" />
-                        </HBox.margin>
-                     </Label>
-                  </HBox>
-                  <HBox layoutX="10.0" layoutY="263.0" prefHeight="23.0">
-                     <Hyperlink fx:id="fontAwesomeRepo" text="Font Awesome Free" />
-                     <Label prefHeight="23.0" text="© Fonticons, Inc" />
-                     <Hyperlink fx:id="fontAwesomeLicense" text="CC BY 4.0 License" />
-                  </HBox>
-               </VBox>
-            </AnchorPane>
-            <styleClass>
-               <String fx:value="noBorder" />
-               <String fx:value="aboutScrollPane" />
-            </styleClass>
-         </ScrollPane>
-      </children>
+   <VBox alignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+         AnchorPane.topAnchor="0.0">
+      <Label fx:id="appNameLabel" alignment="CENTER" maxWidth="1.7976931348623157E308" styleClass="appIconAndName"
+             text="CorreoMQTT" VBox.vgrow="ALWAYS">
+      </Label>
+      <ScrollPane VBox.vgrow="ALWAYS">
+         <AnchorPane minHeight="0.0" minWidth="0.0">
+            <VBox styleClass="noBorder" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+               <HBox prefHeight="23.0">
+                  <Label prefHeight="23.0" styleClass="aboutHeadline" text="Contributors">
+                     <HBox.margin>
+                        <Insets left="5.0"/>
+                     </HBox.margin>
+                  </Label>
+               </HBox>
+               <HBox prefHeight="23.0">
+                  <Hyperlink fx:id="exxetaLink" text="EXXETA AG"/>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="10.0" prefHeight="23.0">
+                  <Label prefHeight="23.0" styleClass="aboutHeadline" text="Libraries">
+                     <HBox.margin>
+                        <Insets left="5.0"/>
+                     </HBox.margin>
+                  </Label>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="10.0" prefHeight="23.0">
+                  <Hyperlink fx:id="hiveMqttClientRepo" text="HiveMQ MQTT Client"/>
+                  <Label prefHeight="23.0" text="© 2018 dc-square and the HiveMQ MQTT Client Project"/>
+                  <Hyperlink fx:id="hiveMqttClientLicense" text="Apache 2.0"/>
+               </HBox>
+
+               <HBox layoutX="10.0" layoutY="102.0" prefHeight="23.0">
+                  <Hyperlink fx:id="jacksonDatabindRepo" text="Jackson Databind"/>
+                  <Label prefHeight="23.0" text="by FasterXML"/>
+                  <Hyperlink fx:id="jacksonDatabindLicense" text="Apache 2.0"/>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="171.0" prefHeight="23.0">
+                  <Hyperlink fx:id="gsonRepo" text="Gson"/>
+                  <Label prefHeight="23.0" text="by Google"/>
+                  <Hyperlink fx:id="gsonLicense" text="Apache 2.0"/>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="194.0" prefHeight="23.0">
+                  <Hyperlink fx:id="richTextFXRepo" text="RichTextFX"/>
+                  <Label prefHeight="23.0" text="© 2013-2017, Tomas Mikula and contributors"/>
+                  <Hyperlink fx:id="richTextFXLicense" text="BSD 2-Clause"/>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="217.0" prefHeight="23.0">
+                  <Hyperlink fx:id="flowlessRepo" text="Flowless"/>
+                  <Label prefHeight="23.0" text="© 2014, Tomas Mikula"/>
+                  <Hyperlink fx:id="flowlessLicense" text="BSD 2-Clause"/>
+               </HBox>
+               <HBox prefHeight="23.0">
+                  <Hyperlink fx:id="lombokRepo" text="Project Lombok"/>
+                  <Label prefHeight="23.0" text="© 2009-2015 The Project Lombok Authors"/>
+                  <Hyperlink fx:id="lombokLicense" text="MIT"/>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="221.0" prefHeight="23.0">
+                  <Hyperlink fx:id="langRepo" text="Apache Commons Lang"/>
+                  <Label prefHeight="23.0" text="© 2001-2019 The Apache Software Foundation"/>
+                  <Hyperlink fx:id="langLicense" text="Apache 2.0"/>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="254.0" prefHeight="23.0">
+                  <Hyperlink fx:id="ioRepo" text="Apache Commons IO"/>
+                  <Label prefHeight="23.0" text="© 2002-2019 The Apache Software Foundation"/>
+                  <Hyperlink fx:id="ioLicense" text="Apache 2.0"/>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="278.0" prefHeight="23.0">
+                  <Hyperlink fx:id="logbackRepo" text="Logback"/>
+                  <Label prefHeight="23.0" text="© 1999-2015, QOS.ch. All rights reserved"/>
+                  <Hyperlink fx:id="logbackLicense" text="EPL 1.0 / LGPL 2.1"/>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="290.0" prefHeight="23.0">
+                  <Hyperlink fx:id="sshjRepo" text="sshj"/>
+                  <Label prefHeight="23.0" text="© 2009 - SSHJ Contributors"/>
+                  <Hyperlink fx:id="sshjLicense" text="Apache 2.0"/>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="290.0" prefHeight="23.0">
+                  <Hyperlink fx:id="javaKeyring" text="java-keyring"/>
+                  <Label prefHeight="23.0" text="© 2012, east301"/>
+                  <Hyperlink fx:id="javaKeyringLicense" text="Modified BSD"/>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="290.0" prefHeight="23.0">
+                  <Hyperlink fx:id="secretService" text="Secret Service"/>
+                  <Label prefHeight="23.0" text="© 2019 Sebastian Wiesendahl"/>
+                  <Hyperlink fx:id="secretServiceLicense" text="MIT"/>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="290.0" prefHeight="23.0">
+                  <Hyperlink fx:id="windpapi4j" text="WinDPAPI4J"/>
+                  <Label prefHeight="23.0" text="by Peter G. Horvath"/>
+                  <Hyperlink fx:id="windpapi4jLicense" text="LGPL-3.0"/>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="10.0" prefHeight="23.0">
+                  <Label prefHeight="23.0" styleClass="aboutHeadline" text="Icons">
+                     <HBox.margin>
+                        <Insets left="5.0"/>
+                     </HBox.margin>
+                  </Label>
+               </HBox>
+               <HBox layoutX="10.0" layoutY="263.0" prefHeight="23.0">
+                  <Hyperlink fx:id="fontAwesomeRepo" text="Font Awesome Free"/>
+                  <Label prefHeight="23.0" text="© Fonticons, Inc"/>
+                  <Hyperlink fx:id="fontAwesomeLicense" text="CC BY 4.0 License"/>
+               </HBox>
+            </VBox>
+         </AnchorPane>
+         <styleClass>
+            <String fx:value="noBorder"/>
+            <String fx:value="aboutScrollPane"/>
+         </styleClass>
+      </ScrollPane>
    </VBox>
 </AnchorPane>

@@ -54,7 +54,6 @@ public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
             setText(null);
             setGraphic(null);
         } else {
-
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(SubscriptionViewCell.class.getResource("subscriptionView.fxml"),

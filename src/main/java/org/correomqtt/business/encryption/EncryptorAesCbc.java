@@ -1,6 +1,5 @@
 package org.correomqtt.business.encryption;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.correomqtt.business.model.PasswordsDTO;
 import org.correomqtt.business.provider.EncryptionRecoverableException;
 
@@ -58,7 +57,7 @@ public class EncryptorAesCbc implements Encryptor {
 
     @Override
     public String encrypt(String dataToEncrypt) {
-        throw new NotImplementedException("This method must not be used.");
+        throw new RuntimeException("This method must not be used.");
     }
 
     @Override

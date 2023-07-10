@@ -11,14 +11,16 @@ import org.correomqtt.business.dispatcher.SubscribeObserver;
 import org.correomqtt.business.dispatcher.UnsubscribeDispatcher;
 import org.correomqtt.business.dispatcher.UnsubscribeObserver;
 import org.correomqtt.business.exception.CorreoMqttException;
+import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.SubscriptionDTO;
 import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.QosCell;
 import org.correomqtt.gui.cell.SubscriptionViewCell;
 import org.correomqtt.gui.cell.TopicCell;
@@ -48,6 +50,7 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class SubscriptionViewController extends BaseMessageBasedViewController implements
@@ -182,7 +185,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         }
 
         Qos selectedQos = qosComboBox.getSelectionModel().getSelectedItem();
-        TaskFactory.subscribe(getConnectionId(), SubscriptionPropertiesDTO.builder()
+        MessageTaskFactory.subscribe(getConnectionId(), SubscriptionPropertiesDTO.builder()
                                                                           .topic(topic)
                                                                           .qos(selectedQos)
                                                                           .build());
@@ -210,7 +213,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     public void unsubscribe(SubscriptionPropertiesDTO subscriptionDTO) {
-        TaskFactory.unsubscribe(getConnectionId(), subscriptionDTO);
+        MessageTaskFactory.unsubscribe(getConnectionId(), subscriptionDTO);
     }
 
     @FXML
@@ -246,12 +249,11 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     public void unsubscribeAll() {
-
         ConnectionHolder.getInstance()
                         .getConnection(getConnectionId())
                         .getClient()
                         .getSubscriptions()
-                        .forEach(s -> TaskFactory.unsubscribe(getConnectionId(), SubscriptionTransformer.dtoToProps(s)));
+                        .forEach(s -> MessageTaskFactory.unsubscribe(getConnectionId(), SubscriptionTransformer.dtoToProps(s)));
 
         subscriptionListView.getItems().clear();
 
@@ -362,6 +364,18 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     @Override
     public void setUpToForm(MessagePropertiesDTO messageDTO) {
         delegate.setUpToForm(messageDTO);
+    }
+
+    @Override
+    public Supplier<MessageListViewConfig> produceListViewConfig() {
+        return () -> SettingsProvider.getInstance()
+                .getConnectionConfigs()
+                .stream()
+                .filter(c -> c.getId().equals(getConnectionId()))
+                .findFirst()
+                .orElse(ConnectionConfigDTO.builder().subscribeListViewConfig(new MessageListViewConfig()).build())
+                .produceSubscribeListViewConfig();
+
     }
 
     @Override

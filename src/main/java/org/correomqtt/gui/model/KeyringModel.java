@@ -1,8 +1,9 @@
 package org.correomqtt.gui.model;
 
 import org.correomqtt.business.keyring.Keyring;
+import org.correomqtt.business.model.GenericTranslatable;
 
-public class KeyringModel implements GenericCellModel {
+public class KeyringModel implements GenericTranslatable {
 
     private final Keyring keyring;
 

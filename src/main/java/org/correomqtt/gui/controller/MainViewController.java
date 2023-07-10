@@ -1,12 +1,25 @@
 package org.correomqtt.gui.controller;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionModel;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.AnchorPane;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ShutdownDispatcher;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
 import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -14,16 +27,6 @@ import org.correomqtt.gui.model.ConnectionState;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.*;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.AnchorPane;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +38,7 @@ import java.util.UUID;
 
 import static org.correomqtt.business.utils.VendorConstants.WEBSITE;
 
-public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
+public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConnectionExportViewDelegate, ConnectionImportViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainViewController.class);
     public static final String DIRTY_CLASS = "dirty";
@@ -119,7 +122,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void setupAddTab() {
         addTab.setClosable(false);
-        LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this, this);
+        LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this, this,this,this);
         addTab.setContent(loadResult.getMainPane());
         resources = loadResult.getResourceBundle();
 
@@ -138,14 +141,14 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void setMenuEventHandler() {
         closeItem.setOnAction(event -> ShutdownDispatcher.getInstance().onShutdownRequested());
-        connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this));
+        connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this, this, this));
         settingsItem.setOnAction(event -> SettingsViewController.showAsDialog());
         aboutItem.setOnAction(event -> AboutViewController.showAsDialog());
         updateItem.setOnAction(event -> {
             try {
                 CheckNewVersionUtils.checkNewVersion(true);
-            } catch (IOException | ParseException e) {
-                LOGGER.warn("Exception checking version", e);
+            } catch (IOException | CorreoMqttUnableToCheckVersionException e) {
+                LOGGER.warn("Exception checking version", e); //TODO UI?
             }
         });
         websiteItem.setOnAction(event -> HostServicesHolder.getInstance().getHostServices().showDocument(

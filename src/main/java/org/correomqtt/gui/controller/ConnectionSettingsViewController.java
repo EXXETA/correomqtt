@@ -1,21 +1,58 @@
 package org.correomqtt.gui.controller;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.TransferMode;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import javafx.util.StringConverter;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import org.correomqtt.business.dispatcher.ImportConnectionDispatcher;
+import org.correomqtt.business.dispatcher.ImportConnectionObserver;
 import org.correomqtt.business.keyring.KeyringFactory;
+import org.correomqtt.business.model.Auth;
+import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.ConnectionExportDTO;
+import org.correomqtt.business.model.CorreoMqttVersion;
+import org.correomqtt.business.model.GenericTranslatable;
+import org.correomqtt.business.model.Lwt;
+import org.correomqtt.business.model.Proxy;
+import org.correomqtt.business.model.Qos;
+import org.correomqtt.business.model.TlsSsl;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.ConnectionCell;
 import org.correomqtt.gui.cell.GenericCell;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.helper.CheckTopicHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import org.correomqtt.gui.model.GenericCellModel;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
@@ -23,27 +60,22 @@ import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
 import org.correomqtt.plugin.spi.LwtSettingsHook;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.scene.input.*;
-import javafx.scene.layout.*;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
-import javafx.util.StringConverter;
-import org.correomqtt.business.model.*;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.*;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConnectionSettingsViewController extends BaseController implements ConfigObserver, ConnectionLifecycleObserver,
+public class ConnectionSettingsViewController extends BaseController implements ConfigObserver, ImportConnectionObserver, ConnectionLifecycleObserver,
         LwtSettingsHook.OnSettingsChangedListener {
 
     private static final String TEXT_FIELD = "text-field";
@@ -53,6 +85,8 @@ public class ConnectionSettingsViewController extends BaseController implements 
     public static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
     public static final String EMPTY_ERROR_CLASS = "emptyError";
     private final ConnectionSettingsViewDelegate delegate;
+    private final ConnectionExportViewDelegate connectionExportViewDelegate;
+    private final ConnectionImportViewDelegate connectionImportViewDelegate;
 
     @FXML
     private ListView<ConnectionPropertiesDTO> connectionsListView;
@@ -111,6 +145,10 @@ public class ConnectionSettingsViewController extends BaseController implements 
     @FXML
     private Label downLabel;
     @FXML
+    private Label exportLabel;
+    @FXML
+    private Label importLabel;
+    @FXML
     private Button applyButton;
     @FXML
     private Button saveButton;
@@ -143,18 +181,23 @@ public class ConnectionSettingsViewController extends BaseController implements 
     private boolean dragging;
     Map<String, Integer> waitForDisconnectIds = new HashMap<>();
 
-    public ConnectionSettingsViewController(ConnectionSettingsViewDelegate delegate) {
+    public ConnectionSettingsViewController(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate, ConnectionImportViewDelegate importViewDelegate) {
         this.delegate = delegate;
+        this.connectionExportViewDelegate = exportViewDelegate;
+        this.connectionImportViewDelegate = importViewDelegate;
         ConfigDispatcher.getInstance().addObserver(this);
         ConnectionLifecycleDispatcher.getInstance().addObserver(this);
+        ImportConnectionDispatcher.getInstance().addObserver(this);
+
     }
 
-    public static LoaderResult<ConnectionSettingsViewController> load(ConnectionSettingsViewDelegate delegate) {
+    public static LoaderResult<ConnectionSettingsViewController> load(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate, ConnectionImportViewDelegate importViewDelegate) {
         return load(ConnectionSettingsViewController.class, "connectionSettingsView.fxml",
-                () -> new ConnectionSettingsViewController(delegate));
+                () -> new ConnectionSettingsViewController(delegate, exportViewDelegate, importViewDelegate));
     }
 
-    public static void showAsDialog(ConnectionSettingsViewDelegate delegate) {
+
+    public static void showAsDialog(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate, ConnectionImportViewDelegate importViewDelegate) {
 
 
         Map<Object, Object> properties = new HashMap<>();
@@ -163,7 +206,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
             return;
         }
-        LoaderResult<ConnectionSettingsViewController> result = load(delegate);
+        LoaderResult<ConnectionSettingsViewController> result = load(delegate, exportViewDelegate, importViewDelegate);
         resources = result.getResourceBundle();
 
         showAsDialog(result, resources.getString("connectionSettingsViewControllerTitle"), properties, false, false, null,
@@ -293,7 +336,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         connectionSettingsViewHint.setText(connectionSettingsViewHint.getText() + " (" + keyringName + ").");
     }
 
-    private <T extends GenericCellModel> StringConverter<T> getStringConverter() {
+    private <T extends GenericTranslatable> StringConverter<T> getStringConverter() {
         return new StringConverter<T>() {
             @Override
             public String toString(T object) {
@@ -423,11 +466,12 @@ public class ConnectionSettingsViewController extends BaseController implements 
     private void executeOnLoadSettingsExtensions() {
         connectionsListView.getItems().forEach(c -> {
             decodeLwtPayload(c);
-            LwtConnectionExtensionDTO connectionExtensionDTO = new LwtConnectionExtensionDTO(c);
+            LwtConnectionExtensionDTO lwtDTO = new LwtConnectionExtensionDTO(c);
             for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
-                connectionExtensionDTO = p.onLoadConnection(connectionExtensionDTO);
+                lwtDTO = p.onLoadConnection(lwtDTO);
             }
-            connectionExtensionDTO.merge(c);
+
+            ConnectionTransformer.mergeProps(lwtDTO, c);
         });
     }
 
@@ -675,7 +719,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
             lwtConnectionExtensionDTO = p.onShowConnection(lwtConnectionExtensionDTO);
         }
-        activeConnectionConfigDTO = lwtConnectionExtensionDTO.merge(activeConnectionConfigDTO);
+        ConnectionTransformer.mergeProps(lwtConnectionExtensionDTO, activeConnectionConfigDTO);
     }
 
     @Override
@@ -751,7 +795,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
 
                 if (confirmed) {
                     LOGGER.info("Disconnect");
-                    TaskFactory.disconnect(selectedItem.getId());
+                    MessageTaskFactory.disconnect(selectedItem.getId());
 
                     waitForDisconnectIds.put(selectedItem.getId(), selectedIndex);
                 }
@@ -863,20 +907,20 @@ public class ConnectionSettingsViewController extends BaseController implements 
     }
 
     private ConnectionPropertiesDTO executeOnSaveSettingsExtensions(ConnectionPropertiesDTO activeConnectionConfigDTO) {
-        LwtConnectionExtensionDTO activeExtensionConnectionConfigDTO = new LwtConnectionExtensionDTO(activeConnectionConfigDTO);
+        LwtConnectionExtensionDTO lwtDTO = new LwtConnectionExtensionDTO(activeConnectionConfigDTO);
         for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
-            activeExtensionConnectionConfigDTO = p.onSaveConnection(activeExtensionConnectionConfigDTO);
+            lwtDTO = p.onSaveConnection(lwtDTO);
         }
-        return activeExtensionConnectionConfigDTO.merge(activeConnectionConfigDTO);
+        return ConnectionTransformer.mergeProps(lwtDTO, activeConnectionConfigDTO);
     }
 
     private void executeOnUnloadSettingsExtensions() {
         connectionsListView.getItems().forEach(c -> {
-            LwtConnectionExtensionDTO activeExtensionConnectionConfigDTO = new LwtConnectionExtensionDTO(c);
+            LwtConnectionExtensionDTO lwtDTO = new LwtConnectionExtensionDTO(c);
             for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
-                activeExtensionConnectionConfigDTO = p.onUnloadConnection(activeExtensionConnectionConfigDTO);
+                lwtDTO = p.onUnloadConnection(lwtDTO);
             }
-            activeExtensionConnectionConfigDTO.merge(c);
+            ConnectionTransformer.mergeProps(lwtDTO, c);
             encodeLwtPayload(c);
         });
     }
@@ -1036,6 +1080,45 @@ public class ConnectionSettingsViewController extends BaseController implements 
         showConnection(current);
     }
 
+    public void openExport(boolean autoNew) {
+        ConnectionExportViewController.showAsDialog(connectionExportViewDelegate);
+        if (autoNew) {
+            //result.getController().onAddClicked(); TODO
+            LOGGER.debug("Open settings with new default connection");
+        } else {
+            LOGGER.debug("Open settings for existing connections");
+        }
+    }
+
+    @FXML
+    public void openExport() {
+        openExport(false);
+
+
+    }
+
+    public void openImport(boolean autoNew) {
+        Stage stage = (Stage) containerAnchorPane.getScene().getWindow();
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(resources.getString("importUtilsTitle"));
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(resources.getString("importUtilsDescription"), "*.json");
+        fileChooser.getExtensionFilters().add(extFilter);
+
+        File file = fileChooser.showOpenDialog(stage);
+        if (file != null) {
+            MessageTaskFactory.importConnection(file);
+            ConnectionImportViewController.showAsDialog(connectionImportViewDelegate);
+        }
+    }
+
+    @FXML
+    public void openImport() {
+        openImport(false);
+
+    }
+
+
     @Override
     public void onConfigDirectoryEmpty() {
         // Do nothing
@@ -1152,5 +1235,23 @@ public class ConnectionSettingsViewController extends BaseController implements 
     @Override
     public String getConnectionId() {
         return null;
+    }
+
+
+    @Override
+    public void onImportSucceeded(ConnectionExportDTO connectionExportDTO) {
+        // TODO Triggered twice, fix to only trigger once after import is completed
+        loadConnectionListFromBackground();
+    }
+
+
+    @Override
+    public void onImportCancelled(File file) {
+
+    }
+
+    @Override
+    public void onImportFailed(File file, Throwable exception) {
+
     }
 }

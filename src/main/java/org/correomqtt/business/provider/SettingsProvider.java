@@ -3,9 +3,12 @@ package org.correomqtt.business.provider;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.exception.CorreoMqttConfigurationMissingException;
 import org.correomqtt.business.model.ConfigDTO;
 import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.model.ThemeSettingsDTO;
 import org.correomqtt.business.utils.ConnectionHolder;
@@ -13,7 +16,6 @@ import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.theme.ThemeProvider;
 import org.correomqtt.gui.theme.light.LightThemeProvider;
 import org.correomqtt.plugin.manager.PluginManager;
-import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,6 +89,11 @@ public class SettingsProvider extends BaseUserFileProvider {
 
     private ThemeProvider getActiveTheme() {
         if (activeThemeProvider == null) {
+            if(configDTO.getThemesSettings().getNextTheme() != null) {
+                configDTO.getThemesSettings().setActiveTheme(configDTO.getThemesSettings().getNextTheme());
+                configDTO.getThemesSettings().setNextTheme(null);
+                saveDTO();
+            }
             String activeThemeName = configDTO.getThemesSettings().getActiveTheme().getName();
             ArrayList<ThemeProvider> themes = new ArrayList<>(PluginManager.getInstance().getExtensions(ThemeProviderHook.class));
             activeThemeProvider = themes.stream().filter(t -> t.getName().equals(activeThemeName)).findFirst().orElse(new LightThemeProvider());
@@ -98,6 +105,24 @@ public class SettingsProvider extends BaseUserFileProvider {
         return configDTO.getConnections();
     }
 
+    public MessageListViewConfig produceSubscribeListViewConfig(String connectionId){
+        return configDTO.getConnections()
+                .stream()
+                .filter(c -> c.getId().equals(connectionId))
+                .findFirst()
+                .orElseThrow(CorreoMqttConfigurationMissingException::new)
+                .produceSubscribeListViewConfig();
+    }
+
+    public MessageListViewConfig producePublishListViewConfig(String connectionId){
+        return configDTO.getConnections()
+                .stream()
+                .filter(c -> c.getId().equals(connectionId))
+                .findFirst()
+                .orElseThrow(CorreoMqttConfigurationMissingException::new)
+                .producePublishListViewConfig();
+    }
+
     public SettingsDTO getSettings() {
         return configDTO.getSettings();
     }
@@ -107,7 +132,6 @@ public class SettingsProvider extends BaseUserFileProvider {
     }
 
     public void saveSettings(boolean showRestartRequiredDialog) {
-        this.activeThemeProvider = null;
         saveDTO();
         saveToUserDirectory(CSS_FILE_NAME, getActiveTheme().getCss());
         ConfigDispatcher.getInstance().onSettingsUpdated(showRestartRequiredDialog);
@@ -132,7 +156,7 @@ public class SettingsProvider extends BaseUserFileProvider {
     private void saveDTO() {
 
         try {
-            new ObjectMapper().writeValue(getFile(), configDTO);
+            new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(getFile(), configDTO);
         } catch (FileNotFoundException e) {
             LOGGER.error(EX_MSG_WRITE_CONFIG, e);
             ConfigDispatcher.getInstance().onConfigDirectoryEmpty();

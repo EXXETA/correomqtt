@@ -1,9 +1,9 @@
 package org.correomqtt.gui.utils;
 
+import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.helper.AlertHelper;
-import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.util.ResourceBundle;
@@ -17,7 +17,7 @@ public class CheckNewVersionUtils {
         // nothing to do
     }
 
-    public static void checkNewVersion(boolean showHintIfUpToDate) throws IOException, ParseException {
+    public static void checkNewVersion(boolean showHintIfUpToDate) throws IOException, CorreoMqttUnableToCheckVersionException {
 
         String newVersion = VersionUtils.isNewerVersionAvailable();
         if (newVersion != null) {
