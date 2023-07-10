@@ -128,15 +128,25 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
             lwtTag.getStyleClass().removeAll(INACTIVE_CLASS);
         }
 
-        descriptionLabel.setText(connectionDTO.getHostAndPort());
+        if (connectionDTO.isNew()) {
+            descriptionLabel.setText(null);
 
-        boolean mqtt3 = connectionDTO.getMqttVersionProperty().getValue().equals(CorreoMqttVersion.MQTT_3_1_1);
-        mqtt3Tag.setVisible(mqtt3);
-        mqtt3Tag.setManaged(mqtt3);
+            mqtt3Tag.setVisible(false);
+            mqtt3Tag.setManaged(false);
 
-        boolean mqtt5 = connectionDTO.getMqttVersionProperty().getValue().equals(CorreoMqttVersion.MQTT_5_0);
-        mqtt5Tag.setVisible(mqtt5);
-        mqtt5Tag.setManaged(mqtt5);
+            mqtt5Tag.setVisible(false);
+            mqtt5Tag.setManaged(false);
+        } else {
+            descriptionLabel.setText(connectionDTO.getHostAndPort());
+
+            boolean mqtt3 = connectionDTO.getMqttVersionProperty().getValue().equals(CorreoMqttVersion.MQTT_3_1_1);
+            mqtt3Tag.setVisible(mqtt3);
+            mqtt3Tag.setManaged(mqtt3);
+
+            boolean mqtt5 = connectionDTO.getMqttVersionProperty().getValue().equals(CorreoMqttVersion.MQTT_5_0);
+            mqtt5Tag.setVisible(mqtt5);
+            mqtt5Tag.setManaged(mqtt5);
+        }
 
         boolean credentials = connectionDTO.getUsername() != null && !connectionDTO.getUsername().isEmpty()
                 && connectionDTO.getPassword() != null && !connectionDTO.getPassword().isEmpty();

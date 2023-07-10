@@ -44,6 +44,7 @@ public class ConnectionPropertiesDTO {
     private final StringProperty lwtPayloadProperty;
     private final Property<ConnectionUISettings> connectionUISettingsProperty;
     private final BooleanProperty dirtyProperty;
+    private final BooleanProperty newProperty;
     private final BooleanProperty unpersistedProperty;
     private final MapProperty<String, Object> extraProperties;
 
@@ -76,6 +77,7 @@ public class ConnectionPropertiesDTO {
                 c.lwtPayloadProperty,
                 c.connectionUISettingsProperty,
                 c.dirtyProperty,
+                c.newProperty,
                 c.unpersistedProperty,
                 c.extraProperties
         };
@@ -189,6 +191,10 @@ public class ConnectionPropertiesDTO {
         return dirtyProperty.get();
     }
 
+    public boolean isNew(){
+        return newProperty.get();
+    }
+
     public boolean isUnpersisted() {
         return unpersistedProperty.get();
     }
@@ -238,6 +244,7 @@ public class ConnectionPropertiesDTO {
         private StringProperty lwtPayloadProperty = new SimpleStringProperty();
         private Property<ConnectionUISettings> connectionUISettingsProperty = new SimpleObjectProperty<>();
         private BooleanProperty dirtyProperty = new SimpleBooleanProperty(false);
+        private BooleanProperty newProperty = new SimpleBooleanProperty(false);
         private BooleanProperty unpersistedProperty = new SimpleBooleanProperty(true);
         private SimpleMapProperty<String, Object> extraProperties = new SimpleMapProperty<>();
 
@@ -386,6 +393,11 @@ public class ConnectionPropertiesDTO {
             return this;
         }
 
+        public ConnectionPropertiesDTOBuilder isNew(boolean isNew){
+            this.newProperty.set(isNew);
+            return this;
+        }
+
         public ConnectionPropertiesDTOBuilder unpersisted(boolean unpersisted) {
             this.unpersistedProperty.set(unpersisted);
             return this;
@@ -424,6 +436,7 @@ public class ConnectionPropertiesDTO {
                     lwtPayloadProperty,
                     connectionUISettingsProperty,
                     dirtyProperty,
+                    newProperty,
                     unpersistedProperty,
                     extraProperties);
         }
