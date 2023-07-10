@@ -55,7 +55,4 @@ public class DisconnectService extends BaseService {
         LOGGER.debug(getConnectionMarker(), "Disconnect scheduled.");
         ConnectionLifecycleDispatcher.getInstance().onDisconnectScheduled(connectionId);
     }
-
-    public void cleanUp() {
-    }
 }
