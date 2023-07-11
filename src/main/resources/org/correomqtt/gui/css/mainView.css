@@ -21,22 +21,22 @@
 
 .tab.connection.disconnecting .tab-label {
     -fx-padding: 0 10 0 20;
-    -fx-background-image: url('../icons/wifi-solid-yellow.png');
+    -fx-background-image: url('../icons/svg/wifi-solid-yellow.svg');
 }
 
 .tab.connection.graceful .tab-label {
     -fx-padding: 0 10 0 20;
-    -fx-background-image: url('../icons/wifi-solid-gray.png');
+    -fx-background-image: url('../icons/svg/wifi-solid-gray.svg');
 }
 
 .tab.connection.ungraceful .tab-label {
     -fx-padding: 0 10 0 20;
-    -fx-background-image: url('../icons/wifi-solid-red.png');
+    -fx-background-image: url('../icons/svg/wifi-solid-red.svg');
 }
 
 .tab.connection.connecting .tab-label {
     -fx-padding: 0 10 0 20;
-    -fx-background-image: url('../icons/wifi-solid-yellow.png');
+    -fx-background-image: url('../icons/svg/wifi-solid-yellow.svg');
 }
 
 .tab.connection.connected .tab-label {
@@ -44,11 +44,11 @@
 }
 
 .black .tab.connection.connected .tab-label {
-    -fx-background-image: url('../icons/wifi-solid-green-black.png');
+    -fx-background-image: url('../icons/svg/wifi-solid-green.svg');
 }
 
 .white .tab.connection.connected .tab-label {
-    -fx-background-image: url('../icons/wifi-solid-green-white.png');
+    -fx-background-image: url('../icons/svg/wifi-solid-green.svg');
 }
 
 .tab.connection.onboarding .tab-label {
