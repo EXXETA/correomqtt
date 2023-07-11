@@ -19,8 +19,10 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.controlsfx.control.textfield.TextFields;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.model.ControllerType;
@@ -62,10 +64,8 @@ public class MessageListViewController extends BaseConnectionController implemen
     protected SplitPane splitPane;
     @FXML
     private VBox messagesVBox;
-    @FXML
+
     private TextField messageSearchTextField;
-    @FXML
-    private Button messageSearchClearButton;
 
     @FXML
     protected ToggleButton showDetailViewButton;
@@ -81,6 +81,9 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     @FXML
     protected CheckMenuItem changeDisplayTimestamp;
+
+    @FXML
+    protected HBox messagesHBox;
 
     private ObservableList<MessagePropertiesDTO> messages;
 
@@ -98,11 +101,19 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     public static LoaderResult<MessageListViewController> load(String connectionId, MessageListViewDelegate delegate) {
         return load(MessageListViewController.class, "messageListView.fxml",
-                    () -> new MessageListViewController(connectionId, delegate));
+                () -> new MessageListViewController(connectionId, delegate));
     }
 
     @FXML
     public void initialize() {
+
+        messageSearchTextField = TextFields.createClearableTextField();
+        messageSearchTextField.setPromptText("Search topics ..."); //TODO translate
+        messageSearchTextField.setId("messageSearchTextField");
+        messageSearchTextField.getStyleClass().add("messageSearchTextField");
+        messageSearchTextField.setMinHeight(27);
+
+        messagesHBox.getChildren().add(3, messageSearchTextField);
 
         splitPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
 
@@ -112,15 +123,15 @@ public class MessageListViewController extends BaseConnectionController implemen
 
         MessageListViewConfig config = delegate.produceListViewConfig().get();
 
-        if(config.isVisible(LabelType.QOS)){
-           changeDisplayQos.setSelected(true);
+        if (config.isVisible(LabelType.QOS)) {
+            changeDisplayQos.setSelected(true);
         }
 
-        if(config.isVisible(LabelType.RETAINED)){
+        if (config.isVisible(LabelType.RETAINED)) {
             changeDisplayRetained.setSelected(true);
         }
 
-        if(config.isVisible(LabelType.TIMESTAMP)){
+        if (config.isVisible(LabelType.TIMESTAMP)) {
             changeDisplayTimestamp.setSelected(true);
         }
 
@@ -172,12 +183,6 @@ public class MessageListViewController extends BaseConnectionController implemen
 
             return message.getTopic().contains(newValue);
         });
-    }
-
-    @FXML
-    private void resetMessageSearchTextField() {
-        messageSearchTextField.textProperty().setValue("");
-
     }
 
     private ListCell<MessagePropertiesDTO> createCell(ListView<MessagePropertiesDTO> listView) {
@@ -367,24 +372,24 @@ public class MessageListViewController extends BaseConnectionController implemen
     }
 
     @FXML
-    private void changeRetainDisplay(ActionEvent actionEvent){
+    private void changeRetainDisplay(ActionEvent actionEvent) {
         CheckMenuItem checkMenuItem = (CheckMenuItem) actionEvent.getSource();
         setLabelVisibility(LabelType.RETAINED, checkMenuItem.isSelected());
     }
 
     @FXML
-    private void changeQosDisplay(ActionEvent actionEvent){
+    private void changeQosDisplay(ActionEvent actionEvent) {
         CheckMenuItem checkMenuItem = (CheckMenuItem) actionEvent.getSource();
         setLabelVisibility(LabelType.QOS, checkMenuItem.isSelected());
     }
 
     @FXML
-    private void changeTimestampDisplay(ActionEvent actionEvent){
+    private void changeTimestampDisplay(ActionEvent actionEvent) {
         CheckMenuItem checkMenuItem = (CheckMenuItem) actionEvent.getSource();
         setLabelVisibility(LabelType.TIMESTAMP, checkMenuItem.isSelected());
     }
 
-    private void setLabelVisibility(LabelType label, boolean visibility){
+    private void setLabelVisibility(LabelType label, boolean visibility) {
         delegate.produceListViewConfig().get().setVisibility(label, visibility);
         SettingsProvider.getInstance().saveSettings(false);
         listView.refresh();

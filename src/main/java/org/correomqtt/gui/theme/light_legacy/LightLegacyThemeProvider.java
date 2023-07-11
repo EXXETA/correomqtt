@@ -1,22 +1,22 @@
-package org.correomqtt.gui.theme.light;
+package org.correomqtt.gui.theme.light_legacy;
 
+import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.correomqtt.gui.theme.BaseThemeProvider;
 import org.correomqtt.gui.theme.IconMode;
 import org.correomqtt.gui.theme.ThemeProvider;
-import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.pf4j.Extension;
 
 @Extension
-public class LightThemeProvider extends BaseThemeProvider implements ThemeProvider, ThemeProviderHook {
+public class LightLegacyThemeProvider extends BaseThemeProvider implements ThemeProvider, ThemeProviderHook {
 
     @Override
     public String getName() {
-        return "Light";
+        return "Light Legacy";
     }
 
     @Override
     public String getCss() {
-        return getCssFromInputStream(LightThemeProvider.class.getResourceAsStream("light.css"));
+        return getCssFromInputStream(LightLegacyThemeProvider.class.getResourceAsStream("light_legacy.css"));
     }
 
     @Override

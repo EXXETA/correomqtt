@@ -1,0 +1,668 @@
+.root {
+    -fx-base: #eff0f1; /* Breeze */ /* Breeze */
+    -fx-background: #eff0f1; /* Breeze */ /* Breeze */
+    -fx-color: #eff0f1; /* Breeze */ /* Breeze */
+    -fx-control-inner-background: #eff0f1; /* Breeze */ /* Breeze */
+    /* version of -fx-control-inner-background for alternative rows */
+    -fx-control-inner-background-alt: derive(-fx-control-inner-background, 2.5%);
+
+    /* text colors depending on background's brightness */
+    -fx-light-text-color: rgb(127, 140, 141);
+    -fx-mid-text-color: rgb(50, 50, 50);
+    -fx-dark-text-color: rgb(20, 20, 20);
+
+    /* A bright blue for highlighting/accenting objects.  For example: selected
+     * text; selected items in menus, lists, trees, and tables; progress bars */
+    -fx-accent: rgb(61, 174, 233);
+
+    /* color of non-focused yet selected elements */
+    -fx-selection-bar-non-focused: rgb(200, 200, 200);
+}
+
+/* Fix derived prompt color for text fields */
+.text-input {
+    -fx-background-color: #fcfcfc; /* Breeze */
+    -fx-prompt-text-fill: #bdc3c7; /* Breeze */
+
+}
+
+/* Keep prompt invisible when focused (above color fix overrides it) */
+.text-input:focused {
+    -fx-prompt-text-fill: transparent;
+}
+
+.messageSearchTextField {
+    -fx-padding: 7px 6px 6px 6px;
+}
+
+
+.basicColors {
+    -fx-background-color: #e1e2e2; /* Breeze */
+    -fx-text-fill: #000000; /* Breeze */
+}
+
+.styled-text-area {
+    -fx-background-color: #dddddd; /* Breeze */
+}
+
+/*connections.css*/
+.errorOnSave {
+    -fx-background-color: #da4453; /* Breeze */
+}
+
+.inactive {
+    -fx-text-fill: #bdc3c7; /* Breeze */
+}
+
+.editMenu {
+    -fx-background-color: #fcfcfc; /* Breeze */
+    -fx-border-color: #eff0f1; /* Breeze */ /* Breeze */
+}
+
+.codeAreaPayload {
+    -fx-background-color: #fcfcfc; /* Breeze */
+    -fx-text-fill: #000000; /* Breeze */
+}
+
+/*controlBarView.css*/
+.brokerInfo {
+    -fx-text-fill: #4b4b4b; /* Breeze */
+}
+
+.brokerStatus {
+    -fx-text-fill: #9d9d9d; /* Breeze */
+}
+
+/*detailView.css*/
+.codeArea {
+    -fx-background-color: #fcfcfc; /* Breeze */
+    -fx-text-fill: #000000; /* Breeze */
+}
+
+.emptyPayloadLabel {
+    -fx-text-fill: #9d9d9d;
+}
+
+/*global.css*/
+.tag {
+    -fx-background-color: LightSkyBlue;
+    -fx-text-fill: white;
+}
+
+.tag.special {
+    -fx-background-color: coral;
+}
+
+.tag.secure {
+    -fx-background-color: #1a611a;
+}
+
+.tag.inactive {
+    -fx-background-color: #999999;
+}
+
+.tag.valid {
+    -fx-background-color: #86a977;
+}
+
+.tag.invalid {
+    -fx-background-color: #a96259;
+}
+
+
+.secondaryText {
+    -fx-text-fill: #9d9d9d; /* Breeze */
+}
+
+.secondaryText.dirty {
+    -fx-text-fill: #9d9d9d; /* Breeze */
+}
+
+.list-view {
+    -fx-background-color: #fcfcfc; /* Breeze */
+    -fx-border-width: 1px;
+    -fx-border-color: #9b9b9b;
+    -fx-effect: null;
+    -fx-drop-shadow: null;
+}
+
+.list-view:focused {
+    -fx-border-width: 1px;
+    -fx-border-color: #9b9b9b; /* Breeze */
+    -fx-effect: null;
+    -fx-drop-shadow: null;
+    -fx-background-insets: 1px;
+}
+
+.list-view.noBorder,
+.list-view.noBorder:focused {
+    -fx-border-color: transparent;
+}
+
+.list-view .list-cell .topic {
+    -fx-text-fill: #555555; /* Breeze */
+}
+
+.list-view .list-cell:odd {
+    -fx-background-color: #ffffff;
+}
+
+.list-view .list-cell:even {
+    -fx-background-color: #f7f7f7;
+}
+
+.list-view .list-cell:filled:selected, .list-view .list-cell:filled:selected {
+    -fx-background-color: #2888ef; /* Breeze */
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected {
+    -fx-background-color: #2180d7;
+}
+
+.list-view .list-cell:filled:selected .secondaryText {
+    -fx-text-fill: #cccccc;
+}
+
+.list-view .list-cell:filled:selected .topic {
+    -fx-text-fill: #FFFFFF;
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .secondaryText {
+    -fx-text-fill: #eeeeee;
+}
+
+
+.list-view .list-cell:filled:selected .secondaryText.dirty {
+    -fx-text-fill: #9d9d9d; /* Breeze */
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .secondaryText.dirty {
+    -fx-text-fill: #dddddd;
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .secondLine {
+    -fx-text-fill: #dddddd;
+}
+
+
+.list-view .list-cell .dirty {
+    -fx-text-fill: #931410; /* Breeze */
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected:odd {
+    -fx-background-color: #2888ef; /* Breeze */
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected:even {
+    -fx-background-color: #2888ef; /* Breeze */
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .stdLine {
+    -fx-text-fill: #eff0f1; /* Breeze */
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .firstLine {
+    -fx-text-fill: #eff0f1; /* Breeze */
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected .secondaryText {
+    -fx-text-fill: #9d9d9d; /* Breeze */
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected:odd .secondaryText {
+    -fx-text-fill: #eff0f1; /* Breeze */
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected:even .secondaryText {
+    -fx-text-fill: #eff0f1; /* Breeze */
+}
+
+.combo-box .list-view .list-cell:hover {
+    -fx-background-color: #3daee9 !important;
+}
+
+.combo-box .list-view .list-cell:hover .stdLine {
+    -fx-text-fill: #eff0f1 !important;
+}
+
+.combo-box .list-view .list-cell:hover .firstLine {
+    -fx-text-fill: #eff0f1 !important;
+}
+
+.combo-box .list-view .list-cell:hover .secondLine {
+    -fx-text-fill: #eff0f1 !important;
+}
+
+.emptyError {
+    -fx-background-color: #e8c1c1;
+}
+
+.hello {
+    -fx-background-color: blue;
+}
+
+.code-area .text {
+    -fx-background-color: #fcfcfc; /* Breeze */
+    -fx-fill: #434547; /* Breeze */
+}
+
+.styled-text-area {
+    -fx-fill: #434547; /* Breeze */
+    -fx-background-color: #fcfcfc; /* Breeze */
+}
+
+.code-area .text .caret,
+.styled-text-area .caret {
+    -fx-stroke: #333333; /* Breeze */
+}
+
+/*mainView.css*/
+.tab.dirty .tab-label {
+    -fx-text-fill: #8e1dd3;
+}
+
+/*messageView.css*/
+.published {
+    -fx-text-fill: gray;
+}
+
+.succeeded {
+    -fx-text-fill: black;
+}
+
+.failed {
+    -fx-text-fill: red;
+}
+
+/*.publishBody.css*/
+
+/*richtextfx.css*/
+.styled-text-area .commentXML {
+    -fx-fill: #939393;
+}
+
+.styled-text-area .tagmarkXML {
+    -fx-fill: #273e7a;
+
+}
+
+.styled-text-area .anytagXML {
+    -fx-fill: #273e7a;
+}
+
+.styled-text-area .attributeXML {
+    -fx-fill: #a52c2f;
+}
+
+.styled-text-area .avalueXML {
+    -fx-fill: #1a611a;
+}
+
+.styled-text-area .braceJSON,
+.styled-text-area .bracketJSON {
+    -fx-fill: #111111;
+}
+
+.styled-text-area .keyJSON {
+    -fx-fill: #273e7a;
+}
+
+.styled-text-area .valueJSON {
+    -fx-fill: #1a611a;
+}
+
+.styled-text-area .numberJSON {
+    -fx-fill: #a52c2f;
+}
+
+.styled-text-area .booleanJSON {
+    -fx-fill: #a56c00;
+}
+
+.styled-text-area .nullJSON {
+    -fx-fill: #505050;
+}
+
+
+.toolbar.top {
+    -fx-background-color: transparent !important;
+    -fx-border-color: none;
+}
+
+.toolbar.bottom {
+    -fx-background-color: transparent !important;
+    -fx-border-width: 0 !important;
+}
+
+.button {
+    -fx-background-radius: 2;
+    -fx-border-radius: 2;
+    -fx-background-color: #eff0f1; /* Breeze */
+    -fx-border-color: #bdc3c7; /* Breeze */
+    -fx-text-fill: #000000; /* Breeze */
+}
+
+.button:focused {
+    -fx-border-color: #93cee9; /* Breeze */
+}
+
+.button:hover {
+    -fx-border-color: #3daee9; /* Breeze */
+}
+
+
+.button:pressed {
+    -fx-background-color: #93cee9; /* Breeze */
+    -fx-border-color: #3daee9; /* Breeze */
+}
+
+.check-box > .box {
+    -fx-background-radius: 2;
+    -fx-border-radius: 2;
+    -fx-border-color: #3daee9; /* Breeze */
+    -fx-background-insets: 3px;
+    -fx-background-color: transparent;
+
+}
+
+.check-box:focused > .box {
+    -fx-border-color: #9ba1a7; /* Breeze */
+}
+
+
+.check-box:hover > .box {
+    -fx-border-color: #3daee9; /* Breeze */
+}
+
+.check-box:selected > .box,
+.check-box:indeterminate > .box {
+    -fx-background-color: #3daee9; /* Breeze */
+
+}
+
+.check-box:selected > .box > .mark,
+.check-box:indeterminate > .box > .mark {
+    visibility: hidden;
+}
+
+.table-view {
+    -fx-background-color: transparent;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #e1e2e2; /* Breeze */
+}
+
+.table-view .column-header {
+    -fx-background-color: #e1e2e2; /* Breeze */
+    -fx-border-color: #eff0f1; /* Breeze */ /* Breeze */
+    -fx-border-width: 0 1px 0 0;
+}
+
+
+.menu-button:focused,
+.menu-button:hover,
+.menu-button:showing {
+    -fx-background-color: #93cee9;
+}
+
+.menu-button:focused > .label,
+.menu-button:hover > .label,
+.menu-button:showing > .label {
+    -fx-text-fill: #FFFFFF;
+}
+
+.menu-item:focused,
+.menu-item:showing,
+.menu-item:hover {
+    -fx-background-color: #93cee9;
+}
+
+.menu-item:focused > .label,
+.menu-item:showing > .label,
+.menu-item:hover > .label {
+    -fx-text-fill: #FFFFFF;
+}
+
+.content-holder .menu-button {
+    -fx-background-radius: 2;
+    -fx-border-radius: 2;
+    -fx-background-color: #eff0f1; /* Breeze */
+    -fx-border-color: #bdc3c7; /* Breeze */
+}
+
+.content-holder .menu-button:focused {
+    -fx-border-color: #93cee9; /* Breeze */
+}
+
+.content-holder .menu-button:hover {
+    -fx-border-color: #3daee9; /* Breeze */
+}
+
+
+.content-holder .menu-button:pressed {
+    -fx-background-color: #93cee9; /* Breeze */
+    -fx-border-color: #3daee9; /* Breeze */
+}
+
+.combo-box-base {
+    -fx-border-radius: 2;
+    -fx-background-radius: 2;
+    -fx-background-color: #eff0f1; /* Breeze */
+    -fx-border-color: #bdc3c7; /* Breeze */
+}
+
+.combo-box-base:focused {
+    -fx-border-color: #93cee9; /* Breeze */
+}
+
+.combo-box-base:hover {
+    -fx-border-color: #3daee9; /* Breeze */
+}
+
+.combo-box-base:pressed {
+    -fx-background-color: #93cee9; /* Breeze */
+    -fx-border-color: #3daee9; /* Breeze */
+}
+
+.combo-box .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.toggle-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 2;
+    -fx-border-radius: 2;
+    -fx-background-color: #eff0f1; /* Breeze */
+    -fx-border-color: #bdc3c7; /* Breeze */
+}
+
+.toggle-button.columns-solid-left,
+.toggle-button.columns-solid,
+.toggle-button.columns-solid-right {
+    -fx-background-color: #eff0f1; /* Breeze */
+    -fx-text-fill: -fx-text-base-color;
+    -fx-border-color: #bdc3c7; /* Breeze */
+    -fx-background-insets: 1px;
+}
+
+.toggle-button.columns-solid-left:selected,
+.toggle-button.columns-solid:selected,
+.toggle-button.columns-solid-right:selected,
+.toggle-button:selected {
+    -fx-background-color: #93cee9;
+    -fx-border-color: #3daee9;
+}
+
+.toggle-button.columns-solid-left:focused,
+.toggle-button.columns-solid:focused,
+.toggle-button.columns-solid-right:focused,
+.toggle-button:focused {
+    -fx-border-color: #9ba1a7; /* Breeze */
+}
+
+.toggle-button.columns-solid-left:hover,
+.toggle-button.columns-solid:hover,
+.toggle-button.columns-solid-right:hover,
+.toggle-button:hover {
+    -fx-border-color: #3daee9; /* Breeze */
+}
+
+.toggle-button.columns-solid-left:pressed,
+.toggle-button.columns-solid:pressed,
+.toggle-button.columns-solid-right:pressed,
+.toggle-button:pressed {
+    -fx-background-color: #93cee9; /* Breeze */
+    -fx-border-color: #3daee9; /* Breeze */
+}
+
+
+.toggle-button.columns-solid-right {
+    -fx-background-radius: 0 2 2 0;
+    -fx-border-radius: 0 2 2 0;
+}
+
+.toggle-button.columns-solid {
+    -fx-background-radius: 0;
+}
+
+.toggle-button.columns-solid-left {
+    -fx-background-radius: 2 0 0 2;
+    -fx-border-radius: 2 0 0 2;
+}
+
+
+.menu-bar {
+    -fx-background-color: transparent;
+    -fx-effect: null;
+    -fx-drop-shadow: null;
+}
+
+.menu { /* The File menu item */
+}
+
+.menu:showing { /* menu when it's being shown (activated) */
+}
+
+.menu .label { /* Styles the text on a menu item */
+}
+
+.menu:showing .label { /* Styles the text on a menu item when activated */
+}
+
+.split-pane {
+    -fx-border-width: 0;
+    -fx-background-color: transparent;
+}
+
+.split-pane:horizontal > .split-pane-divider {
+    -fx-padding: 0 2px 0 2px;
+    -fx-background-color: #cdcfd0; /* Breeze */
+}
+
+.split-pane:vertical > .split-pane-divider {
+    -fx-padding: 0 2px 0 2px;
+    -fx-background-color: #cdcfd0; /* Breeze */
+}
+
+.codeAreaPayload {
+    -fx-padding: 0 !important;
+    -fx-border-width: 0 !important;
+}
+
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: #c6c8c9, #eff0f1; /* Breeze */ /* Breeze */
+    -fx-background-insets: 0, -1 0 1 0;
+}
+
+.tab-pane {
+
+}
+
+.tab-pane .tab {
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-border-width: 0 1px 0 0;
+    -fx-background-color: #cdcfd0, #cdcfd0; /* Breeze */
+    -fx-background-insets: 0 0 1 0, 1 1 1 1;
+    -fx-border-color: #c6c8c9;
+}
+
+.tab-pane .tab:hover {
+    -fx-background-color: #93cee9, #93cee9;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #c6c8c9, #eff0f1;
+    -fx-background-insets: 0, 1 1 -1 1;
+}
+
+.tab-pane .tab:pressed {
+    -fx-background-color: #c6c8c9, #eff0f1; /* Breeze */
+
+}
+
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+}
+
+
+/* scrollbar */
+
+.scroll-bar .thumb {
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-background-color: #b0b1b2; /* Breeze */
+    -fx-border-color: #b0b1b2; /* Breeze */
+    -fx-border-insets: 4px;
+    -fx-background-insets: 4px;
+}
+
+.scroll-bar .thumb:focused {
+    -fx-background-color: #9ba1a7; /* Breeze */
+    -fx-border-color: #9ba1a7; /* Breeze */
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #3daee9; /* Breeze */
+    -fx-border-color: #3daee9; /* Breeze */
+}
+
+
+.scroll-bar .thumb:pressed {
+    -fx-background-color: #3daee9; /* Breeze */
+    -fx-border-color: #3daee9; /* Breeze */
+}
+
+.scroll-bar .track {
+    -fx-background-color: #e1e2e2; /* Breeze */
+}
+
+.scroll-bar:horizontal .increment-button,
+.scroll-bar:horizontal .decrement-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0.0em;
+    -fx-padding: 0.0 0.0 10.0 0.0;
+
+}
+
+.scroll-bar:vertical .increment-button,
+.scroll-bar:vertical .decrement-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0.0em;
+    -fx-padding: 0.0 10.0 0.0 0.0;
+
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0.15em 0.0;
+}
+
+.scroll-bar:vertical .increment-arrow,
+.scroll-bar:vertical .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0.0 0.15em;
+}

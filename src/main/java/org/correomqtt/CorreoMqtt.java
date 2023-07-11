@@ -35,6 +35,7 @@ import org.correomqtt.plugin.manager.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -54,9 +55,15 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
     @Override
     public void init() throws IOException {
 
-        LOGGER.info("Application started.");
-        LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
-        LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
+        if(LOGGER.isInfoEnabled()) {
+            LOGGER.info("Application started.");
+            LOGGER.info("JVM: {} {} {}", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
+            LOGGER.info("OS: {} {} {}", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"));
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            String xdgCurrentDesktop = System.getenv("XDG_CURRENT_DESKTOP");
+            LOGGER.info("ENV: {}{} x {} ", xdgCurrentDesktop != null?xdgCurrentDesktop + " ":"", screenSize.getWidth(), screenSize.getHeight());
+            LOGGER.info("CorreoMQTT version is {}", VersionUtils.getVersion());
+        }
 
         StartupDispatcher.getInstance().addObserver(this);
         ShutdownDispatcher.getInstance().addObserver(this);
