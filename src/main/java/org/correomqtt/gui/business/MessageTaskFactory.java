@@ -2,7 +2,6 @@ package org.correomqtt.gui.business;
 
 import lombok.extern.slf4j.Slf4j;
 import org.correomqtt.business.model.ConnectionExportDTO;
-import org.correomqtt.business.services.CleanUpService;
 import org.correomqtt.business.services.ConnectService;
 import org.correomqtt.business.services.DisconnectService;
 import org.correomqtt.business.services.ExportConnectionService;
@@ -16,9 +15,6 @@ import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.transformer.SubscriptionTransformer;
-import org.correomqtt.plugin.manager.PluginManager;
-import org.correomqtt.plugin.model.MessageExtensionDTO;
-import org.correomqtt.plugin.spi.OutgoingMessageHook;
 
 import java.io.File;
 
@@ -80,9 +76,5 @@ public class MessageTaskFactory {
 
     public static void reconnect(String connectionId) {
         new GuiService<>(new ConnectService(connectionId), ConnectService::reconnect).start();
-    }
-
-    public static void cleanUp(String connectionId) {
-        new GuiService<>(new CleanUpService(connectionId), CleanUpService::cleanUp).start();
     }
 }

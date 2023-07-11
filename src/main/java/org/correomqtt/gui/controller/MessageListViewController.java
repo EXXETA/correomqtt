@@ -470,8 +470,10 @@ public class MessageListViewController extends BaseConnectionController implemen
         // do nothing
     }
 
-    public void cleanup() {
-        this.detailViewController.cleanUp();
+    public void cleanUp() {
+        if (this.detailViewController != null) {
+            detailViewController.cleanUp();
+        }
 
         ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
     }

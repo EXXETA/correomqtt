@@ -509,7 +509,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     public void cleanUp() {
-        this.messageListViewController.cleanup();
+        this.messageListViewController.cleanUp();
 
         SubscribeDispatcher.getInstance().removeObserver(this);
         UnsubscribeDispatcher.getInstance().removeObserver(this);

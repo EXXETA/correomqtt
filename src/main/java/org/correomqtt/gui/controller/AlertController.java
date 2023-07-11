@@ -12,8 +12,7 @@ public class AlertController extends BaseController implements
         ConfigObserver,
         SecretStoreObserver,
         PersistPublishHistoryObserver,
-        PersistSubscriptionHistoryObserver,
-        ConnectionLifecycleObserver {
+        PersistSubscriptionHistoryObserver {
 
     public static final String ALERT_CONTROLLER_WARN_TITLE = "alertControllerWarnTitle";
     public static final String ALERT_EXCEPTION_TITLE = "Exception";
@@ -161,63 +160,5 @@ public class AlertController extends BaseController implements
                 resources.getString("onPasswordFileUnreadableFailedContent"),
                 true
         ));
-    }
-
-    @Override
-    public void onDisconnectFromConnectionDeleted(String connectionId) {
-
-    }
-
-    @Override
-    public void onConnect() {
-
-    }
-
-    @Override
-    public void onConnectRunning() {
-
-    }
-
-    @Override
-    public void onConnectionFailed(Throwable message) {
-
-    }
-
-    @Override
-    public void onConnectionLost() {
-
-    }
-
-    @Override
-    public void onDisconnect() {
-
-    }
-
-    @Override
-    public void onDisconnectFailed(Throwable exception) {
-
-    }
-
-    @Override
-    public void onDisconnectRunning() {
-
-    }
-
-    @Override
-    public void onConnectionReconnected() {
-
-    }
-
-    @Override
-    public void onReconnectFailed(AtomicInteger triedReconnects, int maxReconnects) {
-
-    }
-
-    @Override
-    public void onCleanUp(String connectinId) {
-        ConfigDispatcher.getInstance().removeObserver(this);
-        SecretStoreDispatcher.getInstance().removeObserver(this);
-        PersistPublishHistoryDispatcher.getInstance().removeObserver(this);
-        PersistSubscriptionHistoryDispatcher.getInstance().removeObserver(this);
     }
 }

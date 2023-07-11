@@ -538,7 +538,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     }
 
     public void cleanUp() {
-        this.messageListViewController.cleanup();
+        this.messageListViewController.cleanUp();
 
         ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
         PublishDispatcher.getInstance().removeObserver(this);

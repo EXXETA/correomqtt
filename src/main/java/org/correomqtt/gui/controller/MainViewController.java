@@ -85,6 +85,12 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private ResourceBundle resources;
     private Map<String, ConnectionViewController> conntectionViewControllers;
 
+    private ConnectionOnbordingViewController connectionOnboardingViewController;
+
+    private LogTabController logViewController;
+
+    private String closedTabId;
+
     public MainViewController() {
         ConfigDispatcher.getInstance().addObserver(this);
     }
@@ -127,6 +133,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this, this,this,this);
         addTab.setContent(loadResult.getMainPane());
         resources = loadResult.getResourceBundle();
+        connectionOnboardingViewController = loadResult.getController();
 
         selectionModel = tabPane.getSelectionModel();
         selectionModel.select(addTab);
@@ -134,7 +141,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void createLogTab() {
         LoaderResult<LogTabController> result = LogTabController.load();
-        LogTabController logViewController = result.getController();
+        logViewController = result.getController();
         logTab.setClosable(false);
         logAnchorPane.getChildren().add(logViewController.logViewAnchor);
         logViewController.logViewAnchor.prefWidthProperty().bind(logAnchorPane.widthProperty());
@@ -201,7 +208,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             LoaderResult<ConnectionViewController> result = ConnectionViewController.load(config.getId(), this);
             result.getController().setTabId(tabId);
             tab.setContent(result.getMainPane());
-            tab.setOnCloseRequest(event -> this.onTabClose(result));
+            tab.setOnCloseRequest(event -> this.onTabClose(result, tabId));
 
             conntectionViewControllers.put(tabId, result.getController());
             System.out.println("Main connect: " + conntectionViewControllers.toString());
@@ -222,7 +229,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     }
 
-    private void onTabClose(LoaderResult<ConnectionViewController> result) {
+    private void onTabClose(LoaderResult<ConnectionViewController> result, String tabId) {
+        closedTabId = tabId;
         result.getController().disconnect(true);
     }
 
@@ -261,12 +269,20 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     @Override
     public void onCleanup() {
-        ConnectionViewController connectionViewController = conntectionViewControllers.get(getUUIDofSelectedTab());
+        ConnectionViewController connectionViewController = conntectionViewControllers.get(this.closedTabId);
         connectionViewController.cleanUp();
-
+        connectionOnboardingViewController.cleanUp();
+        logViewController.cleanUp();
 
         ConfigDispatcher.getInstance().removeObserver(this);
-        conntectionViewControllers.remove(getUUIDofSelectedTab());
+        conntectionViewControllers.remove(this.closedTabId);
+    }
+
+    @Override
+    public void cleanUpProvider(ConnectionPropertiesDTO config) {
+        PersistPublishHistoryProvider.getInstance(config.getId()).cleanUp();
+        PersistPublishMessageHistoryProvider.getInstance(config.getId()).cleanUp();
+        PersistSubscriptionHistoryProvider.getInstance(config.getId()).cleanUp();
     }
 
     public void onDisconnect() {

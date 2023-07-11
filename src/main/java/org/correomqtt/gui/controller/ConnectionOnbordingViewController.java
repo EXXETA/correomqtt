@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class ConnectionOnbordingViewController extends BaseController implements ConfigObserver, ConnectionOnboardingDelegate {
+public class ConnectionOnbordingViewController extends BaseController implements ConfigObserver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionOnbordingViewController.class);
     @FXML
@@ -284,9 +284,9 @@ public class ConnectionOnbordingViewController extends BaseController implements
     public void onConfigPrepareFailed() {
         // nothing to do
     }
-
-    @Override
-    public void onConnect(ConnectionPropertiesDTO config) {
-        // nothing to do
+    public void cleanUp() {
+        ConnectionPropertiesDTO config = connectionListView.getSelectionModel().getSelectedItem();
+        connectionsOnboardingDelegate.cleanUpProvider(config);
+        ConfigDispatcher.getInstance().removeObserver(this);
     }
 }

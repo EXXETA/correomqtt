@@ -388,9 +388,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             setGuiConnecting();
         });
     }
-
-    @Override
-    public void onCleanUp(String connectinId) {
+    public void cleanUp() {
         ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
     }
 }

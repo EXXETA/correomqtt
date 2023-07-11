@@ -62,6 +62,8 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     private SubscriptionViewController subscribeController;
 
+    private ControlBarController controlBarController;
+
     private boolean isFinalClose;
 
     public ConnectionViewController(String connectionId, ConnectionViewDelegate delegate) {
@@ -110,6 +112,7 @@ public class ConnectionViewController extends BaseConnectionController implement
 
         publishController = publishLoadResult.getController();
         subscribeController = subscriptionLoadResult.getController();
+        controlBarController = controlBarLoadResult.getController();
         resources = controlBarLoadResult.getResourceBundle();
 
         connectionHolder.getChildren().add(0, controlBarPane);
@@ -320,6 +323,7 @@ public class ConnectionViewController extends BaseConnectionController implement
     public void cleanUp() {
         publishController.cleanUp();
         subscribeController.cleanUp();
+        controlBarController.cleanUp();
 
         LogDispatcher.getInstance().removeObserver(this);
         ConnectionLifecycleDispatcher.getInstance().removeObserver(this);

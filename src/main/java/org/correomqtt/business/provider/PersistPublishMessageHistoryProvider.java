@@ -214,8 +214,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
         // nothing to do
     }
 
-    @Override
-    public void onCleanUp(String connectinId) {
+    public void cleanUp() {
         PublishGlobalDispatcher.getInstance().removeObserver(this);
         ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
         ConfigDispatcher.getInstance().removeObserver(this);

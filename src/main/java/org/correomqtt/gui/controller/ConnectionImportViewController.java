@@ -69,7 +69,6 @@ public class ConnectionImportViewController extends BaseController implements Lo
     public ConnectionImportViewController(ConnectionImportViewDelegate delegate) {
         this.delegate = delegate;
         ImportConnectionDispatcher.getInstance().addObserver(this);
-
     }
 
     public static LoaderResult<ConnectionImportViewController> load(ConnectionImportViewDelegate delegate) {
@@ -80,7 +79,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
 
     public static void showAsDialog(ConnectionImportViewDelegate delegate) {
 
-        LOGGER.info("OPEN DIALOG");
+        LOGGER.info("Open ConnectionImportView Dialog");
         Map<Object, Object> properties = new HashMap<>();
         properties.put(WindowProperty.WINDOW_TYPE, WindowType.CONNECTION_EXPORT);
 
@@ -137,6 +136,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
     }
 
     private void closeDialog() {
+        cleanUp();
         Stage stage = (Stage) importButton.getScene().getWindow();
         stage.close();
     }
@@ -206,8 +206,6 @@ public class ConnectionImportViewController extends BaseController implements Lo
         );
         ImportConnectionDispatcher.getInstance().onImportSucceeded(connectionExportDTO);
         closeDialog();
-
-
     }
 
     public void onDecryptClicked() {
@@ -233,5 +231,9 @@ public class ConnectionImportViewController extends BaseController implements Lo
             passwordField.setTooltip(new Tooltip(resources.getString("passwordEmpty")));
             passwordField.getStyleClass().add(EXCLAMATION_CIRCLE_SOLID);
         }
+    }
+    
+    private void cleanUp() {
+        ImportConnectionDispatcher.getInstance().removeObserver(this);
     }
 }

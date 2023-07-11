@@ -10,7 +10,7 @@ import javafx.scene.layout.AnchorPane;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class LogTabController extends BaseController implements LogObserver, ConnectionLifecycleObserver {
+public class LogTabController extends BaseController implements LogObserver {
     @FXML
     public AnchorPane logViewAnchor;
     @FXML
@@ -36,63 +36,7 @@ public class LogTabController extends BaseController implements LogObserver, Con
         logTextArea.appendText(message);
     }
 
-    @Override
-    public String getConnectionId() {
-        return null;
-    }
-
-    @Override
-    public void onDisconnectFromConnectionDeleted(String connectionId) {
-
-    }
-
-    @Override
-    public void onConnect() {
-
-    }
-
-    @Override
-    public void onConnectRunning() {
-
-    }
-
-    @Override
-    public void onConnectionFailed(Throwable message) {
-
-    }
-
-    @Override
-    public void onConnectionLost() {
-
-    }
-
-    @Override
-    public void onDisconnect() {
-
-    }
-
-    @Override
-    public void onDisconnectFailed(Throwable exception) {
-
-    }
-
-    @Override
-    public void onDisconnectRunning() {
-
-    }
-
-    @Override
-    public void onConnectionReconnected() {
-
-    }
-
-    @Override
-    public void onReconnectFailed(AtomicInteger triedReconnects, int maxReconnects) {
-
-    }
-
-    @Override
-    public void onCleanUp(String connectinId) {
+    public void cleanUp() {
         LogDispatcher.getInstance().removeObserver(this);
     }
 }

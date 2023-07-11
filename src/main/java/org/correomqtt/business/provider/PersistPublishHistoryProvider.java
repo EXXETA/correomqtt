@@ -157,16 +157,6 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
     }
 
     @Override
-    public void onCleanUp(String connectinId) {
-        PublishGlobalDispatcher.getInstance().removeObserver(this);
-        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
-        ConfigDispatcher.getInstance().removeObserver(this);
-
-        instances.remove(getConnectionId());
-        historyDTOs.remove(getConnectionId());
-    }
-
-    @Override
     public void onConfigDirectoryEmpty() {
         // nothing to do
     }
@@ -219,6 +209,15 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
     @Override
     public void onConfigPrepareFailed() {
         // nothing to do
+    }
+
+    public void cleanUp() {
+        PublishGlobalDispatcher.getInstance().removeObserver(this);
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        ConfigDispatcher.getInstance().removeObserver(this);
+
+        instances.remove(getConnectionId());
+        historyDTOs.remove(getConnectionId());
     }
 }
 

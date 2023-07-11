@@ -678,7 +678,7 @@ public class ConnectionSettingsViewController extends BaseController
     }
 
     private void closeDialog() {
-        this.cleanUp();
+        cleanUp();
         Stage stage = (Stage) saveButton.getScene().getWindow();
         stage.close();
     }
@@ -1154,8 +1154,6 @@ public class ConnectionSettingsViewController extends BaseController
     @FXML
     public void openExport() {
         openExport(false);
-
-
     }
 
     public void openImport(boolean autoNew) {

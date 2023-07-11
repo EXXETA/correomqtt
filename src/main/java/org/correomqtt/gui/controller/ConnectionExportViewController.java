@@ -67,7 +67,6 @@ public class ConnectionExportViewController extends BaseController implements Ex
     public ConnectionExportViewController(ConnectionExportViewDelegate delegate) {
         this.delegate = delegate;
         ExportConnectionDispatcher.getInstance().addObserver(this);
-
     }
 
     public static LoaderResult<ConnectionExportViewController> load(ConnectionExportViewDelegate delegate) {
@@ -130,10 +129,14 @@ public class ConnectionExportViewController extends BaseController implements Ex
     }
 
     private void closeDialog() {
+        cleanUp();
         Stage stage = (Stage) exportButton.getScene().getWindow();
         stage.close();
     }
 
+    private void cleanUp() {
+        ExportConnectionDispatcher.getInstance().removeObserver(this);
+    }
 
     private void loadConnectionListFromBackground() {
 
