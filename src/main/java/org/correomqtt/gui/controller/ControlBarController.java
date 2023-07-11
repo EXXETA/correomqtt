@@ -133,7 +133,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         }
 
         gracefulDisconnenct = true;
-        MessageTaskFactory.disconnect(getConnectionId(), false);
+        MessageTaskFactory.disconnect(getConnectionId());
     }
 
     @FXML

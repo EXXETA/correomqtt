@@ -470,8 +470,9 @@ public class MessageListViewController extends BaseConnectionController implemen
         // do nothing
     }
 
-    @Override
-    public void onCleanUp(String connectinId) {
+    public void cleanup() {
+        this.detailViewController.cleanUp();
+
         ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
     }
 

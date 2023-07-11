@@ -38,6 +38,4 @@ public interface ConnectionLifecycleObserver extends BaseConnectionObserver {
     void onConnectionReconnected();
 
     void onReconnectFailed(AtomicInteger triedReconnects, int maxReconnects);
-
-    void onCleanUp(String connectinId);
 }

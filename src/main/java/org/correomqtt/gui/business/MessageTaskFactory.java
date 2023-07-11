@@ -51,8 +51,8 @@ public class MessageTaskFactory {
         new GuiService<>(new ConnectService(connectionId), ConnectService::connect).start();
     }
 
-    public static void disconnect(String connectionId, boolean isFinalClose) {
-        new GuiService<>(new DisconnectService(connectionId, isFinalClose),
+    public static void disconnect(String connectionId) {
+        new GuiService<>(new DisconnectService(connectionId),
                          DisconnectService::disconnect).start();
     }
 

@@ -742,4 +742,9 @@ public class DetailViewController extends BaseConnectionController implements
     public void onImportFailed(File file, Throwable exception) {
         detailViewVBox.setDisable(false);
     }
+
+    public void cleanUp() {
+        ExportMessageDispatcher.getInstance().removeObserver(this);
+        ImportMessageDispatcher.getInstance().removeObserver(this);
+    }
 }

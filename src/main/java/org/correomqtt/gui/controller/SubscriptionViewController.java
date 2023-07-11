@@ -439,15 +439,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     @Override
-    public void onCleanUp(String connectinId) {
-        SubscribeDispatcher.getInstance().removeObserver(this);
-        UnsubscribeDispatcher.getInstance().removeObserver(this);
-        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
-        ShortcutDispatcher.getInstance().removeObserver(this);
-        PersistSubscriptionHistoryDispatcher.getInstance().removeObserver(this);
-    }
-
-    @Override
     public void onSubscriptionShortcutPressed() {
         // nothing to do
     }
@@ -515,6 +506,16 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     @Override
     public void setTabDirty() {
         delegate.setTabDirty();
+    }
+
+    public void cleanUp() {
+        this.messageListViewController.cleanup();
+
+        SubscribeDispatcher.getInstance().removeObserver(this);
+        UnsubscribeDispatcher.getInstance().removeObserver(this);
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        ShortcutDispatcher.getInstance().removeObserver(this);
+        PersistSubscriptionHistoryDispatcher.getInstance().removeObserver(this);
     }
 }
 

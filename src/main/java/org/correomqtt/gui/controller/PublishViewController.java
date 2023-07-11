@@ -314,16 +314,6 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     }
 
     @Override
-    public void onCleanUp(String connectinId) {
-        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
-        PublishDispatcher.getInstance().removeObserver(this);
-        ConfigDispatcher.getInstance().removeObserver(this);
-        ShortcutDispatcher.getInstance().removeObserver(this);
-        ImportMessageDispatcher.getInstance().removeObserver(this);
-        PersistPublishHistoryDispatcher.getInstance().removeObserver(this);
-    }
-
-    @Override
     public void setUpToForm(MessagePropertiesDTO messageDTO) {
         executeOnCopyMessageToFormExtensions(messageDTO);
 
@@ -545,5 +535,16 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     @Override
     public void updatedPublishes(String connectionId) {
         initTopicComboBox();
+    }
+
+    public void cleanUp() {
+        this.messageListViewController.cleanup();
+
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        PublishDispatcher.getInstance().removeObserver(this);
+        ConfigDispatcher.getInstance().removeObserver(this);
+        ShortcutDispatcher.getInstance().removeObserver(this);
+        ImportMessageDispatcher.getInstance().removeObserver(this);
+        PersistPublishHistoryDispatcher.getInstance().removeObserver(this);
     }
 }

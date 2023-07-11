@@ -201,7 +201,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             LoaderResult<ConnectionViewController> result = ConnectionViewController.load(config.getId(), this);
             result.getController().setTabId(tabId);
             tab.setContent(result.getMainPane());
-            tab.setOnCloseRequest(event -> this.onTabClose(tabId, result));
+            tab.setOnCloseRequest(event -> this.onTabClose(result));
 
             conntectionViewControllers.put(tabId, result.getController());
             System.out.println("Main connect: " + conntectionViewControllers.toString());
@@ -222,10 +222,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     }
 
-    private void onTabClose(String tabId, LoaderResult<ConnectionViewController> result) {
+    private void onTabClose(LoaderResult<ConnectionViewController> result) {
         result.getController().disconnect(true);
-        ConfigDispatcher.getInstance().removeObserver(this);
-        conntectionViewControllers.remove(tabId);
     }
 
     @FXML
@@ -262,10 +260,18 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     @Override
+    public void onCleanup() {
+        ConnectionViewController connectionViewController = conntectionViewControllers.get(getUUIDofSelectedTab());
+        connectionViewController.cleanUp();
+
+
+        ConfigDispatcher.getInstance().removeObserver(this);
+        conntectionViewControllers.remove(getUUIDofSelectedTab());
+    }
+
     public void onDisconnect() {
         calcTabWidth();
     }
-
     @Override
     public void setTabDirty(String tabId) {
         tabPane.getTabs().stream()
