@@ -24,7 +24,7 @@ import org.correomqtt.gui.model.LanguageModel;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.theme.ThemeProvider;
-import org.correomqtt.gui.theme.light.LightThemeProvider;
+import org.correomqtt.gui.theme.light_legacy.LightLegacyThemeProvider;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -165,7 +165,7 @@ public class SettingsViewController extends BaseController {
                     return t.getName().equals(SettingsProvider.getInstance().getThemeSettings().getActiveTheme().getName());
                 })
                 .findFirst()
-                .orElse(new LightThemeProvider()));
+                .orElse(new LightLegacyThemeProvider()));
 
         List<KeyringModel> keyringModels = KeyringFactory.getSupportedKeyrings()
                 .stream()

@@ -14,7 +14,7 @@ import org.correomqtt.business.model.ThemeSettingsDTO;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.theme.ThemeProvider;
-import org.correomqtt.gui.theme.light.LightThemeProvider;
+import org.correomqtt.gui.theme.light_legacy.LightLegacyThemeProvider;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +96,7 @@ public class SettingsProvider extends BaseUserFileProvider {
             }
             String activeThemeName = configDTO.getThemesSettings().getActiveTheme().getName();
             ArrayList<ThemeProvider> themes = new ArrayList<>(PluginManager.getInstance().getExtensions(ThemeProviderHook.class));
-            activeThemeProvider = themes.stream().filter(t -> t.getName().equals(activeThemeName)).findFirst().orElse(new LightThemeProvider());
+            activeThemeProvider = themes.stream().filter(t -> t.getName().equals(activeThemeName)).findFirst().orElse(new LightLegacyThemeProvider());
         }
         return activeThemeProvider;
     }
