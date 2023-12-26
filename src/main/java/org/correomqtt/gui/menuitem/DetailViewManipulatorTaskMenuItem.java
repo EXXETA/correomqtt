@@ -1,9 +1,9 @@
 package org.correomqtt.gui.menuitem;
 
-import org.correomqtt.plugin.manager.DetailViewManipulatorTask;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
 import lombok.Getter;
+import org.correomqtt.plugin.manager.DetailViewManipulatorTask;
 
 public class DetailViewManipulatorTaskMenuItem extends CustomMenuItem {
 

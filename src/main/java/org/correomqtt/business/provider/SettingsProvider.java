@@ -29,7 +29,9 @@ import java.nio.file.InvalidPathException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.correomqtt.business.model.ConnectionPasswordType.*;
+import static org.correomqtt.business.model.ConnectionPasswordType.AUTH_PASSWORD;
+import static org.correomqtt.business.model.ConnectionPasswordType.PASSWORD;
+import static org.correomqtt.business.model.ConnectionPasswordType.SSL_KEYSTORE_PASSWORD;
 
 //TODO check invalid configs
 

@@ -453,7 +453,6 @@
 }
 
 .toggle-button {
-    -fx-background-color: transparent;
     -fx-background-radius: 2;
     -fx-border-radius: 2;
     -fx-background-color: #3d3d3d;

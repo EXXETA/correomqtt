@@ -18,8 +18,6 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-import static org.correomqtt.business.utils.VendorConstants.GITHUB_API_LATEST;
-
 public class VersionUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VersionUtils.class);
@@ -50,7 +48,7 @@ public class VersionUtils {
      */
     public static String isNewerVersionAvailable() throws IOException, CorreoMqttUnableToCheckVersionException {
 
-        URL url = new URL(GITHUB_API_LATEST);
+        URL url = new URL(VendorConstants.GITHUB_API_LATEST());
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", "application/json");
@@ -69,14 +67,14 @@ public class VersionUtils {
             ComparableVersion currentLocalVersion = new ComparableVersion(getVersion());
 
             if (latestGithubVersion.compareTo(currentLocalVersion) > 0) {
-                LOGGER.info("There is a new release available on github! {}", GITHUB_API_LATEST);
+                LOGGER.info("There is a new release available on github! {}", VendorConstants.GITHUB_LATEST());
                 return tagName;
             } else {
-                LOGGER.info("Version is up to date or newer! {}", GITHUB_API_LATEST);
+                LOGGER.info("Version is up to date or newer! {}", VendorConstants.GITHUB_LATEST());
                 return null;
             }
         } catch (FileNotFoundException fnfe){
-            LOGGER.warn("Unable to find {} while checking for new version. Plugin updates will also be skipped.", GITHUB_API_LATEST);
+            LOGGER.warn("Unable to find {} while checking for new version. Plugin updates will also be skipped.", VendorConstants.GITHUB_API_LATEST());
         } catch (SocketTimeoutException ste){
             LOGGER.warn("Timeout checking for new version. Plugin updates will also be skipped.");
         } catch (UnknownHostException uhe) {
