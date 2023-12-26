@@ -1,15 +1,22 @@
 package org.correomqtt.gui.model;
 
-import org.correomqtt.business.model.MessageType;
-import org.correomqtt.business.model.PublishStatus;
-import org.correomqtt.business.model.Qos;
-import org.correomqtt.business.utils.MessageDateTimeFormatter;
 import javafx.beans.Observable;
-import javafx.beans.property.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.MapProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleMapProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.util.Callback;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import org.correomqtt.business.model.MessageType;
+import org.correomqtt.business.model.PublishStatus;
+import org.correomqtt.business.model.Qos;
+import org.correomqtt.business.utils.MessageDateTimeFormatter;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -135,6 +142,18 @@ public class MessagePropertiesDTO implements Comparable<MessagePropertiesDTO> {
 
     public MessageType getMessageType() {
         return messageTypeProperty.getValue();
+    }
+
+    public void update(MessagePropertiesDTO messageDTO) {
+        this.topicProperty.setValue(messageDTO.getTopic());
+        this.payloadProperty.setValue(messageDTO.getPayload());
+        this.isRetainedProperty.setValue(messageDTO.isRetained());
+        this.qosProperty.setValue(messageDTO.getQos());
+        this.dateTimeProperty.setValue(messageDTO.getDateTime());
+        this.messageTypeProperty.setValue(messageDTO.getMessageType());
+        this.publishStatusProperty.setValue(messageDTO.getPublishStatus());
+        this.subscriptionDTOProperty.setValue(messageDTO.getSubscription());
+        this.extraProperties.setValue(messageDTO.getExtraProperties());
     }
 
     @SuppressWarnings({"FieldCanBeLocal", "unused"})

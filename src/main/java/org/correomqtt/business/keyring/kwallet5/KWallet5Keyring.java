@@ -1,10 +1,10 @@
 package org.correomqtt.business.keyring.kwallet5;
 
 import org.apache.commons.lang3.SystemUtils;
+import org.correomqtt.plugin.spi.KeyringHook;
 import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.plugin.spi.KeyringHook;
 import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +48,12 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
 
     @Override
     public boolean isSupported() {
-        return SystemUtils.IS_OS_LINUX && isEnabled();
+        try {
+            return SystemUtils.IS_OS_LINUX && isEnabled();
+        }catch(KeyringException e){
+            LOGGER.debug("KWallet5 is not supported", e);
+            return false;
+        }
     }
 
     @Override

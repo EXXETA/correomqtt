@@ -1,17 +1,18 @@
 package org.correomqtt.gui.cell;
 
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.Pane;
 import org.correomqtt.business.model.CorreoMqttVersion;
 import org.correomqtt.business.model.Lwt;
 import org.correomqtt.business.model.Proxy;
 import org.correomqtt.business.model.TlsSsl;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +46,8 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
     private Label mqtt5Tag;
     @FXML
     private ResourceBundle resources;
+    @FXML
+    private CheckBox exportCheckbox;
 
     private FXMLLoader loader;
 
@@ -116,6 +119,10 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
 
             lwtTag.getStyleClass().removeAll(INACTIVE_CLASS);
             lwtTag.getStyleClass().add(INACTIVE_CLASS);
+
+            exportCheckbox.getStyleClass().removeAll(INACTIVE_CLASS);
+            exportCheckbox.getStyleClass().add(INACTIVE_CLASS);
+
         } else {
             nameLabel.setText(connectionDTO.getName());
             nameLabel.getStyleClass().removeAll(DIRTY_CLASS);
@@ -128,15 +135,25 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
             lwtTag.getStyleClass().removeAll(INACTIVE_CLASS);
         }
 
-        descriptionLabel.setText(connectionDTO.getHostAndPort());
+        if (connectionDTO.isNew()) {
+            descriptionLabel.setText(null);
 
-        boolean mqtt3 = connectionDTO.getMqttVersionProperty().getValue().equals(CorreoMqttVersion.MQTT_3_1_1);
-        mqtt3Tag.setVisible(mqtt3);
-        mqtt3Tag.setManaged(mqtt3);
+            mqtt3Tag.setVisible(false);
+            mqtt3Tag.setManaged(false);
 
-        boolean mqtt5 = connectionDTO.getMqttVersionProperty().getValue().equals(CorreoMqttVersion.MQTT_5_0);
-        mqtt5Tag.setVisible(mqtt5);
-        mqtt5Tag.setManaged(mqtt5);
+            mqtt5Tag.setVisible(false);
+            mqtt5Tag.setManaged(false);
+        } else {
+            descriptionLabel.setText(connectionDTO.getHostAndPort());
+
+            boolean mqtt3 = connectionDTO.getMqttVersionProperty().getValue().equals(CorreoMqttVersion.MQTT_3_1_1);
+            mqtt3Tag.setVisible(mqtt3);
+            mqtt3Tag.setManaged(mqtt3);
+
+            boolean mqtt5 = connectionDTO.getMqttVersionProperty().getValue().equals(CorreoMqttVersion.MQTT_5_0);
+            mqtt5Tag.setVisible(mqtt5);
+            mqtt5Tag.setManaged(mqtt5);
+        }
 
         boolean credentials = connectionDTO.getUsername() != null && !connectionDTO.getUsername().isEmpty()
                 && connectionDTO.getPassword() != null && !connectionDTO.getPassword().isEmpty();

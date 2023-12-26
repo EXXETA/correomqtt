@@ -1,20 +1,20 @@
 package org.correomqtt.gui.cell;
 
-import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.gui.model.GenericCellModel;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
+import org.correomqtt.business.model.GenericTranslatable;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
 @SuppressWarnings("java:S110")
-public class GenericCell<T extends GenericCellModel> extends ListCell<T> {
+public class GenericCell<T extends GenericTranslatable> extends ListCell<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GenericCell.class);
     private final ListView<T> listView;

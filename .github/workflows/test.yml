@@ -14,10 +14,33 @@ jobs:
     name: testbuild
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout master
-        uses: actions/checkout@v2   
-      - name: Build
-        run: .github/build.bash linux
-        id: build
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Java Zulu 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - name: Extract Version
+        uses: nowsprinting/check-version-format-action@v3
+        id: version
+        with:
+          prefix: 'v'
+      - name: Set Version Release
+        run: |
+          mvn -B versions:set -DnewVersion="${{steps.version.outputs.full_without_prefix}}"
+          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+        if: steps.version.outputs.is_valid == 'true'
         shell: bash
-
+      - name: Set Version Test
+        run: |
+          mvn -B versions:set -DnewVersion="0.0.1"
+          echo -n "0.0.1" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+        shell: bash
+        if: steps.version.outputs.is_valid != 'true'
+      - name: Build
+        run: |
+          mvn -B clean install -DskipTests=true
+        shell: bash

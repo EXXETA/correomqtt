@@ -18,6 +18,7 @@ import org.correomqtt.business.dispatcher.ShutdownDispatcher;
 import org.correomqtt.business.dispatcher.ShutdownObserver;
 import org.correomqtt.business.dispatcher.StartupDispatcher;
 import org.correomqtt.business.dispatcher.StartupObserver;
+import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.business.model.GlobalUISettings;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.provider.SettingsProvider;
@@ -29,12 +30,12 @@ import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.PluginCheckUtils;
-import org.correomqtt.plugin.PluginSystem;
+import org.correomqtt.plugin.PluginLauncher;
 import org.correomqtt.plugin.manager.PluginManager;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -53,9 +54,17 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
 
     @Override
     public void init() throws IOException {
-        LOGGER.info("Application started.");
-        LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
-        LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
+
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Application started.");
+            LOGGER.info("JVM: {} {} {}", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
+            LOGGER.info("JavaFX: {}, Runtime: {}", System.getProperty("javafx.version"), System.getProperty("javafx.runtime.version"));
+            LOGGER.info("OS: {} {} {}", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"));
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            String xdgCurrentDesktop = System.getenv("XDG_CURRENT_DESKTOP");
+            LOGGER.info("ENV: {}{} x {} ", xdgCurrentDesktop != null ? xdgCurrentDesktop + " " : "", screenSize.getWidth(), screenSize.getHeight());
+            LOGGER.info("CorreoMQTT version is {}", VersionUtils.getVersion());
+        }
 
         StartupDispatcher.getInstance().addObserver(this);
         ShutdownDispatcher.getInstance().addObserver(this);
@@ -75,9 +84,14 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         if (settings.isSearchUpdates()) {
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderSearchingUpdates"));
             PluginCheckUtils.checkMigration();
-            new PluginSystem().start();
-            checkForUpdates();
+            new PluginLauncher().start(false);
+            try {
+                checkForUpdates();
+            } catch (CorreoMqttUnableToCheckVersionException e) {
+                LOGGER.debug("Unable to check version", e);
+            }
         }
+
 
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderKeyring"));
 
@@ -136,11 +150,13 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
     }
 
-    private void checkForUpdates() {
+    private boolean checkForUpdates() throws CorreoMqttUnableToCheckVersionException {
         try {
             CheckNewVersionUtils.checkNewVersion(false);
-        } catch (IOException | ParseException e) {
+            return true;
+        } catch (IOException e) {
             LOGGER.warn("Version check failed.", e);
+            return false;
         }
     }
 
@@ -168,6 +184,7 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
             scene.getStylesheets().add(cssPath);
         }
         primaryStage.setScene(scene);
+        primaryStage.sizeToScene();
         primaryStage.setMinHeight(400);
         primaryStage.setMinWidth(850);
 

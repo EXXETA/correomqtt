@@ -4,12 +4,19 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.Pane;
-import org.correomqtt.business.dispatcher.*;
+import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
+import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import org.correomqtt.business.dispatcher.ExportMessageDispatcher;
+import org.correomqtt.business.dispatcher.ExportMessageObserver;
+import org.correomqtt.business.dispatcher.ImportMessageDispatcher;
+import org.correomqtt.business.dispatcher.ImportMessageObserver;
+import org.correomqtt.business.dispatcher.LogDispatcher;
+import org.correomqtt.business.dispatcher.LogObserver;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ConnectionUISettings;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -32,18 +39,32 @@ public class ConnectionViewController extends BaseConnectionController implement
         ControlBarDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionViewController.class);
+
     private final ConnectionViewDelegate delegate;
+
     @FXML
     private Pane connectionHolder;
+
     @FXML
     private SplitPane splitPane;
+
     private Pane publishPane;
+
     private Pane subscribePane;
+
     private LoadingViewController loadingViewController;
+
     private PublishViewController publishController;
+
     private ResourceBundle resources;
+
     private ConnectionConfigDTO connectionConfigDTO = null;
+
     private SubscriptionViewController subscribeController;
+
+    private ControlBarController controlBarController;
+
+    private boolean isFinalClose;
 
     public ConnectionViewController(String connectionId, ConnectionViewDelegate delegate) {
         super(connectionId);
@@ -56,30 +77,30 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     public static LoaderResult<ConnectionViewController> load(String connectionId, ConnectionViewDelegate delegate) {
         return load(ConnectionViewController.class, "connectionView.fxml",
-                () -> new ConnectionViewController(connectionId, delegate));
+                    () -> new ConnectionViewController(connectionId, delegate));
     }
 
     @FXML
     public void initialize() {
         SettingsProvider.getInstance().getConnectionConfigs().stream()
-                .filter(c -> c.getId().equals(getConnectionId()))
-                .findFirst()
-                .ifPresent(c -> {
-                    connectionConfigDTO = c;
-                    if (connectionConfigDTO.getConnectionUISettings() == null) {
-                        connectionConfigDTO.setConnectionUISettings(new ConnectionUISettings(
-                                true,
-                                true,
-                                0.5,
-                                0.5,
-                                0.5,
-                                false,
-                                0.5,
-                                0.5,
-                                false
-                        ));
-                    }
-                });
+                        .filter(c -> c.getId().equals(getConnectionId()))
+                        .findFirst()
+                        .ifPresent(c -> {
+                            connectionConfigDTO = c;
+                            if (connectionConfigDTO.getConnectionUISettings() == null) {
+                                connectionConfigDTO.setConnectionUISettings(new ConnectionUISettings(
+                                        true,
+                                        true,
+                                        0.5,
+                                        0.5,
+                                        0.5,
+                                        false,
+                                        0.5,
+                                        0.5,
+                                        false
+                                ));
+                            }
+                        });
 
         LoaderResult<PublishViewController> publishLoadResult = PublishViewController.load(getConnectionId(), this);
         LoaderResult<SubscriptionViewController> subscriptionLoadResult = SubscriptionViewController.load(getConnectionId(), this);
@@ -91,6 +112,7 @@ public class ConnectionViewController extends BaseConnectionController implement
 
         publishController = publishLoadResult.getController();
         subscribeController = subscriptionLoadResult.getController();
+        controlBarController = controlBarLoadResult.getController();
         resources = controlBarLoadResult.getResourceBundle();
 
         connectionHolder.getChildren().add(0, controlBarPane);
@@ -106,7 +128,8 @@ public class ConnectionViewController extends BaseConnectionController implement
     public void saveConnectionUISettings() {
         LOGGER.debug("Save connection ui settings: {}", getConnectionId());
         if (!splitPane.getDividers().isEmpty()) {
-            connectionConfigDTO.getConnectionUISettings().setMainDividerPosition(splitPane.getDividers().get(0).positionProperty().getValue());
+            connectionConfigDTO.getConnectionUISettings()
+                               .setMainDividerPosition(splitPane.getDividers().get(0).positionProperty().getValue());
             connectionConfigDTO.getConnectionUISettings().setShowPublish(true);
             connectionConfigDTO.getConnectionUISettings().setShowSubscribe(true);
 
@@ -129,7 +152,8 @@ public class ConnectionViewController extends BaseConnectionController implement
         connectionConfigDTO.getConnectionUISettings().setSubscribeDetailActive(subscribeController.isDetailActive());
 
         KeyringHandler.getInstance().retryWithMasterPassword(
-                masterPassword -> SettingsProvider.getInstance().saveConnections(SettingsProvider.getInstance().getConnectionConfigs(), masterPassword),
+                masterPassword -> SettingsProvider.getInstance()
+                                                  .saveConnections(SettingsProvider.getInstance().getConnectionConfigs(), masterPassword),
                 resources.getString("onPasswordSaveFailedTitle"),
                 resources.getString("onPasswordSaveFailedHeader"),
                 resources.getString("onPasswordSaveFailedContent"),
@@ -194,7 +218,10 @@ public class ConnectionViewController extends BaseConnectionController implement
             splitPane.getItems().add(0, publishPane);
         }
         if (!splitPane.getDividers().isEmpty()) {
-            splitPane.getDividers().get(0).positionProperty().setValue(connectionConfigDTO.getConnectionUISettings().getMainDividerPosition());
+            splitPane.getDividers()
+                     .get(0)
+                     .positionProperty()
+                     .setValue(connectionConfigDTO.getConnectionUISettings().getMainDividerPosition());
         }
     }
 
@@ -224,7 +251,6 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     @Override
     public void onConnectRunning() {
-
         Platform.runLater(() -> splitPane.setDisable(true));
     }
 
@@ -247,6 +273,10 @@ public class ConnectionViewController extends BaseConnectionController implement
     public void onDisconnect() {
         Platform.runLater(() -> splitPane.setDisable(true));
         delegate.onDisconnect();
+
+        if (isFinalClose) {
+            delegate.onCleanup();
+        }
     }
 
     @Override
@@ -284,9 +314,21 @@ public class ConnectionViewController extends BaseConnectionController implement
         // do nothing
     }
 
-    public void disconnect() {
+    public void disconnect(boolean isFinalClose) {
+        this.isFinalClose = isFinalClose;
         saveConnectionUISettings();
-        TaskFactory.disconnect(getConnectionId());
+        MessageTaskFactory.disconnect(getConnectionId());
+    }
+
+    public void cleanUp() {
+        publishController.cleanUp();
+        subscribeController.cleanUp();
+        controlBarController.cleanUp();
+
+        LogDispatcher.getInstance().removeObserver(this);
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        ExportMessageDispatcher.getInstance().removeObserver(this);
+        ImportMessageDispatcher.getInstance().removeObserver(this);
     }
 
     public Pane getMainNode() {
@@ -296,14 +338,18 @@ public class ConnectionViewController extends BaseConnectionController implement
     public void connect(ConnectionPropertiesDTO config) {
         splitPane.setDisable(true);
         this.setConnectionId(config.getId());
-        TaskFactory.connect(getConnectionId());
+        MessageTaskFactory.connect(getConnectionId());
     }
 
     @Override
     public void onExportStarted(File file, MessageDTO messageDTO) {
         Platform.runLater(() -> {
             splitPane.setDisable(true);
-            loadingViewController = LoadingViewController.showAsDialog(getConnectionId(), resources.getString("connectionViewControllerExportTitle") + " " + file.getAbsolutePath());
+            loadingViewController =
+                    LoadingViewController.showAsDialog(getConnectionId(),
+                                                       resources.getString("connectionViewControllerExportTitle") +
+                                                               " " +
+                                                               file.getAbsolutePath());
         });
     }
 
@@ -316,14 +362,14 @@ public class ConnectionViewController extends BaseConnectionController implement
     public void onExportCancelled(File file, MessageDTO messageDTO) {
         disableLoading();
         AlertHelper.warn(resources.getString("connectionViewControllerExportCancelledTitle"),
-                resources.getString("connectionViewControllerExportCancelledContent"));
+                         resources.getString("connectionViewControllerExportCancelledContent"));
     }
 
     @Override
     public void onExportFailed(File file, MessageDTO messageDTO, Throwable exception) {
         disableLoading();
         AlertHelper.warn(resources.getString("connectionViewControllerExportFailedTitle"),
-                resources.getString("connectionViewControllerExportFailedContent") + exception.getLocalizedMessage());
+                         resources.getString("connectionViewControllerExportFailedContent") + exception.getLocalizedMessage());
     }
 
     @Override
@@ -375,7 +421,6 @@ public class ConnectionViewController extends BaseConnectionController implement
             }
         });
     }
-
 
     @Override
     public void setUpToForm(MessagePropertiesDTO messageDTO) {

@@ -99,12 +99,12 @@ public class SecretStoreProvider extends BaseUserFileProvider {
         try {
             String encryptedPasswords = "";
             if (localDecryptedPasswords.size() != 0) {
-                encryptedPasswords = encryptor.encrypt(new ObjectMapper().writeValueAsString(localDecryptedPasswords));
+                encryptedPasswords = encryptor.encrypt(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(localDecryptedPasswords));
             }
             passwordsDTO.setSalt(null);
             passwordsDTO.setPasswords(encryptedPasswords);
             passwordsDTO.setEncryptionType(encryptor.getEncryptionTranslation());
-            new ObjectMapper().writeValue(getFile(), passwordsDTO);
+            new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(getFile(), passwordsDTO);
         } catch (IOException e) {
             LOGGER.error("Could not save encrypted passwords. ", e);
             throw new EncryptionRecoverableException();

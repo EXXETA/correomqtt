@@ -5,27 +5,38 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.model.HooksDTO;
+import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.provider.PluginConfigProvider;
+import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.utils.VendorConstants;
+import org.correomqtt.business.utils.VersionUtils;
+import org.correomqtt.plugin.model.PluginInfoDTO;
+import org.correomqtt.plugin.repository.BundledPluginList;
+import org.correomqtt.plugin.repository.CorreoUpdateRepository;
 import org.correomqtt.plugin.spi.BaseExtensionPoint;
 import org.correomqtt.plugin.spi.DetailViewManipulatorHook;
 import org.correomqtt.plugin.spi.ExtensionId;
 import org.correomqtt.plugin.spi.IncomingMessageHook;
 import org.correomqtt.plugin.spi.MessageValidatorHook;
 import org.correomqtt.plugin.spi.OutgoingMessageHook;
-import org.pf4j.ExtensionFactory;
+import org.correomqtt.plugin.spi.OutgoingMessageHookDTO;
+import org.correomqtt.plugin.transformer.PluginInfoTransformer;
 import org.pf4j.JarPluginManager;
-import org.pf4j.ManifestPluginDescriptorFinder;
-import org.pf4j.PluginDescriptorFinder;
-import org.pf4j.PluginFactory;
-import org.pf4j.PluginLoader;
 import org.pf4j.PluginState;
 import org.pf4j.PluginWrapper;
+import org.pf4j.update.UpdateManager;
+import org.pf4j.update.UpdateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,14 +45,18 @@ import java.util.stream.Collectors;
 public class PluginManager extends JarPluginManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginManager.class);
+    public static final String DEFAULT_REPO_ID = "default";
 
     private static PluginManager instance;
+
+    private BundledPluginList.BundledPlugins bundledPlugins;
 
     private PluginManager() {
         // private constructor
         super(Path.of(PluginConfigProvider.getInstance().getPluginPath()));
     }
 
+    /*
     @Override
     protected PluginFactory createPluginFactory() {
         return new PermissionPluginFactory();
@@ -62,7 +77,7 @@ public class PluginManager extends JarPluginManager {
     @Override
     protected ExtensionFactory createExtensionFactory() {
         return new PluginExtensionFactory();
-    }
+    }*/
 
     public static PluginManager getInstance() {
         if (instance == null) {
@@ -71,34 +86,137 @@ public class PluginManager extends JarPluginManager {
         return instance;
     }
 
+    private String getInstalledVersion(String pluginId) {
+        PluginWrapper installedPlugin = this.getPlugin(pluginId);
+        if (installedPlugin == null) {
+            return null;
+        }
+        return installedPlugin.getDescriptor().getVersion();
+    }
+
+    public List<PluginInfoDTO> getInstalledPlugins() {
+        return this.getPlugins().stream()
+                .map(wrapper -> PluginInfoTransformer.wrapperToDTO(wrapper, wrapper.getDescriptor().getVersion(),
+                        isPluginDisabled(wrapper.getPluginId()),
+                        isPluginBundled(wrapper.getPluginId())))
+                .sorted(Comparator.comparing(PluginInfoDTO::getName))
+                .collect(Collectors.toList());
+    }
+
+    public BundledPluginList.BundledPlugins getBundledPlugins() {
+
+        if(bundledPlugins != null){
+            return bundledPlugins;
+        }
+
+        SettingsDTO settings = SettingsProvider.getInstance().getSettings();
+
+        if (settings.isInstallBundledPlugins()) {
+
+            String bundledPluginUrl = settings.getBundledPluginsUrl();
+
+            if (bundledPluginUrl == null) {
+                bundledPluginUrl = VendorConstants.BUNDLED_PLUGINS_URL();
+            }
+
+            try {
+                LOGGER.info("Read bundled plugins '{}'", bundledPluginUrl);
+                BundledPluginList bundledPluginList = new ObjectMapper().readValue(new URL(bundledPluginUrl), BundledPluginList.class);
+
+                BundledPluginList.BundledPlugins bundledPlugins = bundledPluginList.getVersions().get(VersionUtils.getVersion().trim());
+                if (bundledPlugins == null) {
+                    return BundledPluginList.BundledPlugins.builder().build();
+                }
+                this.bundledPlugins = bundledPlugins;
+                return bundledPlugins;
+
+            } catch (IOException e) {
+                LOGGER.warn("Unable to load bundled plugin list from {}.", bundledPluginUrl);
+                return BundledPluginList.BundledPlugins.builder().build();
+            }
+        } else {
+            LOGGER.info("Do not install bundled plugins.");
+            return BundledPluginList.BundledPlugins.builder().build();
+        }
+
+    }
+
+    private boolean isPluginBundled(String pluginId) {
+        BundledPluginList.BundledPlugins bundledPlugins = getBundledPlugins();
+        return bundledPlugins.getInstall().stream().anyMatch(p -> p.equals(pluginId));
+    }
+
+    public List<PluginInfoDTO> getAllPluginsAvailableFromRepos() {
+        return getUpdateManager().getPlugins().stream()
+                .map(info -> PluginInfoTransformer.pf4jToDTO(info, getInstalledVersion(info.id), isPluginDisabled(info.id)))
+                .sorted(Comparator.comparing(PluginInfoDTO::getName))
+                .collect(Collectors.toList());
+    }
+
+    public UpdateManager getUpdateManager() {
+        PluginManager pluginManager = PluginManager.getInstance();
+        List<UpdateRepository> repos = new ArrayList<>();
+        final SettingsDTO settings = SettingsProvider.getInstance().getSettings();
+
+        if (settings.isSearchUpdates()) {
+            if (settings.isUseDefaultRepo()) {
+                String defaultRepo = VendorConstants.DEFAULT_REPO_URL();
+                try {
+                    repos.add(new CorreoUpdateRepository(DEFAULT_REPO_ID, defaultRepo));
+                } catch (MalformedURLException e) {
+                    LOGGER.error("Invalid url for repo {} with url {}", DEFAULT_REPO_ID, defaultRepo);
+                }
+            }
+            settings.getPluginRepositories().forEach((id, url) -> {
+                try {
+                    repos.add(new CorreoUpdateRepository(id, url));
+                } catch (MalformedURLException e) {
+                    LOGGER.error("Invalid url for repo {} with url {}", id, url);
+                }
+            });
+        }
+
+        return new UpdateManager(pluginManager, repos);
+    }
+
     // TODO obsolete ?
     public static void resetInstance() {
         instance = new PluginManager();
     }
 
-    public List<OutgoingMessageHook> getOutgoingMessageHooks() {
+    public List<OutgoingMessageHook<?>> getOutgoingMessageHooks() {
         return PluginConfigProvider.getInstance().getOutgoingMessageHooks()
                 .stream()
                 .map(extensionDefinition -> {
-                    OutgoingMessageHook extension = getExtensionById(OutgoingMessageHook.class,
+                    OutgoingMessageHook<?> extension = getExtensionById(OutgoingMessageHook.class,
                             extensionDefinition.getPluginId(),
                             extensionDefinition.getId());
+                    if(extension == null){
+                        LOGGER.warn("Extension for Outgoing Message Hook with id {} from plugin {} not found.",extensionDefinition.getId(), extensionDefinition.getPluginId());
+                        return null;
+                    }
                     enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                     return extension;
                 })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
-    public List<IncomingMessageHook> getIncomingMessageHooks() {
+    public List<IncomingMessageHook<?>> getIncomingMessageHooks() {
         return PluginConfigProvider.getInstance().getIncomingMessageHooks()
                 .stream()
                 .map(extensionDefinition -> {
-                    IncomingMessageHook extension = getExtensionById(IncomingMessageHook.class,
+                    IncomingMessageHook<?> extension = getExtensionById(IncomingMessageHook.class,
                             extensionDefinition.getPluginId(),
                             extensionDefinition.getId());
+                    if(extension == null){
+                        LOGGER.warn("Extension for Incoming Message Hook with id {} from plugin {} not found.",extensionDefinition.getId(), extensionDefinition.getPluginId());
+                        return null;
+                    }
                     enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                     return extension;
                 })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -168,7 +286,7 @@ public class PluginManager extends JarPluginManager {
         return extension;
     }
 
-    public <P extends BaseExtensionPoint<T>, T> P getExtensionById(Class<P> type, String pluginId, String extensionId) {
+    public <P extends BaseExtensionPoint<?>> P getExtensionById(Class<P> type, String pluginId, String extensionId) {
         return super.getExtensions(type, pluginId)
                 .stream()
                 .filter(e -> isExtensionIdResolved(e, extensionId))
@@ -212,7 +330,7 @@ public class PluginManager extends JarPluginManager {
     @Override
     public void unloadPlugins() {
         LOGGER.debug("Unload Plugins");
-        List<String> pluginIds = resolvedPlugins.stream().map(PluginWrapper::getPluginId).collect(Collectors.toList());
+        List<String> pluginIds = resolvedPlugins.stream().map(PluginWrapper::getPluginId).toList();
         for (String pluginId : pluginIds) {
             LOGGER.debug("Unload Plugin \"{}\"", pluginId);
             unloadPlugin(pluginId);

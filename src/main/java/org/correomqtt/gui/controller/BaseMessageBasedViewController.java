@@ -42,5 +42,4 @@ abstract class BaseMessageBasedViewController extends BaseConnectionController i
         super.setConnectionId(connectionId);
         messageListViewController.setConnectionId(connectionId);
     }
-
 }

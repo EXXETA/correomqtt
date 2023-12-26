@@ -1,29 +1,35 @@
 package org.correomqtt.gui.controller;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.Event;
+import javafx.event.EventHandler;
+import javafx.fxml.FXML;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionModel;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.AnchorPane;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ShutdownDispatcher;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
 import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.business.utils.VendorConstants;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.ConnectionState;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.*;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.AnchorPane;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,9 +39,8 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
-import static org.correomqtt.business.utils.VendorConstants.WEBSITE;
 
-public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
+public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConnectionExportViewDelegate, ConnectionImportViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainViewController.class);
     public static final String DIRTY_CLASS = "dirty";
@@ -80,6 +85,12 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private ResourceBundle resources;
     private Map<String, ConnectionViewController> conntectionViewControllers;
 
+    private ConnectionOnbordingViewController connectionOnboardingViewController;
+
+    private LogTabController logViewController;
+
+    private String closedTabId;
+
     public MainViewController() {
         ConfigDispatcher.getInstance().addObserver(this);
     }
@@ -119,9 +130,10 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void setupAddTab() {
         addTab.setClosable(false);
-        LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this, this);
+        LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this, this,this,this);
         addTab.setContent(loadResult.getMainPane());
         resources = loadResult.getResourceBundle();
+        connectionOnboardingViewController = loadResult.getController();
 
         selectionModel = tabPane.getSelectionModel();
         selectionModel.select(addTab);
@@ -129,7 +141,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void createLogTab() {
         LoaderResult<LogTabController> result = LogTabController.load();
-        LogTabController logViewController = result.getController();
+        logViewController = result.getController();
         logTab.setClosable(false);
         logAnchorPane.getChildren().add(logViewController.logViewAnchor);
         logViewController.logViewAnchor.prefWidthProperty().bind(logAnchorPane.widthProperty());
@@ -138,18 +150,18 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void setMenuEventHandler() {
         closeItem.setOnAction(event -> ShutdownDispatcher.getInstance().onShutdownRequested());
-        connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this));
+        connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this, this, this));
         settingsItem.setOnAction(event -> SettingsViewController.showAsDialog());
         aboutItem.setOnAction(event -> AboutViewController.showAsDialog());
         updateItem.setOnAction(event -> {
             try {
                 CheckNewVersionUtils.checkNewVersion(true);
-            } catch (IOException | ParseException e) {
-                LOGGER.warn("Exception checking version", e);
+            } catch (IOException | CorreoMqttUnableToCheckVersionException e) {
+                LOGGER.warn("Exception checking version", e); //TODO UI?
             }
         });
         websiteItem.setOnAction(event -> HostServicesHolder.getInstance().getHostServices().showDocument(
-                new Hyperlink(WEBSITE).getText()));
+                new Hyperlink(VendorConstants.WEBSITE()).getText()));
         pluginSettingsItem.setOnAction(event -> openPluginSettings());
     }
 
@@ -196,9 +208,10 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             LoaderResult<ConnectionViewController> result = ConnectionViewController.load(config.getId(), this);
             result.getController().setTabId(tabId);
             tab.setContent(result.getMainPane());
-            tab.setOnCloseRequest(event -> result.getController().disconnect());
+            tab.setOnCloseRequest(event -> this.onTabClose(result, tabId));
 
             conntectionViewControllers.put(tabId, result.getController());
+            System.out.println("Main connect: " + conntectionViewControllers.toString());
 
             tabPane.getTabs().add(tabPane.getTabs().size() - 1, tab);
             selectionModel = tabPane.getSelectionModel();
@@ -214,6 +227,11 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                     resources.getString("mainViewControllerAlreadyUsedContent"));
         }
 
+    }
+
+    private void onTabClose(LoaderResult<ConnectionViewController> result, String tabId) {
+        closedTabId = tabId;
+        result.getController().disconnect(true);
     }
 
     @FXML
@@ -250,10 +268,26 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     @Override
+    public void onCleanup() {
+        ConnectionViewController connectionViewController = conntectionViewControllers.get(this.closedTabId);
+        connectionViewController.cleanUp();
+        connectionOnboardingViewController.cleanUp();
+        logViewController.cleanUp();
+
+        ConfigDispatcher.getInstance().removeObserver(this);
+        conntectionViewControllers.remove(this.closedTabId);
+    }
+
+    @Override
+    public void cleanUpProvider(ConnectionPropertiesDTO config) {
+        PersistPublishHistoryProvider.getInstance(config.getId()).cleanUp();
+        PersistPublishMessageHistoryProvider.getInstance(config.getId()).cleanUp();
+        PersistSubscriptionHistoryProvider.getInstance(config.getId()).cleanUp();
+    }
+
     public void onDisconnect() {
         calcTabWidth();
     }
-
     @Override
     public void setTabDirty(String tabId) {
         tabPane.getTabs().stream()

@@ -1,13 +1,28 @@
 package org.correomqtt.gui.model;
 
 import javafx.beans.Observable;
-import javafx.beans.property.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.MapProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleMapProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.util.Callback;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import org.correomqtt.business.model.*;
+import org.correomqtt.business.model.Auth;
+import org.correomqtt.business.model.ConnectionUISettings;
+import org.correomqtt.business.model.CorreoMqttVersion;
+import org.correomqtt.business.model.Lwt;
+import org.correomqtt.business.model.Proxy;
+import org.correomqtt.business.model.Qos;
+import org.correomqtt.business.model.TlsSsl;
 
 import java.util.HashMap;
 
@@ -44,6 +59,7 @@ public class ConnectionPropertiesDTO {
     private final StringProperty lwtPayloadProperty;
     private final Property<ConnectionUISettings> connectionUISettingsProperty;
     private final BooleanProperty dirtyProperty;
+    private final BooleanProperty newProperty;
     private final BooleanProperty unpersistedProperty;
     private final MapProperty<String, Object> extraProperties;
 
@@ -76,6 +92,7 @@ public class ConnectionPropertiesDTO {
                 c.lwtPayloadProperty,
                 c.connectionUISettingsProperty,
                 c.dirtyProperty,
+                c.newProperty,
                 c.unpersistedProperty,
                 c.extraProperties
         };
@@ -189,6 +206,10 @@ public class ConnectionPropertiesDTO {
         return dirtyProperty.get();
     }
 
+    public boolean isNew(){
+        return newProperty.get();
+    }
+
     public boolean isUnpersisted() {
         return unpersistedProperty.get();
     }
@@ -238,6 +259,7 @@ public class ConnectionPropertiesDTO {
         private StringProperty lwtPayloadProperty = new SimpleStringProperty();
         private Property<ConnectionUISettings> connectionUISettingsProperty = new SimpleObjectProperty<>();
         private BooleanProperty dirtyProperty = new SimpleBooleanProperty(false);
+        private BooleanProperty newProperty = new SimpleBooleanProperty(false);
         private BooleanProperty unpersistedProperty = new SimpleBooleanProperty(true);
         private SimpleMapProperty<String, Object> extraProperties = new SimpleMapProperty<>();
 
@@ -386,6 +408,11 @@ public class ConnectionPropertiesDTO {
             return this;
         }
 
+        public ConnectionPropertiesDTOBuilder isNew(boolean isNew){
+            this.newProperty.set(isNew);
+            return this;
+        }
+
         public ConnectionPropertiesDTOBuilder unpersisted(boolean unpersisted) {
             this.unpersistedProperty.set(unpersisted);
             return this;
@@ -424,6 +451,7 @@ public class ConnectionPropertiesDTO {
                     lwtPayloadProperty,
                     connectionUISettingsProperty,
                     dirtyProperty,
+                    newProperty,
                     unpersistedProperty,
                     extraProperties);
         }

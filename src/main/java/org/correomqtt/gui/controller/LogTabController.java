@@ -1,11 +1,16 @@
 package org.correomqtt.gui.controller;
 
+import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.dispatcher.LogDispatcher;
 import org.correomqtt.business.dispatcher.LogObserver;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.AnchorPane;
+import org.correomqtt.business.dispatcher.LogDispatcher;
+import org.correomqtt.business.dispatcher.LogObserver;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class LogTabController extends BaseController implements LogObserver {
     @FXML
@@ -33,4 +38,7 @@ public class LogTabController extends BaseController implements LogObserver {
         logTextArea.appendText(message);
     }
 
+    public void cleanUp() {
+        LogDispatcher.getInstance().removeObserver(this);
+    }
 }

@@ -1,6 +1,15 @@
 package org.correomqtt.business.mqtt;
 
+import com.hivemq.client.mqtt.lifecycle.MqttClientConnectedContext;
+import com.hivemq.client.mqtt.lifecycle.MqttClientConnectedListener;
+import com.hivemq.client.mqtt.lifecycle.MqttClientDisconnectedContext;
+import com.hivemq.client.mqtt.lifecycle.MqttClientDisconnectedListener;
+import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
+import com.hivemq.client.util.KeyStoreUtil;
+import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.connection.channel.direct.LocalPortForwarder;
 import net.schmizz.sshj.connection.channel.direct.Parameters;
+import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.exception.CorreoMqttAlreadySubscribedException;
 import org.correomqtt.business.exception.CorreoMqttNoRetriesLeftException;
@@ -10,15 +19,6 @@ import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.Proxy;
 import org.correomqtt.business.model.SubscriptionDTO;
-import com.hivemq.client.mqtt.lifecycle.MqttClientConnectedContext;
-import com.hivemq.client.mqtt.lifecycle.MqttClientConnectedListener;
-import com.hivemq.client.mqtt.lifecycle.MqttClientDisconnectedContext;
-import com.hivemq.client.mqtt.lifecycle.MqttClientDisconnectedListener;
-import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
-import com.hivemq.client.util.KeyStoreUtil;
-import net.schmizz.sshj.SSHClient;
-import net.schmizz.sshj.connection.channel.direct.LocalPortForwarder;
-import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.slf4j.Logger;
 import org.slf4j.MarkerFactory;
 
@@ -198,7 +198,6 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
     public synchronized void unsubscribe(SubscriptionDTO subscriptionDTO) {
         doUnsubscribe(subscriptionDTO);
         subscriptions.remove(subscriptionDTO);
-
     }
 
     abstract void doUnsubscribe(SubscriptionDTO subscriptionDTO);
@@ -217,7 +216,6 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
     @Override
     public synchronized void subscribe(SubscriptionDTO subscriptionDTO, Consumer<MessageDTO> incomingCallback)
             throws InterruptedException, ExecutionException, TimeoutException {
-
         if (subscriptions.contains(subscriptionDTO)) {
             throw new CorreoMqttAlreadySubscribedException(getConfigDTO().getId(), subscriptionDTO);
         }

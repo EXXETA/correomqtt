@@ -16,6 +16,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.correomqtt.plugin.spi.MessageContextMenuHook;
+import org.correomqtt.plugin.spi.PublishMenuHook;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
@@ -30,8 +32,10 @@ import org.correomqtt.business.dispatcher.PublishObserver;
 import org.correomqtt.business.dispatcher.ShortcutDispatcher;
 import org.correomqtt.business.dispatcher.ShortcutObserver;
 import org.correomqtt.business.exception.CorreoMqttException;
+import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.business.model.Qos;
@@ -39,7 +43,7 @@ import org.correomqtt.business.provider.PersistPublishHistoryProvider;
 import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.AutoFormatPayload;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.QosCell;
 import org.correomqtt.gui.cell.TopicCell;
 import org.correomqtt.gui.helper.AlertHelper;
@@ -48,8 +52,6 @@ import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
-import org.correomqtt.plugin.spi.MessageContextMenuHook;
-import org.correomqtt.plugin.spi.PublishMenuHook;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
@@ -62,6 +64,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 public class PublishViewController extends BaseMessageBasedViewController implements ConnectionLifecycleObserver,
         PublishObserver,
@@ -120,6 +123,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         LoaderResult<PublishViewController> result = load(PublishViewController.class, "publishView.fxml",
                 () -> new PublishViewController(connectionId, delegate));
         resources = result.getResourceBundle();
+
         return result;
     }
 
@@ -217,7 +221,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 .dateTime(LocalDateTime.now())
                 .build();
 
-        TaskFactory.publish(getConnectionId(), messagePropertiesDTO);
+        MessageTaskFactory.publish(getConnectionId(), messagePropertiesDTO);
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Publishing to topic: {}: {}", messagePropertiesDTO.getTopic(), getConnectionId());
@@ -237,7 +241,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         File file = fileChooser.showOpenDialog(stage);
 
         if (file != null) {
-            TaskFactory.importMessage(getConnectionId(), file);
+            MessageTaskFactory.importMessage(getConnectionId(), file);
         }
     }
 
@@ -248,10 +252,6 @@ public class PublishViewController extends BaseMessageBasedViewController implem
 
     @Override
     public void onConnect() {
-        topicComboBox.valueProperty().set(null);
-        payloadCodeArea.replaceText("");
-        retainedCheckBox.setSelected(false);
-
         // reverse order, because first message in history must be last one to add
         new LinkedList<>(PersistPublishMessageHistoryProvider.getInstance(getConnectionId())
                 .getMessages(getConnectionId()))
@@ -327,6 +327,21 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Message copied to form: {}", getConnectionId());
         }
+    }
+
+    @Override
+    public Supplier<MessageListViewConfig> produceListViewConfig() {
+        return () -> {
+            ConnectionConfigDTO config = SettingsProvider.getInstance()
+                    .getConnectionConfigs()
+                    .stream()
+                    .filter(c -> c.getId().equals(getConnectionId()))
+                    .findFirst()
+                    .orElse(ConnectionConfigDTO.builder().publishListViewConfig(new MessageListViewConfig()).build());
+
+            return config.producePublishListViewConfig() != null ? config.producePublishListViewConfig() : new MessageListViewConfig();
+        };
+
     }
 
     private void executeOnCopyMessageToFormExtensions(MessagePropertiesDTO messageDTO) {
@@ -436,7 +451,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
 
     @Override
     public void onPublishScheduled(MessageDTO messageDTO) {
-        messageDTO.setPublishStatus(PublishStatus.PUBLISEHD);
+        messageDTO.setPublishStatus(PublishStatus.PUBLISHED);
         messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO));
     }
 
@@ -516,5 +531,16 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     @Override
     public void updatedPublishes(String connectionId) {
         initTopicComboBox();
+    }
+
+    public void cleanUp() {
+        this.messageListViewController.cleanUp();
+
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        PublishDispatcher.getInstance().removeObserver(this);
+        ConfigDispatcher.getInstance().removeObserver(this);
+        ShortcutDispatcher.getInstance().removeObserver(this);
+        ImportMessageDispatcher.getInstance().removeObserver(this);
+        PersistPublishHistoryDispatcher.getInstance().removeObserver(this);
     }
 }

@@ -1,5 +1,6 @@
 package org.correomqtt.business.utils;
 
+import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ApplicationLifecycleObserver;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
@@ -14,14 +15,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class ConnectionHolder implements ApplicationLifecycleObserver {
+public class ConnectionHolder {
 
     private static ConnectionHolder instance;
     private final Map<String /* connectionId*/, CorreoMqttConnection> connectionMap = new ConcurrentHashMap<>();
 
-    private ConnectionHolder() {
-        //private constructor
-    }
+    private ConnectionHolder() {}
 
     public static synchronized ConnectionHolder getInstance() {
         if (instance == null) {
@@ -36,14 +35,14 @@ public class ConnectionHolder implements ApplicationLifecycleObserver {
 
         Set<String> existingConnectionIds = new HashSet<>(connectionMap.keySet());
 
-        for ( ConnectionConfigDTO c : SettingsProvider.getInstance().getConnectionConfigs() ) {
+        for (ConnectionConfigDTO c : SettingsProvider.getInstance().getConnectionConfigs()) {
             CorreoMqttConnection connection = connectionMap.get(c.getId());
-            if(connection == null){
+            if (connection == null) {
                 connectionMap.put(c.getId(), CorreoMqttConnection.builder()
-                                                                 .configDTO(c)
-                                                                 .sort(sort)
-                                                                 .build());
-            }else{
+                        .configDTO(c)
+                        .sort(sort)
+                        .build());
+            } else {
                 existingConnectionIds.remove(c.getId());
                 connection.setConfigDTO(c);
                 connection.setSort(sort);
@@ -82,16 +81,11 @@ public class ConnectionHolder implements ApplicationLifecycleObserver {
         return connectionMap;
     }
 
-    @Override
-    public void onShutdown() {
-        connectionMap.keySet().forEach(connectionId -> new DisconnectService(connectionId).disconnect());
-    }
-
     public List<ConnectionConfigDTO> getSortedConnections() {
         return connectionMap.values()
-                            .stream()
-                            .sorted(Comparator.comparing(CorreoMqttConnection::getSort))
-                            .map(CorreoMqttConnection::getConfigDTO)
-                            .collect(Collectors.toList());
+                .stream()
+                .sorted(Comparator.comparing(CorreoMqttConnection::getSort))
+                .map(CorreoMqttConnection::getConfigDTO)
+                .toList();
     }
 }

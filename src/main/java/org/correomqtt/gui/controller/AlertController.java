@@ -1,11 +1,19 @@
 package org.correomqtt.gui.controller;
 
-import org.correomqtt.business.dispatcher.*;
+import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.dispatcher.ConfigObserver;
+import org.correomqtt.business.dispatcher.PersistPublishHistoryDispatcher;
+import org.correomqtt.business.dispatcher.PersistPublishHistoryObserver;
+import org.correomqtt.business.dispatcher.PersistSubscriptionHistoryDispatcher;
+import org.correomqtt.business.dispatcher.PersistSubscriptionHistoryObserver;
+import org.correomqtt.business.dispatcher.SecretStoreDispatcher;
+import org.correomqtt.business.dispatcher.SecretStoreObserver;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.utils.PlatformUtils;
 
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AlertController extends BaseController implements
         ConfigObserver,
@@ -24,7 +32,6 @@ public class AlertController extends BaseController implements
         SecretStoreDispatcher.getInstance().addObserver(this);
         PersistPublishHistoryDispatcher.getInstance().addObserver(this);
         PersistSubscriptionHistoryDispatcher.getInstance().addObserver(this);
-
     }
 
     public static void activate() {

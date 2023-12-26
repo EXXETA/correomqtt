@@ -9,7 +9,12 @@ import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.WindowHelper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.ResourceBundle;
 
 public class AboutViewController extends BaseController {
 
@@ -18,10 +23,6 @@ public class AboutViewController extends BaseController {
     private Hyperlink hiveMqttClientRepo;
     @FXML
     private Hyperlink hiveMqttClientLicense;
-    @FXML
-    private Hyperlink jsonSimpleRepo;
-    @FXML
-    private Hyperlink jsonSimpleLicense;
     @FXML
     private Hyperlink jacksonDatabindRepo;
     @FXML
@@ -105,8 +106,6 @@ public class AboutViewController extends BaseController {
 
         hiveMqttClientRepo.getProperties().put("link", "https://github.com/hivemq/hivemq-mqtt-client/tree/v1.1.1");
         hiveMqttClientLicense.getProperties().put("link", "https://github.com/hivemq/hivemq-mqtt-client/blob/v1.1.1/LICENSE");
-        jsonSimpleRepo.getProperties().put("link", "https://github.com/fangyidong/json-simple/tree/tag_release_1_1_1");
-        jsonSimpleLicense.getProperties().put("link", "https://github.com/fangyidong/json-simple/blob/tag_release_1_1_1/LICENSE.txt");
         jacksonDatabindRepo.getProperties().put("link", "https://github.com/FasterXML/jackson-databind/tree/jackson-databind-2.9.7");
         jacksonDatabindLicense.getProperties().put("link", "https://github.com/FasterXML/jackson-databind/blob/jackson-databind-2.9.7/src/main/resources/META-INF/LICENSE");
         gsonRepo.getProperties().put("link", "https://github.com/google/gson/tree/gson-parent-2.8.5");
@@ -137,7 +136,6 @@ public class AboutViewController extends BaseController {
 
         links.addAll(Arrays.asList(
                 hiveMqttClientRepo, hiveMqttClientLicense,
-                jsonSimpleRepo, jsonSimpleLicense,
                 jacksonDatabindRepo, jacksonDatabindLicense,
                 gsonRepo, gsonLicense,
                 richTextFXRepo, richTextFXLicense,

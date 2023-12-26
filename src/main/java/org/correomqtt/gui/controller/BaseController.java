@@ -1,14 +1,16 @@
 package org.correomqtt.gui.controller;
 
-import org.correomqtt.business.provider.SettingsProvider;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +68,19 @@ abstract class BaseController {
                                                         boolean alwaysOnTop,
                                                         final EventHandler<WindowEvent> closeHandler,
                                                         final EventHandler<KeyEvent> keyHandler) {
+        showAsDialog(result, title, windowProperties,resizable, alwaysOnTop, closeHandler, keyHandler, 300, 400);
+
+    }
+
+    static <Z extends BaseController> void showAsDialog(LoaderResult<Z> result,
+                                                        String title,
+                                                        Map<Object, Object> windowProperties,
+                                                        boolean resizable,
+                                                        boolean alwaysOnTop,
+                                                        final EventHandler<WindowEvent> closeHandler,
+                                                        final EventHandler<KeyEvent> keyHandler,
+                                                        int minWidth,
+                                                        int minHeight) {
 
         Scene scene = new Scene(result.getMainPane());
         String cssPath = SettingsProvider.getInstance().getCssPath();
@@ -73,10 +88,14 @@ abstract class BaseController {
             scene.getStylesheets().add(cssPath);
         }
         Stage stage = new Stage();
+        stage.initStyle(StageStyle.UTILITY);
         stage.setTitle(title);
         stage.setScene(scene);
         stage.setResizable(resizable);
+        stage.setMinWidth(minWidth);
+        stage.setMinHeight(minHeight);
         stage.setAlwaysOnTop(alwaysOnTop);
+        stage.initModality(Modality.WINDOW_MODAL);
         stage.show();
         if (closeHandler != null) {
             stage.getScene().getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, closeHandler);

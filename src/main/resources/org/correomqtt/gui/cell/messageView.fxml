@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.String?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
-
+<?import java.lang.String?>
 <AnchorPane fx:id="mainNode" stylesheets="@../css/messageView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1">
     <styleClass>
         <String fx:value="basicColors" />
@@ -36,6 +35,8 @@
                 <Label fx:id="retainedLabel" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" styleClass="tag" text="Retained" textAlignment="CENTER">
                 </Label>
                 <Label fx:id="qosLabel" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" styleClass="tag" text="QoS2" textAlignment="CENTER">
+                </Label>
+                <Label fx:id="timestampLabel" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" styleClass="tag" textAlignment="CENTER">
                 </Label>
             </HBox>
         </HBox>

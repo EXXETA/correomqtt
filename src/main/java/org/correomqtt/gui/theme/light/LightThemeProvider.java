@@ -6,7 +6,6 @@ import org.correomqtt.gui.theme.ThemeProvider;
 import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.pf4j.Extension;
 
-
 @Extension
 public class LightThemeProvider extends BaseThemeProvider implements ThemeProvider, ThemeProviderHook {
 
@@ -17,7 +16,7 @@ public class LightThemeProvider extends BaseThemeProvider implements ThemeProvid
 
     @Override
     public String getCss() {
-        return getCssFromInputStream(LightThemeProvider.class.getResourceAsStream(getName() + ".css"));
+        return getCssFromInputStream(LightThemeProvider.class.getResourceAsStream("light.css"));
     }
 
     @Override
