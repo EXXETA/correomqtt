@@ -177,7 +177,7 @@ public class SettingsViewController extends BaseController {
         List<KeyringModel> keyringModels = KeyringFactory.getSupportedKeyrings()
                 .stream()
                 .map(KeyringModel::new)
-                .collect(Collectors.toList());
+                .toList();
         keyringBackendComboBox.setOnAction(event -> updateKeyringDescription(keyringBackendComboBox.getSelectionModel().getSelectedItem()));
         keyringBackendComboBox.setItems(FXCollections.observableArrayList(keyringModels));
         keyringBackendComboBox.setCellFactory(GenericCell::new);
@@ -234,7 +234,7 @@ public class SettingsViewController extends BaseController {
                 availableLocales.stream()
                         .filter(distinctByKey(l -> l.getLanguage() + "_" + l.getCountry()))
                         .map(LanguageModel::new)
-                        .collect(Collectors.toList())));
+                        .toList()));
         languageComboBox.getSelectionModel().select(new LanguageModel(settings.getSavedLocale()));
 
         settingsPane.setMinHeight(500);

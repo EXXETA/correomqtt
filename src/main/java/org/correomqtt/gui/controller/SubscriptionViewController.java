@@ -331,8 +331,8 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     @Override
     public void onSubscribedFailed(SubscriptionDTO subscriptionDTO, Throwable exception) {
         String msg;
-        if (exception instanceof CorreoMqttException) {
-            msg = ((CorreoMqttException) exception).getInfo();
+        if (exception instanceof CorreoMqttException correoMqttException) {
+            msg = correoMqttException.getInfo();
         } else {
             msg = "Exception in business layer: " + exception.getMessage();
         }

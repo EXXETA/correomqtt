@@ -163,7 +163,7 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
                     localPortforwarder.close();
                     sshClient.disconnect();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    getLogger().warn(MarkerFactory.getMarker(configDTO.getName()), "SSH Tunnel disconnecting unsuccessful.", e);
                 }
                 getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Disconnected by {}. Connection to broker disconnected by user.", context.getSource());
             }

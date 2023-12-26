@@ -1,6 +1,5 @@
 package org.correomqtt.gui.window;
 
-import javafx.scene.control.Alert;
 import javafx.scene.control.Dialog;
 import javafx.stage.Stage;
 import javafx.stage.Window;

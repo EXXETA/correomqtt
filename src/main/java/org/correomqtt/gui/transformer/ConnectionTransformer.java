@@ -7,7 +7,6 @@ import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ConnectionTransformer {
 
