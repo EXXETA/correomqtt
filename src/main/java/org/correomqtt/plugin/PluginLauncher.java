@@ -54,7 +54,7 @@ public class PluginLauncher {
 
             // Already installed?
             if (pluginManager.getPlugin(pluginId) != null) {
-                LOGGER.info("Skip installing bundled plugin '{}', as it is already installed.", pluginId);
+                LOGGER.debug("Skip installing bundled plugin '{}', as it is already installed.", pluginId);
                 continue;
             }
 

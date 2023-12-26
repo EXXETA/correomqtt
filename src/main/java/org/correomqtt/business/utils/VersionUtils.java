@@ -17,8 +17,6 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-import static org.correomqtt.business.utils.VendorConstants.GITHUB_API_LATEST;
-
 public class VersionUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VersionUtils.class);
@@ -49,7 +47,7 @@ public class VersionUtils {
      */
     public static String isNewerVersionAvailable() throws IOException, ParseException {
 
-        URL url = new URL(GITHUB_API_LATEST);
+        URL url = new URL(VendorConstants.GITHUB_API_LATEST());
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", "application/json");

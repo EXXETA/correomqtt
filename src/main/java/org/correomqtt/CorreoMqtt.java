@@ -56,6 +56,7 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
 
         LOGGER.info("Application started.");
         LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
+        LOGGER.info("JavaFX: {}, Runtime: {}",  System.getProperty("javafx.version"),System.getProperty("javafx.runtime.version"));
         LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
 
         StartupDispatcher.getInstance().addObserver(this);

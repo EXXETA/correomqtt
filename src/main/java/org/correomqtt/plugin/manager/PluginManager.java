@@ -8,6 +8,7 @@ import org.correomqtt.business.model.HooksDTO;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.provider.PluginConfigProvider;
 import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.utils.VendorConstants;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.model.PluginInfoDTO;
 import org.correomqtt.plugin.repository.BundledPluginList;
@@ -45,15 +46,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.correomqtt.business.utils.VendorConstants.BUNDLED_PLUGINS_URL;
-import static org.correomqtt.business.utils.VendorConstants.DEFAULT_REPO_URL;
-
 public class PluginManager extends JarPluginManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginManager.class);
     public static final String DEFAULT_REPO_ID = "default";
 
     private static PluginManager instance;
+
+    private BundledPluginList.BundledPlugins bundledPlugins;
 
     private PluginManager() {
         // private constructor
@@ -108,14 +108,18 @@ public class PluginManager extends JarPluginManager {
 
     public BundledPluginList.BundledPlugins getBundledPlugins() {
 
+        if(bundledPlugins != null){
+            return bundledPlugins;
+        }
+
         SettingsDTO settings = SettingsProvider.getInstance().getSettings();
 
-        if(settings.isInstallBundledPlugins()) {
+        if (settings.isInstallBundledPlugins()) {
 
             String bundledPluginUrl = settings.getBundledPluginsUrl();
 
-            if(bundledPluginUrl == null){
-                bundledPluginUrl = BUNDLED_PLUGINS_URL;
+            if (bundledPluginUrl == null) {
+                bundledPluginUrl = VendorConstants.BUNDLED_PLUGINS_URL();
             }
 
             try {
@@ -126,13 +130,14 @@ public class PluginManager extends JarPluginManager {
                 if (bundledPlugins == null) {
                     return BundledPluginList.BundledPlugins.builder().build();
                 }
+                this.bundledPlugins = bundledPlugins;
                 return bundledPlugins;
 
             } catch (IOException e) {
                 LOGGER.warn("Unable to load bundled plugin list from {}.", bundledPluginUrl);
                 return BundledPluginList.BundledPlugins.builder().build();
             }
-        }else {
+        } else {
             LOGGER.info("Do not install bundled plugins.");
             return BundledPluginList.BundledPlugins.builder().build();
         }
@@ -158,10 +163,11 @@ public class PluginManager extends JarPluginManager {
 
         if (settings.isSearchUpdates()) {
             if (settings.isUseDefaultRepo()) {
+                String defaultRepo = VendorConstants.DEFAULT_REPO_URL();
                 try {
-                    repos.add(new CorreoUpdateRepository(DEFAULT_REPO_ID, DEFAULT_REPO_URL));
+                    repos.add(new CorreoUpdateRepository(DEFAULT_REPO_ID, defaultRepo));
                 } catch (MalformedURLException e) {
-                    LOGGER.error("Invalid url for repo {} with url {}", DEFAULT_REPO_ID, DEFAULT_REPO_URL);
+                    LOGGER.error("Invalid url for repo {} with url {}", DEFAULT_REPO_ID, defaultRepo);
                 }
             }
             settings.getPluginRepositories().forEach((id, url) -> {

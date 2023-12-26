@@ -2,6 +2,7 @@ package org.correomqtt.gui.keyring;
 
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.business.keyring.Keyring;
+import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.SettingsDTO;
@@ -136,7 +137,16 @@ public class KeyringHandler {
         }
 
         if (keyring == null) {
-            keyring = KeyringFactory.create(); // Not null, will produce UserInputKeyring for sure
+            List<Keyring> keyrings = KeyringFactory.create(); // Not null, will produce UserInputKeyring for sure
+            if(keyrings.size() <= 2){
+                keyring = keyrings.get(0);
+            }else{
+                keyring = AlertHelper.select("Multiple KyringsFound","Select a keyring",keyrings); //TODO
+            }
+        }
+
+        if(keyring == null){
+            throw new KeyringException("No supported keyring backend found.");
         }
 
         String newKeyringIdentifier = keyring.getIdentifier();
