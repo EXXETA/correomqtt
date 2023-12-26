@@ -20,6 +20,7 @@ import org.correomqtt.business.dispatcher.PreloadingObserver;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.PreloaderViewController;
+import org.correomqtt.gui.window.StageHelper;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -75,14 +76,7 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
         this.preloaderStage = primaryStage;
         preloaderStage.setScene(scene);
 
-        String xdgCurrentDesktop = System.getenv("XDG_CURRENT_DESKTOP");
-
-        if("i3".equals(xdgCurrentDesktop) || "sway".equals(xdgCurrentDesktop)) {
-            preloaderStage.setTitle("CorreoMQTT");
-            preloaderStage.initStyle(StageStyle.UTILITY);
-        }else{
-            preloaderStage.initStyle(StageStyle.UNDECORATED);
-        }
+        StageHelper.enforceFloatingWindow(preloaderStage);
 
         RotateTransition rotateTransition = new RotateTransition();
         rotateTransition.setAxis(Rotate.Z_AXIS);

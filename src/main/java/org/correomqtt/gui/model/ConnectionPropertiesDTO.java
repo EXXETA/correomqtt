@@ -1,15 +1,28 @@
 package org.correomqtt.gui.model;
 
 import javafx.beans.Observable;
-import javafx.beans.property.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.MapProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleMapProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.util.Callback;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.correomqtt.business.model.Auth;
+import org.correomqtt.business.model.ConnectionUISettings;
+import org.correomqtt.business.model.CorreoMqttVersion;
 import org.correomqtt.business.model.Lwt;
+import org.correomqtt.business.model.Proxy;
 import org.correomqtt.business.model.Qos;
-import org.correomqtt.business.model.*;
+import org.correomqtt.business.model.TlsSsl;
 
 import java.util.HashMap;
 

@@ -1,10 +1,10 @@
 package org.correomqtt.gui.contextmenu;
 
-import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.gui.model.MessagePropertiesDTO;
-import org.correomqtt.gui.helper.ClipboardHelper;
 import javafx.event.ActionEvent;
 import javafx.scene.control.MenuItem;
+import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.gui.helper.ClipboardHelper;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

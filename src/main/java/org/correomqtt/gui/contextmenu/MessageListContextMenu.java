@@ -1,9 +1,9 @@
 package org.correomqtt.gui.contextmenu;
 
-import org.correomqtt.gui.model.MessagePropertiesDTO;
 import javafx.event.ActionEvent;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
