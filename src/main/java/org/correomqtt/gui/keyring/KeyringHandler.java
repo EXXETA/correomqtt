@@ -22,7 +22,7 @@ public class KeyringHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyringHandler.class);
 
     private static KeyringHandler instance = null;
-    private ResourceBundle resources;
+    private final ResourceBundle resources;
     private String masterPassword;
     private static final String KEYRING_LABEL = "CorreoMQTT_MasterPassword";
     private Keyring keyring;

@@ -18,7 +18,7 @@ public class ConnectionTransformer {
     public static List<ConnectionPropertiesDTO> dtoListToPropList(List<ConnectionConfigDTO> connectionDTOList) {
         return connectionDTOList.stream()
                 .map(ConnectionTransformer::dtoToProps)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static ConnectionPropertiesDTO dtoToProps(ConnectionConfigDTO dto) {
@@ -57,7 +57,7 @@ public class ConnectionTransformer {
     public static List<ConnectionConfigDTO> propsListToDtoList(ObservableList<ConnectionPropertiesDTO> connectionPropList) {
         return connectionPropList.stream()
                 .map(ConnectionTransformer::propsToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static ConnectionConfigDTO propsToDto(ConnectionPropertiesDTO props) {

@@ -178,7 +178,7 @@ public class ConnectionOnbordingViewController extends BaseController implements
         connectionListView.getItems().clear();
         connectionListView.getItems().addAll(resultList.stream()
                 .sorted(Comparator.comparing(o -> sorted.get(o.getId())))
-                .collect(Collectors.toList()));
+                .toList());
 
         boolean isEmpty = connectionListView.getItems().isEmpty();
         connectionListView.setVisible(!isEmpty);

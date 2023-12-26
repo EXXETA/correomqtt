@@ -48,7 +48,7 @@ public class AlertHelper {
                 dialogPane.getStylesheets().add(cssPath);
             }
             alert.setTitle(title);
-            alert.initOwner(Stage.getWindows().stream().filter(Window::isShowing).findFirst().orElse(null));
+            alert.initOwner(Window.getWindows().stream().filter(Window::isShowing).findFirst().orElse(null));
             alert.setHeaderText(null);
             alert.setContentText(content);
             alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
@@ -201,7 +201,6 @@ public class AlertHelper {
                 dialogPane.getStylesheets().add(cssPath);
             }
             dialog.setTitle(title);
-            // dialog.setHeaderText(header);
             dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK);
 
             ComboBox<T> comboBox = new ComboBox<>();

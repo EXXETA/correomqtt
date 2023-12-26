@@ -36,7 +36,7 @@ public class KeyringFactory {
     public static List<Keyring> getSupportedKeyrings() {
         return getAllKeyrings().stream()
                 .filter(Keyring::isSupported)
-                .collect(Collectors.toList());
+                .toList();
     }
 
 }
