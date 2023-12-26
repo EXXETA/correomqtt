@@ -3,6 +3,7 @@ package org.correomqtt.plugin.transformer;
 import com.github.zafarkhaja.semver.Version;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.plugin.model.PluginInfoDTO;
+import org.pf4j.Plugin;
 import org.pf4j.PluginDescriptor;
 import org.pf4j.PluginWrapper;
 import org.pf4j.update.PluginInfo;
@@ -10,6 +11,10 @@ import org.pf4j.update.PluginInfo;
 import java.util.Comparator;
 
 public class PluginInfoTransformer {
+
+    private PluginInfoTransformer(){
+        // private constructor
+    }
 
     public static PluginInfoDTO wrapperToDTO(PluginWrapper pluginWrapper, String installedVersion, boolean disabled, boolean bundled){
 
