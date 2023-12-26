@@ -2,6 +2,8 @@ package org.correomqtt.gui.controller;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Menu;
@@ -83,6 +85,12 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private ResourceBundle resources;
     private Map<String, ConnectionViewController> conntectionViewControllers;
 
+    private ConnectionOnbordingViewController connectionOnboardingViewController;
+
+    private LogTabController logViewController;
+
+    private String closedTabId;
+
     public MainViewController() {
         ConfigDispatcher.getInstance().addObserver(this);
     }
@@ -125,6 +133,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this, this,this,this);
         addTab.setContent(loadResult.getMainPane());
         resources = loadResult.getResourceBundle();
+        connectionOnboardingViewController = loadResult.getController();
 
         selectionModel = tabPane.getSelectionModel();
         selectionModel.select(addTab);
@@ -132,7 +141,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void createLogTab() {
         LoaderResult<LogTabController> result = LogTabController.load();
-        LogTabController logViewController = result.getController();
+        logViewController = result.getController();
         logTab.setClosable(false);
         logAnchorPane.getChildren().add(logViewController.logViewAnchor);
         logViewController.logViewAnchor.prefWidthProperty().bind(logAnchorPane.widthProperty());
@@ -199,9 +208,10 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             LoaderResult<ConnectionViewController> result = ConnectionViewController.load(config.getId(), this);
             result.getController().setTabId(tabId);
             tab.setContent(result.getMainPane());
-            tab.setOnCloseRequest(event -> result.getController().disconnect());
+            tab.setOnCloseRequest(event -> this.onTabClose(result, tabId));
 
             conntectionViewControllers.put(tabId, result.getController());
+            System.out.println("Main connect: " + conntectionViewControllers.toString());
 
             tabPane.getTabs().add(tabPane.getTabs().size() - 1, tab);
             selectionModel = tabPane.getSelectionModel();
@@ -217,6 +227,11 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                     resources.getString("mainViewControllerAlreadyUsedContent"));
         }
 
+    }
+
+    private void onTabClose(LoaderResult<ConnectionViewController> result, String tabId) {
+        closedTabId = tabId;
+        result.getController().disconnect(true);
     }
 
     @FXML
@@ -253,10 +268,26 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     @Override
+    public void onCleanup() {
+        ConnectionViewController connectionViewController = conntectionViewControllers.get(this.closedTabId);
+        connectionViewController.cleanUp();
+        connectionOnboardingViewController.cleanUp();
+        logViewController.cleanUp();
+
+        ConfigDispatcher.getInstance().removeObserver(this);
+        conntectionViewControllers.remove(this.closedTabId);
+    }
+
+    @Override
+    public void cleanUpProvider(ConnectionPropertiesDTO config) {
+        PersistPublishHistoryProvider.getInstance(config.getId()).cleanUp();
+        PersistPublishMessageHistoryProvider.getInstance(config.getId()).cleanUp();
+        PersistSubscriptionHistoryProvider.getInstance(config.getId()).cleanUp();
+    }
+
     public void onDisconnect() {
         calcTabWidth();
     }
-
     @Override
     public void setTabDirty(String tabId) {
         tabPane.getTabs().stream()

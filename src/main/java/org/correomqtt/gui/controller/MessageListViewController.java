@@ -487,6 +487,14 @@ public class MessageListViewController extends BaseConnectionController implemen
         // do nothing
     }
 
+    public void cleanUp() {
+        if (this.detailViewController != null) {
+            detailViewController.cleanUp();
+        }
+
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+    }
+
     @Override
     public void showDetailsInSeparateWindow(MessagePropertiesDTO messageDTO) {
         // do nothing

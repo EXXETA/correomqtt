@@ -532,4 +532,15 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     public void updatedPublishes(String connectionId) {
         initTopicComboBox();
     }
+
+    public void cleanUp() {
+        this.messageListViewController.cleanUp();
+
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        PublishDispatcher.getInstance().removeObserver(this);
+        ConfigDispatcher.getInstance().removeObserver(this);
+        ShortcutDispatcher.getInstance().removeObserver(this);
+        ImportMessageDispatcher.getInstance().removeObserver(this);
+        PersistPublishHistoryDispatcher.getInstance().removeObserver(this);
+    }
 }

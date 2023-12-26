@@ -388,4 +388,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             setGuiConnecting();
         });
     }
+    public void cleanUp() {
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+    }
 }

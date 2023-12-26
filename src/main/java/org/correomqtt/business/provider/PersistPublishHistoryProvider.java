@@ -134,15 +134,7 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
     }
 
     @Override
-    public void onDisconnect() {
-
-        PublishGlobalDispatcher.getInstance().removeObserver(this);
-        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
-        ConfigDispatcher.getInstance().removeObserver(this);
-
-        instances.remove(getConnectionId());
-        historyDTOs.remove(getConnectionId());
-    }
+    public void onDisconnect() {}
 
     @Override
     public void onDisconnectFailed(Throwable exception) {
@@ -217,6 +209,15 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
     @Override
     public void onConfigPrepareFailed() {
         // nothing to do
+    }
+
+    public void cleanUp() {
+        PublishGlobalDispatcher.getInstance().removeObserver(this);
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        ConfigDispatcher.getInstance().removeObserver(this);
+
+        instances.remove(getConnectionId());
+        historyDTOs.remove(getConnectionId());
     }
 }
 
