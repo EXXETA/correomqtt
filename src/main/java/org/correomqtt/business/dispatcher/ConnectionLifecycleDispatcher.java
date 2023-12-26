@@ -6,8 +6,7 @@ public class ConnectionLifecycleDispatcher extends BaseConnectionDispatcher<Conn
 
     private static ConnectionLifecycleDispatcher instance;
 
-    private ConnectionLifecycleDispatcher() {
-    }
+    private ConnectionLifecycleDispatcher() {}
 
     public static synchronized ConnectionLifecycleDispatcher getInstance() {
         if (instance == null) {

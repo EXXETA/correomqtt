@@ -192,10 +192,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     }
 
     @Override
-    public void onDisconnect() {
-        instances.remove(getConnectionId());
-        historyDTOs.remove(getConnectionId());
-    }
+    public void onDisconnect() {}
 
     @Override
     public void onDisconnectFailed(Throwable exception) {
@@ -215,6 +212,15 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     @Override
     public void onReconnectFailed(AtomicInteger triedReconnects, int maxReconnects) {
         // nothing to do
+    }
+
+    public void cleanUp() {
+        PublishGlobalDispatcher.getInstance().removeObserver(this);
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        ConfigDispatcher.getInstance().removeObserver(this);
+
+        instances.remove(getConnectionId());
+        historyDTOs.remove(getConnectionId());
     }
 }
 

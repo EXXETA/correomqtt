@@ -507,5 +507,15 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     public void setTabDirty() {
         delegate.setTabDirty();
     }
+
+    public void cleanUp() {
+        this.messageListViewController.cleanUp();
+
+        SubscribeDispatcher.getInstance().removeObserver(this);
+        UnsubscribeDispatcher.getInstance().removeObserver(this);
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        ShortcutDispatcher.getInstance().removeObserver(this);
+        PersistSubscriptionHistoryDispatcher.getInstance().removeObserver(this);
+    }
 }
 

@@ -13,6 +13,7 @@ import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.utils.PlatformUtils;
 
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AlertController extends BaseController implements
         ConfigObserver,
@@ -31,7 +32,6 @@ public class AlertController extends BaseController implements
         SecretStoreDispatcher.getInstance().addObserver(this);
         PersistPublishHistoryDispatcher.getInstance().addObserver(this);
         PersistSubscriptionHistoryDispatcher.getInstance().addObserver(this);
-
     }
 
     public static void activate() {
