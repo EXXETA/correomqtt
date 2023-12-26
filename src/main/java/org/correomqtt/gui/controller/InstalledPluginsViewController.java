@@ -221,9 +221,8 @@ public class InstalledPluginsViewController extends BaseController implements
     @Override
     public void onPluginUninstallSucceeded(String pluginId) {
         reloadData(pluginId);
-        Platform.runLater(() -> {
-            AlertHelper.info(resources.getString("pluginChangeTitle"), resources.getString("pluginChangeContent"));
-        });
+        Platform.runLater(() -> AlertHelper.info(resources.getString("pluginChangeTitle"),
+                resources.getString("pluginChangeContent")));
     }
 
     @Override
@@ -267,9 +266,8 @@ public class InstalledPluginsViewController extends BaseController implements
     @Override
     public void onPluginEnableSucceeded(String pluginId) {
         reloadData(pluginId);
-        Platform.runLater(() -> {
-            AlertHelper.info(resources.getString("pluginChangeTitle"), resources.getString("pluginChangeContent"));
-        });
+        Platform.runLater(() -> AlertHelper.info(resources.getString("pluginChangeTitle"),
+                resources.getString("pluginChangeContent")));
     }
 
     @Override

@@ -1,24 +1,18 @@
 package org.correomqtt.gui.controller;
 
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import org.correomqtt.business.provider.PluginConfigProvider;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.WindowHelper;
-import org.correomqtt.plugin.manager.PluginManager;
-import org.pf4j.PluginState;
 import org.pf4j.PluginWrapper;
 
 import java.io.File;
@@ -61,10 +55,6 @@ public class PluginsViewController extends BaseController {
     @FXML
     private Tab installedPluginsTab;
 
-    private boolean isRestartRequired;
-
-    private PluginManager pluginSystem;
-
     public static void showAsDialog() {
         Map<Object, Object> properties = new HashMap<>();
         properties.put(WindowProperty.WINDOW_TYPE, WindowType.PLUGIN_SETTINGS);
@@ -88,7 +78,6 @@ public class PluginsViewController extends BaseController {
 
     @FXML
     public void initialize() {
-        this.pluginSystem = PluginManager.getInstance();
 
         setupInstalledPluginTab();
         setupMarketplaceTab();

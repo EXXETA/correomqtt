@@ -13,7 +13,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.dispatcher.PreloadingObserver;
@@ -65,14 +64,12 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
             configurator.setContext(loggerContext);
             configurator.doConfigure(configStream);
         } catch (JoranException | IOException e) {
-            e.printStackTrace();
+            System.out.println("Problem configuring logger: " + e.getMessage());
         }
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-       // com.sun.glass.ui.Application.GetApplication().setName("org.correomqtt.CorreoMqtt");
-
         this.preloaderStage = primaryStage;
         preloaderStage.setScene(scene);
 

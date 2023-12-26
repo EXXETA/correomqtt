@@ -13,7 +13,6 @@ import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.utils.PlatformUtils;
 
 import java.util.ResourceBundle;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class AlertController extends BaseController implements
         ConfigObserver,

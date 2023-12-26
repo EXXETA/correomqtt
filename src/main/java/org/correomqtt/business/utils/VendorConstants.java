@@ -20,19 +20,19 @@ public class VendorConstants {
     private static final Map<String, String> CACHE = new HashMap<>();
 
     private static String getFromCache(String envOverride, String defaultValue) {
-        if (!CACHE.containsKey(envOverride)) {
+        return CACHE.computeIfAbsent(envOverride, k -> {
             String env = System.getenv(envOverride);
             LOGGER.error("Override {} via ENV: {}", envOverride, env);
             CACHE.put(envOverride, Objects.requireNonNullElse(env, defaultValue));
-        }
-        return CACHE.get(envOverride);
+            return defaultValue;
+        });
     }
 
-    public static String BUNDLED_PLUGINS_URL() {
+    public static String getBundledPluginsUrl() {
         return getFromCache(BUNDLED_PLUGINS_URL_ENV_OVERRIDE, BUNDLED_PLUGINS_URL_DEFAULT);
     }
 
-    public static String DEFAULT_REPO_URL() {
+    public static String getDefaultRepoUrl() {
         return getFromCache(DEFAULT_REPO_URL_ENV_OVERRIDE, DEFAULT_REPO_URL_DEFAULT);
     }
 

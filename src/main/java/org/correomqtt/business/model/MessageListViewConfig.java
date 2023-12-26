@@ -7,8 +7,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -17,7 +19,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MessageListViewConfig {
-    HashMap<LabelType, Boolean> labelVisibilityMap = new HashMap<>();
+    Map<LabelType, Boolean> labelVisibilityMap = new EnumMap<>(LabelType.class);
 
     public MessageListViewConfig(){
         addLabel(LabelType.RETAINED);
@@ -26,9 +28,7 @@ public class MessageListViewConfig {
     }
 
     public void addLabel(LabelType label) {
-        if(!labelVisibilityMap.containsKey(label)){
-            labelVisibilityMap.put(label, false);
-        }
+        labelVisibilityMap.putIfAbsent(label, false);
     }
 
     public void addLabels(List<LabelType> labels) {
@@ -36,7 +36,7 @@ public class MessageListViewConfig {
     }
 
     public boolean isVisible(LabelType label) {
-        return labelVisibilityMap.get(label) != null ? labelVisibilityMap.get(label) : false;
+        return labelVisibilityMap.get(label) != null && labelVisibilityMap.get(label);
     }
 
     public void setVisibility(LabelType label, boolean visibility) {

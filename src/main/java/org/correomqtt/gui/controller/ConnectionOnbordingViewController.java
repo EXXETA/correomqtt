@@ -59,7 +59,10 @@ public class ConnectionOnbordingViewController extends BaseController implements
     private ConnectionExportViewDelegate connectionExportViewDelegate;
     private ConnectionImportViewDelegate connectionImportViewDelegate;
 
-    public ConnectionOnbordingViewController(ConnectionOnboardingDelegate connectionsOnboardingDelegate, ConnectionSettingsViewDelegate connectionSettingsViewDelegate, ConnectionExportViewDelegate connectionExportViewDelegate, ConnectionImportViewDelegate connectionImportViewDelegate) {
+    public ConnectionOnbordingViewController(ConnectionOnboardingDelegate connectionsOnboardingDelegate,
+                                             ConnectionSettingsViewDelegate connectionSettingsViewDelegate,
+                                             ConnectionExportViewDelegate connectionExportViewDelegate,
+                                             ConnectionImportViewDelegate connectionImportViewDelegate) {
         super();
         this.connectionsOnboardingDelegate = connectionsOnboardingDelegate;
         this.connectionsSettingsViewDelegate = connectionSettingsViewDelegate;

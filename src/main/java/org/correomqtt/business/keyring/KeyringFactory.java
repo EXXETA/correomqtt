@@ -30,7 +30,8 @@ public class KeyringFactory {
         return PluginManager.getInstance().getExtensions(KeyringHook.class)
                 .stream()
                 .sorted(Comparator.comparingInt(Keyring::getSortIndex))
-                .collect(Collectors.toList());
+                .map(kh -> (Keyring) kh)
+                .toList();
     }
 
     public static List<Keyring> getSupportedKeyrings() {
