@@ -29,7 +29,7 @@ public class ConnectionConfigDTO {
     private String password;
     private boolean cleanSession;
     @Builder.Default
-    private CorreoMqttVersion mqttVersion = CorreoMqttVersion.MQTT_3_1_1;
+    private CorreoMqttVersion mqttVersion = CorreoMqttVersion.MQTT_5_0;
     @Builder.Default
     private TlsSsl ssl = TlsSsl.OFF;
     private String sslKeystore;

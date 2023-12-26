@@ -544,7 +544,7 @@ public class ConnectionSettingsViewController extends BaseController
 
     private boolean checkDirty() {
         if (activeConnectionConfigDTO != null && activeConnectionConfigDTO.isDirty()) {
-            if (confirmUnsavedConnectionSync()) {
+            if (!confirmUnsavedConnectionSync()) {
                 return handleConfirmedConnectionSync();
             } else {
                 return handleUnconfirmedConnectionSync();
@@ -612,7 +612,7 @@ public class ConnectionSettingsViewController extends BaseController
     private void handleCancelClick(ConnectionPropertiesDTO config) {
         if (config != null && config.isDirty()) {
 
-            if (confirmUnsavedConnectionSync()) {
+            if (!confirmUnsavedConnectionSync()) {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Unsaved connection status confirmed: {}", activeConnectionConfigDTO.getId());
                 }
@@ -814,12 +814,15 @@ public class ConnectionSettingsViewController extends BaseController
 
         newConfig.getUnpersistedProperty().set(true);
         newConfig.getDirtyProperty().set(true);
+        newConfig.getNewProperty().set(true);
 
         connectionsListView.getItems().add(newConfig);
         connectionsListView.getSelectionModel().select(newConfig);
         newConfig.getUnpersistedProperty().set(true);
         showConnection(newConfig);
         setDirty(true);
+
+        activeConnectionConfigDTO.getNewProperty().set(true);
 
         nameTextField.requestFocus();
     }
