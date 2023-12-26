@@ -252,10 +252,6 @@ public class PublishViewController extends BaseMessageBasedViewController implem
 
     @Override
     public void onConnect() {
-        topicComboBox.valueProperty().set(null);
-        payloadCodeArea.replaceText("");
-        retainedCheckBox.setSelected(false);
-
         // reverse order, because first message in history must be last one to add
         new LinkedList<>(PersistPublishMessageHistoryProvider.getInstance(getConnectionId())
                 .getMessages(getConnectionId()))
