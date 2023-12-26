@@ -1,9 +1,9 @@
 package org.correomqtt.gui.transformer;
 
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import javafx.collections.ObservableList;
 import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
 
 import java.util.List;
@@ -18,7 +18,7 @@ public class ConnectionTransformer {
     public static List<ConnectionPropertiesDTO> dtoListToPropList(List<ConnectionConfigDTO> connectionDTOList) {
         return connectionDTOList.stream()
                 .map(ConnectionTransformer::dtoToProps)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static ConnectionPropertiesDTO dtoToProps(ConnectionConfigDTO dto) {
@@ -57,7 +57,7 @@ public class ConnectionTransformer {
     public static List<ConnectionConfigDTO> propsListToDtoList(ObservableList<ConnectionPropertiesDTO> connectionPropList) {
         return connectionPropList.stream()
                 .map(ConnectionTransformer::propsToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static ConnectionConfigDTO propsToDto(ConnectionPropertiesDTO props) {

@@ -1,5 +1,15 @@
 package org.correomqtt.gui.controller;
 
+import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.AnchorPane;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.dispatcher.PersistSubscriptionHistoryDispatcher;
@@ -32,16 +42,6 @@ import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.transformer.SubscriptionTransformer;
-import javafx.collections.FXCollections;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.AnchorPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

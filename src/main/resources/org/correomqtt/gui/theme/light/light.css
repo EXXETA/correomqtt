@@ -470,7 +470,6 @@
 }
 
 .toggle-button {
-    -fx-background-color: transparent;
     -fx-background-radius: 2;
     -fx-border-radius: 2;
     -fx-background-color: #eff0f1; /* Breeze */

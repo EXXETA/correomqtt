@@ -1,12 +1,12 @@
 package org.correomqtt.plugin.model;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
