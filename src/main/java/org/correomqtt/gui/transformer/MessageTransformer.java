@@ -48,6 +48,7 @@ public class MessageTransformer {
         to.setPublishStatus(from.getPublishStatus());
         return to;
     }
+
     public static MessagePropertiesDTO mergeProps(MessageExtensionDTO from, MessagePropertiesDTO to) {
         to.getTopicProperty().setValue(from.getTopic());
         to.getPayloadProperty().setValue(from.getPayload());

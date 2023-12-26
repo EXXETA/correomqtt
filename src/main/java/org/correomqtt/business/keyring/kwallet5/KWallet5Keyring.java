@@ -48,7 +48,12 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
 
     @Override
     public boolean isSupported() {
-        return SystemUtils.IS_OS_LINUX && isEnabled();
+        try {
+            return SystemUtils.IS_OS_LINUX && isEnabled();
+        }catch(KeyringException e){
+            LOGGER.debug("KWallet5 is not supported", e);
+            return false;
+        }
     }
 
     @Override

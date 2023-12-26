@@ -55,13 +55,14 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
     @Override
     public void init() throws IOException {
 
-        if(LOGGER.isInfoEnabled()) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Application started.");
             LOGGER.info("JVM: {} {} {}", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
+            LOGGER.info("JavaFX: {}, Runtime: {}", System.getProperty("javafx.version"), System.getProperty("javafx.runtime.version"));
             LOGGER.info("OS: {} {} {}", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"));
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             String xdgCurrentDesktop = System.getenv("XDG_CURRENT_DESKTOP");
-            LOGGER.info("ENV: {}{} x {} ", xdgCurrentDesktop != null?xdgCurrentDesktop + " ":"", screenSize.getWidth(), screenSize.getHeight());
+            LOGGER.info("ENV: {}{} x {} ", xdgCurrentDesktop != null ? xdgCurrentDesktop + " " : "", screenSize.getWidth(), screenSize.getHeight());
             LOGGER.info("CorreoMQTT version is {}", VersionUtils.getVersion());
         }
 
@@ -80,17 +81,17 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
             initUpdatesOnFirstStart(settings);
         }
 
-        boolean doPluginUpdates  = false;
         if (settings.isSearchUpdates()) {
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderSearchingUpdates"));
+            PluginCheckUtils.checkMigration();
+            new PluginLauncher().start(false);
             try {
-                doPluginUpdates = checkForUpdates();
-            } catch (CorreoMqttUnableToCheckVersionException ignored) {
+                checkForUpdates();
+            } catch (CorreoMqttUnableToCheckVersionException e) {
+                LOGGER.debug("Unable to check version", e);
             }
         }
 
-        PluginCheckUtils.checkMigration();
-        new PluginLauncher().start(doPluginUpdates);
 
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderKeyring"));
 

@@ -42,7 +42,7 @@
         <maven.compiler.release>17</maven.compiler.release>
         <sonar.organization>farion</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <javafx.version>17.0.7</javafx.version>
+        <javafx.version>22-ea+16</javafx.version>
         <lombok.version>1.18.22</lombok.version>
     </properties>
 

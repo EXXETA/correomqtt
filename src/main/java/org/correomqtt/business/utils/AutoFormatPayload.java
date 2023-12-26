@@ -8,6 +8,7 @@ import org.correomqtt.plugin.manager.PluginManager;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Objects;
 
