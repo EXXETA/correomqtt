@@ -1,15 +1,12 @@
 package org.correomqtt.gui.cell;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.*;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
-import org.correomqtt.business.model.CorreoMqttVersion;
-import org.correomqtt.business.model.Lwt;
-import org.correomqtt.business.model.Proxy;
-import org.correomqtt.business.model.TlsSsl;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.slf4j.Logger;
@@ -18,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ResourceBundle;
 
 public class ExportConnectionCell extends ListCell<ConnectionPropertiesDTO> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionCell.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExportConnectionCell.class);
     public static final String DIRTY_CLASS = "dirty";
     public static final String INACTIVE_CLASS = "inactive";
     private final ListView<ConnectionPropertiesDTO> listView;

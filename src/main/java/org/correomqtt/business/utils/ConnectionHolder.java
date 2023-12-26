@@ -1,11 +1,8 @@
 package org.correomqtt.business.utils;
 
-import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
-import org.correomqtt.business.dispatcher.ApplicationLifecycleObserver;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.business.services.DisconnectService;
 
 import java.util.Comparator;
 import java.util.HashSet;
@@ -13,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class ConnectionHolder {
 

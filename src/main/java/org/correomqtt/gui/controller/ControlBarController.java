@@ -322,8 +322,8 @@ public class ControlBarController extends BaseConnectionController implements Co
     @Override
     public void onConnectionFailed(Throwable e) {
         String msg;
-        if (e instanceof CorreoMqttException) {
-            msg = ((CorreoMqttException) e).getInfo();
+        if (e instanceof CorreoMqttException correoMqttException) {
+            msg = correoMqttException.getInfo();
         } else {
             msg = e.getClass().toString() + ":" + e.getMessage();
         }

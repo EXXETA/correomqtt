@@ -19,7 +19,6 @@ import org.correomqtt.plugin.spi.ExtensionId;
 import org.correomqtt.plugin.spi.IncomingMessageHook;
 import org.correomqtt.plugin.spi.MessageValidatorHook;
 import org.correomqtt.plugin.spi.OutgoingMessageHook;
-import org.correomqtt.plugin.spi.OutgoingMessageHookDTO;
 import org.correomqtt.plugin.transformer.PluginInfoTransformer;
 import org.pf4j.JarPluginManager;
 import org.pf4j.PluginState;
@@ -56,29 +55,6 @@ public class PluginManager extends JarPluginManager {
         super(Path.of(PluginConfigProvider.getInstance().getPluginPath()));
     }
 
-    /*
-    @Override
-    protected PluginFactory createPluginFactory() {
-        return new PermissionPluginFactory();
-    }
-
-    @Override
-    protected PluginLoader createPluginLoader() {
-        // load only jar plugins
-        return new PermissionJarPluginLoader(this);
-    }
-
-    @Override
-    protected PluginDescriptorFinder createPluginDescriptorFinder() {
-        // read plugin descriptor from jar's manifest
-        return new ManifestPluginDescriptorFinder();
-    }
-
-    @Override
-    protected ExtensionFactory createExtensionFactory() {
-        return new PluginExtensionFactory();
-    }*/
-
     public static PluginManager getInstance() {
         if (instance == null) {
             instance = new PluginManager();
@@ -100,7 +76,7 @@ public class PluginManager extends JarPluginManager {
                         isPluginDisabled(wrapper.getPluginId()),
                         isPluginBundled(wrapper.getPluginId())))
                 .sorted(Comparator.comparing(PluginInfoDTO::getName))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public BundledPluginList.BundledPlugins getBundledPlugins() {
@@ -116,7 +92,7 @@ public class PluginManager extends JarPluginManager {
             String bundledPluginUrl = settings.getBundledPluginsUrl();
 
             if (bundledPluginUrl == null) {
-                bundledPluginUrl = VendorConstants.BUNDLED_PLUGINS_URL();
+                bundledPluginUrl = VendorConstants.getBundledPluginsUrl();
             }
 
             try {
@@ -150,7 +126,7 @@ public class PluginManager extends JarPluginManager {
         return getUpdateManager().getPlugins().stream()
                 .map(info -> PluginInfoTransformer.pf4jToDTO(info, getInstalledVersion(info.id), isPluginDisabled(info.id)))
                 .sorted(Comparator.comparing(PluginInfoDTO::getName))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public UpdateManager getUpdateManager() {
@@ -160,7 +136,7 @@ public class PluginManager extends JarPluginManager {
 
         if (settings.isSearchUpdates()) {
             if (settings.isUseDefaultRepo()) {
-                String defaultRepo = VendorConstants.DEFAULT_REPO_URL();
+                String defaultRepo = VendorConstants.getDefaultRepoUrl();
                 try {
                     repos.add(new CorreoUpdateRepository(DEFAULT_REPO_ID, defaultRepo));
                 } catch (MalformedURLException e) {
@@ -237,14 +213,14 @@ public class PluginManager extends JarPluginManager {
                                 return extension;
                             })
                             .filter(Objects::nonNull)
-                            .collect(Collectors.toList());
+                            .toList();
 
                     return DetailViewManipulatorTask.builder()
                             .name(detailViewTaskDefinition.getName())
                             .hooks(hooks)
                             .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<MessageValidatorHook<?>> getMessageValidators(String topic) {
@@ -262,7 +238,8 @@ public class PluginManager extends JarPluginManager {
                             }
                             enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                             return extension;
-                        }).collect(Collectors.toList()))
+                        })
+                        .toList())
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }

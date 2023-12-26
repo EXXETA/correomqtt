@@ -47,7 +47,6 @@ public class ConnectionExportViewController extends BaseController implements Ex
     private final ConnectionExportViewDelegate delegate;
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
     private ObservableList<ConnectionConfigDTO> connectionConfigDTOS = FXCollections.observableArrayList();
-    private ConnectionPropertiesDTO activeConnectionConfigDTO;
 
     private static ResourceBundle resources;
 
@@ -98,7 +97,7 @@ public class ConnectionExportViewController extends BaseController implements Ex
         passwordField.setDisable(true);
         passwordField.setVisible(false);
         passwordCheckBox.selectedProperty().addListener((observableValue, oldValue, newValue) -> {
-            if (newValue) {
+            if (Boolean.TRUE.equals(newValue)) {
                 passwordField.setVisible(true);
                 passwordField.setDisable(false);
             } else {

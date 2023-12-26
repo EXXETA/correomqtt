@@ -5,7 +5,6 @@ import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
 import org.correomqtt.business.dispatcher.PublishDispatcher;
 import org.correomqtt.business.exception.CorreoMqttExecutionException;
 import org.correomqtt.business.model.MessageDTO;
-import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;

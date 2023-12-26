@@ -4,7 +4,6 @@ import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.plugin.model.PluginInfoDTO;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class PluginTransformer {
 

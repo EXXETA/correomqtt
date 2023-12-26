@@ -152,9 +152,8 @@ public class MarketplaceViewController extends BaseController implements
     @Override
     public void onPluginInstallSucceeded(String pluginId, String version) {
         reloadData(pluginId);
-        Platform.runLater(() -> {
-            AlertHelper.info(resources.getString("pluginChangeTitle"), resources.getString("pluginChangeContent"));
-        });
+        Platform.runLater(() -> AlertHelper.info(resources.getString("pluginChangeTitle"),
+                resources.getString("pluginChangeContent")));
     }
 
     private void reloadData(String pluginId) {

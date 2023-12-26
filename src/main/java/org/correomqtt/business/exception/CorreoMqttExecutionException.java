@@ -19,8 +19,8 @@ public class CorreoMqttExecutionException extends CorreoMqttException {
     }
 
     private String getSafeMessage(Throwable cause){
-        if (cause instanceof CorreoMqttException) {
-            return ((CorreoMqttException) cause).getInfo();
+        if (cause instanceof CorreoMqttException correoMqttException) {
+            return correoMqttException.getInfo();
         } else {
             return cause.getClass().getSimpleName() + ": " + cause.getMessage();
         }
