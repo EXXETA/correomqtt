@@ -35,7 +35,7 @@ public enum CorreoMqttVersion implements GenericTranslatable {
             return CorreoMqttVersion.valueOf(value);
         } catch (IllegalArgumentException iae) {
             LOGGER.warn("Exception reading version", iae);
-            return MQTT_3_1_1;
+            return MQTT_5_0;
         }
     }
 
