@@ -151,7 +151,7 @@ public class KeyringHandler {
 
         String newKeyringIdentifier = keyring.getIdentifier();
 
-        ComparableVersion createdVersion = new ComparableVersion(settings.getConfigCreatedWithCorreoVersion().replaceAll("[^0-9\\.]", ""));
+        ComparableVersion createdVersion = new ComparableVersion(settings.getConfigCreatedWithCorreoVersion().replaceAll("[^0-9.]", ""));
         ComparableVersion keyringSupportVersion = new ComparableVersion("0.13.0");
 
         if (oldKeyringIdentifier == null && keyringSupportVersion.compareTo(createdVersion) < 0) {

@@ -3,6 +3,7 @@
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.AnchorPane?>
+
 <AnchorPane fx:id="pluginRootPane" minHeight="200.0" minWidth="400.0" prefHeight="500.0" prefWidth="1000.0" styleClass="dialog" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.PluginsViewController">
    <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
      <tabs>

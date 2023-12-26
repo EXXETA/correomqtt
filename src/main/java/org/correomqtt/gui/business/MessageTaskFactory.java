@@ -1,9 +1,12 @@
 package org.correomqtt.gui.business;
 
 import lombok.extern.slf4j.Slf4j;
+import org.correomqtt.business.model.ConnectionExportDTO;
 import org.correomqtt.business.services.ConnectService;
 import org.correomqtt.business.services.DisconnectService;
+import org.correomqtt.business.services.ExportConnectionService;
 import org.correomqtt.business.services.ExportMessageService;
+import org.correomqtt.business.services.ImportConnectionService;
 import org.correomqtt.business.services.ImportMessageService;
 import org.correomqtt.business.services.PublishService;
 import org.correomqtt.business.services.SubscribeService;
@@ -15,6 +18,7 @@ import org.correomqtt.gui.transformer.SubscriptionTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
 import org.correomqtt.plugin.spi.OutgoingMessageHook;
+import org.correomqtt.plugin.spi.OutgoingMessageHookDTO;
 
 import java.io.File;
 
@@ -26,8 +30,6 @@ public class MessageTaskFactory {
     }
 
     public static void publish(String connectionId, MessagePropertiesDTO messagePropertiesDTO) {
-        messagePropertiesDTO = executeOnPublishMessageExtensions(connectionId, messagePropertiesDTO);
-
         new GuiService<>(new PublishService(connectionId,
                                             MessageTransformer.propsToDTO(messagePropertiesDTO)),
                          PublishService::publish).start();
@@ -35,7 +37,7 @@ public class MessageTaskFactory {
 
     private static MessagePropertiesDTO executeOnPublishMessageExtensions(String connectionId, MessagePropertiesDTO messagePropertiesDTO) {
         MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messagePropertiesDTO);
-        for (OutgoingMessageHook p : PluginManager.getInstance().getOutgoingMessageHooks()) {
+        for (OutgoingMessageHook<?> p : PluginManager.getInstance().getOutgoingMessageHooks()) {
             log.info("Publish {}", p);
             messageExtensionDTO = p.onPublishMessage(connectionId, messageExtensionDTO);
         }
@@ -71,5 +73,21 @@ public class MessageTaskFactory {
         new GuiService<>(new ExportMessageService(connectionId, file, MessageTransformer.propsToDTO(messageDTO)),
                          ExportMessageService::exportMessage).start();
 
+    }
+
+    public static void exportConnection(String connectionId, File file, ConnectionExportDTO connectionExportDTO) {
+        new GuiService<>(new ExportConnectionService(connectionId,file, connectionExportDTO),
+                ExportConnectionService::exportConnection).start();
+
+    }
+
+    public static void importConnection( File file) {
+        new GuiService<>(new ImportConnectionService(file),
+                ImportConnectionService::importConnection).start();
+
+    }
+
+    public static void reconnect(String connectionId) {
+        new GuiService<>(new ConnectService(connectionId), ConnectService::reconnect).start();
     }
 }

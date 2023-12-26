@@ -41,23 +41,23 @@
 }
 
 .grayStatus {
-    -fx-graphic: url('../icons/wifi-solid-gray.png');
+    -fx-graphic: url('../icons/svg/wifi-solid-gray.svg');
 }
 
 .redStatus {
-    -fx-graphic: url('../icons/wifi-solid-red.png');
+    -fx-graphic: url('../icons/svg/wifi-solid-red.svg');
 }
 
 .yellowStatus {
-    -fx-graphic: url('../icons/wifi-solid-yellow.png');
+    -fx-graphic: url('../icons/svg/wifi-solid-yellow.svg');
 }
 
 .black .greenStatus {
-    -fx-graphic: url('../icons/wifi-solid-green-black.png');
+    -fx-graphic: url('../icons/svg/wifi-solid-green.svg');
 }
 
 .white .greenStatus {
-    -fx-graphic: url('../icons/wifi-solid-green-white.png');
+    -fx-graphic: url('../icons/svg/wifi-solid-green.svg');
 }
 
 .brokerStatus {

@@ -2,6 +2,7 @@ package org.correomqtt.business.services;
 
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.exception.CorreoMqttExecutionException;
+import org.correomqtt.business.model.SubscriptionDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.mqtt.CorreoMqttClientFactory;
 import org.correomqtt.business.utils.ConnectionHolder;
@@ -10,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -38,6 +40,19 @@ public class ConnectService extends BaseService {
         } catch (ExecutionException | TimeoutException | SSLException e) {
             throw new CorreoMqttExecutionException(e);
         }
+    }
+
+    public void reconnect() {
+        CorreoMqttConnection connection = ConnectionHolder.getInstance().getConnection(connectionId);
+        Set<SubscriptionDTO> existingSubscriptions = connection.getClient().getSubscriptions();
+
+        connection.setClient(CorreoMqttClientFactory.createClient(connection.getConfigDTO()));
+        callSafeOnClient(this::connect);
+
+        existingSubscriptions.forEach(subscriptionDTO -> {
+            SubscribeService subscribeService = new SubscribeService(connectionId, subscriptionDTO);
+            subscribeService.subscribe();
+        });
     }
 
     @Override
@@ -69,5 +84,4 @@ public class ConnectService extends BaseService {
         LOGGER.debug(getConnectionMarker(), "Connecting to broker scheduled.");
         ConnectionLifecycleDispatcher.getInstance().onConnectScheduled(connectionId);
     }
-
 }

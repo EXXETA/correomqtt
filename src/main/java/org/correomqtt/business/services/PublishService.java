@@ -1,8 +1,16 @@
 package org.correomqtt.business.services;
 
+import com.hivemq.client.mqtt.datatypes.MqttTopic;
+import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
 import org.correomqtt.business.dispatcher.PublishDispatcher;
 import org.correomqtt.business.exception.CorreoMqttExecutionException;
 import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.gui.transformer.MessageTransformer;
+import org.correomqtt.plugin.manager.PluginManager;
+import org.correomqtt.plugin.model.MessageExtensionDTO;
+import org.correomqtt.plugin.spi.OutgoingMessageHook;
+import org.correomqtt.plugin.spi.OutgoingMessageHookDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +32,8 @@ public class PublishService extends BaseService {
         LOGGER.info(getConnectionMarker(), "Start publishing to topic: {}", messageDTO.getTopic());
         callSafeOnClient(client -> {
             try {
-                client.publish(messageDTO);
+                MessageDTO manipulatedMessageDTO = executeOnPublishMessageExtensions(connectionId, messageDTO);
+                client.publish(manipulatedMessageDTO);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new CorreoMqttExecutionException(e);
@@ -32,6 +41,24 @@ public class PublishService extends BaseService {
                 throw new CorreoMqttExecutionException(e);
             }
         });
+    }
+
+    private MessageDTO executeOnPublishMessageExtensions(String connectionId, MessageDTO messageDTO) {
+        MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
+        for (OutgoingMessageHook<?> p : PluginManager.getInstance().getOutgoingMessageHooks()) {
+            OutgoingMessageHookDTO config = p.getConfig();
+            if (config != null && config.isEnableOutgoing() && (config.getOutgoingTopicFilter() == null ||
+                    config.getOutgoingTopicFilter()
+                            .stream()
+                            .anyMatch(tp -> MqttTopicFilter.of(tp)
+                                    .matches(MqttTopic.of(messageDTO.getTopic()))
+                            )
+            )){
+                LOGGER.info(getConnectionMarker(), "[HOOK] Manipulated outgoing message on {} with {}", messageDTO.getTopic(), p.getClass().getName());
+                messageExtensionDTO = p.onPublishMessage(connectionId, messageExtensionDTO);
+            }
+        }
+        return MessageTransformer.mergeDTO(messageExtensionDTO, messageDTO);
     }
 
     @Override

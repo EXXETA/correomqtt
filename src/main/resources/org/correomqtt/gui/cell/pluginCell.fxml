@@ -6,6 +6,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import java.lang.String?>
+
 <AnchorPane fx:id="mainNode" stylesheets="@../css/pluginView.css" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1">
     <styleClass>
         <String fx:value="basicColors" />

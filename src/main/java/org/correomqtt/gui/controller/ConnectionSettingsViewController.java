@@ -31,9 +31,12 @@ import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import org.correomqtt.business.dispatcher.ImportConnectionDispatcher;
+import org.correomqtt.business.dispatcher.ImportConnectionObserver;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.Auth;
 import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.ConnectionExportDTO;
 import org.correomqtt.business.model.CorreoMqttVersion;
 import org.correomqtt.business.model.GenericTranslatable;
 import org.correomqtt.business.model.Lwt;
@@ -72,7 +75,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConnectionSettingsViewController extends BaseController implements ConfigObserver, ConnectionLifecycleObserver,
+public class ConnectionSettingsViewController extends BaseController implements ConfigObserver, ImportConnectionObserver, ConnectionLifecycleObserver,
         LwtSettingsHook.OnSettingsChangedListener {
 
     private static final String TEXT_FIELD = "text-field";
@@ -82,6 +85,8 @@ public class ConnectionSettingsViewController extends BaseController implements 
     public static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
     public static final String EMPTY_ERROR_CLASS = "emptyError";
     private final ConnectionSettingsViewDelegate delegate;
+    private final ConnectionExportViewDelegate connectionExportViewDelegate;
+    private final ConnectionImportViewDelegate connectionImportViewDelegate;
 
     @FXML
     private ListView<ConnectionPropertiesDTO> connectionsListView;
@@ -140,6 +145,10 @@ public class ConnectionSettingsViewController extends BaseController implements 
     @FXML
     private Label downLabel;
     @FXML
+    private Label exportLabel;
+    @FXML
+    private Label importLabel;
+    @FXML
     private Button applyButton;
     @FXML
     private Button saveButton;
@@ -172,18 +181,23 @@ public class ConnectionSettingsViewController extends BaseController implements 
     private boolean dragging;
     Map<String, Integer> waitForDisconnectIds = new HashMap<>();
 
-    public ConnectionSettingsViewController(ConnectionSettingsViewDelegate delegate) {
+    public ConnectionSettingsViewController(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate, ConnectionImportViewDelegate importViewDelegate) {
         this.delegate = delegate;
+        this.connectionExportViewDelegate = exportViewDelegate;
+        this.connectionImportViewDelegate = importViewDelegate;
         ConfigDispatcher.getInstance().addObserver(this);
         ConnectionLifecycleDispatcher.getInstance().addObserver(this);
+        ImportConnectionDispatcher.getInstance().addObserver(this);
+
     }
 
-    public static LoaderResult<ConnectionSettingsViewController> load(ConnectionSettingsViewDelegate delegate) {
+    public static LoaderResult<ConnectionSettingsViewController> load(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate, ConnectionImportViewDelegate importViewDelegate) {
         return load(ConnectionSettingsViewController.class, "connectionSettingsView.fxml",
-                () -> new ConnectionSettingsViewController(delegate));
+                () -> new ConnectionSettingsViewController(delegate, exportViewDelegate, importViewDelegate));
     }
 
-    public static void showAsDialog(ConnectionSettingsViewDelegate delegate) {
+
+    public static void showAsDialog(ConnectionSettingsViewDelegate delegate, ConnectionExportViewDelegate exportViewDelegate, ConnectionImportViewDelegate importViewDelegate) {
 
 
         Map<Object, Object> properties = new HashMap<>();
@@ -192,7 +206,7 @@ public class ConnectionSettingsViewController extends BaseController implements 
         if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
             return;
         }
-        LoaderResult<ConnectionSettingsViewController> result = load(delegate);
+        LoaderResult<ConnectionSettingsViewController> result = load(delegate, exportViewDelegate, importViewDelegate);
         resources = result.getResourceBundle();
 
         showAsDialog(result, resources.getString("connectionSettingsViewControllerTitle"), properties, false, false, null,
@@ -1063,6 +1077,45 @@ public class ConnectionSettingsViewController extends BaseController implements 
         showConnection(current);
     }
 
+    public void openExport(boolean autoNew) {
+        ConnectionExportViewController.showAsDialog(connectionExportViewDelegate);
+        if (autoNew) {
+            //result.getController().onAddClicked(); TODO
+            LOGGER.debug("Open settings with new default connection");
+        } else {
+            LOGGER.debug("Open settings for existing connections");
+        }
+    }
+
+    @FXML
+    public void openExport() {
+        openExport(false);
+
+
+    }
+
+    public void openImport(boolean autoNew) {
+        Stage stage = (Stage) containerAnchorPane.getScene().getWindow();
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(resources.getString("importUtilsTitle"));
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(resources.getString("importUtilsDescription"), "*.json");
+        fileChooser.getExtensionFilters().add(extFilter);
+
+        File file = fileChooser.showOpenDialog(stage);
+        if (file != null) {
+            MessageTaskFactory.importConnection(file);
+            ConnectionImportViewController.showAsDialog(connectionImportViewDelegate);
+        }
+    }
+
+    @FXML
+    public void openImport() {
+        openImport(false);
+
+    }
+
+
     @Override
     public void onConfigDirectoryEmpty() {
         // Do nothing
@@ -1179,5 +1232,23 @@ public class ConnectionSettingsViewController extends BaseController implements 
     @Override
     public String getConnectionId() {
         return null;
+    }
+
+
+    @Override
+    public void onImportSucceeded(ConnectionExportDTO connectionExportDTO) {
+        // TODO Triggered twice, fix to only trigger once after import is completed
+        loadConnectionListFromBackground();
+    }
+
+
+    @Override
+    public void onImportCancelled(File file) {
+
+    }
+
+    @Override
+    public void onImportFailed(File file, Throwable exception) {
+
     }
 }

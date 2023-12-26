@@ -39,25 +39,23 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.target>17</maven.compiler.target>
         <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.release>17</maven.compiler.release>
         <sonar.organization>farion</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <javafx.version>22-ea+16</javafx.version>
+        <lombok.version>1.18.22</lombok.version>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
-
 
     <dependencies>
         <dependency>
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
             <version>3.9.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.controlsfx</groupId>
+            <artifactId>controlsfx</artifactId>
+            <version>11.1.1</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -82,7 +80,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.22</version>
+            <version>${lombok.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -107,51 +105,39 @@
         <dependency>
             <groupId>com.hivemq</groupId>
             <artifactId>hivemq-mqtt-client</artifactId>
-            <version>1.1.2</version>
+            <version>1.3.1</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.fxmisc.richtext/richtextfx -->
         <dependency>
             <groupId>org.fxmisc.richtext</groupId>
             <artifactId>richtextfx</artifactId>
-            <version>0.10.7</version>
+            <version>0.11.0</version>
         </dependency>
         <!--Compile-Scope-->
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-artifact</artifactId>
-            <version>3.8.1</version>
+            <version>3.9.2</version>
         </dependency>
         <dependency>
             <groupId>com.hierynomus</groupId>
             <artifactId>sshj</artifactId>
-            <version>0.32.0</version>
+            <version>0.35.0</version>
         </dependency>
-        <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
-            <version>1.1.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>junit</groupId>
-                    <artifactId>junit</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
-            <version>1.2.10</version>
+            <version>1.4.7</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.33</version>
+            <version>2.0.7</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.10</version>
+            <version>1.4.7</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -163,7 +149,7 @@
         <dependency>
             <groupId>org.fxmisc.flowless</groupId>
             <artifactId>flowless</artifactId>
-            <version>0.6.7</version>
+            <version>0.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -173,17 +159,12 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.11.0</version>
+            <version>2.12.0</version>
         </dependency>
         <dependency>
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j-update</artifactId>
             <version>2.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jdom</groupId>
-            <artifactId>jdom2</artifactId>
-            <version>2.0.6.1</version>
         </dependency>
         <!--Test-Scope-->
         <dependency>
@@ -205,14 +186,14 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.xafero.java-keyring</groupId>
+            <groupId>com.github.javakeyring</groupId>
             <artifactId>java-keyring</artifactId>
-            <version>7c26961cc4</version>
+            <version>1.0.2</version>
         </dependency>
         <dependency>
             <groupId>de.swiesend</groupId>
             <artifactId>secret-service</artifactId>
-            <version>1.7.0</version>
+            <version>1.8.1-jdk17</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -223,7 +204,7 @@
         <dependency>
             <groupId>com.github.peter-gergely-horvath</groupId>
             <artifactId>windpapi4j</artifactId>
-            <version>1.0</version>
+            <version>1.1.0</version>
         </dependency>
     </dependencies>
 
@@ -245,14 +226,28 @@
                 <version>3.8.1</version>
                 <configuration>
                     <release>${maven.compiler.release}</release>
+                    <annotationProcessorPaths>
+                        <annotationProcessorPath>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </annotationProcessorPath>
+                        <annotationProcessorPath>
+                            <groupId>org.pf4j</groupId>
+                            <artifactId>pf4j</artifactId>
+                            <version>3.9.0</version>
+                        </annotationProcessorPath>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
-                <version>0.0.3</version>
+                <version>0.0.8</version>
                 <configuration>
-                    <mainClass>org.correomqtt.CorreoMqtt</mainClass>
+                    <jlinkImageName>CorreoMQTT</jlinkImageName>
+                    <launcher>launcher</launcher>
+                    <mainClass>correomqtt.client/org.correomqtt.CorreoMqtt</mainClass>
                 </configuration>
             </plugin>
             <plugin>

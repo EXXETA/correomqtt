@@ -16,7 +16,7 @@ public class DarkThemeProvider extends BaseThemeProvider implements ThemeProvide
 
     @Override
     public String getCss() {
-        return getCssFromInputStream(DarkThemeProvider.class.getResourceAsStream(getName() + ".css"));
+        return getCssFromInputStream(DarkThemeProvider.class.getResourceAsStream("dark.css"));
     }
 
     @Override

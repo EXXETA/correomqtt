@@ -36,6 +36,8 @@
                 </Label>
                 <Label fx:id="qosLabel" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" styleClass="tag" text="QoS2" textAlignment="CENTER">
                 </Label>
+                <Label fx:id="timestampLabel" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" styleClass="tag" textAlignment="CENTER">
+                </Label>
             </HBox>
         </HBox>
         <Label fx:id="payloadLabel" text="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;">

@@ -2,6 +2,7 @@ package org.correomqtt.gui.cell;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -45,6 +46,8 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
     private Label mqtt5Tag;
     @FXML
     private ResourceBundle resources;
+    @FXML
+    private CheckBox exportCheckbox;
 
     private FXMLLoader loader;
 
@@ -116,6 +119,10 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
 
             lwtTag.getStyleClass().removeAll(INACTIVE_CLASS);
             lwtTag.getStyleClass().add(INACTIVE_CLASS);
+
+            exportCheckbox.getStyleClass().removeAll(INACTIVE_CLASS);
+            exportCheckbox.getStyleClass().add(INACTIVE_CLASS);
+
         } else {
             nameLabel.setText(connectionDTO.getName());
             nameLabel.getStyleClass().removeAll(DIRTY_CLASS);

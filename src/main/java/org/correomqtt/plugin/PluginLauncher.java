@@ -18,15 +18,17 @@ public class PluginLauncher {
 
     private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
-    public void start() throws IOException {
+    public void start(boolean doPluginUpdates) throws IOException {
 
         PluginManager pluginManager = PluginManager.getInstance();
 
         try {
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLoadPlugins"));
             pluginManager.loadPlugins();
-            PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderUpdatePlugins"));
-            updateSystem();
+            if(doPluginUpdates) {
+                PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderUpdatePlugins"));
+                updateSystem();
+            }
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderStartPlugins"));
             pluginManager.startPlugins();
         } catch (Exception e) {
@@ -54,7 +56,7 @@ public class PluginLauncher {
 
             // Already installed?
             if (pluginManager.getPlugin(pluginId) != null) {
-                LOGGER.debug("Skip installing bundled plugin '{}', as it is already installed.", pluginId);
+                LOGGER.info("Skip installing bundled plugin '{}', as it is already installed.", pluginId);
                 continue;
             }
 

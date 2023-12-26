@@ -19,13 +19,9 @@ import org.correomqtt.plugin.spi.ExtensionId;
 import org.correomqtt.plugin.spi.IncomingMessageHook;
 import org.correomqtt.plugin.spi.MessageValidatorHook;
 import org.correomqtt.plugin.spi.OutgoingMessageHook;
+import org.correomqtt.plugin.spi.OutgoingMessageHookDTO;
 import org.correomqtt.plugin.transformer.PluginInfoTransformer;
-import org.pf4j.ExtensionFactory;
 import org.pf4j.JarPluginManager;
-import org.pf4j.ManifestPluginDescriptorFinder;
-import org.pf4j.PluginDescriptorFinder;
-import org.pf4j.PluginFactory;
-import org.pf4j.PluginLoader;
 import org.pf4j.PluginState;
 import org.pf4j.PluginWrapper;
 import org.pf4j.update.UpdateManager;
@@ -60,6 +56,7 @@ public class PluginManager extends JarPluginManager {
         super(Path.of(PluginConfigProvider.getInstance().getPluginPath()));
     }
 
+    /*
     @Override
     protected PluginFactory createPluginFactory() {
         return new PermissionPluginFactory();
@@ -80,7 +77,7 @@ public class PluginManager extends JarPluginManager {
     @Override
     protected ExtensionFactory createExtensionFactory() {
         return new PluginExtensionFactory();
-    }
+    }*/
 
     public static PluginManager getInstance() {
         if (instance == null) {
@@ -187,29 +184,39 @@ public class PluginManager extends JarPluginManager {
         instance = new PluginManager();
     }
 
-    public List<OutgoingMessageHook> getOutgoingMessageHooks() {
+    public List<OutgoingMessageHook<?>> getOutgoingMessageHooks() {
         return PluginConfigProvider.getInstance().getOutgoingMessageHooks()
                 .stream()
                 .map(extensionDefinition -> {
-                    OutgoingMessageHook extension = getExtensionById(OutgoingMessageHook.class,
+                    OutgoingMessageHook<?> extension = getExtensionById(OutgoingMessageHook.class,
                             extensionDefinition.getPluginId(),
                             extensionDefinition.getId());
+                    if(extension == null){
+                        LOGGER.warn("Extension for Outgoing Message Hook with id {} from plugin {} not found.",extensionDefinition.getId(), extensionDefinition.getPluginId());
+                        return null;
+                    }
                     enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                     return extension;
                 })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
-    public List<IncomingMessageHook> getIncomingMessageHooks() {
+    public List<IncomingMessageHook<?>> getIncomingMessageHooks() {
         return PluginConfigProvider.getInstance().getIncomingMessageHooks()
                 .stream()
                 .map(extensionDefinition -> {
-                    IncomingMessageHook extension = getExtensionById(IncomingMessageHook.class,
+                    IncomingMessageHook<?> extension = getExtensionById(IncomingMessageHook.class,
                             extensionDefinition.getPluginId(),
                             extensionDefinition.getId());
+                    if(extension == null){
+                        LOGGER.warn("Extension for Incoming Message Hook with id {} from plugin {} not found.",extensionDefinition.getId(), extensionDefinition.getPluginId());
+                        return null;
+                    }
                     enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                     return extension;
                 })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -279,7 +286,7 @@ public class PluginManager extends JarPluginManager {
         return extension;
     }
 
-    public <P extends BaseExtensionPoint<T>, T> P getExtensionById(Class<P> type, String pluginId, String extensionId) {
+    public <P extends BaseExtensionPoint<?>> P getExtensionById(Class<P> type, String pluginId, String extensionId) {
         return super.getExtensions(type, pluginId)
                 .stream()
                 .filter(e -> isExtensionIdResolved(e, extensionId))
@@ -323,7 +330,7 @@ public class PluginManager extends JarPluginManager {
     @Override
     public void unloadPlugins() {
         LOGGER.debug("Unload Plugins");
-        List<String> pluginIds = resolvedPlugins.stream().map(PluginWrapper::getPluginId).collect(Collectors.toList());
+        List<String> pluginIds = resolvedPlugins.stream().map(PluginWrapper::getPluginId).toList();
         for (String pluginId : pluginIds) {
             LOGGER.debug("Unload Plugin \"{}\"", pluginId);
             unloadPlugin(pluginId);

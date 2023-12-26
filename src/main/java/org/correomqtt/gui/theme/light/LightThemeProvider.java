@@ -16,7 +16,7 @@ public class LightThemeProvider extends BaseThemeProvider implements ThemeProvid
 
     @Override
     public String getCss() {
-        return getCssFromInputStream(LightThemeProvider.class.getResourceAsStream(getName() + ".css"));
+        return getCssFromInputStream(LightThemeProvider.class.getResourceAsStream("light.css"));
     }
 
     @Override

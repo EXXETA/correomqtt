@@ -52,4 +52,5 @@ public class VendorConstants {
     @Getter
     @Accessors(fluent = true)
     private static final String GITHUB_LATEST = "https://github.com/EXXETA/correomqtt/releases/latest";
+
 }

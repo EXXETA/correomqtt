@@ -1,13 +1,11 @@
 package org.correomqtt.business.keyring.osxkeychain;
 
-import net.east301.keyring.BackendNotSupportedException;
-import net.east301.keyring.PasswordRetrievalException;
-import net.east301.keyring.PasswordSaveException;
-import net.east301.keyring.osx.OSXKeychainBackend;
+import com.github.javakeyring.PasswordAccessException;
+import com.github.javakeyring.internal.osx.ModernOsxKeychainBackend;
+import org.correomqtt.plugin.spi.KeyringHook;
 import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.plugin.spi.KeyringHook;
 import org.pf4j.Extension;
 
 import java.util.ResourceBundle;
@@ -22,31 +20,32 @@ public class OSXKeychainKeyring extends BaseKeyring implements KeyringHook {
 
     @Override
     public String getPassword(String label) {
-        OSXKeychainBackend keychainBackend = new OSXKeychainBackend();
-        try {
-            keychainBackend.setup();
+        try(ModernOsxKeychainBackend keychainBackend = new ModernOsxKeychainBackend()) {
             return keychainBackend.getPassword(SERVICE_NAME, label);
-        } catch (PasswordRetrievalException e) {
+        }catch(PasswordAccessException e){
             return null;
-        } catch (BackendNotSupportedException e) {
+        } catch (Exception e) {
             throw new KeyringException(FAILED_TO_RETRIEVE_PASSWORD_FROM_OSX_KEYCHAIN, e);
         }
     }
 
     @Override
     public void setPassword(String label, String password) {
-        OSXKeychainBackend keychainBackend = new OSXKeychainBackend();
-        try {
-            keychainBackend.setup();
+        try(ModernOsxKeychainBackend keychainBackend = new ModernOsxKeychainBackend()) {
             keychainBackend.setPassword(SERVICE_NAME, label, password);
-        } catch (BackendNotSupportedException | PasswordSaveException e) {
+        } catch (Exception e) {
             throw new KeyringException(FAILED_TO_RETRIEVE_PASSWORD_FROM_OSX_KEYCHAIN, e);
         }
     }
 
     @Override
     public boolean isSupported() {
-        return new OSXKeychainBackend().isSupported();
+
+        try(ModernOsxKeychainBackend ignored = new ModernOsxKeychainBackend()) {
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override

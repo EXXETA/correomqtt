@@ -24,6 +24,14 @@
     -fx-graphic: url('../icons/trash-alt-solid-white.png');
 }
 
+.black .eye-solid {
+    -fx-graphic: url('../icons/eye-solid-black.png');
+}
+
+.white .eye-solid {
+    -fx-graphic: url('../icons/eye-solid-white.png');
+}
+
 .black .file-upload-solid {
     -fx-graphic: url('../icons/file-upload-solid-black.png');
 }
@@ -57,11 +65,8 @@
 }
 
 .messageSearchTextField {
-    -fx-background-radius: 3 0 0 3;
-}
-
-.messageSearchClear {
-    -fx-background-radius: 0 3 3 0;
+    -fx-padding: 6 7 6 7;
+    -fx-min-height: 29;
 }
 
 .subscriptionAnchorPane {
