@@ -1,5 +1,6 @@
 package org.correomqtt.business.provider;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
@@ -9,7 +10,6 @@ import org.correomqtt.business.dispatcher.PublishGlobalDispatcher;
 import org.correomqtt.business.dispatcher.PublishGlobalObserver;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.PublishHistoryListDTO;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -37,6 +37,9 @@ import org.correomqtt.gui.contextmenu.MessageListContextMenuDelegate;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.utils.MessageUtils;
+import org.correomqtt.plugin.manager.PluginManager;
+import org.correomqtt.plugin.model.MessageExtensionDTO;
+import org.correomqtt.plugin.spi.IncomingMessageHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -315,6 +318,15 @@ public class MessageListViewController extends BaseConnectionController implemen
             messages.add(0, messageDTO);
             clearMessagesButton.setDisable(false);
         });
+    }
+
+    private MessagePropertiesDTO executeOnMessageIncomingExtensions(MessagePropertiesDTO messageDTO) {
+        MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
+        for (IncomingMessageHook p : PluginManager.getInstance().getExtensions(IncomingMessageHook.class)) {
+            LOGGER.info("Incoming {}", p);
+            messageExtensionDTO = p.onMessageIncoming(getConnectionId(), messageExtensionDTO);
+        }
+        return MessageTransformer.mergeProps(messageExtensionDTO, messageDTO);
     }
 
     @FXML

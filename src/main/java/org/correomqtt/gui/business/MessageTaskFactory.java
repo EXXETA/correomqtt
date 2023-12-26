@@ -15,6 +15,10 @@ import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.transformer.SubscriptionTransformer;
+import org.correomqtt.plugin.manager.PluginManager;
+import org.correomqtt.plugin.model.MessageExtensionDTO;
+import org.correomqtt.plugin.spi.OutgoingMessageHook;
+import org.correomqtt.plugin.spi.OutgoingMessageHookDTO;
 
 import java.io.File;
 
@@ -29,6 +33,15 @@ public class MessageTaskFactory {
         new GuiService<>(new PublishService(connectionId,
                                             MessageTransformer.propsToDTO(messagePropertiesDTO)),
                          PublishService::publish).start();
+    }
+
+    private static MessagePropertiesDTO executeOnPublishMessageExtensions(String connectionId, MessagePropertiesDTO messagePropertiesDTO) {
+        MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messagePropertiesDTO);
+        for (OutgoingMessageHook<?> p : PluginManager.getInstance().getOutgoingMessageHooks()) {
+            log.info("Publish {}", p);
+            messageExtensionDTO = p.onPublishMessage(connectionId, messageExtensionDTO);
+        }
+        return MessageTransformer.mergeProps(messageExtensionDTO, messagePropertiesDTO);
     }
 
     public static void subscribe(String connectionId, SubscriptionPropertiesDTO subscriptionDTO) {

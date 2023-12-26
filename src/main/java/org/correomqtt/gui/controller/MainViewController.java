@@ -23,6 +23,7 @@ import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
 import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.business.utils.VendorConstants;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.ConnectionState;
@@ -38,7 +39,6 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
-import static org.correomqtt.business.utils.VendorConstants.WEBSITE;
 
 public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConnectionExportViewDelegate, ConnectionImportViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
 
@@ -161,7 +161,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             }
         });
         websiteItem.setOnAction(event -> HostServicesHolder.getInstance().getHostServices().showDocument(
-                new Hyperlink(WEBSITE).getText()));
+                new Hyperlink(VendorConstants.WEBSITE()).getText()));
         pluginSettingsItem.setOnAction(event -> openPluginSettings());
     }
 

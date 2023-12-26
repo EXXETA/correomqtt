@@ -35,14 +35,14 @@ public class ConnectionHolder {
 
         Set<String> existingConnectionIds = new HashSet<>(connectionMap.keySet());
 
-        for ( ConnectionConfigDTO c : SettingsProvider.getInstance().getConnectionConfigs() ) {
+        for (ConnectionConfigDTO c : SettingsProvider.getInstance().getConnectionConfigs()) {
             CorreoMqttConnection connection = connectionMap.get(c.getId());
-            if(connection == null){
+            if (connection == null) {
                 connectionMap.put(c.getId(), CorreoMqttConnection.builder()
-                                                                 .configDTO(c)
-                                                                 .sort(sort)
-                                                                 .build());
-            }else{
+                        .configDTO(c)
+                        .sort(sort)
+                        .build());
+            } else {
                 existingConnectionIds.remove(c.getId());
                 connection.setConfigDTO(c);
                 connection.setSort(sort);
@@ -83,9 +83,9 @@ public class ConnectionHolder {
 
     public List<ConnectionConfigDTO> getSortedConnections() {
         return connectionMap.values()
-                            .stream()
-                            .sorted(Comparator.comparing(CorreoMqttConnection::getSort))
-                            .map(CorreoMqttConnection::getConfigDTO)
-                            .collect(Collectors.toList());
+                .stream()
+                .sorted(Comparator.comparing(CorreoMqttConnection::getSort))
+                .map(CorreoMqttConnection::getConfigDTO)
+                .toList();
     }
 }

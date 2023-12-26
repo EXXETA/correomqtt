@@ -1,10 +1,10 @@
 package org.correomqtt.plugin.model;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.correomqtt.business.model.Lwt;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.HashMap;
 
