@@ -1,13 +1,5 @@
 package org.correomqtt.business.mqtt;
 
-import org.correomqtt.business.exception.CorreoMqtt3SubscriptionFailed;
-import org.correomqtt.business.exception.CorreoMqttConnectionFailedException;
-import org.correomqtt.business.exception.CorreoMqttNotConnectedException;
-import org.correomqtt.business.model.ConnectionConfigDTO;
-import org.correomqtt.business.model.Lwt;
-import org.correomqtt.business.model.MessageDTO;
-import org.correomqtt.business.model.SubscriptionDTO;
-import org.correomqtt.business.model.TlsSsl;
 import com.hivemq.client.mqtt.MqttClient;
 import com.hivemq.client.mqtt.lifecycle.MqttClientDisconnectedContext;
 import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
@@ -19,6 +11,14 @@ import com.hivemq.client.mqtt.mqtt3.message.connect.connack.Mqtt3ConnAck;
 import com.hivemq.client.mqtt.mqtt3.message.subscribe.suback.Mqtt3SubAck;
 import com.hivemq.client.mqtt.mqtt3.message.subscribe.suback.Mqtt3SubAckReturnCode;
 import lombok.Getter;
+import org.correomqtt.business.exception.CorreoMqtt3SubscriptionFailed;
+import org.correomqtt.business.exception.CorreoMqttConnectionFailedException;
+import org.correomqtt.business.exception.CorreoMqttNotConnectedException;
+import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.Lwt;
+import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.model.SubscriptionDTO;
+import org.correomqtt.business.model.TlsSsl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -2,6 +2,7 @@ package org.correomqtt.gui.keyring;
 
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.business.keyring.Keyring;
+import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.SettingsDTO;
@@ -21,7 +22,7 @@ public class KeyringHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyringHandler.class);
 
     private static KeyringHandler instance = null;
-    private ResourceBundle resources;
+    private final ResourceBundle resources;
     private String masterPassword;
     private static final String KEYRING_LABEL = "CorreoMQTT_MasterPassword";
     private Keyring keyring;
@@ -136,12 +137,21 @@ public class KeyringHandler {
         }
 
         if (keyring == null) {
-            keyring = KeyringFactory.create(); // Not null, will produce UserInputKeyring for sure
+            List<Keyring> keyrings = KeyringFactory.create(); // Not null, will produce UserInputKeyring for sure
+            if(keyrings.size() <= 2){
+                keyring = keyrings.get(0);
+            }else{
+                keyring = AlertHelper.select("Multiple KyringsFound","Select a keyring",keyrings); //TODO
+            }
+        }
+
+        if(keyring == null){
+            throw new KeyringException("No supported keyring backend found.");
         }
 
         String newKeyringIdentifier = keyring.getIdentifier();
 
-        ComparableVersion createdVersion = new ComparableVersion(settings.getConfigCreatedWithCorreoVersion().replaceAll("[^0-9\\.]", ""));
+        ComparableVersion createdVersion = new ComparableVersion(settings.getConfigCreatedWithCorreoVersion().replaceAll("[^0-9.]", ""));
         ComparableVersion keyringSupportVersion = new ComparableVersion("0.13.0");
 
         if (oldKeyringIdentifier == null && keyringSupportVersion.compareTo(createdVersion) < 0) {

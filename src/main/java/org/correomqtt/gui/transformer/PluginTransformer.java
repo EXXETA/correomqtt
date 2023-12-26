@@ -15,7 +15,7 @@ public class PluginTransformer {
     public static List<PluginInfoPropertiesDTO> dtoListToPropList(List<PluginInfoDTO> pluginInfoList) {
         return pluginInfoList.stream()
                 .map(PluginTransformer::dtoToProps)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static PluginInfoPropertiesDTO dtoToProps(PluginInfoDTO dto) {

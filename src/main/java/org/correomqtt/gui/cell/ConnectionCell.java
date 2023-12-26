@@ -1,18 +1,18 @@
 package org.correomqtt.gui.cell;
 
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.Pane;
 import org.correomqtt.business.model.CorreoMqttVersion;
 import org.correomqtt.business.model.Lwt;
 import org.correomqtt.business.model.Proxy;
 import org.correomqtt.business.model.TlsSsl;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

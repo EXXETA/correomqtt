@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <protocol>
     <lists>
-        <PublishMessageHook>
-<!--        <plugin name="example-plugin"/>     -->
-<!--        ### more plugins ###                -->
-        </PublishMessageHook>
-
-        <MessageIncomingHook>
-<!--        ### more plugins ###                -->
-        </MessageIncomingHook>
     </lists>
 
     <tasks>

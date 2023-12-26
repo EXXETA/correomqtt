@@ -1,7 +1,5 @@
 package org.correomqtt.business.model;
 
-import org.correomqtt.business.utils.CorreoCharsetDecoder;
-import org.correomqtt.business.utils.MessageDateTimeFormatter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hivemq.client.mqtt.mqtt3.message.publish.Mqtt3Publish;
@@ -11,6 +9,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.correomqtt.business.utils.CorreoCharsetDecoder;
+import org.correomqtt.business.utils.MessageDateTimeFormatter;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
