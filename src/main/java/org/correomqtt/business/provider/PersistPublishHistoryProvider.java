@@ -134,7 +134,9 @@ public class PersistPublishHistoryProvider extends BasePersistHistoryProvider<Pu
     }
 
     @Override
-    public void onDisconnect() {}
+    public void onDisconnect() {
+        // nothing to do
+    }
 
     @Override
     public void onDisconnectFailed(Throwable exception) {
