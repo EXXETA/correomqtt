@@ -14,7 +14,7 @@ abstract class BaseConnectionController extends BaseController {
         this.connectionId = connectionId;
     }
 
-    static <C extends BaseController, Z extends Class<C>> LoaderResult<C> load(final Z controllerClazz,
+    static <C extends BaseController> LoaderResult<C> load(final Class<C> controllerClazz,
                                                                                final String fxml,
                                                                                final String connectionId) {
         return load(controllerClazz,

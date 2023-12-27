@@ -25,13 +25,13 @@ abstract class BaseController {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseController.class);
     private static final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
-    static <C extends BaseController, Z extends Class<C>> LoaderResult<C> load(Z controllerClazz, String fxml) {
+    static <C extends BaseController> LoaderResult<C> load(Class<C> controllerClazz, String fxml) {
         return load(controllerClazz,
                     fxml,
                     () -> controllerClazz.getDeclaredConstructor().newInstance());
     }
 
-    static <C extends BaseController, Z extends Class<C>> LoaderResult<C> load(final Z controllerClazz,
+    static <C extends BaseController> LoaderResult<C> load(final Class<C> controllerClazz,
                                                                                final String fxml,
                                                                                final ConstructorMethod<C> constructorMethod) {
 

@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public abstract class BaseConnectionDispatcher<T extends BaseConnectionObserver> extends BaseDispatcher<T>  {
 

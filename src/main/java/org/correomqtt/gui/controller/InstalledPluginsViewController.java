@@ -243,9 +243,8 @@ public class InstalledPluginsViewController extends BaseController implements
     @Override
     public void onPluginDisableSucceeded(String pluginId) {
         reloadData(pluginId);
-        Platform.runLater(() -> {
-            AlertHelper.info(resources.getString("pluginChangeTitle"), resources.getString("pluginChangeContent"));
-        });
+        Platform.runLater(() -> AlertHelper.info(resources.getString("pluginChangeTitle"),
+                resources.getString("pluginChangeContent")));
     }
 
     @Override
