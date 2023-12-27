@@ -189,7 +189,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
         importConnections();
     }
 
-    public void onCancelClicked(ActionEvent actionEvent) {
+    public void onCancelClicked() {
         closeDialog();
     }
 
