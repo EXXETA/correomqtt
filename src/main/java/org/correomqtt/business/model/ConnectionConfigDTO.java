@@ -1,6 +1,5 @@
 package org.correomqtt.business.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,7 +29,7 @@ public class ConnectionConfigDTO {
     private String password;
     private boolean cleanSession;
     @Builder.Default
-    private CorreoMqttVersion mqttVersion = CorreoMqttVersion.MQTT_3_1_1;
+    private CorreoMqttVersion mqttVersion = CorreoMqttVersion.MQTT_5_0;
     @Builder.Default
     private TlsSsl ssl = TlsSsl.OFF;
     private String sslKeystore;
@@ -54,6 +53,14 @@ public class ConnectionConfigDTO {
     private Qos lwtQoS;
     private boolean lwtRetained;
     private String lwtPayload;
+    @Builder.Default
+    private ConnectionUISettings connectionUISettings = null;
+
+    @Builder.Default
+    private MessageListViewConfig publishListViewConfig = null;
+
+    @Builder.Default
+    private MessageListViewConfig subscribeListViewConfig = null;
 
     public ConnectionConfigDTO(ConnectionConfigDTO configDTO) {
         id = configDTO.id;
@@ -75,6 +82,25 @@ public class ConnectionConfigDTO {
         auth = configDTO.auth;
         authPassword = configDTO.authPassword;
         authKeyfile = configDTO.authKeyfile;
+        connectionUISettings = configDTO.connectionUISettings;
+        publishListViewConfig = configDTO.publishListViewConfig;
+        subscribeListViewConfig = configDTO.subscribeListViewConfig;
+    }
+
+    public MessageListViewConfig producePublishListViewConfig(){
+        if(publishListViewConfig == null){
+            publishListViewConfig = new MessageListViewConfig();
+        }
+
+        return publishListViewConfig;
+    }
+
+    public MessageListViewConfig produceSubscribeListViewConfig(){
+        if(subscribeListViewConfig == null){
+          subscribeListViewConfig = new MessageListViewConfig();
+        }
+
+        return subscribeListViewConfig;
     }
 
     public String getHostAndPort() {

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=CorreoMQTT
+Comment=CorreoMQTT
+Exec=/opt/correomqtt/bin/CorreoMQTT
+Icon=/opt/correomqtt/lib/CorreoMQTT.png
+StartupWMClass=org.correomqtt.CorreoMqtt
+Terminal=false
+Type=Application
+Categories=Unknown
+MimeType=

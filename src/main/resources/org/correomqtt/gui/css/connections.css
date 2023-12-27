@@ -49,6 +49,22 @@
     -fx-background-image: url('../icons/angle-down-solid-white.png');
 }
 
+.black .file-upload-solid {
+    -fx-background-image: url('../icons/file-upload-solid-black.png');
+}
+
+.black .file-export-solid {
+    -fx-background-image: url('../icons/file-export-solid-black.png');
+}
+
+.white .file-upload-solid {
+    -fx-background-image: url('../icons/file-upload-solid-white.png');
+}
+
+.white .file-export-solid {
+    -fx-background-image: url('../icons/file-export-solid-white.png');
+}
+
 .black .folder-open-solid {
     -fx-graphic: url('../icons/folder-open-solid-black.png');
 }

@@ -1,0 +1,36 @@
+name: Maven Central CI
+on:
+  create:
+    tags:
+      - v*
+  workflow_dispatch:
+jobs:
+  linuxbuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Java Zulu 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - name: Extract Version
+        uses: nowsprinting/check-version-format-action@v3
+        id: version
+        with:
+          prefix: 'v'
+      - name: Set Version Release
+        run: |
+          mvn -B versions:set -DnewVersion="${{steps.version.outputs.full_without_prefix}}"
+          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+        if: steps.version.outputs.is_valid == 'true'
+        shell: bash
+      - name: Release Maven package
+        uses: samuelmeuli/action-maven-publish@v1
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          nexus_username: ${{ secrets.SONATYPE_USERNAME }}
+          nexus_password: ${{ secrets.SONATYPE_PASSWORD }}
+        if: steps.version.outputs.is_stable == 'true'

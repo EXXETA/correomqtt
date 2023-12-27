@@ -1,9 +1,9 @@
 package org.correomqtt.business.keyring.libsecret;
 
-import com.sun.jna.Platform;
+import org.apache.commons.lang3.SystemUtils;
+import org.correomqtt.plugin.spi.KeyringHook;
 import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.plugin.spi.KeyringHook;
 import org.freedesktop.secret.simple.SimpleCollection;
 import org.pf4j.Extension;
 import org.slf4j.Logger;
@@ -44,7 +44,7 @@ public class LibSecretKeyring extends BaseKeyring implements KeyringHook {
 
     @Override
     public boolean isSupported() {
-        return Platform.isLinux() && isAvailable();
+        return SystemUtils.IS_OS_LINUX && isAvailable();
     }
 
     @Override
@@ -65,7 +65,7 @@ public class LibSecretKeyring extends BaseKeyring implements KeyringHook {
     private boolean isAvailable() {
         try (SimpleCollection collection = new SimpleCollection()) {
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.debug("Try to detect libsecret failed. This is not a real problem.", e);
             return false;
         }

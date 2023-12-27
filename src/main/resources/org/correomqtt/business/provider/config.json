@@ -9,7 +9,7 @@
       "username": null,
       "password": null,
       "cleanSession": false,
-      "mqttVersion": "V3",
+      "mqttVersion": "MQTT_5_0",
       "ssl": "OFF",
       "ssl_keystore": null,
       "ssl_keystore_password": null,
@@ -27,7 +27,8 @@
       "lwtMessageId": false,
       "lwtAnswerExpected": false,
       "lwtRetained": false,
-      "lwtPayload": null
+      "lwtPayload": null,
+      "connectionUISettings": null
     }
   ],
   "themesSettings": {
@@ -44,7 +45,8 @@
     "useIgnoreCase": true,
     "searchUpdates": false,
     "firstStart": true,
-    "configCreatedWithCorreoVersion": null
+    "configCreatedWithCorreoVersion": null,
+    "globalUISettings": null
   }
 }
 

@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.String?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 <?import org.fxmisc.richtext.CodeArea?>
-
-<AnchorPane fx:id="publishViewAnchor" minWidth="410.0" styleClass="noBorder" stylesheets="@../css/publishBody.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.PublishViewController">
+<?import java.lang.String?>
+<AnchorPane fx:id="publishViewAnchor" minWidth="410.0" styleClass="noBorder" stylesheets="@../css/publishBody.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.PublishViewController">
     <SplitPane fx:id="splitPane" orientation="VERTICAL" styleClass="noBorder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <AnchorPane fx:id="publishUpperSplit" minHeight="250.0" styleClass="noBorder">
             <VBox fx:id="mainVBox" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -57,6 +57,19 @@
                     </styleClass>
                 </HBox>
                 <HBox alignment="CENTER_RIGHT" maxHeight="40.0" minHeight="40.0">
+               <ToggleButton fx:id="publishViewFormatToggleButton" mnemonicParsing="false" styleClass="highlighter-solid">
+                   <tooltip>
+                       <Tooltip text="%detailViewAutoFormatToggleButtonTooltip" />
+                   </tooltip>
+                  <HBox.margin>
+                     <Insets right="5.0" />
+                  </HBox.margin>
+               </ToggleButton>
+               <Pane prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
+                  <HBox.margin>
+                     <Insets right="5.0" />
+                  </HBox.margin>
+               </Pane>
                     <HBox fx:id="pluginControlBox" alignment="CENTER_RIGHT" maxHeight="40.0" minHeight="40.0">
                     </HBox>
                     <CheckBox fx:id="retainedCheckBox" alignment="CENTER_RIGHT" mnemonicParsing="false" text="Retained">

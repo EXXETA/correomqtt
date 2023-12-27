@@ -6,10 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.windpapi4j.InitializationFailedException;
 import com.github.windpapi4j.WinAPICallFailedException;
 import com.github.windpapi4j.WinDPAPI;
+import org.correomqtt.plugin.spi.KeyringHook;
 import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.plugin.spi.KeyringHook;
 import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +29,8 @@ public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
     private static final Logger LOGGER = LoggerFactory.getLogger(WinDPAPIKeyring.class);
 
     private static final Charset STD_CHAR_SET = StandardCharsets.UTF_8;
+    public static final String FAILED_TO_UNPROTECT_DATA_WITH_WIN_DPAPI = "Failed to unprotect data with WinDPAPI.";
+    public static final String FAILED_TO_PARSE_DATA_FROM_WIN_DPAPI = "Failed to parse data from WinDPAPI.";
 
     private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
@@ -63,32 +65,30 @@ public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
     private void writeData(Map<String, String> data) {
         try {
             File file = getFile();
-            LOGGER.debug("Write encoded string {}",Base64.getEncoder().encodeToString(protect(data)));
-            new ObjectMapper().writeValue(file,
+            if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Write encoded string {}", Base64.getEncoder().encodeToString(protect(data)));
+            }
+            new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file,
                     WinDPAPIKeyringDTO
                             .builder()
                             .data(Base64.getEncoder().encodeToString(protect(data)))
                             .build());
         } catch (JsonProcessingException e) {
-            LOGGER.error("Failed to write json data for WinDPAPI.", e);
             throw new KeyringException("Failed to write json data for WinDPAPI.", e);
         } catch (IOException e) {
-            LOGGER.error("Failed to write file with data from WinDPAPI.", e);
             throw new KeyringException("Failed to write file with data from WinDPAPI.", e);
         }
     }
 
     private byte[] protect(Map<String, String> data) {
         try {
-            String unprotectedData = new ObjectMapper().writeValueAsString(data);
+            String unprotectedData = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(data);
             WinDPAPI winDPAPI = WinDPAPI.newInstance(WinDPAPI.CryptProtectFlag.CRYPTPROTECT_UI_FORBIDDEN);
             return winDPAPI.protectData(unprotectedData.getBytes(STD_CHAR_SET));
         } catch (InitializationFailedException | WinAPICallFailedException e) {
-            LOGGER.error("Failed to unprotect data with WinDPAPI.", e);
-            throw new KeyringException("Failed to unprotect data with WinDPAPI.", e);
+            throw new KeyringException(FAILED_TO_UNPROTECT_DATA_WITH_WIN_DPAPI, e);
         } catch (JsonProcessingException e) {
-            LOGGER.error("Failed to parse data from WinDPAPI.", e);
-            throw new KeyringException("Failed to parse data from WinDPAPI.", e);
+            throw new KeyringException(FAILED_TO_PARSE_DATA_FROM_WIN_DPAPI, e);
         }
 
     }
@@ -101,7 +101,6 @@ public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
                 byte[] data = Base64.getDecoder().decode(winDPAPIKeyringDTO.getData().getBytes(STD_CHAR_SET));
                 return unprotect(data);
             } catch (IOException e) {
-                LOGGER.error("Reading WinDPAPI file failed.", e);
                 throw new KeyringException("Reading WinDPAPI file failed.", e);
             }
         } else {
@@ -116,11 +115,9 @@ public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
             return new ObjectMapper().readValue(unprotectedData, new TypeReference<HashMap<String, String>>() {
             });
         } catch (InitializationFailedException | WinAPICallFailedException e) {
-            LOGGER.error("Failed to unprotect data with WinDPAPI.", e);
-            throw new KeyringException("Failed to unprotect data with WinDPAPI.", e);
+            throw new KeyringException(FAILED_TO_UNPROTECT_DATA_WITH_WIN_DPAPI, e);
         } catch (JsonProcessingException e) {
-            LOGGER.error("Failed to parse data from WinDPAPI.", e);
-            throw new KeyringException("Failed to parse data from WinDPAPI.", e);
+            throw new KeyringException(FAILED_TO_PARSE_DATA_FROM_WIN_DPAPI, e);
         }
     }
 

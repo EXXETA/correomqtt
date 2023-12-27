@@ -1,5 +1,6 @@
 package org.correomqtt.business.provider;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
@@ -9,12 +10,14 @@ import org.correomqtt.business.dispatcher.SubscribeGlobalDispatcher;
 import org.correomqtt.business.dispatcher.SubscribeGlobalObserver;
 import org.correomqtt.business.model.SubscriptionDTO;
 import org.correomqtt.business.model.SubscriptionHistoryListDTO;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class PersistSubscriptionHistoryProvider extends BasePersistHistoryProvider<SubscriptionHistoryListDTO>
@@ -155,7 +158,7 @@ public class PersistSubscriptionHistoryProvider extends BasePersistHistoryProvid
     }
 
     @Override
-    public void onSettingsUpdated() {
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
         // nothing to do
     }
 
@@ -195,10 +198,7 @@ public class PersistSubscriptionHistoryProvider extends BasePersistHistoryProvid
     }
 
     @Override
-    public void onDisconnect() {
-        instances.remove(getConnectionId());
-        historyDTOs.remove(getConnectionId());
-    }
+    public void onDisconnect() {}
 
     @Override
     public void onDisconnectFailed(Throwable exception) {
@@ -218,6 +218,15 @@ public class PersistSubscriptionHistoryProvider extends BasePersistHistoryProvid
     @Override
     public void onReconnectFailed(AtomicInteger triedReconnects, int maxReconnects) {
         // nothing to do
+    }
+
+    public void cleanUp() {
+        SubscribeGlobalDispatcher.getInstance().removeObserver(this);
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        ConfigDispatcher.getInstance().removeObserver(this);
+
+        instances.remove(getConnectionId());
+        historyDTOs.remove(getConnectionId());
     }
 }
 

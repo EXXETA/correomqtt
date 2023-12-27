@@ -3,18 +3,19 @@ package org.correomqtt.business.provider;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.keyring.Keyring;
+import org.correomqtt.business.exception.CorreoMqttConfigurationMissingException;
 import org.correomqtt.business.model.ConfigDTO;
 import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.model.ThemeSettingsDTO;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.theme.ThemeProvider;
-import org.correomqtt.gui.theme.light.LightThemeProvider;
+import org.correomqtt.gui.theme.light_legacy.LightLegacyThemeProvider;
 import org.correomqtt.plugin.manager.PluginManager;
-import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +29,9 @@ import java.nio.file.InvalidPathException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.correomqtt.business.model.ConnectionPasswordType.*;
+import static org.correomqtt.business.model.ConnectionPasswordType.AUTH_PASSWORD;
+import static org.correomqtt.business.model.ConnectionPasswordType.PASSWORD;
+import static org.correomqtt.business.model.ConnectionPasswordType.SSL_KEYSTORE_PASSWORD;
 
 //TODO check invalid configs
 
@@ -71,7 +74,7 @@ public class SettingsProvider extends BaseUserFileProvider {
         try {
             configDTO = new ObjectMapper().readValue(getFile(), ConfigDTO.class);
         } catch (IOException e) {
-            LOGGER.error("Exception parsing config file.", e);
+            LOGGER.error("Exception parsing config file {}.", CONFIG_FILE_NAME, e);
             ConfigDispatcher.getInstance().onInvalidJsonFormat();
         }
 
@@ -88,15 +91,38 @@ public class SettingsProvider extends BaseUserFileProvider {
 
     private ThemeProvider getActiveTheme() {
         if (activeThemeProvider == null) {
+            if(configDTO.getThemesSettings().getNextTheme() != null) {
+                configDTO.getThemesSettings().setActiveTheme(configDTO.getThemesSettings().getNextTheme());
+                configDTO.getThemesSettings().setNextTheme(null);
+                saveDTO();
+            }
             String activeThemeName = configDTO.getThemesSettings().getActiveTheme().getName();
             ArrayList<ThemeProvider> themes = new ArrayList<>(PluginManager.getInstance().getExtensions(ThemeProviderHook.class));
-            activeThemeProvider = themes.stream().filter(t -> t.getName().equals(activeThemeName)).findFirst().orElse(new LightThemeProvider());
+            activeThemeProvider = themes.stream().filter(t -> t.getName().equals(activeThemeName)).findFirst().orElse(new LightLegacyThemeProvider());
         }
         return activeThemeProvider;
     }
 
     public List<ConnectionConfigDTO> getConnectionConfigs() {
         return configDTO.getConnections();
+    }
+
+    public MessageListViewConfig produceSubscribeListViewConfig(String connectionId){
+        return configDTO.getConnections()
+                .stream()
+                .filter(c -> c.getId().equals(connectionId))
+                .findFirst()
+                .orElseThrow(CorreoMqttConfigurationMissingException::new)
+                .produceSubscribeListViewConfig();
+    }
+
+    public MessageListViewConfig producePublishListViewConfig(String connectionId){
+        return configDTO.getConnections()
+                .stream()
+                .filter(c -> c.getId().equals(connectionId))
+                .findFirst()
+                .orElseThrow(CorreoMqttConfigurationMissingException::new)
+                .producePublishListViewConfig();
     }
 
     public SettingsDTO getSettings() {
@@ -107,22 +133,22 @@ public class SettingsProvider extends BaseUserFileProvider {
         return configDTO.getThemesSettings();
     }
 
-    public void saveSettings() {
-        this.activeThemeProvider = null;
+    public void saveSettings(boolean showRestartRequiredDialog) {
         saveDTO();
         saveToUserDirectory(CSS_FILE_NAME, getActiveTheme().getCss());
-        ConfigDispatcher.getInstance().onSettingsUpdated();
+        ConfigDispatcher.getInstance().onSettingsUpdated(showRestartRequiredDialog);
     }
 
-    public void saveConnections(List<ConnectionConfigDTO> connections, String masterPassword) throws PasswordRecoverableException {
+    public void saveConnections(List<ConnectionConfigDTO> connections, String masterPassword) throws EncryptionRecoverableException {
         configDTO.setConnections(connections);
+        saveDTO();
 
         SecretStoreProvider secretStoreProvider = SecretStoreProvider.getInstance();
         for(ConnectionConfigDTO c: connections){
             secretStoreProvider.setPassword(masterPassword, c, PASSWORD, c.getPassword());
             secretStoreProvider.setPassword(masterPassword,c, AUTH_PASSWORD,  c.getAuthPassword());
             secretStoreProvider.setPassword(masterPassword, c, SSL_KEYSTORE_PASSWORD, c.getSslKeystorePassword());
-        };
+        }
         secretStoreProvider.encryptAndSavePasswords(masterPassword);
 
         ConnectionHolder.getInstance().refresh();
@@ -132,7 +158,7 @@ public class SettingsProvider extends BaseUserFileProvider {
     private void saveDTO() {
 
         try {
-            new ObjectMapper().writeValue(getFile(), configDTO);
+            new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(getFile(), configDTO);
         } catch (FileNotFoundException e) {
             LOGGER.error(EX_MSG_WRITE_CONFIG, e);
             ConfigDispatcher.getInstance().onConfigDirectoryEmpty();
@@ -145,7 +171,7 @@ public class SettingsProvider extends BaseUserFileProvider {
         }
     }
 
-    public void wipeSecretData(String masterPassword) throws PasswordRecoverableException {
+    public void wipeSecretData(String masterPassword) throws EncryptionRecoverableException {
         KeyringHandler.getInstance().wipe();
         List<ConnectionConfigDTO> connections = this.getConnectionConfigs();
         connections.forEach(c -> {
@@ -176,14 +202,17 @@ public class SettingsProvider extends BaseUserFileProvider {
         return configDTO.getThemesSettings().getActiveTheme().getIconMode().toString();
     }
 
-    public void initializePasswords(String masterPassword) throws PasswordRecoverableException {
+    public void initializePasswords(String masterPassword) throws EncryptionRecoverableException {
         SecretStoreProvider secretStoreProvider = SecretStoreProvider.getInstance();
+
+        secretStoreProvider.migratePasswordEncryption(masterPassword);
+
         List<ConnectionConfigDTO> connections = this.getConnectionConfigs();
         for(ConnectionConfigDTO c: connections){
             c.setPassword(secretStoreProvider.getPassword(masterPassword,c,PASSWORD));
             c.setAuthPassword(secretStoreProvider.getPassword(masterPassword,c, AUTH_PASSWORD));
             c.setSslKeystorePassword(secretStoreProvider.getPassword(masterPassword,c, SSL_KEYSTORE_PASSWORD));
-        };
+        }
         saveConnections(connections, masterPassword);
     }
 }

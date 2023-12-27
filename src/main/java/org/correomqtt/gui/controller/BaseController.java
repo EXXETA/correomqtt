@@ -1,37 +1,39 @@
 package org.correomqtt.gui.controller;
 
-import javafx.scene.layout.Region;
-import org.correomqtt.business.provider.SettingsProvider;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
+import org.correomqtt.business.provider.SettingsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.ResourceBundle;
 
 abstract class BaseController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseController.class);
-    private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+    private static final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
-    static <C extends BaseController, Z extends Class<C>> LoaderResult<C> load(Z controllerClazz, String fxml) {
+    static <C extends BaseController> LoaderResult<C> load(Class<C> controllerClazz, String fxml) {
         return load(controllerClazz,
                 fxml,
                 () -> controllerClazz.getDeclaredConstructor().newInstance());
     }
 
-    static <C extends BaseController, Z extends Class<C>> LoaderResult<C> load(final Z controllerClazz,
-                                                                               final String fxml,
-                                                                               final ConstructorMethod<C> constructorMethod) {
+    static <C extends BaseController> LoaderResult<C> load(final Class<C> controllerClazz,
+                                                           final String fxml,
+                                                           final ConstructorMethod<C> constructorMethod) {
 
         FXMLLoader loader = new FXMLLoader(controllerClazz.getResource(fxml),
                 ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()));
@@ -39,9 +41,9 @@ abstract class BaseController {
         loader.setControllerFactory(param -> {
             try {
                 return constructorMethod.construct();
-            } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-                LOGGER.error("Exception loading {} from {}: ", controllerClazz.getSimpleName(), fxml, e);
-                throw new IllegalStateException(e);
+            } catch (InstantiationException | InvocationTargetException | NoSuchMethodException |
+                     IllegalAccessException e) {
+                throw new IllegalStateException(MessageFormat.format("Exception loading {0} from {1}: ", controllerClazz.getSimpleName(), fxml), e);
             }
         });
 
@@ -68,7 +70,7 @@ abstract class BaseController {
                                                         boolean alwaysOnTop,
                                                         final EventHandler<WindowEvent> closeHandler,
                                                         final EventHandler<KeyEvent> keyHandler) {
-        showAsDialog(result, title, windowProperties, true, minWidth, minHeight, alwaysOnTop, closeHandler, keyHandler);
+        showAsDialog(result, title, windowProperties, true, alwaysOnTop, closeHandler, keyHandler, minWidth, minHeight);
     }
 
     static <Z extends BaseController> void showAsDialog(LoaderResult<Z> result,
@@ -78,19 +80,18 @@ abstract class BaseController {
                                                         boolean alwaysOnTop,
                                                         final EventHandler<WindowEvent> closeHandler,
                                                         final EventHandler<KeyEvent> keyHandler) {
-        showAsDialog(result, title, windowProperties, resizable, null, null, alwaysOnTop, closeHandler, keyHandler);
+        showAsDialog(result, title, windowProperties, resizable, alwaysOnTop, closeHandler, keyHandler, 300, 400);
     }
 
-    private static <Z extends BaseController> void showAsDialog(LoaderResult<Z> result,
-                                                                String title,
-                                                                Map<Object, Object> windowProperties,
-                                                                boolean resizable,
-                                                                Integer minWidth,
-                                                                Integer minHeight,
-                                                                boolean alwaysOnTop,
-                                                                final EventHandler<WindowEvent> closeHandler,
-                                                                final EventHandler<KeyEvent> keyHandler) {
-
+    static <Z extends BaseController> void showAsDialog(LoaderResult<Z> result,
+                                                        String title,
+                                                        Map<Object, Object> windowProperties,
+                                                        boolean resizable,
+                                                        boolean alwaysOnTop,
+                                                        final EventHandler<WindowEvent> closeHandler,
+                                                        final EventHandler<KeyEvent> keyHandler,
+                                                        int minWidth,
+                                                        int minHeight) {
 
         Scene scene = new Scene(result.getMainPane());
         String cssPath = SettingsProvider.getInstance().getCssPath();
@@ -98,16 +99,14 @@ abstract class BaseController {
             scene.getStylesheets().add(cssPath);
         }
         Stage stage = new Stage();
+        stage.initStyle(StageStyle.UTILITY);
         stage.setTitle(title);
         stage.setScene(scene);
         stage.setResizable(resizable);
+        stage.setMinWidth(minWidth);
+        stage.setMinHeight(minHeight);
         stage.setAlwaysOnTop(alwaysOnTop);
-        if(minWidth != null){
-            stage.setMinWidth(minWidth);
-        }
-        if(minHeight != null){
-            stage.setMinHeight(minHeight);
-        }
+        stage.initModality(Modality.WINDOW_MODAL);
         stage.show();
         if (closeHandler != null) {
             stage.getScene().getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, closeHandler);

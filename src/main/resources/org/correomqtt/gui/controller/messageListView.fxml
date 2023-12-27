@@ -1,64 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.String?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.SplitPane?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
-
-<AnchorPane fx:id="mainPane" minHeight="250.0" styleClass="noBorder" stylesheets="@../css/messageListView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.MessageListViewController">
-    <SplitPane fx:id="splitPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+<?import java.lang.String?>
+<AnchorPane fx:id="mainPane" minHeight="250.0" styleClass="noBorder" stylesheets="@../css/messageListView.css"
+            xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.correomqtt.gui.controller.MessageListViewController">
+    <SplitPane fx:id="splitPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+               AnchorPane.topAnchor="0.0">
         <VBox fx:id="messagesVBox" minWidth="250.0" styleClass="noBorder">
-            <HBox maxHeight="40.0" minHeight="40.0">
+            <HBox fx:id="messagesHBox" maxHeight="40.0" minHeight="40.0">
                 <styleClass>
-                    <String fx:value="toolbar" />
-                    <String fx:value="bottom" />
+                    <String fx:value="toolbar"/>
+                    <String fx:value="bottom"/>
                 </styleClass>
-                <Button fx:id="copyToFormButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#copyToForm" styleClass="file-upload-solid">
+                <Button fx:id="copyToFormButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
+                        onAction="#copyToForm" styleClass="file-upload-solid">
                     <tooltip>
-                        <Tooltip text="%messageListViewCopyButtonTooltip" />
+                        <Tooltip text="%messageListViewCopyButtonTooltip"/>
                     </tooltip>
                     <HBox.margin>
-                        <Insets right="5.0" />
+                        <Insets right="5.0"/>
                     </HBox.margin>
                 </Button>
-                <Button fx:id="showDetailsButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#showDetailsOfMessage" styleClass="window-maximize-regular">
+                <Button fx:id="showDetailsButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
+                        onAction="#showDetailsOfMessage" styleClass="window-maximize-regular">
                     <tooltip>
-                        <Tooltip text="%messageListViewShowDetailsTooltip" />
+                        <Tooltip text="%messageListViewShowDetailsTooltip"/>
                     </tooltip>
                 </Button>
-                <Pane HBox.hgrow="ALWAYS" />
-            <TextField fx:id="messageSearchTextField" promptText="Search topics .." styleClass="messageSearchTextField" />
-            <Button fx:id="messageSearchClearButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#resetMessageSearchTextField">
-               <HBox.margin>
-                  <Insets left="-1.0" />
-               </HBox.margin>
-               <styleClass>
-                  <String fx:value="broom-solid" />
-                  <String fx:value="messageSearchClear" />
-               </styleClass></Button>
+                <Pane HBox.hgrow="ALWAYS"/>
 
-                <Button fx:id="clearMessagesButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#clearList" styleClass="trash-alt-solid">
+
+                <Button fx:id="clearMessagesButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
+                        onAction="#clearList" styleClass="trash-alt-solid">
                     <tooltip>
-                        <Tooltip text="%messageListViewClearMessagesButton" />
-                    </tooltip>
-               <HBox.margin>
-                  <Insets left="5.0" />
-               </HBox.margin>
-                </Button>
-                <ToggleButton fx:id="showDetailViewButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#toggleDetailView" styleClass="columns-solid-without-toolbar">
-                    <tooltip>
-                        <Tooltip text="%messageListViewMessageSplitButton" />
+                        <Tooltip text="%messageListViewClearMessagesButton"/>
                     </tooltip>
                     <HBox.margin>
-                        <Insets left="5.0" />
+                        <Insets left="5.0"/>
+                    </HBox.margin>
+                </Button>
+                <MenuButton fx:id="showLabelsButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
+                            onAction="#showLabelsInListView" styleClass="eye-solid">
+                    <tooltip>
+                        <Tooltip text="%messageListViewShowDetailsTooltip"/>
+                    </tooltip>
+                    <items>
+                        <CheckMenuItem fx:id="changeDisplayRetained" mnemonicParsing="false"
+                                       onAction="#changeRetainDisplay" styleClass="menuItem" text="%retainedMenuItem"/>
+                        <CheckMenuItem fx:id="changeDisplayQos" mnemonicParsing="false" onAction="#changeQosDisplay"
+                                       styleClass="menuItem" text="%qosMenuItem"/>
+                        <CheckMenuItem fx:id="changeDisplayTimestamp" mnemonicParsing="false"
+                                       onAction="#changeTimestampDisplay" styleClass="menuItem"
+                                       text="%timestampMenuItem"/>
+                    </items>
+                    <HBox.margin>
+                        <Insets left="5.0"/>
+                    </HBox.margin>
+                </MenuButton>
+                <ToggleButton fx:id="showDetailViewButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
+                              onAction="#toggleDetailView" styleClass="columns-solid-without-toolbar">
+                    <tooltip>
+                        <Tooltip text="%messageListViewMessageSplitButton"/>
+                    </tooltip>
+                    <HBox.margin>
+                        <Insets left="5.0"/>
                     </HBox.margin>
                 </ToggleButton>
             </HBox>

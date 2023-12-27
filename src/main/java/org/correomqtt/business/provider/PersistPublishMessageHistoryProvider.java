@@ -1,5 +1,6 @@
 package org.correomqtt.business.provider;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
@@ -9,13 +10,12 @@ import org.correomqtt.business.dispatcher.PublishGlobalDispatcher;
 import org.correomqtt.business.dispatcher.PublishGlobalObserver;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.PublishMessageHistoryListDTO;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,8 +29,8 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     private static final String HISTORY_FILE_NAME = "publishMessageHistory.json";
     private static final int MAX_ENTRIES = 100;
 
-    private static Map<String, PersistPublishMessageHistoryProvider> instances = new HashMap<>();
-    private static Map<String, PublishMessageHistoryListDTO> historyDTOs = new HashMap<>();
+    private static final Map<String, PersistPublishMessageHistoryProvider> instances = new HashMap<>();
+    private static final Map<String, PublishMessageHistoryListDTO> historyDTOs = new HashMap<>();
 
 
     private PersistPublishMessageHistoryProvider(String id) {
@@ -68,7 +68,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
         historyDTOs.put(id, dto);
     }
 
-    public LinkedList<MessageDTO> getMessages(String connectionId) {
+    public List<MessageDTO> getMessages(String connectionId) {
         return historyDTOs.get(connectionId).getMessages();
     }
 
@@ -76,11 +76,11 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     public void onPublishSucceeded(String connectionId, MessageDTO messageDTO) {
         LOGGER.info("Persisting new publish history entry: {}", messageDTO.getTopic());
 
-        LinkedList<MessageDTO> messageList = getMessages(connectionId);
-        messageList.addFirst(messageDTO);
+        List<MessageDTO> messageList = getMessages(connectionId);
+        messageList.add(0,messageDTO);
         while (messageList.size() > MAX_ENTRIES) {
             LOGGER.info("Removing last entry from publish history, cause limit of {} is reached.", MAX_ENTRIES);
-            messageList.removeLast();
+            messageList.remove(messageList.size()-1);
         }
         saveHistory(connectionId);
     }
@@ -97,7 +97,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     @Override
     public void onPublishRemoved(String connectionId, MessageDTO messageDTO) {
         LOGGER.info("Removing {} from publish history for {}.", messageDTO.getTopic(), connectionId);
-        LinkedList<MessageDTO> messageList = getMessages(connectionId);
+        List<MessageDTO> messageList = getMessages(connectionId);
         messageList.remove(messageDTO);
         saveHistory(connectionId);
     }
@@ -105,7 +105,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     @Override
     public void onPublishesCleared(String connectionId) {
         LOGGER.info("Clearing publish history for {}.", connectionId);
-        LinkedList<MessageDTO> messageList = getMessages(connectionId);
+        List<MessageDTO> messageList = getMessages(connectionId);
         messageList.clear();
         saveHistory(connectionId);
     }
@@ -152,7 +152,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
 
 
     @Override
-    public void onSettingsUpdated() {
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
         // nothing to do
     }
 
@@ -168,7 +168,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
 
     @Override
     public void onDisconnectFromConnectionDeleted(String connectionId) {
-
+        // nothing to do
     }
 
     @Override
@@ -192,10 +192,7 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     }
 
     @Override
-    public void onDisconnect() {
-        instances.remove(getConnectionId());
-        historyDTOs.remove(getConnectionId());
-    }
+    public void onDisconnect() {}
 
     @Override
     public void onDisconnectFailed(Throwable exception) {
@@ -215,6 +212,15 @@ public class PersistPublishMessageHistoryProvider extends BasePersistHistoryProv
     @Override
     public void onReconnectFailed(AtomicInteger triedReconnects, int maxReconnects) {
         // nothing to do
+    }
+
+    public void cleanUp() {
+        PublishGlobalDispatcher.getInstance().removeObserver(this);
+        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        ConfigDispatcher.getInstance().removeObserver(this);
+
+        instances.remove(getConnectionId());
+        historyDTOs.remove(getConnectionId());
     }
 }
 

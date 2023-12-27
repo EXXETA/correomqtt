@@ -1,9 +1,9 @@
 package org.correomqtt.business.services;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.dispatcher.ExportMessageDispatcher;
 import org.correomqtt.business.exception.CorreoMqttExportMessageException;
 import org.correomqtt.business.model.MessageDTO;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +27,7 @@ public class ExportMessageService extends BaseService {
         ExportMessageDispatcher.getInstance().onExportStarted(connectionId, file, messageDTO);
         LOGGER.info(getConnectionMarker(), "Start exporting message {} to file {}.", messageDTO.getMessageId(), file.getAbsolutePath());
         try {
-            new ObjectMapper().writeValue(file, messageDTO);
+            new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, messageDTO);
         } catch (IOException e) {
             throw new CorreoMqttExportMessageException(e);
         }

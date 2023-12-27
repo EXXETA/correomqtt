@@ -6,8 +6,7 @@ public class ConnectionLifecycleDispatcher extends BaseConnectionDispatcher<Conn
 
     private static ConnectionLifecycleDispatcher instance;
 
-    private ConnectionLifecycleDispatcher() {
-    }
+    private ConnectionLifecycleDispatcher() {}
 
     public static synchronized ConnectionLifecycleDispatcher getInstance() {
         if (instance == null) {
@@ -66,8 +65,6 @@ public class ConnectionLifecycleDispatcher extends BaseConnectionDispatcher<Conn
     }
 
     public void onReconnectFailed(String connectionId, AtomicInteger triedReconnects, int maxReconnects) {
-        triggerFiltered(connectionId,o -> {
-            o.onReconnectFailed(triedReconnects, maxReconnects);
-        });
+        triggerFiltered(connectionId,o -> o.onReconnectFailed(triedReconnects, maxReconnects));
     }
 }

@@ -1,15 +1,26 @@
 package org.correomqtt.gui.helper;
 
+import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.stage.StageStyle;
+import javafx.stage.Window;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.gui.utils.PlatformUtils;
+import org.correomqtt.gui.window.StageHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -29,19 +40,21 @@ public class AlertHelper {
         final CountDownLatch countDownLatch = block ? new CountDownLatch(1) : null;
         PlatformUtils.runLaterIfNotInFxThread(() -> {
             Alert alert = new Alert(type);
+            StageHelper.enforceFloatingWindow(alert);
             DialogPane dialogPane = alert.getDialogPane();
             String cssPath = SettingsProvider.getInstance().getCssPath();
             if (cssPath != null) {
                 dialogPane.getStylesheets().add(cssPath);
             }
             alert.setTitle(title);
+            alert.initOwner(Window.getWindows().stream().filter(Window::isShowing).findFirst().orElse(null));
             alert.setHeaderText(null);
             alert.setContentText(content);
             alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
             if (buttonType != null) {
                 alert.getButtonTypes().setAll(buttonType);
             }
-
+            alert.initStyle(StageStyle.UTILITY);
             alert.showAndWait();
             if (countDownLatch != null) {
                 countDownLatch.countDown();
@@ -62,6 +75,7 @@ public class AlertHelper {
         AtomicBoolean result = new AtomicBoolean();
         PlatformUtils.runLaterIfNotInFxThread(() -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            StageHelper.enforceFloatingWindow(alert);
             DialogPane dialogPane = alert.getDialogPane();
             dialogPane.setMaxWidth(450);
             String cssPath = SettingsProvider.getInstance().getCssPath();
@@ -72,6 +86,7 @@ public class AlertHelper {
             alert.setHeaderText(header);
             alert.setContentText(content);
             alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+            alert.initStyle(StageStyle.UTILITY);
             ButtonType no = new ButtonType(noButton);
             ButtonType yes = new ButtonType(yesButton);
 
@@ -123,11 +138,12 @@ public class AlertHelper {
         return showConfirmationDialog(title, header, content, noButton, yesButton);
     }
 
-    public static String passwordInput(String title, String header, String content){
+    public static String passwordInput(String title, String header, String content) {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         AtomicReference<String> result = new AtomicReference<>();
         PlatformUtils.runLaterIfNotInFxThread(() -> {
             Dialog<String> dialog = new Dialog<>();
+            StageHelper.enforceFloatingWindow(dialog);
             dialog.setWidth(450);
             DialogPane dialogPane = dialog.getDialogPane();
             dialog.setWidth(450);
@@ -155,7 +171,7 @@ public class AlertHelper {
                 }
                 return null;
             });
-            dialog.showAndWait().ifPresentOrElse(result::set,() -> result.set(null));
+            dialog.showAndWait().ifPresentOrElse(result::set, () -> result.set(null));
             countDownLatch.countDown();
         });
 
@@ -168,4 +184,52 @@ public class AlertHelper {
         return result.get();
 
     }
+
+    public static <T> T select(String title, String content, List<T> choices) {
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        AtomicReference<T> result = new AtomicReference<>();
+        PlatformUtils.runLaterIfNotInFxThread(() -> {
+            Dialog<T> dialog = new Dialog<>();
+            StageHelper.enforceFloatingWindow(dialog);
+            dialog.setWidth(450);
+            DialogPane dialogPane = dialog.getDialogPane();
+            dialog.setWidth(450);
+            dialogPane.setMinHeight(Region.USE_PREF_SIZE);
+            String cssPath = SettingsProvider.getInstance().getCssPath();
+            if (cssPath != null) {
+                dialogPane.getStylesheets().add(cssPath);
+            }
+            dialog.setTitle(title);
+            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK);
+
+            ComboBox<T> comboBox = new ComboBox<>();
+            comboBox.setItems(FXCollections.observableArrayList(choices));
+            comboBox.getSelectionModel().selectFirst();
+            VBox vbox = new VBox();
+            vbox.setAlignment(Pos.CENTER_LEFT);
+            vbox.setSpacing(10);
+            Label label = new Label(content);
+            label.setWrapText(true);
+            label.setMaxWidth(450);
+            vbox.getChildren().addAll(label, comboBox);
+            dialog.getDialogPane().setContent(vbox);
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == ButtonType.OK) {
+                    return comboBox.getSelectionModel().getSelectedItem();
+                }
+                return null;
+            });
+            dialog.showAndWait().ifPresentOrElse(result::set, () -> result.set(null));
+            countDownLatch.countDown();
+        });
+
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            LOGGER.error("Exception during password input dialog ", e);
+            Thread.currentThread().interrupt();
+        }
+        return result.get();
+    }
+
 }

@@ -1,9 +1,16 @@
 package org.correomqtt.plugin.spi;
 
-import org.jdom2.Element;
 import org.pf4j.ExtensionPoint;
 
-public interface BaseExtensionPoint extends ExtensionPoint {
+public interface BaseExtensionPoint<T> extends ExtensionPoint {
 
-    default void onConfigReceived(Element config) {}
+    default Class<T> getConfigClass() {
+        return null;
+    }
+
+    default T getConfig(){
+        return null;
+    }
+
+    default void onConfigReceived(T config) {}
 }

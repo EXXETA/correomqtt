@@ -8,7 +8,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -24,9 +26,14 @@ public class SettingsDTO {
     private Locale savedLocale = null;
     private Locale currentLocale = null;
     private boolean searchUpdates;
+    private boolean useDefaultRepo = true;
+    private boolean installBundledPlugins = true;
+    private String bundledPluginsUrl;
+    private Map<String, String> pluginRepositories = new HashMap<>();
     private boolean firstStart = true;
     private String keyringIdentifier;
-
+    @Builder.Default
+    private GlobalUISettings globalUISettings = null;
     @Builder.Default
     private String configCreatedWithCorreoVersion = null;
 
@@ -52,5 +59,13 @@ public class SettingsDTO {
 
     public void setSavedLocale(Locale savedLocale) {
         this.savedLocale = savedLocale;
+    }
+
+    public GlobalUISettings getGlobalUISettings() {
+        return globalUISettings;
+    }
+
+    public void setGlobalUISettings(GlobalUISettings globalUISettings) {
+        this.globalUISettings = globalUISettings;
     }
 }

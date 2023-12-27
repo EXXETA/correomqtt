@@ -1,9 +1,5 @@
 package org.correomqtt;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.util.ContextInitializer;
-import ch.qos.logback.core.joran.spi.JoranException;
-import ch.qos.logback.core.util.StatusPrinter;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -15,37 +11,42 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import org.apache.maven.artifact.versioning.ComparableVersion;
-import org.correomqtt.business.dispatcher.*;
-import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
+import org.correomqtt.business.dispatcher.PreloadingDispatcher;
+import org.correomqtt.business.dispatcher.ShortcutDispatcher;
+import org.correomqtt.business.dispatcher.ShutdownDispatcher;
+import org.correomqtt.business.dispatcher.ShutdownObserver;
+import org.correomqtt.business.dispatcher.StartupDispatcher;
+import org.correomqtt.business.dispatcher.StartupObserver;
+import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
+import org.correomqtt.business.model.GlobalUISettings;
 import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.provider.PasswordRecoverableException;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.VersionUtils;
-import org.correomqtt.gui.business.TaskFactory;
 import org.correomqtt.gui.controller.AlertController;
 import org.correomqtt.gui.controller.MainViewController;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
-import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
-import org.correomqtt.plugin.PluginSystem;
+import org.correomqtt.gui.utils.PluginCheckUtils;
+import org.correomqtt.plugin.PluginLauncher;
 import org.correomqtt.plugin.manager.PluginManager;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.io.IOException;
-import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-public class CorreoMqtt extends Application implements StartupObserver {
+public class CorreoMqtt extends Application implements StartupObserver, ShutdownObserver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CorreoMqtt.class);
     private ResourceBundle resources;
     private MainViewController mainViewController;
     private Scene scene;
+    private Stage primaryStage;
 
     public static void main(String[] args) {
         launch(args);
@@ -53,11 +54,20 @@ public class CorreoMqtt extends Application implements StartupObserver {
 
     @Override
     public void init() throws IOException {
-        LOGGER.info("Application started.");
-        LOGGER.info("JVM: {} | {} | {}.", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
-        LOGGER.info("CorreoMQTT version is {}.", VersionUtils.getVersion());
+
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Application started.");
+            LOGGER.info("JVM: {} {} {}", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
+            LOGGER.info("JavaFX: {}, Runtime: {}", System.getProperty("javafx.version"), System.getProperty("javafx.runtime.version"));
+            LOGGER.info("OS: {} {} {}", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"));
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            String xdgCurrentDesktop = System.getenv("XDG_CURRENT_DESKTOP");
+            LOGGER.info("ENV: {}{} x {} ", xdgCurrentDesktop != null ? xdgCurrentDesktop + " " : "", screenSize.getWidth(), screenSize.getHeight());
+            LOGGER.info("CorreoMQTT version is {}", VersionUtils.getVersion());
+        }
 
         StartupDispatcher.getInstance().addObserver(this);
+        ShutdownDispatcher.getInstance().addObserver(this);
 
         final SettingsDTO settings = SettingsProvider.getInstance().getSettings();
 
@@ -73,9 +83,15 @@ public class CorreoMqtt extends Application implements StartupObserver {
 
         if (settings.isSearchUpdates()) {
             PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderSearchingUpdates"));
-            new PluginSystem().start();
-            checkForUpdates();
+            PluginCheckUtils.checkMigration();
+            new PluginLauncher().start(false);
+            try {
+                checkForUpdates();
+            } catch (CorreoMqttUnableToCheckVersionException e) {
+                LOGGER.debug("Unable to check version", e);
+            }
         }
+
 
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderKeyring"));
 
@@ -92,7 +108,7 @@ public class CorreoMqtt extends Application implements StartupObserver {
 
         PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderReady"));
 
-        SettingsProvider.getInstance().saveSettings();
+        SettingsProvider.getInstance().saveSettings(false);
 
     }
 
@@ -134,23 +150,26 @@ public class CorreoMqtt extends Application implements StartupObserver {
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
     }
 
-    private void checkForUpdates() {
+    private boolean checkForUpdates() throws CorreoMqttUnableToCheckVersionException {
         try {
             CheckNewVersionUtils.checkNewVersion(false);
-        } catch (IOException | ParseException e) {
+            return true;
+        } catch (IOException e) {
             LOGGER.warn("Version check failed.", e);
+            return false;
         }
     }
 
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        loadPrimaryStage(primaryStage);
+        this.primaryStage = primaryStage;
+        loadPrimaryStage();
 
         AlertController.activate();
     }
 
-    private void loadPrimaryStage(Stage primaryStage) throws IOException {
+    private void loadPrimaryStage() throws IOException {
         String cssPath = SettingsProvider.getInstance().getCssPath();
 
         FXMLLoader loader = new FXMLLoader(MainViewController.class.getResource("mainView.fxml"),
@@ -165,22 +184,48 @@ public class CorreoMqtt extends Application implements StartupObserver {
             scene.getStylesheets().add(cssPath);
         }
         primaryStage.setScene(scene);
+        primaryStage.sizeToScene();
         primaryStage.setMinHeight(400);
         primaryStage.setMinWidth(850);
-        primaryStage.show();
 
-        primaryStage.setOnCloseRequest(t -> {
-            LOGGER.info("Main window closed. Initialize shutdown.");
-            LOGGER.info("Shutting down connections.");
-            ApplicationLifecycleDispatcher.getInstance().onShutdown();
-            LOGGER.info("Shutting down plugins.");
-            PluginManager.getInstance().stopPlugins();
-            LOGGER.info("Shutting down application. Bye.");
-            Platform.exit();
-            System.exit(0);
-        });
+        final SettingsDTO settings = SettingsProvider.getInstance().getSettings();
+
+        if (settings.getGlobalUISettings() == null) {
+            primaryStage.show();
+            saveGlobalUISettings();
+        } else {
+            primaryStage.setX(settings.getGlobalUISettings().getWindowPositionX());
+            primaryStage.setY(settings.getGlobalUISettings().getWindowPositionY());
+            primaryStage.setWidth(settings.getGlobalUISettings().getWindowWidth());
+            primaryStage.setHeight(settings.getGlobalUISettings().getWindowHeight());
+
+            primaryStage.show();
+        }
+
+        primaryStage.setOnCloseRequest(t -> onShutdownRequested());
 
         setupShortcut();
+    }
+
+    private void saveGlobalUISettings() {
+        final SettingsDTO settings = SettingsProvider.getInstance().getSettings();
+
+        settings.setGlobalUISettings(new GlobalUISettings(
+                primaryStage.getX(),
+                primaryStage.getY(),
+                primaryStage.getWidth(),
+                primaryStage.getHeight()
+        ));
+
+        SettingsProvider.getInstance().saveSettings(false);
+    }
+
+    private void saveConnectionUISettings() {
+        mainViewController.tabPane.getTabs().forEach(tab -> {
+            if (mainViewController.getConntectionViewControllers().get(tab.getId()) != null) {
+                mainViewController.getConntectionViewControllers().get(tab.getId()).saveConnectionUISettings();
+            }
+        });
     }
 
     private void setupShortcut() {
@@ -207,25 +252,6 @@ public class CorreoMqtt extends Application implements StartupObserver {
         );
     }
 
-    private void setLoggerFilePath() {
-
-
-        // Set the path for file logging to user directory.
-        System.setProperty("correomqtt-logfile", SettingsProvider.getInstance().getLogPath());
-
-        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
-        ContextInitializer ci = new ContextInitializer(lc);
-        lc.reset();
-        try {
-            //I prefer autoConfig() over JoranConfigurator.doConfigure() so I wouldn't need to find the file myself.
-            ci.autoConfig();
-        } catch (JoranException e) {
-            // StatusPrinter will try to log this
-            e.printStackTrace(); //TODO
-        }
-        StatusPrinter.printInCaseOfErrorsOrWarnings(lc);
-    }
-
     @Override
     public void onPluginUpdateFailed(String disabledPath) {
         AlertHelper.warn(
@@ -246,4 +272,19 @@ public class CorreoMqtt extends Application implements StartupObserver {
         System.exit(1);
     }
 
+    @Override
+    public void onShutdownRequested() {
+        LOGGER.info("Main window closed. Initialize shutdown.");
+        LOGGER.info("Saving global UI settings.");
+        saveGlobalUISettings();
+        LOGGER.info("Saving connection UI settings.");
+        saveConnectionUISettings();
+        LOGGER.info("Shutting down connections.");
+        ApplicationLifecycleDispatcher.getInstance().onShutdown();
+        LOGGER.info("Shutting down plugins.");
+        PluginManager.getInstance().stopPlugins();
+        LOGGER.info("Shutting down application. Bye.");
+        Platform.exit();
+        System.exit(0);
+    }
 }

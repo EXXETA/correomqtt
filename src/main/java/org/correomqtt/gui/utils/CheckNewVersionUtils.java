@@ -1,14 +1,13 @@
 package org.correomqtt.gui.utils;
 
+import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.utils.VendorConstants;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.helper.AlertHelper;
-import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.util.ResourceBundle;
-
-import static org.correomqtt.business.utils.VendorConstants.GITHUB_LATEST;
 
 public class CheckNewVersionUtils {
     private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
@@ -17,7 +16,7 @@ public class CheckNewVersionUtils {
         // nothing to do
     }
 
-    public static void checkNewVersion(boolean showHintIfUpToDate) throws IOException, ParseException {
+    public static void checkNewVersion(boolean showHintIfUpToDate) throws IOException, CorreoMqttUnableToCheckVersionException {
 
         String newVersion = VersionUtils.isNewerVersionAvailable();
         if (newVersion != null) {
@@ -30,7 +29,7 @@ public class CheckNewVersionUtils {
             );
 
             if (confirmed) {
-                HostServicesHolder.getInstance().getHostServices().showDocument(GITHUB_LATEST);
+                HostServicesHolder.getInstance().getHostServices().showDocument(VendorConstants.GITHUB_LATEST());
             }
         } else if (showHintIfUpToDate) {
             AlertHelper.info(

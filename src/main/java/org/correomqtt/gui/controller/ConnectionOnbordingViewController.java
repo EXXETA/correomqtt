@@ -1,15 +1,13 @@
 package org.correomqtt.gui.controller;
 
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.dispatcher.ConfigObserver;
-import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.cell.ConnectionCell;
-import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import org.correomqtt.gui.transformer.ConnectionTransformer;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -17,6 +15,12 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.dispatcher.ConfigObserver;
+import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.gui.cell.ConnectionCell;
+import org.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +31,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class ConnectionOnbordingViewController extends BaseController implements ConfigObserver, ConnectionOnboardingDelegate {
+public class ConnectionOnbordingViewController extends BaseController implements ConfigObserver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionOnbordingViewController.class);
     @FXML
@@ -52,18 +56,26 @@ public class ConnectionOnbordingViewController extends BaseController implements
     public HBox noConnectionsButtonBar;
     private ConnectionOnboardingDelegate connectionsOnboardingDelegate;
     private ConnectionSettingsViewDelegate connectionsSettingsViewDelegate;
+    private ConnectionExportViewDelegate connectionExportViewDelegate;
+    private ConnectionImportViewDelegate connectionImportViewDelegate;
 
-    public ConnectionOnbordingViewController(ConnectionOnboardingDelegate connectionsOnboardingDelegate, ConnectionSettingsViewDelegate connectionSettingsViewDelegate) {
+    public ConnectionOnbordingViewController(ConnectionOnboardingDelegate connectionsOnboardingDelegate,
+                                             ConnectionSettingsViewDelegate connectionSettingsViewDelegate,
+                                             ConnectionExportViewDelegate connectionExportViewDelegate,
+                                             ConnectionImportViewDelegate connectionImportViewDelegate) {
         super();
         this.connectionsOnboardingDelegate = connectionsOnboardingDelegate;
         this.connectionsSettingsViewDelegate = connectionSettingsViewDelegate;
+        this.connectionExportViewDelegate = connectionExportViewDelegate;
         ConfigDispatcher.getInstance().addObserver(this);
     }
 
     public static LoaderResult<ConnectionOnbordingViewController> load(ConnectionOnboardingDelegate connectionsOnboardingDelegate,
-                                                                       ConnectionSettingsViewDelegate connectionSettingsViewDelegate) {
+                                                                       ConnectionSettingsViewDelegate connectionSettingsViewDelegate,
+                                                                       ConnectionExportViewDelegate connectionExportViewDelegate,
+                                                                       ConnectionImportViewDelegate connectionImportViewDelegate) {
         return load(ConnectionOnbordingViewController.class, "connectionOnboardingView.fxml",
-                () -> new ConnectionOnbordingViewController(connectionsOnboardingDelegate, connectionSettingsViewDelegate));
+                () -> new ConnectionOnbordingViewController(connectionsOnboardingDelegate, connectionSettingsViewDelegate, connectionExportViewDelegate, connectionImportViewDelegate));
     }
 
     public void setDelegate(ConnectionOnboardingDelegate delegate) {
@@ -112,7 +124,7 @@ public class ConnectionOnbordingViewController extends BaseController implements
 
         AtomicInteger sortIndex = new AtomicInteger();
         Map<String, Integer> sorted = newConnectionList.stream()
-                .collect(Collectors.toMap(i -> i.getId(), i -> sortIndex.getAndIncrement()));
+                .collect(Collectors.toMap(ConnectionPropertiesDTO::getId, i -> sortIndex.getAndIncrement()));
 
         Map<String, ConnectionPropertiesDTO> oldConnections = resultList.stream()
                 .collect(Collectors.toMap(ConnectionPropertiesDTO::getId, i -> i));
@@ -162,14 +174,14 @@ public class ConnectionOnbordingViewController extends BaseController implements
             }
         });
 
-        if (allConnectionsToDelete != null && !allConnectionsToDelete.isEmpty()) {
+        if (!allConnectionsToDelete.isEmpty()) {
             resultList.removeAll(allConnectionsToDelete);
         }
 
         connectionListView.getItems().clear();
         connectionListView.getItems().addAll(resultList.stream()
                 .sorted(Comparator.comparing(o -> sorted.get(o.getId())))
-                .collect(Collectors.toList()));
+                .toList());
 
         boolean isEmpty = connectionListView.getItems().isEmpty();
         connectionListView.setVisible(!isEmpty);
@@ -210,7 +222,7 @@ public class ConnectionOnbordingViewController extends BaseController implements
     }
 
     public void openSettings(boolean autoNew) {
-        ConnectionSettingsViewController.showAsDialog(connectionsSettingsViewDelegate);
+        ConnectionSettingsViewController.showAsDialog(connectionsSettingsViewDelegate, connectionExportViewDelegate, connectionImportViewDelegate);
         if (autoNew) {
             //result.getController().onAddClicked(); TODO
             LOGGER.debug("Open settings with new default connection");
@@ -227,47 +239,47 @@ public class ConnectionOnbordingViewController extends BaseController implements
 
     @Override
     public void onConfigDirectoryEmpty() {
-
+        // nothing to do
     }
 
     @Override
     public void onConfigDirectoryNotAccessible() {
-
+        // nothing to do
     }
 
     @Override
     public void onAppDataNull() {
-
+        // nothing to do
     }
 
     @Override
     public void onUserHomeNull() {
-
+        // nothing to do
     }
 
     @Override
     public void onFileAlreadyExists() {
-
+        // nothing to do
     }
 
     @Override
     public void onInvalidPath() {
-
+        // nothing to do
     }
 
     @Override
     public void onInvalidJsonFormat() {
-
+        // nothing to do
     }
 
     @Override
     public void onSavingFailed() {
-
+        // nothing to do
     }
 
     @Override
-    public void onSettingsUpdated() {
-
+    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
+        // nothing to do
     }
 
     @Override
@@ -277,11 +289,11 @@ public class ConnectionOnbordingViewController extends BaseController implements
 
     @Override
     public void onConfigPrepareFailed() {
-
+        // nothing to do
     }
-
-    @Override
-    public void onConnect(ConnectionPropertiesDTO config) {
-
+    public void cleanUp() {
+        ConnectionPropertiesDTO config = connectionListView.getSelectionModel().getSelectedItem();
+        connectionsOnboardingDelegate.cleanUpProvider(config);
+        ConfigDispatcher.getInstance().removeObserver(this);
     }
 }

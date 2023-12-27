@@ -8,10 +8,10 @@ import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
+import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.model.ThemeDTO;
@@ -24,21 +24,25 @@ import org.correomqtt.gui.model.LanguageModel;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.theme.ThemeProvider;
-import org.correomqtt.gui.theme.light.LightThemeProvider;
+import org.correomqtt.gui.theme.light_legacy.LightLegacyThemeProvider;
 import org.correomqtt.plugin.manager.PluginManager;
-import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class SettingsViewController extends BaseController {
-
-    private static ResourceBundle resources;
 
     @FXML
     private AnchorPane settingsPane;
@@ -54,6 +58,8 @@ public class SettingsViewController extends BaseController {
     private CheckBox searchUpdatesCheckbox;
     @FXML
     private Label keyringDescriptionLabel;
+
+    private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
     private SettingsDTO settings;
     private static final Logger LOGGER = LoggerFactory.getLogger(SettingsViewController.class);
@@ -135,7 +141,9 @@ public class SettingsViewController extends BaseController {
         searchUpdatesCheckbox.setSelected(settings.isSearchUpdates());
 
         ArrayList<ThemeProvider> themes = new ArrayList<>(PluginManager.getInstance().getExtensions(ThemeProviderHook.class));
-        LOGGER.info(themes.stream().map(ThemeProvider::getName).collect(Collectors.joining(",")));
+        if(LOGGER.isInfoEnabled()) {
+            LOGGER.info(themes.stream().map(ThemeProvider::getName).collect(Collectors.joining(",")));
+        }
 
         themeComboBox.setOnAction(null);
         themeComboBox.setItems(FXCollections.observableArrayList(themes));
@@ -157,17 +165,20 @@ public class SettingsViewController extends BaseController {
 
         themeComboBox.getSelectionModel().select(themes.
                 stream()
-                .filter(t -> t.getName().equals(SettingsProvider.getInstance().getThemeSettings().getActiveTheme().getName()))
+                .filter(t -> {
+                    if(SettingsProvider.getInstance().getThemeSettings().getNextTheme() != null) {
+                        return t.getName().equals(SettingsProvider.getInstance().getThemeSettings().getNextTheme().getName());
+                    }
+                    return t.getName().equals(SettingsProvider.getInstance().getThemeSettings().getActiveTheme().getName());
+                })
                 .findFirst()
-                .orElse(new LightThemeProvider()));
+                .orElse(new LightLegacyThemeProvider()));
 
         List<KeyringModel> keyringModels = KeyringFactory.getSupportedKeyrings()
                 .stream()
                 .map(KeyringModel::new)
-                .collect(Collectors.toList());
-        keyringBackendComboBox.setOnAction(event -> {
-            updateKeyringDescription(keyringBackendComboBox.getSelectionModel().getSelectedItem());
-        });
+                .toList();
+        keyringBackendComboBox.setOnAction(event -> updateKeyringDescription(keyringBackendComboBox.getSelectionModel().getSelectedItem()));
         keyringBackendComboBox.setItems(FXCollections.observableArrayList(keyringModels));
         keyringBackendComboBox.setCellFactory(GenericCell::new);
         keyringBackendComboBox.setConverter(new StringConverter<>() {
@@ -223,7 +234,7 @@ public class SettingsViewController extends BaseController {
                 availableLocales.stream()
                         .filter(distinctByKey(l -> l.getLanguage() + "_" + l.getCountry()))
                         .map(LanguageModel::new)
-                        .collect(Collectors.toList())));
+                        .toList()));
         languageComboBox.getSelectionModel().select(new LanguageModel(settings.getSavedLocale()));
 
         settingsPane.setMinHeight(500);
@@ -231,7 +242,6 @@ public class SettingsViewController extends BaseController {
     }
 
     private void updateKeyringDescription(KeyringModel selectedKeyring) {
-        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()); // too early here
         keyringDescriptionLabel.setText(resources.getString("settingsViewKeyringBackendExplanationLabel")
                 + "\n\n"
                 + selectedKeyring.getLabelTranslationKey() + ":\n"
@@ -255,8 +265,8 @@ public class SettingsViewController extends BaseController {
         settings.setSearchUpdates(searchUpdatesCheckbox.isSelected());
         ThemeProvider selectedTheme = themeComboBox.getSelectionModel().getSelectedItem();
         settings.setSavedLocale(languageComboBox.getSelectionModel().getSelectedItem().getLocale());
-        SettingsProvider.getInstance().getThemeSettings().setActiveTheme(new ThemeDTO(selectedTheme.getName(), selectedTheme.getIconMode()));
-        SettingsProvider.getInstance().saveSettings();
+        SettingsProvider.getInstance().getThemeSettings().setNextTheme(new ThemeDTO(selectedTheme.getName(), selectedTheme.getIconMode()));
+        SettingsProvider.getInstance().saveSettings(true);
     }
 
     private void closeDialog() {

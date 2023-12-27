@@ -1,13 +1,28 @@
 package org.correomqtt.gui.model;
 
 import javafx.beans.Observable;
-import javafx.beans.property.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.MapProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleMapProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.util.Callback;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import org.correomqtt.business.model.*;
+import org.correomqtt.business.model.Auth;
+import org.correomqtt.business.model.ConnectionUISettings;
+import org.correomqtt.business.model.CorreoMqttVersion;
+import org.correomqtt.business.model.Lwt;
+import org.correomqtt.business.model.Proxy;
+import org.correomqtt.business.model.Qos;
+import org.correomqtt.business.model.TlsSsl;
 
 import java.util.HashMap;
 
@@ -42,7 +57,9 @@ public class ConnectionPropertiesDTO {
     private final Property<Qos> lwtQoSProperty;
     private final BooleanProperty lwtRetainedProperty;
     private final StringProperty lwtPayloadProperty;
+    private final Property<ConnectionUISettings> connectionUISettingsProperty;
     private final BooleanProperty dirtyProperty;
+    private final BooleanProperty newProperty;
     private final BooleanProperty unpersistedProperty;
     private final MapProperty<String, Object> extraProperties;
 
@@ -73,7 +90,9 @@ public class ConnectionPropertiesDTO {
                 c.lwtQoSProperty,
                 c.lwtRetainedProperty,
                 c.lwtPayloadProperty,
+                c.connectionUISettingsProperty,
                 c.dirtyProperty,
+                c.newProperty,
                 c.unpersistedProperty,
                 c.extraProperties
         };
@@ -179,8 +198,16 @@ public class ConnectionPropertiesDTO {
         return lwtPayloadProperty.getValue();
     }
 
+    public ConnectionUISettings getConnectionUISettings() {
+        return connectionUISettingsProperty.getValue();
+    }
+
     public boolean isDirty() {
         return dirtyProperty.get();
+    }
+
+    public boolean isNew(){
+        return newProperty.get();
     }
 
     public boolean isUnpersisted() {
@@ -230,7 +257,9 @@ public class ConnectionPropertiesDTO {
         private BooleanProperty lwtAnswerExpectedProperty = new SimpleBooleanProperty();
         private BooleanProperty lwtRetainedProperty = new SimpleBooleanProperty();
         private StringProperty lwtPayloadProperty = new SimpleStringProperty();
+        private Property<ConnectionUISettings> connectionUISettingsProperty = new SimpleObjectProperty<>();
         private BooleanProperty dirtyProperty = new SimpleBooleanProperty(false);
+        private BooleanProperty newProperty = new SimpleBooleanProperty(false);
         private BooleanProperty unpersistedProperty = new SimpleBooleanProperty(true);
         private SimpleMapProperty<String, Object> extraProperties = new SimpleMapProperty<>();
 
@@ -369,8 +398,18 @@ public class ConnectionPropertiesDTO {
             return this;
         }
 
+        public ConnectionPropertiesDTOBuilder connectionUISettings(ConnectionUISettings connectionUISettings) {
+            this.connectionUISettingsProperty.setValue(connectionUISettings);
+            return this;
+        }
+
         public ConnectionPropertiesDTOBuilder dirty(boolean dirty) {
             this.dirtyProperty.set(dirty);
+            return this;
+        }
+
+        public ConnectionPropertiesDTOBuilder isNew(boolean isNew){
+            this.newProperty.set(isNew);
             return this;
         }
 
@@ -410,7 +449,9 @@ public class ConnectionPropertiesDTO {
                     lwtQoSProperty,
                     lwtRetainedProperty,
                     lwtPayloadProperty,
+                    connectionUISettingsProperty,
                     dirtyProperty,
+                    newProperty,
                     unpersistedProperty,
                     extraProperties);
         }

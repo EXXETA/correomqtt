@@ -1,11 +1,12 @@
 package org.correomqtt.gui.transformer;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import javafx.collections.ObservableList;
+import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ConnectionTransformer {
 
@@ -16,7 +17,7 @@ public class ConnectionTransformer {
     public static List<ConnectionPropertiesDTO> dtoListToPropList(List<ConnectionConfigDTO> connectionDTOList) {
         return connectionDTOList.stream()
                 .map(ConnectionTransformer::dtoToProps)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static ConnectionPropertiesDTO dtoToProps(ConnectionConfigDTO dto) {
@@ -46,6 +47,7 @@ public class ConnectionTransformer {
                 .lwtQoS(dto.getLwtQoS())
                 .lwtRetained(dto.isLwtRetained())
                 .lwtPayload(dto.getLwtPayload())
+                .connectionUISettings(dto.getConnectionUISettings())
                 .dirty(false)
                 .unpersisted(false)
                 .build();
@@ -54,7 +56,7 @@ public class ConnectionTransformer {
     public static List<ConnectionConfigDTO> propsListToDtoList(ObservableList<ConnectionPropertiesDTO> connectionPropList) {
         return connectionPropList.stream()
                 .map(ConnectionTransformer::propsToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static ConnectionConfigDTO propsToDto(ConnectionPropertiesDTO props) {
@@ -84,6 +86,21 @@ public class ConnectionTransformer {
                 .lwtQoS(props.getLwtQos())
                 .lwtRetained(props.isLwtRetained())
                 .lwtPayload(props.getLwtPayload())
+                .connectionUISettings(props.getConnectionUISettings())
                 .build();
+    }
+
+
+    public static ConnectionPropertiesDTO mergeProps(LwtConnectionExtensionDTO from,
+                                                     ConnectionPropertiesDTO to) {
+        to.getIdProperty().setValue(from.getId());
+        to.getNameProperty().setValue(from.getName());
+        to.getLwtProperty().setValue(from.getLwt());
+        to.getLwtTopicProperty().setValue(from.getLwtTopic());
+        to.getLwtQoSProperty().setValue(from.getLwtQoS());
+        to.getLwtRetainedProperty().setValue(from.isLwtRetained());
+        to.getLwtPayloadProperty().setValue(from.getLwtPayload());
+        to.getExtraProperties().setValue(FXCollections.observableMap(from.getCustomFields()));
+        return to;
     }
 }

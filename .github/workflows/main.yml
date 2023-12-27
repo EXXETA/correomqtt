@@ -1,0 +1,170 @@
+name: Release CI
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+jobs:
+  linuxbuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Java Zulu 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - name: Extract Version
+        uses: nowsprinting/check-version-format-action@v3
+        id: version
+        with:
+          prefix: 'v'
+      - name: Set Version Release
+        run: |
+          mvn -B versions:set -DnewVersion="${{steps.version.outputs.full_without_prefix}}"
+          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+        if: steps.version.outputs.is_valid == 'true'
+        shell: bash
+      - name: Build
+        run: |
+          mvn -B clean install -DskipTests=true
+        shell: bash
+      - name: Package DEB
+        run: |
+          jpackage \
+          --type deb \
+          -d target \
+          -i target/shade \
+          -n CorreoMQTT \
+          --main-jar correomqtt-client-${{steps.version.outputs.full_without_prefix}}-runnable.jar \
+          --app-version ${{steps.version.outputs.full_without_prefix}} \
+          --icon ./src/main/deploy/package/Icon.png \
+          --linux-package-deps libpng16-16 \
+          --resource-dir .github/resources/linux
+      - name: Package RPM
+        run: |
+          jpackage \
+          --type rpm \
+          -d target \
+          -i target/shade \
+          -n CorreoMQTT \
+          --main-jar correomqtt-client-${{steps.version.outputs.full_without_prefix}}-runnable.jar \
+          --app-version ${{steps.version.outputs.full_without_prefix}} \
+          --icon ./src/main/deploy/package/Icon.png \
+          --resource-dir .github/resources/linux
+      - name: Release 
+        uses: xresloader/upload-to-github-release@v1.3.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: false
+          file: target/*.deb;target/*.rpm
+          tags: true
+  winbuild:
+    runs-on: windows-2019
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Java Zulu 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - name: Extract Version
+        uses: nowsprinting/check-version-format-action@v3
+        id: version
+        with:
+          prefix: 'v'
+      - name: Set Version Release
+        run: |
+          mvn -B versions:set -DnewVersion="${{steps.version.outputs.full_without_prefix}}"
+          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+        if: steps.version.outputs.is_valid == 'true'
+        shell: bash
+      - name: Build
+        run: |
+          mvn -B clean install -DskipTests=true
+        shell: bash
+      - name: Package MSI
+        run: | 
+          jpackage \
+          --type msi \
+          -d target \
+          -i target/shade \
+          -n CorreoMQTT \
+          --main-jar correomqtt-client-${{steps.version.outputs.full_without_prefix}}-runnable.jar \
+          --app-version ${{steps.version.outputs.full_without_prefix}} \
+          --icon ./src/main/deploy/package/Icon.ico \
+          --win-dir-chooser \
+          --win-menu \
+          --win-menu-group CorreoMqtt \
+          --win-shortcut \
+          --vendor "Exxeta AG" \
+          --win-upgrade-uuid "146a4ea7-af22-4e1e-a9ea-7945ce0190fd"
+      - name: Release 
+        uses: xresloader/upload-to-github-release@v1.3.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: false
+          file: target/*.msi
+          tags: true
+  macbuild:
+    runs-on: macos-11
+    steps:    
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Java Zulu 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - name: Extract Version
+        uses: nowsprinting/check-version-format-action@v3
+        id: version
+        with:
+          prefix: 'v'
+      - name: Set Version Release
+        run: |
+          mvn -B versions:set -DnewVersion="${{steps.version.outputs.full_without_prefix}}"
+          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+        if: steps.version.outputs.is_valid == 'true'
+        shell: bash
+      - name: Build
+        run: |
+          mvn -B clean install -DskipTests=true
+        shell: bash
+      - name: Package DMG
+        run: |
+          jpackage \
+            --type app-image \
+            -d target \
+            -i target/shade \
+            -n CorreoMQTT \
+            --main-jar correomqtt-client-${{steps.version.outputs.full_without_prefix}}-runnable.jar \
+            --app-version ${{steps.version.outputs.full_without_prefix}} \
+            --icon ./src/main/deploy/package/Icon.icns
+
+          openssl req -subj '/CN=correomqtt.org' -config .github/osx.correo.certconfig -x509 -newkey rsa:4096 -keyout correokey.pem -out correocert.pem -days 365 -nodes
+          openssl pkcs12 -passout pass:1234 -export -out correomqtt.p12 -inkey correokey.pem -in correocert.pem
+          security create-keychain -p 1234 /tmp/correomqtt-db
+          security import correomqtt.p12 -k /tmp/correomqtt-db -P 1234 -T /usr/bin/codesign
+          security default-keychain -d user -s /tmp/correomqtt-db
+          security unlock-keychain -p 1234 /tmp/correomqtt-db
+          security list-keychains -s /tmp/correomqtt-db
+          codesign -h -fs correomqtt.org --keychain /tmp/correomqtt-db --force target/CorreoMQTT.app
+
+          jpackage \
+            --type dmg \
+            -d target \
+            -n CorreoMQTT \
+            --app-version ${{steps.version.outputs.full_without_prefix}} \
+            --app-image target/CorreoMQTT.app
+      - name: Release 
+        uses: xresloader/upload-to-github-release@v1.3.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: false
+          file: target/*.dmg
+          tags: true

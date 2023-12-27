@@ -1,20 +1,21 @@
 package org.correomqtt;
 
-import com.sun.javafx.application.LauncherImpl;
-import org.correomqtt.plugin.manager.PluginSecurityPolicy;
-import java.security.Policy;
 import java.util.PropertyPermission;
+
+import static javafx.application.Application.launch;
 
 public class Launcher {
     public static void main(String[] args) {
-        enablePluginSandbox();
-        LauncherImpl.launchApplication(CorreoMqtt.class, CorreoPreloader.class, args);
-    }
+        System.setProperty("javafx.preloader", CorreoPreloader.class.getCanonicalName());
 
-    private static void enablePluginSandbox() {
-        Policy.setPolicy(new PluginSecurityPolicy());
-        java.security.AccessController.checkPermission(new PropertyPermission("org.graalvm.nativeimage.imagecode", "read"));
-        System.out.println("Perm granted");
-        System.setSecurityManager(new SecurityManager());
+      //  java.security.AccessController.checkPermission(new PropertyPermission("org.graalvm.nativeimage.imagecode", "read"));
+      //  System.setSecurityManager(new SecurityManager());
+
+        // Loading lib secret keyring requires org.objectweb.asm, but including it clashes with lombok.
+        // See: https://github.com/projectlombok/lombok/issues/2973
+        // Workaround is to disable the use of asm library.
+        System.setProperty("jnr.ffi.asm.enabled", "false");
+
+        launch(CorreoMqtt.class, args);
     }
 }

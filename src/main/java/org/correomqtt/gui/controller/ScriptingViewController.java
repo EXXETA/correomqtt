@@ -1,13 +1,23 @@
 package org.correomqtt.gui.controller;
 
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
-import org.correomqtt.business.dispatcher.*;
+import org.correomqtt.business.dispatcher.ScriptCancelDispatcher;
+import org.correomqtt.business.dispatcher.ScriptCancelObserver;
+import org.correomqtt.business.dispatcher.ScriptLoadDispatcher;
+import org.correomqtt.business.dispatcher.ScriptLoadObserver;
+import org.correomqtt.business.dispatcher.ScriptResultDispatcher;
+import org.correomqtt.business.dispatcher.ScriptResultObserver;
+import org.correomqtt.business.dispatcher.ScriptSubmitDispatcher;
+import org.correomqtt.business.dispatcher.ScriptSubmitObserver;
 import org.correomqtt.business.model.ScriptExecutionDTO;
 import org.correomqtt.business.model.ScriptingDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
@@ -16,7 +26,7 @@ import org.correomqtt.business.provider.ScriptingProvider;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.scripting.ScriptingBackend;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.TaskFactory;
+import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.ConnectionCell;
 import org.correomqtt.gui.cell.ConnectionCellButton;
 import org.correomqtt.gui.cell.ExecutionCell;
@@ -174,7 +184,7 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
     }
 
     private void onSelectScript(ScriptingPropertiesDTO selectedItem) {
-        TaskFactory.loadScript(selectedItem);
+        MessageTaskFactory.loadScript(selectedItem);
     }
 
     private ListCell<ExecutionPropertiesDTO> createExcecutionCell(ListView<ExecutionPropertiesDTO> executionListView) {
@@ -245,7 +255,7 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
         statusText.setText(resources.getString("scriptExecutionRunning"));
         logArea.clear();
 
-        TaskFactory.submitScript(ScriptExecutionDTO.builder()
+        MessageTaskFactory.submitScript(ScriptExecutionDTO.builder()
                 .jsCode(codeArea.getText())
                 .connectionId(selectedConnection.getId())
                 .build());

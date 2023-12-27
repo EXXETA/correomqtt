@@ -8,8 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @AllArgsConstructor
@@ -19,4 +17,5 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ThemeSettingsDTO {
     private ThemeDTO activeTheme;
+    private ThemeDTO nextTheme;
 }

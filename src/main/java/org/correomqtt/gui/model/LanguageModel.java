@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+import org.correomqtt.business.model.GenericTranslatable;
 
 import java.util.Locale;
 
@@ -12,7 +13,7 @@ import java.util.Locale;
 @Setter
 @AllArgsConstructor
 @Builder
-public class LanguageModel implements GenericCellModel {
+public class LanguageModel implements GenericTranslatable {
 
     private Locale locale;
 
@@ -28,6 +29,11 @@ public class LanguageModel implements GenericCellModel {
         }
 
         return ((LanguageModel) language).getLocale().equals(locale);
+    }
+
+    @Override
+    public int hashCode(){
+        return locale.hashCode();
     }
 
 }

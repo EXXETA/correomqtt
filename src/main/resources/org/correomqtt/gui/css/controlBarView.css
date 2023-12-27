@@ -24,24 +24,40 @@
     -fx-graphic: url('../icons/columns-solid-white.png');
 }
 
+.black .save-ui {
+    -fx-graphic: url('../icons/save-solid-black.png');
+}
+
+.white .save-ui {
+    -fx-graphic: url('../icons/save-solid-white.png');
+}
+
+.black .reset-ui {
+    -fx-graphic: url('../icons/trash-restore-alt-solid-black.png');
+}
+
+.white .reset-ui {
+    -fx-graphic: url('../icons/trash-restore-alt-solid-white.png');
+}
+
 .grayStatus {
-    -fx-graphic: url('../icons/wifi-solid-gray.png');
+    -fx-graphic: url('../icons/svg/wifi-solid-gray.svg');
 }
 
 .redStatus {
-    -fx-graphic: url('../icons/wifi-solid-red.png');
+    -fx-graphic: url('../icons/svg/wifi-solid-red.svg');
 }
 
 .yellowStatus {
-    -fx-graphic: url('../icons/wifi-solid-yellow.png');
+    -fx-graphic: url('../icons/svg/wifi-solid-yellow.svg');
 }
 
 .black .greenStatus {
-    -fx-graphic: url('../icons/wifi-solid-green-black.png');
+    -fx-graphic: url('../icons/svg/wifi-solid-green.svg');
 }
 
 .white .greenStatus {
-    -fx-graphic: url('../icons/wifi-solid-green-white.png');
+    -fx-graphic: url('../icons/svg/wifi-solid-green.svg');
 }
 
 .brokerStatus {
@@ -61,4 +77,14 @@
 .toggle-button.columns-solid-left {
   -fx-background-radius: 3 0 0 3;
   -fx-border-radius: 3 0 0 3;
+}
+
+.button.save-ui {
+    -fx-background-radius: 3 0 0 3;
+    -fx-border-radius: 3 0 0 3;
+}
+
+.button.reset-ui{
+    -fx-background-radius: 0 3 3 0;
+    -fx-border-radius: 0 3 3 0;
 }

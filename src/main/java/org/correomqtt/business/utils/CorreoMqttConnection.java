@@ -1,11 +1,11 @@
 package org.correomqtt.business.utils;
 
-import org.correomqtt.business.model.ConnectionConfigDTO;
-import org.correomqtt.business.mqtt.CorreoMqttClient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import org.correomqtt.business.model.ConnectionConfigDTO;
+import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,23 +1,22 @@
 package org.correomqtt.gui.utils;
 
-import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.gui.business.TaskFactory;
-import org.correomqtt.gui.model.MessagePropertiesDTO;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.gui.business.MessageTaskFactory;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
 
 import java.io.File;
 import java.util.ResourceBundle;
 
 public class MessageUtils {
-    private static ResourceBundle resources;
 
     private MessageUtils() {
-
+        // private constructor
     }
 
     public static void saveMessage(String connectionId, MessagePropertiesDTO messageDTO, Stage stage) {
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(resources.getString("messageUtilsTitle"));
@@ -26,7 +25,7 @@ public class MessageUtils {
 
         File file = fileChooser.showSaveDialog(stage);
         if (file != null) {
-            TaskFactory.exportMessage(connectionId, file, messageDTO);
+            MessageTaskFactory.exportMessage(connectionId, file, messageDTO);
         }
     }
 }

@@ -5,7 +5,7 @@ import org.correomqtt.business.model.SubscriptionDTO;
 public class CorreoMqttAlreadySubscribedException extends CorreoMqttException {
 
     private final String connectionId;
-    private final SubscriptionDTO subcriptionDTO;
+    private final transient SubscriptionDTO subcriptionDTO;
 
     public CorreoMqttAlreadySubscribedException(String connectionId, SubscriptionDTO subscriptionDTO) {
         super();
@@ -15,6 +15,6 @@ public class CorreoMqttAlreadySubscribedException extends CorreoMqttException {
 
     @Override
     public String getInfo() {
-        return subcriptionDTO.getTopic() + " " + resources.getString("correoMqttAlreadySubscribedExceptionInfo");
+        return "[" + connectionId + "] " + subcriptionDTO.getTopic() + " " + resources.getString("correoMqttAlreadySubscribedExceptionInfo");
     }
 }

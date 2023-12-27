@@ -1,9 +1,9 @@
 package org.correomqtt.plugin.spi;
 
-import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
 import javafx.scene.layout.HBox;
+import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
 
-public interface LwtSettingsHook extends BaseExtensionPoint {
+public interface LwtSettingsHook extends BaseExtensionPoint<Object> {
 
     void onAddItemsToLwtSettingsBox(OnSettingsChangedListener settingsChangeListener, HBox pluginWidgetArea);
 

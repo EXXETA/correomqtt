@@ -13,13 +13,13 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import org.correomqtt.business.dispatcher.PreloadingDispatcher;
 import org.correomqtt.business.dispatcher.PreloadingObserver;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.PreloaderViewController;
+import org.correomqtt.gui.window.StageHelper;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -64,7 +64,7 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
             configurator.setContext(loggerContext);
             configurator.doConfigure(configStream);
         } catch (JoranException | IOException e) {
-            e.printStackTrace();
+            System.out.println("Problem configuring logger: " + e.getMessage());
         }
     }
 
@@ -72,7 +72,8 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
     public void start(Stage primaryStage) throws Exception {
         this.preloaderStage = primaryStage;
         preloaderStage.setScene(scene);
-        preloaderStage.initStyle(StageStyle.UNDECORATED);
+
+        StageHelper.enforceFloatingWindow(preloaderStage);
 
         RotateTransition rotateTransition = new RotateTransition();
         rotateTransition.setAxis(Rotate.Z_AXIS);
@@ -95,9 +96,7 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
 
     @Override
     public void onProgress(Double progress, String message) {
-        Platform.runLater(() -> {
-            preloaderViewController.getPreloaderStepLabel().setText(message);
-        });
+        Platform.runLater(() -> preloaderViewController.getPreloaderStepLabel().setText(message));
     }
 
 }
