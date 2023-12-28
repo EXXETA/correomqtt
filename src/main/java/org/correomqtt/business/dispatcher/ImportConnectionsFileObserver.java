@@ -4,7 +4,7 @@ import org.correomqtt.business.model.ConnectionExportDTO;
 
 import java.io.File;
 
-public interface ImportConnectionObserver extends BaseConnectionObserver{
+public interface ImportConnectionsFileObserver extends BaseObserver{
     void onImportSucceeded(ConnectionExportDTO connectionExportDTO);
 
     void onImportCancelled(File file);

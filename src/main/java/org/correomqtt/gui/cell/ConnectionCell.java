@@ -46,9 +46,6 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
     private Label mqtt5Tag;
     @FXML
     private ResourceBundle resources;
-    @FXML
-    private CheckBox exportCheckbox;
-
     private FXMLLoader loader;
 
     @FXML
@@ -94,7 +91,7 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
     private void setConnection(ConnectionPropertiesDTO connectionDTO) {
 
         //TODO parent css class only
-        if (connectionDTO.isDirty()) {
+        if (connectionDTO.isDirty() || connectionDTO.isNew()) {
             nameLabel.setText(connectionDTO.getName() + " *");
             nameLabel.getStyleClass().removeAll(DIRTY_CLASS);
             nameLabel.getStyleClass().add(DIRTY_CLASS);
@@ -120,8 +117,6 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
             lwtTag.getStyleClass().removeAll(INACTIVE_CLASS);
             lwtTag.getStyleClass().add(INACTIVE_CLASS);
 
-            exportCheckbox.getStyleClass().removeAll(INACTIVE_CLASS);
-            exportCheckbox.getStyleClass().add(INACTIVE_CLASS);
 
         } else {
             nameLabel.setText(connectionDTO.getName());

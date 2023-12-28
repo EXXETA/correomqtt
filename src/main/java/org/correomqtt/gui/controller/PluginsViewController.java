@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-public class PluginsViewController extends BaseController {
+public class PluginsViewController extends BaseControllerImpl {
 
     @FXML
     private Tab marketplaceTab;
@@ -85,12 +85,12 @@ public class PluginsViewController extends BaseController {
 
     private void setupInstalledPluginTab(){
         LoaderResult<InstalledPluginsViewController> result = InstalledPluginsViewController.load();
-        installedPluginsTab.setContent(result.getMainPane());
+        installedPluginsTab.setContent(result.getMainRegion());
     }
 
     private void setupMarketplaceTab(){
         LoaderResult<MarketplaceViewController> result = MarketplaceViewController.load();
-        marketplaceTab.setContent(result.getMainPane());
+        marketplaceTab.setContent(result.getMainRegion());
     }
 
     @FXML

@@ -27,7 +27,7 @@ import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 @Slf4j
-public class MarketplaceViewController extends BaseController implements
+public class MarketplaceViewController extends BaseControllerImpl implements
         PluginInstallObserver,
         PluginUninstallObserver,
         PluginDisableObserver,

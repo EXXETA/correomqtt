@@ -4,13 +4,13 @@ import org.correomqtt.business.model.ConnectionExportDTO;
 
 import java.io.File;
 
-public class ImportConnectionDispatcher extends BaseDispatcher<ImportConnectionObserver> {
+public class ImportConnectionsFileDispatcher extends BaseDispatcher<ImportConnectionsFileObserver> {
 
-    private static ImportConnectionDispatcher instance;
+    private static ImportConnectionsFileDispatcher instance;
 
-    public static synchronized ImportConnectionDispatcher getInstance() {
+    public static synchronized ImportConnectionsFileDispatcher getInstance() {
         if (instance == null) {
-            instance = new ImportConnectionDispatcher();
+            instance = new ImportConnectionsFileDispatcher();
         }
         return instance;
     }
@@ -32,11 +32,11 @@ public class ImportConnectionDispatcher extends BaseDispatcher<ImportConnectionO
     }
 
     public void onImportRunning() {
-        trigger(ImportConnectionObserver::onImportRunning);
+        trigger(ImportConnectionsFileObserver::onImportRunning);
     }
 
     public void onImportScheduled() {
-        trigger(ImportConnectionObserver::onImportScheduled);
+        trigger(ImportConnectionsFileObserver::onImportScheduled);
     }
 
 }
