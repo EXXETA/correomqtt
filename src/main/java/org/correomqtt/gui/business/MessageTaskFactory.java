@@ -1,13 +1,12 @@
 package org.correomqtt.gui.business;
 
 import lombok.extern.slf4j.Slf4j;
+
 import org.correomqtt.business.model.ConnectionExportDTO;
 import org.correomqtt.business.model.ScriptExecutionDTO;
 import org.correomqtt.business.services.ConnectService;
 import org.correomqtt.business.services.DisconnectService;
-import org.correomqtt.business.services.ExportConnectionService;
 import org.correomqtt.business.services.ExportMessageService;
-import org.correomqtt.business.services.ImportConnectionService;
 import org.correomqtt.business.services.ImportMessageService;
 import org.correomqtt.business.services.PublishService;
 import org.correomqtt.business.services.ScriptCancelService;
@@ -93,18 +92,6 @@ public class MessageTaskFactory {
     public static void cancelScript(ScriptExecutionDTO scriptExecutionDTO) {
         new GuiService<>(new ScriptCancelService(scriptExecutionDTO),
                 ScriptCancelService::cancelScript).start();
-    }
-
-    public static void exportConnection(String connectionId, File file, ConnectionExportDTO connectionExportDTO) {
-        new GuiService<>(new ExportConnectionService(connectionId, file, connectionExportDTO),
-                ExportConnectionService::exportConnection).start();
-
-    }
-
-    public static void importConnection(File file) {
-        new GuiService<>(new ImportConnectionService(file),
-                ImportConnectionService::importConnection).start();
-
     }
 
     public static void reconnect(String connectionId) {

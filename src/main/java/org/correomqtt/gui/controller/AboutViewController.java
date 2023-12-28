@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-public class AboutViewController extends BaseController {
+public class AboutViewController extends BaseControllerImpl {
 
     List<Hyperlink> links = new ArrayList<>();
     @FXML

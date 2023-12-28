@@ -38,7 +38,7 @@ import java.util.ResourceBundle;
 import java.util.UUID;
 
 
-public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConnectionExportViewDelegate, ConnectionImportViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
+public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainViewController.class);
     public static final String DIRTY_CLASS = "dirty";
@@ -54,6 +54,10 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     public Tab addTab;
     @FXML
     public AnchorPane tabPaneAnchorPane;
+    @FXML
+    public MenuItem exportConnectionsItem;
+    @FXML
+    public MenuItem importConnectionsItem;
     @FXML
     private MenuBar menuBar;
     @FXML
@@ -130,8 +134,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void setupAddTab() {
         addTab.setClosable(false);
-        LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this, this,this,this);
-        addTab.setContent(loadResult.getMainPane());
+        LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this,this);
+        addTab.setContent(loadResult.getMainRegion());
         resources = loadResult.getResourceBundle();
         connectionOnboardingViewController = loadResult.getController();
 
@@ -150,7 +154,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void setMenuEventHandler() {
         closeItem.setOnAction(event -> ShutdownDispatcher.getInstance().onShutdownRequested());
-        connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this, this, this));
+        connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this, null));
         settingsItem.setOnAction(event -> SettingsViewController.showAsDialog());
         aboutItem.setOnAction(event -> AboutViewController.showAsDialog());
         updateItem.setOnAction(event -> {
@@ -164,6 +168,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         websiteItem.setOnAction(event -> HostServicesHolder.getInstance().getHostServices().showDocument(
                 new Hyperlink(VendorConstants.WEBSITE()).getText()));
         pluginSettingsItem.setOnAction(event -> openPluginSettings());
+        exportConnectionsItem.setOnAction(event -> ConnectionExportViewController.showAsDialog());
+        importConnectionsItem.setOnAction(event -> ConnectionImportViewController.showAsDialog());
     }
 
     private void openPluginSettings() {
@@ -208,7 +214,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
             LoaderResult<ConnectionViewController> result = ConnectionViewController.load(config.getId(), this);
             result.getController().setTabId(tabId);
-            tab.setContent(result.getMainPane());
+            tab.setContent(result.getMainRegion());
             tab.setOnCloseRequest(event -> this.onTabClose(result, tabId));
 
             conntectionViewControllers.put(tabId, result.getController());

@@ -55,7 +55,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
-public class ScriptingViewController extends BaseController implements ScriptLoadObserver, ScriptSubmitObserver, ScriptCancelObserver, ScriptResultObserver {
+public class ScriptingViewController extends BaseControllerImpl implements ScriptLoadObserver, ScriptSubmitObserver, ScriptCancelObserver, ScriptResultObserver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptingViewController.class);
 
@@ -114,7 +114,7 @@ public class ScriptingViewController extends BaseController implements ScriptLoa
 
         LoaderResult<ScriptingViewController> result = load(ScriptingViewController.class, "scriptingView.fxml");
         resources = result.getResourceBundle();
-        showAsDialog(result, resources.getString("scriptingViewControllerTitle"), properties, 400, 300, false, null, null);
+        showAsDialog(result, resources.getString("scriptingViewControllerTitle"), properties,false, false, null, null, 400, 300);
     }
 
     @FXML

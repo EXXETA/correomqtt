@@ -4,7 +4,7 @@ import org.correomqtt.business.utils.ConnectionHolder;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-abstract class BaseConnectionController extends BaseController {
+abstract class BaseConnectionController extends BaseControllerImpl {
 
     private String connectionId;
     private String tabId;
@@ -14,9 +14,9 @@ abstract class BaseConnectionController extends BaseController {
         this.connectionId = connectionId;
     }
 
-    static <C extends BaseController> LoaderResult<C> load(final Class<C> controllerClazz,
-                                                                               final String fxml,
-                                                                               final String connectionId) {
+    static <C extends BaseControllerImpl> LoaderResult<C> load(final Class<C> controllerClazz,
+                                                               final String fxml,
+                                                               final String connectionId) {
         return load(controllerClazz,
                     fxml,
                     () -> controllerClazz.getDeclaredConstructor(String.class).newInstance(connectionId));
