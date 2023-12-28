@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-public class PluginsViewController extends BaseController {
+public class PluginsViewController extends BaseControllerImpl {
 
     @FXML
     private Tab marketplaceTab;

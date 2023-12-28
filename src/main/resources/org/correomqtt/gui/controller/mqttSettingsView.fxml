@@ -5,7 +5,8 @@
 <?import javafx.scene.layout.*?>
 <?import org.fxmisc.richtext.*?>
 
-<TabPane fx:id="containerAnchorPane" prefHeight="450.0" prefWidth="800.0" stylesheets="@../css/connections.css" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.MqttSettingsViewController">
+<TabPane fx:id="containerAnchorPane" prefHeight="450.0" prefWidth="800.0" stylesheets="@../css/connections.css"
+         tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.MqttSettingsViewController">
     <tabs>
         <Tab text="MQTT">
             <content>

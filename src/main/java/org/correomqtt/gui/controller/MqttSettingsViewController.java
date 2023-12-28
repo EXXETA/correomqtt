@@ -9,22 +9,16 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import org.correomqtt.business.dispatcher.ImportConnectionDispatcher;
-import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.Auth;
 import org.correomqtt.business.model.ConnectionConfigDTO;
-import org.correomqtt.business.model.ConnectionExportDTO;
 import org.correomqtt.business.model.CorreoMqttVersion;
 import org.correomqtt.business.model.GenericTranslatable;
 import org.correomqtt.business.model.Lwt;
@@ -33,14 +27,10 @@ import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.TlsSsl;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.GenericCell;
-import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.helper.CheckTopicHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
-import org.correomqtt.plugin.model.LwtConnectionExtensionDTO;
 import org.correomqtt.plugin.spi.LwtSettingsHook;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
@@ -49,14 +39,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class MqttSettingsViewController extends BaseController
+public class MqttSettingsViewController extends BaseControllerImpl
         implements ConfigObserver, ConnectionSettingsDelegateController,
         LwtSettingsHook.OnSettingsChangedListener {
 

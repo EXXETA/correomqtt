@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class ConnectionOnbordingViewController extends BaseController implements ConfigObserver {
+public class ConnectionOnbordingViewController extends BaseControllerImpl implements ConfigObserver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionOnbordingViewController.class);
     @FXML

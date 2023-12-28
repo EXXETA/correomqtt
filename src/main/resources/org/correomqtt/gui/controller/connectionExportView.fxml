@@ -42,6 +42,21 @@
                                 <String fx:value="settingsDescription" />
                             </styleClass>
                         </Label>
+                        <HBox>
+                            <Button minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#checkAll" text="%exportConnectionsSelectAll">
+                                <HBox.margin>
+                                    <Insets right="5.0" />
+                                </HBox.margin>
+                            </Button>
+                            <Button minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#checkNone" text="%exportConnectionsSelectNone">
+                                <HBox.margin>
+                                    <Insets right="5.0" />
+                                </HBox.margin>
+                            </Button>
+                     <VBox.margin>
+                        <Insets bottom="20.0" />
+                     </VBox.margin>
+                        </HBox>
                     </VBox>
 
                     <VBox prefWidth="294.0" GridPane.rowIndex="1">
@@ -54,7 +69,7 @@
                         </Label>
                         <GridPane>
                             <columnConstraints>
-                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="300.0" minWidth="300.0" />
+                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="300.0" minWidth="250.0" />
                                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
                             </columnConstraints>
                             <rowConstraints>
@@ -78,6 +93,7 @@
                             <Tooltip text="%commonCancelTooltip" />
                         </tooltip>
                     </Button>
+               <VBox HBox.hgrow="ALWAYS" />
                     <Button fx:id="exportButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onExportClicked" text="%connectionExportSelectionButton">
                         <HBox.margin>
                             <Insets right="5.0" />
