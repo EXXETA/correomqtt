@@ -94,7 +94,7 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
     private void setConnection(ConnectionPropertiesDTO connectionDTO) {
 
         //TODO parent css class only
-        if (connectionDTO.isDirty()) {
+        if (connectionDTO.isDirty() || connectionDTO.isNew()) {
             nameLabel.setText(connectionDTO.getName() + " *");
             nameLabel.getStyleClass().removeAll(DIRTY_CLASS);
             nameLabel.getStyleClass().add(DIRTY_CLASS);

@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
 import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.dispatcher.ExportMessageDispatcher;
@@ -48,9 +49,9 @@ public class ConnectionViewController extends BaseConnectionController implement
     @FXML
     private SplitPane splitPane;
 
-    private Pane publishPane;
+    private Region publishRegion;
 
-    private Pane subscribePane;
+    private Region subscribeRegion;
 
     private LoadingViewController loadingViewController;
 
@@ -106,16 +107,16 @@ public class ConnectionViewController extends BaseConnectionController implement
         LoaderResult<SubscriptionViewController> subscriptionLoadResult = SubscriptionViewController.load(getConnectionId(), this);
         LoaderResult<ControlBarController> controlBarLoadResult = ControlBarController.load(getConnectionId(), this);
 
-        publishPane = publishLoadResult.getMainPane();
-        subscribePane = subscriptionLoadResult.getMainPane();
-        Pane controlBarPane = controlBarLoadResult.getMainPane();
+        publishRegion = publishLoadResult.getMainRegion();
+        subscribeRegion = subscriptionLoadResult.getMainRegion();
+        Region controlBarRegion = controlBarLoadResult.getMainRegion();
 
         publishController = publishLoadResult.getController();
         subscribeController = subscriptionLoadResult.getController();
         controlBarController = controlBarLoadResult.getController();
         resources = controlBarLoadResult.getResourceBundle();
 
-        connectionHolder.getChildren().add(0, controlBarPane);
+        connectionHolder.getChildren().add(0, controlBarRegion);
 
         setLayout(
                 connectionConfigDTO.getConnectionUISettings().isShowPublish(),
@@ -134,10 +135,10 @@ public class ConnectionViewController extends BaseConnectionController implement
             connectionConfigDTO.getConnectionUISettings().setShowSubscribe(true);
 
         } else {
-            if (splitPane.getItems().contains(publishPane)) {
+            if (splitPane.getItems().contains(publishRegion)) {
                 connectionConfigDTO.getConnectionUISettings().setShowPublish(true);
                 connectionConfigDTO.getConnectionUISettings().setShowSubscribe(false);
-            } else if (splitPane.getItems().contains(subscribePane)) {
+            } else if (splitPane.getItems().contains(subscribeRegion)) {
                 connectionConfigDTO.getConnectionUISettings().setShowPublish(false);
                 connectionConfigDTO.getConnectionUISettings().setShowSubscribe(true);
             }
@@ -211,11 +212,11 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     private void setLayoutBoth() {
-        if (!splitPane.getItems().contains(subscribePane)) {
-            splitPane.getItems().add(subscribePane);
+        if (!splitPane.getItems().contains(subscribeRegion)) {
+            splitPane.getItems().add(subscribeRegion);
         }
-        if (!splitPane.getItems().contains(publishPane)) {
-            splitPane.getItems().add(0, publishPane);
+        if (!splitPane.getItems().contains(publishRegion)) {
+            splitPane.getItems().add(0, publishRegion);
         }
         if (!splitPane.getDividers().isEmpty()) {
             splitPane.getDividers()
@@ -226,16 +227,16 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     private void setLayoutSubscribeOnly() {
-        splitPane.getItems().remove(publishPane);
-        if (!splitPane.getItems().contains(subscribePane)) {
-            splitPane.getItems().add(0, subscribePane);
+        splitPane.getItems().remove(publishRegion);
+        if (!splitPane.getItems().contains(subscribeRegion)) {
+            splitPane.getItems().add(0, subscribeRegion);
         }
     }
 
     private void setLayoutPublishOnly() {
-        splitPane.getItems().remove(subscribePane);
-        if (!splitPane.getItems().contains(publishPane)) {
-            splitPane.getItems().add(0, publishPane);
+        splitPane.getItems().remove(subscribeRegion);
+        if (!splitPane.getItems().contains(publishRegion)) {
+            splitPane.getItems().add(0, publishRegion);
         }
     }
 

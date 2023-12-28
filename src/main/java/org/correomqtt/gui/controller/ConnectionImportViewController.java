@@ -42,8 +42,7 @@ import java.util.ResourceBundle;
 import static org.correomqtt.gui.controller.ConnectionSettingsViewController.EXCLAMATION_CIRCLE_SOLID;
 
 public class ConnectionImportViewController extends BaseController implements LogObserver, ImportConnectionObserver {
-    private final ConnectionImportViewDelegate delegate;
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionImportViewController.class);
     private ObservableList<ConnectionConfigDTO> connectionConfigDTOS = FXCollections.observableArrayList();
     private static ResourceBundle resources;
     private ConnectionExportDTO connectionExportDTO;
@@ -66,18 +65,17 @@ public class ConnectionImportViewController extends BaseController implements Lo
     private Label importConnectionsExists;
 
 
-    public ConnectionImportViewController(ConnectionImportViewDelegate delegate) {
-        this.delegate = delegate;
+    public ConnectionImportViewController() {
         ImportConnectionDispatcher.getInstance().addObserver(this);
     }
 
-    public static LoaderResult<ConnectionImportViewController> load(ConnectionImportViewDelegate delegate) {
+    public static LoaderResult<ConnectionImportViewController> load() {
         return load(ConnectionImportViewController.class, "connectionImportView.fxml",
-                () -> new ConnectionImportViewController(delegate));
+                () -> new ConnectionImportViewController());
     }
 
 
-    public static void showAsDialog(ConnectionImportViewDelegate delegate) {
+    public static void showAsDialog() {
 
         LOGGER.info("Open ConnectionImportView Dialog");
         Map<Object, Object> properties = new HashMap<>();
@@ -86,7 +84,7 @@ public class ConnectionImportViewController extends BaseController implements Lo
         if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
             return;
         }
-        LoaderResult<ConnectionImportViewController> result = load(delegate);
+        LoaderResult<ConnectionImportViewController> result = load();
         resources = result.getResourceBundle();
 
         showAsDialog(result, resources.getString("connectionImportViewControllerTitle"), properties, false, false, null,

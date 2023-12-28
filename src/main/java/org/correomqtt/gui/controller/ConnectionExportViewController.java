@@ -7,6 +7,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxListCell;
@@ -26,6 +27,7 @@ import org.correomqtt.business.provider.EncryptionRecoverableException;
 import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.MessageTaskFactory;
+import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.WindowHelper;
@@ -43,12 +45,11 @@ import static org.correomqtt.gui.controller.ConnectionSettingsViewController.EXC
 
 public class ConnectionExportViewController extends BaseController implements ExportConnectionObserver {
 
-    private final ConnectionExportViewDelegate delegate;
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
-    private ObservableList<ConnectionConfigDTO> connectionConfigDTOS = FXCollections.observableArrayList();
+    @FXML
+    public Label passwordLabel;
 
     private static ResourceBundle resources;
-
 
     @FXML
     private CheckListView<ConnectionConfigDTO> connectionsListView;
@@ -62,17 +63,16 @@ public class ConnectionExportViewController extends BaseController implements Ex
     private PasswordField passwordField;
 
 
-    public ConnectionExportViewController(ConnectionExportViewDelegate delegate) {
-        this.delegate = delegate;
+    public ConnectionExportViewController() {
         ExportConnectionDispatcher.getInstance().addObserver(this);
     }
 
-    public static LoaderResult<ConnectionExportViewController> load(ConnectionExportViewDelegate delegate) {
+    public static LoaderResult<ConnectionExportViewController> load() {
         return load(ConnectionExportViewController.class, "connectionExportView.fxml",
-                () -> new ConnectionExportViewController(delegate));
+                ConnectionExportViewController::new);
     }
 
-    public static void showAsDialog(ConnectionExportViewDelegate delegate) {
+    public static void showAsDialog() {
 
         LOGGER.info("OPEN DIALOG");
         Map<Object, Object> properties = new HashMap<>();
@@ -81,7 +81,7 @@ public class ConnectionExportViewController extends BaseController implements Ex
         if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
             return;
         }
-        LoaderResult<ConnectionExportViewController> result = load(delegate);
+        LoaderResult<ConnectionExportViewController> result = load();
         resources = result.getResourceBundle();
 
         showAsDialog(result, resources.getString("connectionExportViewControllerTitle"), properties, false, false, null,
@@ -91,17 +91,26 @@ public class ConnectionExportViewController extends BaseController implements Ex
 
     @FXML
     public void initialize() {
+
+        // improve list style
+
         exportButton.setDisable(false);
         passwordCheckBox.setSelected(false);
         passwordField.setDisable(true);
         passwordField.setVisible(false);
+        passwordLabel.setVisible(false);
+        passwordLabel.setDisable(true);
         passwordCheckBox.selectedProperty().addListener((observableValue, oldValue, newValue) -> {
             if (Boolean.TRUE.equals(newValue)) {
                 passwordField.setVisible(true);
                 passwordField.setDisable(false);
+                passwordLabel.setVisible(true);
+                passwordLabel.setDisable(false);
             } else {
                 passwordField.setVisible(false);
                 passwordField.setDisable(true);
+                passwordLabel.setVisible(false);
+                passwordLabel.setDisable(true);
             }
         });
         containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
@@ -139,14 +148,17 @@ public class ConnectionExportViewController extends BaseController implements Ex
     private void loadConnectionListFromBackground() {
 
         List<ConnectionConfigDTO> connectionList = ConnectionHolder.getInstance().getSortedConnections();
-        connectionConfigDTOS.addAll(connectionList);
-        connectionsListView.setItems(connectionConfigDTOS);
+        connectionsListView.setItems(FXCollections.observableArrayList(connectionList));
         LOGGER.debug("Loading connection list from background");
     }
 
 
     public void onExportClicked() {
         Stage stage = (Stage) containerAnchorPane.getScene().getWindow();
+
+
+        // TODO fail if no connections are selected
+
 
         if (passwordCheckBox.isSelected() && passwordField.getText().isEmpty()) {
             passwordField.setTooltip(new Tooltip(resources.getString("passwordEmpty")));
@@ -155,12 +167,14 @@ public class ConnectionExportViewController extends BaseController implements Ex
         }
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(resources.getString("exportUtilsTitle"));
-        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(resources.getString("exportUtilsDescription"), "*.json");
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(resources.getString("exportUtilsDescription"), "*.cqc");
         fileChooser.getExtensionFilters().add(extFilter);
 
         File file = fileChooser.showSaveDialog(stage);
         if (file != null) {
             if (passwordCheckBox.isSelected()) {
+
+                // To business
                 try {
                     String connectionsJSON = new ObjectMapper().addMixIn(ConnectionConfigDTO.class, ConnectionConfigDTOMixin.class).writeValueAsString(connectionsListView.getCheckModel().getCheckedItems());
                     String encryptedData = new EncryptorAesGcm(passwordField.getText()).encrypt(connectionsJSON);
@@ -170,15 +184,11 @@ public class ConnectionExportViewController extends BaseController implements Ex
                 } catch (JsonProcessingException | EncryptionRecoverableException e) {
                     ExportConnectionDispatcher.getInstance().onExportFailed(file, e);
                 }
-
             } else {
                 List<ConnectionConfigDTO> connectionConfigDTOS = connectionsListView.getCheckModel().getCheckedItems();
                 ConnectionExportDTO connectionExportDTO = new ConnectionExportDTO(connectionConfigDTOS);
                 MessageTaskFactory.exportConnection(null, file, connectionExportDTO);
-
-
             }
-
         }
     }
 
@@ -186,10 +196,17 @@ public class ConnectionExportViewController extends BaseController implements Ex
     public void onCancelClicked() {
         Stage stage = (Stage) exportButton.getScene().getWindow();
         stage.close();
+
+        // TODO Cleanup @ Julien Marcq
     }
 
     @Override
     public void onExportSucceeded() {
+
+        AlertHelper.info(resources.getString("exportConnectionsSuccessTitle"),
+                resources.getString("exportConnectionsSuccessBody"), true);
         closeDialog();
+
+        // TODO error cases
     }
 }

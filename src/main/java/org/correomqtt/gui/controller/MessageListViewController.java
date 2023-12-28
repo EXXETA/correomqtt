@@ -366,7 +366,7 @@ public class MessageListViewController extends BaseConnectionController implemen
         if (detailViewController == null) {
             LoaderResult<DetailViewController> result = DetailViewController.load(getSelectedMessage(), getConnectionId(), this, true);
             detailViewController = result.getController();
-            splitPane.getItems().add(result.getMainPane());
+            splitPane.getItems().add(result.getMainRegion());
 
             SettingsProvider.getInstance().getConnectionConfigs().stream()
                     .filter(c -> c.getId().equals(getConnectionId()))

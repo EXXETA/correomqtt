@@ -5,7 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -56,7 +56,7 @@ abstract class BaseController {
 
         return LoaderResult.<C>builder()
                 .controller(loader.getController())
-                .mainPane((Pane) parent)
+                .mainRegion((Region) parent)
                 .resourceBundle(resources)
                 .build();
     }
@@ -82,7 +82,7 @@ abstract class BaseController {
                                                         int minWidth,
                                                         int minHeight) {
 
-        Scene scene = new Scene(result.getMainPane());
+        Scene scene = new Scene(result.getMainRegion());
         String cssPath = SettingsProvider.getInstance().getCssPath();
         if (cssPath != null) {
             scene.getStylesheets().add(cssPath);
