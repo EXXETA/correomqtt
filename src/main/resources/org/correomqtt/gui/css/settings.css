@@ -1,11 +1,5 @@
 @import "global.css";
 
-.headline {
-    -fx-font-size: 20;
-    -fx-font-weight: bold;
-    -fx-padding: 0 0 10 0;
-}
-
 .dialog {
     -fx-padding: 10;
 }

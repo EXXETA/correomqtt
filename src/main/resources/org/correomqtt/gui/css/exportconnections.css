@@ -102,3 +102,17 @@
     -fx-border-style: solid;
     -fx-border-color: derive(-fx-base, -10%);
 }
+
+.settingsLabel {
+    -fx-padding: 5 0 5 0;
+    -fx-font-weight: bold;
+}
+
+.settingsDescription {
+    -fx-padding: 0 10 20 0;
+}
+
+.settingsLabel.disabled {
+    -fx-text-fill: #777777;
+    -fx-font-weight: bold;
+}

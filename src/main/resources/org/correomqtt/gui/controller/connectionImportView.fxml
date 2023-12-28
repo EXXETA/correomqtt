@@ -1,68 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import org.controlsfx.control.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<AnchorPane prefHeight="450.0" prefWidth="800.0" stylesheets="@../css/exportconnections.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ConnectionImportViewController">
 
-<AnchorPane prefHeight="450.0" prefWidth="800.0" stylesheets="@../css/connections.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ConnectionImportViewController">
-
-    <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <VBox>
-
-            <CheckListView fx:id="connectionsListView" minHeight="320.0" prefHeight="450.0" prefWidth="350.0" />
-        </VBox>
-        <VBox>
-            <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
-                <Label fx:id="passwordRequiredLabel" text="%importPasswordRequired" textAlignment="CENTER" />
-            </HBox>
-            <HBox alignment="BOTTOM_CENTER" prefHeight="404.0" prefWidth="602.0">
-
-                <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="5">
-                    <GridPane.margin>
-                        <Insets />
-                    </GridPane.margin>
-                </PasswordField>
-                <Button fx:id="decryptButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onDecryptClicked" text="%commonApplyButton">
-                    <HBox.margin>
-                        <Insets right="5.0" />
-                    </HBox.margin>
-                    <tooltip>
-                        <Tooltip text="%commonCancelTooltip" />
-                    </tooltip>
-                </Button>
-            </HBox>
-            <HBox alignment="TOP_CENTER" prefHeight="404.0" prefWidth="602.0">
-                <VBox alignment="TOP_CENTER" prefHeight="110.0">
-                    <Label fx:id="importConnectionsExists" alignment="CENTER" contentDisplay="CENTER"
-                           text="%importConnectionExists" textAlignment="CENTER"/>
-                    <Label fx:id="passwordIncorrectLabel" style="-fx-text-fill: #ff0000" text="%importPasswordIncorrect"
-                           textAlignment="CENTER"/>
-                </VBox>
-            </HBox>
-            <HBox alignment="CENTER" prefHeight="404.0" prefWidth="550.0">
-                <Button fx:id="cancelButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">
-                    <HBox.margin>
-                        <Insets right="5.0" />
-                    </HBox.margin>
-                    <tooltip>
-                        <Tooltip text="%commonCancelTooltip" />
-                    </tooltip>
-                </Button>
-                <Button fx:id="importButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onImportClicked" text="%connectionImportSelectionButton">
-                    <HBox.margin>
-                        <Insets right="5.0" />
-                    </HBox.margin>
-                    <tooltip>
-                        <Tooltip text="%commonApplyTooltip" />
-                    </tooltip>
-                </Button>
+    <VBox fx:id="contentHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" VBox.vgrow="NEVER">
+            <Label alignment="TOP_LEFT" styleClass="headline" text="%importConnectionsViewHeaderLabel" HBox.hgrow="ALWAYS">
                 <VBox.margin>
-                    <Insets bottom="10.0" right="10.0" />
+                    <Insets bottom="10.0" />
                 </VBox.margin>
-            </HBox>
-        </VBox>
+            </Label>
+        </HBox>
 
-    </HBox>
 
+
+
+
+    </VBox>
 </AnchorPane>

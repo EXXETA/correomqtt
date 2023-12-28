@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class ConnectionOnbordingViewController extends BaseController implements ConfigObserver {
+public class ConnectionOnbordingViewController extends BaseControllerImpl implements ConfigObserver {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionOnbordingViewController.class);
     @FXML
@@ -56,26 +56,19 @@ public class ConnectionOnbordingViewController extends BaseController implements
     public HBox noConnectionsButtonBar;
     private ConnectionOnboardingDelegate connectionsOnboardingDelegate;
     private ConnectionSettingsViewDelegate connectionsSettingsViewDelegate;
-    private ConnectionExportViewDelegate connectionExportViewDelegate;
-    private ConnectionImportViewDelegate connectionImportViewDelegate;
 
     public ConnectionOnbordingViewController(ConnectionOnboardingDelegate connectionsOnboardingDelegate,
-                                             ConnectionSettingsViewDelegate connectionSettingsViewDelegate,
-                                             ConnectionExportViewDelegate connectionExportViewDelegate,
-                                             ConnectionImportViewDelegate connectionImportViewDelegate) {
+                                             ConnectionSettingsViewDelegate connectionSettingsViewDelegate) {
         super();
         this.connectionsOnboardingDelegate = connectionsOnboardingDelegate;
         this.connectionsSettingsViewDelegate = connectionSettingsViewDelegate;
-        this.connectionExportViewDelegate = connectionExportViewDelegate;
         ConfigDispatcher.getInstance().addObserver(this);
     }
 
     public static LoaderResult<ConnectionOnbordingViewController> load(ConnectionOnboardingDelegate connectionsOnboardingDelegate,
-                                                                       ConnectionSettingsViewDelegate connectionSettingsViewDelegate,
-                                                                       ConnectionExportViewDelegate connectionExportViewDelegate,
-                                                                       ConnectionImportViewDelegate connectionImportViewDelegate) {
+                                                                       ConnectionSettingsViewDelegate connectionSettingsViewDelegate) {
         return load(ConnectionOnbordingViewController.class, "connectionOnboardingView.fxml",
-                () -> new ConnectionOnbordingViewController(connectionsOnboardingDelegate, connectionSettingsViewDelegate, connectionExportViewDelegate, connectionImportViewDelegate));
+                () -> new ConnectionOnbordingViewController(connectionsOnboardingDelegate, connectionSettingsViewDelegate));
     }
 
     public void setDelegate(ConnectionOnboardingDelegate delegate) {
@@ -202,7 +195,7 @@ public class ConnectionOnbordingViewController extends BaseController implements
 
     @FXML
     public void addConnection(ActionEvent actionEvent) {
-        openSettings(true);
+        openSettings();
     }
 
     private void updateConnectButton() {
@@ -221,20 +214,10 @@ public class ConnectionOnbordingViewController extends BaseController implements
         connectionsOnboardingDelegate.onConnect(config);
     }
 
-    public void openSettings(boolean autoNew) {
-        ConnectionSettingsViewController.showAsDialog(connectionsSettingsViewDelegate, connectionExportViewDelegate, connectionImportViewDelegate);
-        if (autoNew) {
-            //result.getController().onAddClicked(); TODO
-            LOGGER.debug("Open settings with new default connection");
-        } else {
-            LOGGER.debug("Open settings for existing connections");
-        }
-    }
-
     @FXML
     public void openSettings() {
-        openSettings(false);
-
+        ConnectionSettingsViewController.showAsDialog(connectionsSettingsViewDelegate, connectionListView.getSelectionModel().getSelectedItem());
+        LOGGER.debug("Open connection settings");
     }
 
     @Override
@@ -291,6 +274,7 @@ public class ConnectionOnbordingViewController extends BaseController implements
     public void onConfigPrepareFailed() {
         // nothing to do
     }
+
     public void cleanUp() {
         ConnectionPropertiesDTO config = connectionListView.getSelectionModel().getSelectedItem();
         connectionsOnboardingDelegate.cleanUpProvider(config);

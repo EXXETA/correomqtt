@@ -29,7 +29,7 @@ import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 @Slf4j
-public class InstalledPluginsViewController extends BaseController implements
+public class InstalledPluginsViewController extends BaseControllerImpl implements
         PluginInstallObserver,
         PluginUninstallObserver,
         PluginDisableObserver,
