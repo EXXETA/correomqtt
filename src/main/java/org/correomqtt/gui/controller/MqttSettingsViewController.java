@@ -164,7 +164,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
 
     public static LoaderResult<MqttSettingsViewController> load() {
         LoaderResult<MqttSettingsViewController> result = load(MqttSettingsViewController.class, "mqttSettingsView.fxml",
-                () -> new MqttSettingsViewController());
+                MqttSettingsViewController::new);
         resources = result.getResourceBundle();
         return result;
     }
@@ -302,40 +302,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
             }
         };
     }
-
-/* TODO ?
-    private void loadConnectionListFromBackground() {
-        ObservableList<ConnectionPropertiesDTO> list = FXCollections.observableArrayList(ConnectionPropertiesDTO.extractor());
-        ConnectionHolder.getInstance().getSortedConnections()
-                .forEach(c -> list.add(ConnectionTransformer.dtoToProps(c)));
-        connectionsListView.setItems(list);
-        executeOnLoadSettingsExtensions();
-        LOGGER.debug("Loading connection list from background");
-    }
-
- */
-
-    /*
-    private void executeOnLoadSettingsExtensions() {
-        connectionsListView.getItems().forEach(c -> {
-            decodeLwtPayload(c);
-            LwtConnectionExtensionDTO lwtDTO = new LwtConnectionExtensionDTO(c);
-            for (LwtSettingsHook p : PluginManager.getInstance().getExtensions(LwtSettingsHook.class)) {
-                lwtDTO = p.onLoadConnection(lwtDTO);
-            }
-
-            ConnectionTransformer.mergeProps(lwtDTO, c);
-        });
-    }
-*/
-
-    private void decodeLwtPayload(ConnectionPropertiesDTO connectionPropertiesDTO) {
-        String lwtPayload = connectionPropertiesDTO.getLwtPayload();
-        if (lwtPayload != null) {
-            connectionPropertiesDTO.getLwtPayloadProperty().set(new String(Base64.getDecoder().decode(lwtPayload)));
-        }
-    }
-
 
     private boolean doChecks() {
         if (LOGGER.isDebugEnabled()) {
@@ -554,27 +520,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
 
     private boolean isEmpty(TextField textField) {
         return textField.getText() == null || textField.getText().isEmpty();
-    }
-
-    private void clearConnectionsForm() {
-        LOGGER.debug("Clearing connections form");
-        nameTextField.clear();
-        urlTextField.clear();
-        portTextField.setText(null);
-        clientIdTextField.clear();
-        usernameTextField.clear();
-        passwordField.clear();
-        sslKeystoreTextField.clear();
-        sslKeystorePasswordTextField.clear();
-        internalIdLabel.setText("");
-        nameTextField.getStyleClass().removeAll(EMPTY_ERROR_CLASS);
-        nameTextField.getStyleClass().removeAll(EXCLAMATION_CIRCLE_SOLID);
-        urlTextField.getStyleClass().removeAll(EMPTY_ERROR_CLASS);
-        urlTextField.getStyleClass().removeAll(EXCLAMATION_CIRCLE_SOLID);
-        portTextField.getStyleClass().removeAll(EMPTY_ERROR_CLASS);
-        portTextField.getStyleClass().removeAll(EXCLAMATION_CIRCLE_SOLID);
-        clientIdTextField.getStyleClass().removeAll(EMPTY_ERROR_CLASS);
-        clientIdTextField.getStyleClass().removeAll(EXCLAMATION_CIRCLE_SOLID);
     }
 
     @FXML

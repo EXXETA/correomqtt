@@ -214,23 +214,6 @@ public class ConnectionSettingsViewController extends BaseControllerImpl impleme
         if (selectedItem != null) {
             showConnection(selectedItem);
         }
-   /*
-
-        if (isSafeToDiscard()) {
-            showConnection(selectedItem);
-        } else {
-/*            if (activeConnectionContainer != null) {
-                connectionsListView.getSelectionModel().select(activeConnectionContainer.getDTO());
-            } else {
-                connectionsListView.getSelectionModel().clearSelection();
-        }
-
-        connectionsListView.getItems()
-                .stream()
-                .filter(ConnectionPropertiesDTO::isNew)
-                .toList()
-                .forEach(i -> connectionsListView.getItems().remove(i));
-    */
     }
 
     private void setOnDragDetected(ConnectionCell cell) {
@@ -306,7 +289,6 @@ public class ConnectionSettingsViewController extends BaseControllerImpl impleme
         ConnectionHolder.getInstance().getSortedConnections()
                 .forEach(c -> list.add(ConnectionTransformer.dtoToProps(c)));
         connectionsListView.setItems(list);
-//TODO        executeOnLoadSettingsExtensions();
         LOGGER.debug("Loading connection list from background");
     }
 
