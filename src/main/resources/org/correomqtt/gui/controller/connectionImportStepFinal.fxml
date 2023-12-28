@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox fx:id="stepHolder" prefHeight="450.0" prefWidth="800.0" stylesheets="@../css/exportconnections.css" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ConnectionImportStepFinalViewController">
+    <VBox minWidth="450.0" HBox.hgrow="ALWAYS">
+        <GridPane VBox.vgrow="ALWAYS">
+            <columnConstraints>
+                <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="100.0" />
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints />
+                <RowConstraints />
+            </rowConstraints>
+            <VBox.margin>
+                <Insets left="10.0" />
+            </VBox.margin>
+            <VBox>
+                <Label styleClass="settingsLabel" text="%connectionImportFinalLabel" />
+                <Label fx:id="description" text="%connectionImportFinalDescription" wrapText="true">
+                    <styleClass>
+                        <String fx:value="secondaryText" />
+                        <String fx:value="settingsDescription" />
+                    </styleClass>
+                </Label>
+            </VBox>
+        </GridPane>
+
+          <HBox alignment="BOTTOM_RIGHT" minWidth="30.0">
+              <VBox prefHeight="200.0" prefWidth="100.0" HBox.hgrow="ALWAYS" />
+              <Button minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onOkClicked" text="%commonOkButton">
+                  <HBox.margin>
+                      <Insets right="5.0" />
+                  </HBox.margin>
+              </Button>
+         <VBox.margin>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </VBox.margin>
+
+          </HBox>
+    </VBox>
+</HBox>

@@ -53,7 +53,7 @@ public class ConnectionTransformer {
                 .build();
     }
 
-    public static List<ConnectionConfigDTO> propsListToDtoList(ObservableList<ConnectionPropertiesDTO> connectionPropList) {
+    public static List<ConnectionConfigDTO> propsListToDtoList(List<ConnectionPropertiesDTO> connectionPropList) {
         return connectionPropList.stream()
                 .map(ConnectionTransformer::propsToDto)
                 .toList();

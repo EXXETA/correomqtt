@@ -14,7 +14,7 @@ import org.correomqtt.gui.utils.PlatformUtils;
 
 import java.util.ResourceBundle;
 
-public class AlertController extends BaseController implements
+public class AlertController extends BaseControllerImpl implements
         ConfigObserver,
         SecretStoreObserver,
         PersistPublishHistoryObserver,

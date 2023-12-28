@@ -29,7 +29,7 @@ import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 @Slf4j
-public class InstalledPluginsViewController extends BaseController implements
+public class InstalledPluginsViewController extends BaseControllerImpl implements
         PluginInstallObserver,
         PluginUninstallObserver,
         PluginDisableObserver,
@@ -242,10 +242,7 @@ public class InstalledPluginsViewController extends BaseController implements
 
     @Override
     public void onPluginDisableSucceeded(String pluginId) {
-        reloadData(pluginId);
-        Platform.runLater(() -> {
-            AlertHelper.info(resources.getString("pluginChangeTitle"), resources.getString("pluginChangeContent"));
-        });
+        this.onPluginUninstallSucceeded(pluginId);
     }
 
     @Override

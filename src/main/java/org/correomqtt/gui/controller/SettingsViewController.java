@@ -42,7 +42,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class SettingsViewController extends BaseController {
+public class SettingsViewController extends BaseControllerImpl {
 
     @FXML
     private AnchorPane settingsPane;

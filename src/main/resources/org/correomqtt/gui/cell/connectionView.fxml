@@ -47,7 +47,6 @@
                <String fx:value="skull-crossbones-solid" />
                <String fx:value="connectionIconTag" />
             </styleClass></Label>
-            <CheckBox fx:id="exportCheckbox" visible="false" alignment="CENTER" disable="true"></CheckBox>
         </HBox>
         <Label fx:id="descriptionLabel" text="127.0.0.1:1883">
          <styleClass>

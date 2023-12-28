@@ -161,4 +161,11 @@
     -fx-font-size: 10;
 }
 
+
+.headline {
+    -fx-font-size: 20;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 10 0;
+}
+
 /* disabled style for RichTextFX */

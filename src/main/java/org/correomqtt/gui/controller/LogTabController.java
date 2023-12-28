@@ -7,7 +7,7 @@ import javafx.scene.layout.AnchorPane;
 import org.correomqtt.business.dispatcher.LogDispatcher;
 import org.correomqtt.business.dispatcher.LogObserver;
 
-public class LogTabController extends BaseController implements LogObserver {
+public class LogTabController extends BaseControllerImpl implements LogObserver {
     @FXML
     public AnchorPane logViewAnchor;
     @FXML
