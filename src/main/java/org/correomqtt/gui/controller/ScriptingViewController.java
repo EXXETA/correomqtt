@@ -27,6 +27,7 @@ import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.scripting.ScriptingBackend;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.business.MessageTaskFactory;
+import org.correomqtt.gui.business.ScriptingTaskFactory;
 import org.correomqtt.gui.cell.ConnectionCell;
 import org.correomqtt.gui.cell.ConnectionCellButton;
 import org.correomqtt.gui.cell.ExecutionCell;
@@ -53,7 +54,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
 
 public class ScriptingViewController extends BaseControllerImpl implements ScriptLoadObserver, ScriptSubmitObserver, ScriptCancelObserver, ScriptResultObserver {
 
@@ -130,7 +130,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         List<ScriptingPropertiesDTO> scriptsList = ScriptingProvider.getInstance().getScripts()
                 .stream()
                 .map(ScriptingTransformer::dtoToProps)
-                .collect(Collectors.toList());
+                .toList();
 
         scripts = FXCollections.observableList(scriptsList);
         scriptListView.setItems(scripts);
@@ -155,7 +155,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                 })
                 .findFirst()
                 .orElseGet(() -> {
-                    if (connectionItems.size() > 0) {
+                    if (!connectionItems.isEmpty()) {
                         return connectionItems.get(0);
                     }
                     return null;
@@ -166,7 +166,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         executionList.setItems(FXCollections.observableArrayList(ScriptingBackend.getInstance().getExecutions()
                 .stream()
                 .map(ExecutionTransformer::dtoToProps)
-                .collect(Collectors.toList())));
+                .toList()));
 
         executionList.setCellFactory(this::createExcecutionCell);
         executionList.getSelectionModel().selectFirst();
@@ -184,7 +184,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     }
 
     private void onSelectScript(ScriptingPropertiesDTO selectedItem) {
-        MessageTaskFactory.loadScript(selectedItem);
+        ScriptingTaskFactory.loadScript(selectedItem);
     }
 
     private ListCell<ExecutionPropertiesDTO> createExcecutionCell(ListView<ExecutionPropertiesDTO> executionListView) {
@@ -255,7 +255,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         statusText.setText(resources.getString("scriptExecutionRunning"));
         logArea.clear();
 
-        MessageTaskFactory.submitScript(ScriptExecutionDTO.builder()
+        ScriptingTaskFactory.submitScript(ScriptExecutionDTO.builder()
                 .jsCode(codeArea.getText())
                 .connectionId(selectedConnection.getId())
                 .build());
@@ -266,7 +266,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         executionList.setItems(FXCollections.observableArrayList(ScriptingBackend.getInstance().getExecutions()
                 .stream()
                 .map(ExecutionTransformer::dtoToProps)
-                .collect(Collectors.toList())));
+                .toList()));
     }
 
     @Override
@@ -344,5 +344,56 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                 PlatformUtils.runLaterIfNotInFxThread(() -> logArea.appendText(String.valueOf(i)));
             }
         }
+    }
+
+    private void showNewScriptDialog(String defaultValue){
+
+        String dialogTitle = resources.getString("scripting.newscript.dialog.title");
+
+        String filename = AlertHelper.input(dialogTitle,
+                resources.getString("scripting.newscript.dialog.header"),
+                resources.getString("scripting.newscript.dialog.content"),
+                defaultValue);
+
+        if(filename == null){
+            return;
+        }
+
+        if(filename.length() < 4 || !filename.endsWith(".js")){
+            AlertHelper.warn(dialogTitle,
+                    resources.getString("scripting.newscript.dialog.extension.content"),
+                    true);
+            showNewScriptDialog(".js");
+            return;
+        }
+
+        boolean alreadyExists;
+        try {
+            alreadyExists = ScriptingProvider.getInstance().getScripts()
+                    .stream()
+                    .anyMatch(s -> s.getName().equals(filename));
+        } catch (IOException e) {
+            //TODO
+            throw new RuntimeException(e);
+        }
+
+        if (alreadyExists){
+            AlertHelper.warn(dialogTitle,
+                    resources.getString("scripting.newscript.dialog.alreadyexists.content"),
+                    true);
+
+            showNewScriptDialog(filename);
+            return;
+        }
+
+        ScriptCreateTask
+
+        ScriptingTaskFactory.createScript(filename);
+
+
+    }
+
+    public void onNewScriptClicked() {
+        showNewScriptDialog(".js");
     }
 }

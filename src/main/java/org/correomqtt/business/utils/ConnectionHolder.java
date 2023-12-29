@@ -70,7 +70,8 @@ public class ConnectionHolder {
     }
 
     public boolean isConnectionUnused(ConnectionConfigDTO config) {
-        return getConnection(config.getId()).getClient() == null;
+        CorreoMqttConnection connection = getConnection(config.getId());
+        return connection == null || connection.getClient() == null;
     }
 
     public Map<String, CorreoMqttConnection> getConnections() {

@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ScriptingProvider extends BaseUserFileProvider {
 
@@ -39,16 +40,18 @@ public class ScriptingProvider extends BaseUserFileProvider {
             Files.createDirectory(scriptPath);
         }
 
-        return Files.walk(scriptPath)
-                .filter(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".js"))
-                .map(f -> {
-                    LOGGER.info("Found script \"{}\"", f.toAbsolutePath().toString());
-                    return ScriptingDTO.builder()
-                            .name(f.getFileName().toString())
-                            .path(f.toAbsolutePath())
-                            .build();
-                })
-                .collect(Collectors.toList());
+        try (Stream<Path> pathStream = Files.walk(scriptPath)) {
+            return pathStream
+                    .filter(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".js"))
+                    .map(f -> {
+                        LOGGER.info("Found script \"{}\"", f.toAbsolutePath());
+                        return ScriptingDTO.builder()
+                                .name(f.getFileName().toString())
+                                .path(f.toAbsolutePath())
+                                .build();
+                    })
+                    .toList();
+        }
     }
 
 }

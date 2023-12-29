@@ -79,21 +79,6 @@ public class MessageTaskFactory {
 
     }
 
-    public static void loadScript(ScriptingPropertiesDTO scriptingPropertiesDTO) {
-        new GuiService<>(new ScriptLoadService(ScriptingTransformer.propsToDTO(scriptingPropertiesDTO)),
-                ScriptLoadService::loadScript).start();
-    }
-
-    public static void submitScript(ScriptExecutionDTO scriptExecutionDTO) {
-        new GuiService<>(new ScriptSubmitService(scriptExecutionDTO),
-                ScriptSubmitService::submitScript).start();
-    }
-
-    public static void cancelScript(ScriptExecutionDTO scriptExecutionDTO) {
-        new GuiService<>(new ScriptCancelService(scriptExecutionDTO),
-                ScriptCancelService::cancelScript).start();
-    }
-
     public static void reconnect(String connectionId) {
         new GuiService<>(new ConnectService(connectionId), ConnectService::reconnect).start();
     }
