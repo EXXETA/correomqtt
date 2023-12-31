@@ -1,7 +1,7 @@
 package org.correomqtt.gui.utils;
 
-import org.correomqtt.business.provider.PluginConfigProvider;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.PluginConfigProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.gui.helper.AlertHelper;
 
 import java.util.ResourceBundle;

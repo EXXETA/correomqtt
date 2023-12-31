@@ -16,22 +16,22 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.correomqtt.plugin.spi.MessageContextMenuHook;
-import org.correomqtt.plugin.spi.PublishMenuHook;
+import org.correomqtt.business.concurrent.ExceptionListener;
+import org.correomqtt.business.connection.ConnectEvent;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
-import org.correomqtt.business.dispatcher.ImportMessageDispatcher;
-import org.correomqtt.business.dispatcher.ImportMessageObserver;
-import org.correomqtt.business.dispatcher.PersistPublishHistoryDispatcher;
-import org.correomqtt.business.dispatcher.PersistPublishHistoryObserver;
-import org.correomqtt.business.dispatcher.PublishDispatcher;
-import org.correomqtt.business.dispatcher.PublishGlobalDispatcher;
-import org.correomqtt.business.dispatcher.PublishObserver;
 import org.correomqtt.business.dispatcher.ShortcutDispatcher;
 import org.correomqtt.business.dispatcher.ShortcutObserver;
+import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.exception.CorreoMqttException;
+import org.correomqtt.business.fileprovider.PersistPublishHistoryProvider;
+import org.correomqtt.business.fileprovider.PersistPublishMessageHistoryProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
+import org.correomqtt.business.importexport.messages.ImportMessageFailedEvent;
+import org.correomqtt.business.importexport.messages.ImportMessageStartedEvent;
+import org.correomqtt.business.importexport.messages.ImportMessageSuccessEvent;
+import org.correomqtt.business.importexport.messages.ImportMessageTask;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.MessageDTO;
@@ -39,11 +39,11 @@ import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.business.model.Qos;
-import org.correomqtt.business.provider.PersistPublishHistoryProvider;
-import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.pubsub.PublishEvent;
+import org.correomqtt.business.pubsub.PublishListRemovedEvent;
+import org.correomqtt.business.pubsub.PublishTask;
+import org.correomqtt.business.pubsub.PublishListClearEvent;
 import org.correomqtt.business.utils.AutoFormatPayload;
-import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.QosCell;
 import org.correomqtt.gui.cell.TopicCell;
 import org.correomqtt.gui.helper.AlertHelper;
@@ -52,6 +52,8 @@ import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
+import org.correomqtt.plugin.spi.MessageContextMenuHook;
+import org.correomqtt.plugin.spi.PublishMenuHook;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
@@ -63,15 +65,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-public class PublishViewController extends BaseMessageBasedViewController implements ConnectionLifecycleObserver,
-        PublishObserver,
+public class PublishViewController extends BaseMessageBasedViewController implements
         ConfigObserver,
-        ShortcutObserver,
-        ImportMessageObserver,
-        PersistPublishHistoryObserver {
+        ShortcutObserver
+         {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishViewController.class);
     private static ResourceBundle resources;
@@ -111,12 +110,9 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     public PublishViewController(String connectionId, PublishViewDelegate delegate) {
         super(connectionId);
         this.delegate = delegate;
-        ConnectionLifecycleDispatcher.getInstance().addObserver(this);
-        PublishDispatcher.getInstance().addObserver(this);
+        EventBus.register(this);
         ConfigDispatcher.getInstance().addObserver(this);
         ShortcutDispatcher.getInstance().addObserver(this);
-        ImportMessageDispatcher.getInstance().addObserver(this);
-        PersistPublishHistoryDispatcher.getInstance().addObserver(this);
     }
 
     static LoaderResult<PublishViewController> load(String connectionId, PublishViewDelegate delegate) {
@@ -211,7 +207,7 @@ public class PublishViewController extends BaseMessageBasedViewController implem
             return;
         }
 
-        MessagePropertiesDTO messagePropertiesDTO = MessagePropertiesDTO.builder()
+        MessageDTO messageDTO = MessageDTO.builder()
                 .topic(topicComboBox.getValue())
                 .qos(qosComboBox.getSelectionModel().getSelectedItem())
                 .isRetained(retainedCheckBox.isSelected())
@@ -221,10 +217,12 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 .dateTime(LocalDateTime.now())
                 .build();
 
-        MessageTaskFactory.publish(getConnectionId(), messagePropertiesDTO);
+        new PublishTask(getConnectionId(), messageDTO)
+                .onError((ExceptionListener) ex -> this.onPublishFailed(messageDTO, ex))
+                .run();
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Publishing to topic: {}: {}", messagePropertiesDTO.getTopic(), getConnectionId());
+            LOGGER.debug("Publishing to topic: {}: {}", messageDTO.getTopic(), getConnectionId());
         }
     }
 
@@ -241,72 +239,19 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         File file = fileChooser.showOpenDialog(stage);
 
         if (file != null) {
-            MessageTaskFactory.importMessage(getConnectionId(), file);
+            new ImportMessageTask(getConnectionId(),file)
+                    .run();
+            //TODO Direct handler
         }
     }
 
-    @Override
-    public void onDisconnectFromConnectionDeleted(String connectionId) {
-        // do nothing
-    }
-
-    @Override
+    @Subscribe(ConnectEvent.class)
     public void onConnect() {
         // reverse order, because first message in history must be last one to add
         new LinkedList<>(PersistPublishMessageHistoryProvider.getInstance(getConnectionId())
                 .getMessages(getConnectionId()))
                 .descendingIterator()
                 .forEachRemaining(messageDTO -> messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO)));
-    }
-
-    @Override
-    public void onConnectRunning() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConnectionFailed(Throwable message) {
-        // nothing to do
-    }
-
-    @Override
-    public void onConnectionCanceled() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConnectionLost() {
-        // nothing to do
-    }
-
-    @Override
-    public void onDisconnect() {
-        // nothing to do
-    }
-
-    @Override
-    public void onDisconnectCanceled() {
-        // nothing to do
-    }
-
-    @Override
-    public void onDisconnectFailed(Throwable exception) {
-        // nothing to do
-    }
-
-    @Override
-    public void onDisconnectRunning() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConnectionReconnected() {
-        // nothing to do
-    }
-
-    @Override
-    public void onReconnectFailed(AtomicInteger triedReconnects, int maxReconnects) {
-        // nothing to do
     }
 
     @Override
@@ -417,20 +362,13 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         // nothing to do
     }
 
-    @Override
-    public void onPublishSucceeded(MessageDTO messageDTO) {
-        messageDTO.setPublishStatus(PublishStatus.SUCCEEDED);
-        messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO));
+    @SuppressWarnings("unused")
+    public void onPublishSucceeded(@Subscribe PublishEvent event) {
+        event.getMessageDTO().setPublishStatus(PublishStatus.SUCCEEDED);
+        messageListViewController.onNewMessage(MessageTransformer.dtoToProps(event.getMessageDTO()));
     }
 
-    @Override
-    public void onPublishCancelled(MessageDTO messageDTO) {
-        messageDTO.setPublishStatus(PublishStatus.FAILED);
-        messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO));
-    }
-
-    @Override
-    public void onPublishFailed(MessageDTO messageDTO, Throwable exception) {
+    private void onPublishFailed(MessageDTO messageDTO, Throwable exception) {
         messageDTO.setPublishStatus(PublishStatus.FAILED);
         messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO));
 
@@ -444,33 +382,22 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 resources.getString("publishViewControllerPublishFailedContent") + ": " + messageDTO.getTopic() + ": " + msg);
     }
 
-    @Override
-    public void onPublishRunning(MessageDTO messageDTO) {
-        // nothing to do
-    }
-
-    @Override
-    public void onPublishScheduled(MessageDTO messageDTO) {
-        messageDTO.setPublishStatus(PublishStatus.PUBLISHED);
-        messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO));
-    }
-
-    @Override
-    public void onImportStarted(File file) {
+    @SuppressWarnings("unused")
+    public void onImportStarted(@Subscribe ImportMessageStartedEvent event) {
         Platform.runLater(() -> {
             loadingViewController = LoadingViewController.showAsDialog(getConnectionId(),
-                    resources.getString("publishViewControllerOpenFileTitle") + ": " + file.getAbsolutePath());
+                    resources.getString("publishViewControllerOpenFileTitle") + ": " + event.file().getAbsolutePath());
             loadingViewController.setProgress(1);
         });
     }
 
-    @Override
-    public void onImportSucceeded(MessageDTO messageDTO) {
+    @SuppressWarnings("unused")
+    public void onImportSucceeded(@Subscribe ImportMessageSuccessEvent event) {
         Platform.runLater(() -> {
-            topicComboBox.setValue(messageDTO.getTopic());
-            retainedCheckBox.setSelected(messageDTO.isRetained());
-            qosComboBox.setValue(messageDTO.getQos());
-            payloadCodeArea.replaceText(messageDTO.getPayload());
+            topicComboBox.setValue(event.messageDTO().getTopic());
+            retainedCheckBox.setSelected(event.messageDTO().isRetained());
+            qosComboBox.setValue(event.messageDTO().getQos());
+            payloadCodeArea.replaceText(event.messageDTO().getPayload());
             if (loadingViewController != null) {
                 loadingViewController.close();
                 loadingViewController = null;
@@ -478,21 +405,9 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         });
     }
 
-    @Override
-    public void onImportCancelled(File file) {
-        Platform.runLater(() -> {
-            if (loadingViewController != null) {
-                loadingViewController.close();
-                loadingViewController = null;
-            }
-            AlertHelper.warn(resources.getString("publishViewControllerImportCancelledTitle"),
-                    resources.getString("publishViewControllerImportFileCancelledContent"));
-        });
-
-    }
-
-    @Override
-    public void onImportFailed(File file, Throwable exception) {
+    @SuppressWarnings("unused")
+    @Subscribe(ImportMessageFailedEvent.class)
+    public void onImportFailed() {
         Platform.runLater(() -> {
             if (loadingViewController != null) {
                 loadingViewController.close();
@@ -505,12 +420,12 @@ public class PublishViewController extends BaseMessageBasedViewController implem
 
     @Override
     public void removeMessage(MessageDTO messageDTO) {
-        PublishGlobalDispatcher.getInstance().onPublishRemoved(getConnectionId(), messageDTO);
+        EventBus.fireAsync(new PublishListRemovedEvent(getConnectionId(), messageDTO));
     }
 
     @Override
     public void clearMessages() {
-        PublishGlobalDispatcher.getInstance().onPublishesCleared(getConnectionId());
+        EventBus.fireAsync(new PublishListClearEvent(getConnectionId()));
     }
 
     @Override
@@ -518,29 +433,10 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         delegate.setTabDirty();
     }
 
-    @Override
-    public void errorReadingPublishHistory(Throwable exception) {
-        // nothing to do
-    }
-
-    @Override
-    public void errorWritingPublishHistory(Throwable exception) {
-        // nothing to do
-    }
-
-    @Override
-    public void updatedPublishes(String connectionId) {
-        initTopicComboBox();
-    }
-
     public void cleanUp() {
         this.messageListViewController.cleanUp();
-
-        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
-        PublishDispatcher.getInstance().removeObserver(this);
+        EventBus.unregister(this);
         ConfigDispatcher.getInstance().removeObserver(this);
         ShortcutDispatcher.getInstance().removeObserver(this);
-        ImportMessageDispatcher.getInstance().removeObserver(this);
-        PersistPublishHistoryDispatcher.getInstance().removeObserver(this);
     }
 }

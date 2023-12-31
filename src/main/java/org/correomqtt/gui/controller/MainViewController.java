@@ -14,13 +14,14 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
-import org.correomqtt.business.dispatcher.ShutdownDispatcher;
+import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
-import org.correomqtt.business.provider.PersistPublishHistoryProvider;
-import org.correomqtt.business.provider.PersistPublishMessageHistoryProvider;
-import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.PersistPublishHistoryProvider;
+import org.correomqtt.business.fileprovider.PersistPublishMessageHistoryProvider;
+import org.correomqtt.business.fileprovider.PersistSubscriptionHistoryProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.business.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.business.utils.VendorConstants;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -151,7 +152,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     private void setMenuEventHandler() {
-        closeItem.setOnAction(event -> ShutdownDispatcher.getInstance().onShutdownRequested());
+        closeItem.setOnAction(event -> EventBus.fireAsync(new ShutdownRequestEvent()));
         connectionsItem.setOnAction(event -> ConnectionSettingsViewController.showAsDialog(this, null));
         settingsItem.setOnAction(event -> SettingsViewController.showAsDialog());
         aboutItem.setOnAction(event -> AboutViewController.showAsDialog());

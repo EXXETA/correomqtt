@@ -5,19 +5,26 @@ import javafx.fxml.FXML;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
-import org.correomqtt.business.dispatcher.ExportMessageDispatcher;
-import org.correomqtt.business.dispatcher.ExportMessageObserver;
-import org.correomqtt.business.dispatcher.ImportMessageDispatcher;
-import org.correomqtt.business.dispatcher.ImportMessageObserver;
+import org.correomqtt.business.connection.AutomaticReconnectEvent;
+import org.correomqtt.business.connection.ConnectEvent;
+import org.correomqtt.business.connection.ConnectFailedEvent;
+import org.correomqtt.business.connection.ConnectStartedEvent;
+import org.correomqtt.business.connection.ConnectTask;
+import org.correomqtt.business.connection.DisconnectEvent;
+import org.correomqtt.business.connection.DisconnectTask;
 import org.correomqtt.business.dispatcher.LogDispatcher;
 import org.correomqtt.business.dispatcher.LogObserver;
+import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
+import org.correomqtt.business.fileprovider.SettingsProvider;
+import org.correomqtt.business.importexport.messages.ExportMessageFailedEvent;
+import org.correomqtt.business.importexport.messages.ExportMessageStartedEvent;
+import org.correomqtt.business.importexport.messages.ExportMessageSuccessEvent;
+import org.correomqtt.business.importexport.messages.ImportMessageFailedEvent;
+import org.correomqtt.business.importexport.messages.ImportMessageStartedEvent;
+import org.correomqtt.business.importexport.messages.ImportMessageSuccessEvent;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ConnectionUISettings;
-import org.correomqtt.business.model.MessageDTO;
-import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -26,15 +33,10 @@ import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.ResourceBundle;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionViewController extends BaseConnectionController implements
         LogObserver,
-        ConnectionLifecycleObserver,
-        ExportMessageObserver,
-        ImportMessageObserver,
         PublishViewDelegate,
         SubscriptionViewDelegate,
         ControlBarDelegate {
@@ -70,38 +72,36 @@ public class ConnectionViewController extends BaseConnectionController implement
     public ConnectionViewController(String connectionId, ConnectionViewDelegate delegate) {
         super(connectionId);
         this.delegate = delegate;
+        EventBus.register(this);
         LogDispatcher.getInstance().addObserver(this);
-        ConnectionLifecycleDispatcher.getInstance().addObserver(this);
-        ExportMessageDispatcher.getInstance().addObserver(this);
-        ImportMessageDispatcher.getInstance().addObserver(this);
     }
 
     public static LoaderResult<ConnectionViewController> load(String connectionId, ConnectionViewDelegate delegate) {
         return load(ConnectionViewController.class, "connectionView.fxml",
-                    () -> new ConnectionViewController(connectionId, delegate));
+                () -> new ConnectionViewController(connectionId, delegate));
     }
 
     @FXML
     public void initialize() {
         SettingsProvider.getInstance().getConnectionConfigs().stream()
-                        .filter(c -> c.getId().equals(getConnectionId()))
-                        .findFirst()
-                        .ifPresent(c -> {
-                            connectionConfigDTO = c;
-                            if (connectionConfigDTO.getConnectionUISettings() == null) {
-                                connectionConfigDTO.setConnectionUISettings(new ConnectionUISettings(
-                                        true,
-                                        true,
-                                        0.5,
-                                        0.5,
-                                        0.5,
-                                        false,
-                                        0.5,
-                                        0.5,
-                                        false
-                                ));
-                            }
-                        });
+                .filter(c -> c.getId().equals(getConnectionId()))
+                .findFirst()
+                .ifPresent(c -> {
+                    connectionConfigDTO = c;
+                    if (connectionConfigDTO.getConnectionUISettings() == null) {
+                        connectionConfigDTO.setConnectionUISettings(new ConnectionUISettings(
+                                true,
+                                true,
+                                0.5,
+                                0.5,
+                                0.5,
+                                false,
+                                0.5,
+                                0.5,
+                                false
+                        ));
+                    }
+                });
 
         LoaderResult<PublishViewController> publishLoadResult = PublishViewController.load(getConnectionId(), this);
         LoaderResult<SubscriptionViewController> subscriptionLoadResult = SubscriptionViewController.load(getConnectionId(), this);
@@ -130,7 +130,7 @@ public class ConnectionViewController extends BaseConnectionController implement
         LOGGER.debug("Save connection ui settings: {}", getConnectionId());
         if (!splitPane.getDividers().isEmpty()) {
             connectionConfigDTO.getConnectionUISettings()
-                               .setMainDividerPosition(splitPane.getDividers().get(0).positionProperty().getValue());
+                    .setMainDividerPosition(splitPane.getDividers().get(0).positionProperty().getValue());
             connectionConfigDTO.getConnectionUISettings().setShowPublish(true);
             connectionConfigDTO.getConnectionUISettings().setShowSubscribe(true);
 
@@ -154,7 +154,7 @@ public class ConnectionViewController extends BaseConnectionController implement
 
         KeyringHandler.getInstance().retryWithMasterPassword(
                 masterPassword -> SettingsProvider.getInstance()
-                                                  .saveConnections(SettingsProvider.getInstance().getConnectionConfigs(), masterPassword),
+                        .saveConnections(SettingsProvider.getInstance().getConnectionConfigs(), masterPassword),
                 resources.getString("onPasswordSaveFailedTitle"),
                 resources.getString("onPasswordSaveFailedHeader"),
                 resources.getString("onPasswordSaveFailedContent"),
@@ -220,9 +220,9 @@ public class ConnectionViewController extends BaseConnectionController implement
         }
         if (!splitPane.getDividers().isEmpty()) {
             splitPane.getDividers()
-                     .get(0)
-                     .positionProperty()
-                     .setValue(connectionConfigDTO.getConnectionUISettings().getMainDividerPosition());
+                    .get(0)
+                    .positionProperty()
+                    .setValue(connectionConfigDTO.getConnectionUISettings().getMainDividerPosition());
         }
     }
 
@@ -240,37 +240,26 @@ public class ConnectionViewController extends BaseConnectionController implement
         }
     }
 
-    @Override
-    public void onDisconnectFromConnectionDeleted(String connectionId) {
-        // do nothing
-    }
-
-    @Override
+    @SuppressWarnings("unused")
+    @Subscribe(ConnectEvent.class)
     public void onConnect() {
         Platform.runLater(() -> splitPane.setDisable(false));
     }
 
-    @Override
-    public void onConnectRunning() {
+    @SuppressWarnings("unused")
+    @Subscribe(ConnectStartedEvent.class)
+    public void onConnectStarted() {
         Platform.runLater(() -> splitPane.setDisable(true));
     }
 
-    @Override
-    public void onConnectionFailed(Throwable message) {
+    @SuppressWarnings("unused")
+    @Subscribe(ConnectFailedEvent.class)
+    public void onConnectionFailed() {
         Platform.runLater(() -> splitPane.setDisable(true));
     }
 
-    @Override
-    public void onConnectionCanceled() {
-        Platform.runLater(() -> splitPane.setDisable(true));
-    }
-
-    @Override
-    public void onConnectionLost() {
-        Platform.runLater(() -> splitPane.setDisable(true));
-    }
-
-    @Override
+    @SuppressWarnings("unused")
+    @Subscribe(DisconnectEvent.class)
     public void onDisconnect() {
         Platform.runLater(() -> splitPane.setDisable(true));
         delegate.onDisconnect();
@@ -280,45 +269,16 @@ public class ConnectionViewController extends BaseConnectionController implement
         }
     }
 
-    @Override
-    public void onConnectScheduled() {
-        // do nothing
-    }
-
-    @Override
-    public void onDisconnectCanceled() {
-        // do nothing
-    }
-
-    @Override
-    public void onDisconnectFailed(Throwable exception) {
-        // do nothing
-    }
-
-    @Override
-    public void onDisconnectRunning() {
-        // do nothing
-    }
-
-    @Override
-    public void onDisconnectScheduled() {
-        // do nothing
-    }
-
-    @Override
+    @SuppressWarnings("unused")
+    @Subscribe(AutomaticReconnectEvent.class)
     public void onConnectionReconnected() {
         splitPane.setDisable(false);
-    }
-
-    @Override
-    public void onReconnectFailed(AtomicInteger triedReconnects, int maxReconnects) {
-        // do nothing
     }
 
     public void disconnect(boolean isFinalClose) {
         this.isFinalClose = isFinalClose;
         saveConnectionUISettings();
-        MessageTaskFactory.disconnect(getConnectionId());
+        new DisconnectTask(getConnectionId()).run();
     }
 
     public void cleanUp() {
@@ -326,10 +286,9 @@ public class ConnectionViewController extends BaseConnectionController implement
         subscribeController.cleanUp();
         controlBarController.cleanUp();
 
+        EventBus.unregister(this);
+
         LogDispatcher.getInstance().removeObserver(this);
-        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
-        ExportMessageDispatcher.getInstance().removeObserver(this);
-        ImportMessageDispatcher.getInstance().removeObserver(this);
     }
 
     public Pane getMainNode() {
@@ -339,78 +298,50 @@ public class ConnectionViewController extends BaseConnectionController implement
     public void connect(ConnectionPropertiesDTO config) {
         splitPane.setDisable(true);
         this.setConnectionId(config.getId());
-        MessageTaskFactory.connect(getConnectionId());
+        new ConnectTask(getConnectionId()).run();
     }
 
-    @Override
-    public void onExportStarted(File file, MessageDTO messageDTO) {
+    @SuppressWarnings("unused")
+    public void onExportStarted(@Subscribe ExportMessageStartedEvent event) {
         Platform.runLater(() -> {
             splitPane.setDisable(true);
             loadingViewController =
                     LoadingViewController.showAsDialog(getConnectionId(),
-                                                       resources.getString("connectionViewControllerExportTitle") +
-                                                               " " +
-                                                               file.getAbsolutePath());
+                            resources.getString("connectionViewControllerExportTitle") +
+                                    " " +
+                                    event.file().getAbsolutePath());
         });
     }
 
-    @Override
+    @SuppressWarnings("unused")
+    @Subscribe(ExportMessageSuccessEvent.class)
     public void onExportSucceeded() {
         disableLoading();
     }
 
-    @Override
-    public void onExportCancelled(File file, MessageDTO messageDTO) {
-        disableLoading();
-        AlertHelper.warn(resources.getString("connectionViewControllerExportCancelledTitle"),
-                         resources.getString("connectionViewControllerExportCancelledContent"));
-    }
-
-    @Override
-    public void onExportFailed(File file, MessageDTO messageDTO, Throwable exception) {
+    @SuppressWarnings("unused")
+    public void onExportFailed(@Subscribe ExportMessageFailedEvent event) {
         disableLoading();
         AlertHelper.warn(resources.getString("connectionViewControllerExportFailedTitle"),
-                         resources.getString("connectionViewControllerExportFailedContent") + exception.getLocalizedMessage());
+                resources.getString("connectionViewControllerExportFailedContent")
+                        + event.throwable().getLocalizedMessage());
     }
 
-    @Override
-    public void onExportRunning() {
-        // do nothing
-    }
-
-    @Override
-    public void onExportScheduled() {
-        // do nothing
-    }
-
-    @Override
-    public void onImportStarted(File file) {
+    @SuppressWarnings("unused")
+    @Subscribe(ImportMessageStartedEvent.class)
+    public void onImportStarted() {
         Platform.runLater(() -> splitPane.setDisable(true));
     }
 
-    @Override
-    public void onImportSucceeded(MessageDTO messageDTO) {
+    @SuppressWarnings("unused")
+    public void onImportSucceeded(@Subscribe ImportMessageSuccessEvent event) {
         disableLoading();
     }
 
-    @Override
-    public void onImportCancelled(File file) {
+    @SuppressWarnings("unused")
+    @Subscribe(ImportMessageFailedEvent.class)
+    public void onImportFailed() {
         disableLoading();
-    }
-
-    @Override
-    public void onImportFailed(File file, Throwable exception) {
-        disableLoading();
-    }
-
-    @Override
-    public void onImportRunning() {
-        // do nothing
-    }
-
-    @Override
-    public void onImportScheduled() {
-        // do nothing
     }
 
     private void disableLoading() {

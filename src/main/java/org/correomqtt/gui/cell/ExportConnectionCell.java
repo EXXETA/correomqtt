@@ -11,7 +11,7 @@ import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.AnchorPane;
 import javafx.util.Callback;
 import org.controlsfx.control.CheckListView;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

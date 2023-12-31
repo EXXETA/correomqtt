@@ -10,7 +10,10 @@ import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.LocalPortForwarder;
 import net.schmizz.sshj.connection.channel.direct.Parameters;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
+import org.correomqtt.business.connection.AutomaticReconnectEvent;
+import org.correomqtt.business.connection.AutomaticReconnectFailedEvent;
+import org.correomqtt.business.connection.ConnectFailedEvent;
+import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.exception.CorreoMqttAlreadySubscribedException;
 import org.correomqtt.business.exception.CorreoMqttNoRetriesLeftException;
 import org.correomqtt.business.exception.CorreoMqttSshFailedException;
@@ -175,7 +178,7 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
         triedReconnects.set(0);
         tryToReconnect.set(true);
         if (wasConnectedBefore.get()) {
-            ConnectionLifecycleDispatcher.getInstance().onConnectionReconnected(configDTO.getId());
+            EventBus.fireAsync(new AutomaticReconnectEvent(configDTO.getId()));
             getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Reconnected to broker successfully");
         }
     }
@@ -228,11 +231,11 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
         getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Reconnecting connect to Broker.");
         if (tryToReconnect.get() && triedReconnects.get() < MAX_RECONNECTS && context.getSource() != MqttDisconnectSource.USER) {
             doReconnect(context);
-            ConnectionLifecycleDispatcher.getInstance().onReconnectFailed(configDTO.getId(), triedReconnects, MAX_RECONNECTS);
+            EventBus.fireAsync(new AutomaticReconnectFailedEvent(configDTO.getId(),triedReconnects.get(), MAX_RECONNECTS));
             triedReconnects.incrementAndGet();
         } else {
             getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "Maximum number of reconnects reached.");
-            ConnectionLifecycleDispatcher.getInstance().onConnectionFailed(configDTO.getId(), new CorreoMqttNoRetriesLeftException());
+            EventBus.fireAsync(new ConnectFailedEvent(configDTO.getId(), new CorreoMqttNoRetriesLeftException()));
 
         }
     }

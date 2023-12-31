@@ -24,21 +24,21 @@
         </encoder>
     </appender>
 
-    <appender name="GUI" class="org.correomqtt.business.dispatcher.LogDispatchAppender">
+<!--<appender name="GUI" class="org.correomqtt.business.dispatcher.LogDispatchAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${GUIPATTERN}</pattern>
         </encoder>
     </appender>
-
+-->
     <logger name="org.correomqtt" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
-        <appender-ref ref="GUI"/>
+     <!--   <appender-ref ref="GUI"/>-->
     </logger>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
-        <appender-ref ref="GUI"/>
+        <!--<appender-ref ref="GUI"/>-->
     </root>
 </configuration>

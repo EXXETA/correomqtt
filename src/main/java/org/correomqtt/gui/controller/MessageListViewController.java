@@ -23,14 +23,15 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.controlsfx.control.textfield.TextFields;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
+import org.correomqtt.business.connection.ConnectEvent;
+import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.LabelType;
 import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.gui.cell.MessageViewCell;
 import org.correomqtt.gui.contextmenu.MessageListContextMenu;
 import org.correomqtt.gui.contextmenu.MessageListContextMenuDelegate;
@@ -43,11 +44,9 @@ import org.correomqtt.plugin.spi.IncomingMessageHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 public class MessageListViewController extends BaseConnectionController implements
-        ConnectionLifecycleObserver,
         MessageListContextMenuDelegate,
         DetailViewDelegate {
 
@@ -98,7 +97,7 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     public MessageListViewController(String connectionId, MessageListViewDelegate delegate) {
         super(connectionId);
-        ConnectionLifecycleDispatcher.getInstance().addObserver(this);
+        EventBus.register(this);
         this.delegate = delegate;
     }
 
@@ -408,12 +407,7 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     }
 
-    @Override
-    public void onDisconnectFromConnectionDeleted(String connectionId) {
-        // do nothing
-    }
-
-    @Override
+    @Subscribe(ConnectEvent.class)
     public void onConnect() {
         setUpShortcuts();
     }
@@ -427,72 +421,12 @@ public class MessageListViewController extends BaseConnectionController implemen
         });
     }
 
-    @Override
-    public void onConnectRunning() {
-        // do nothing
-    }
-
-    @Override
-    public void onConnectionFailed(Throwable message) {
-        // do nothing
-    }
-
-    @Override
-    public void onConnectionCanceled() {
-        // do nothing
-    }
-
-    @Override
-    public void onConnectionLost() {
-        // do nothing
-    }
-
-    @Override
-    public void onDisconnect() {
-        // do nothing
-    }
-
-    @Override
-    public void onConnectScheduled() {
-        // do nothing
-    }
-
-    @Override
-    public void onDisconnectCanceled() {
-        // do nothing
-    }
-
-    @Override
-    public void onDisconnectFailed(Throwable exception) {
-        // do nothing
-    }
-
-    @Override
-    public void onDisconnectRunning() {
-        // do nothing
-    }
-
-    @Override
-    public void onDisconnectScheduled() {
-        // do nothing
-    }
-
-    @Override
-    public void onConnectionReconnected() {
-        // do nothing
-    }
-
-    @Override
-    public void onReconnectFailed(AtomicInteger triedReconnects, int maxReconnects) {
-        // do nothing
-    }
-
     public void cleanUp() {
         if (this.detailViewController != null) {
             detailViewController.cleanUp();
         }
 
-        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        EventBus.unregister(this);
     }
 
     @Override

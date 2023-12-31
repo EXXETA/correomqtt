@@ -25,7 +25,7 @@ import org.correomqtt.business.model.Lwt;
 import org.correomqtt.business.model.Proxy;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.TlsSsl;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.cell.GenericCell;
 import org.correomqtt.gui.helper.CheckTopicHelper;
@@ -38,7 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Base64;
 import java.util.ResourceBundle;
 import java.util.UUID;
 

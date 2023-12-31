@@ -8,7 +8,7 @@ import javafx.scene.control.SelectionMode;
 import org.controlsfx.control.CheckListView;
 import org.controlsfx.control.IndexedCheckModel;
 import org.correomqtt.business.model.ConnectionConfigDTO;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.cell.ExportConnectionCell;
 import org.correomqtt.gui.helper.AlertHelper;

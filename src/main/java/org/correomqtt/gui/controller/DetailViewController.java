@@ -25,18 +25,17 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import org.correomqtt.business.dispatcher.ExportMessageDispatcher;
-import org.correomqtt.business.dispatcher.ExportMessageObserver;
-import org.correomqtt.business.dispatcher.ImportMessageDispatcher;
-import org.correomqtt.business.dispatcher.ImportMessageObserver;
+import org.correomqtt.business.eventbus.Subscribe;
+import org.correomqtt.business.importexport.messages.ExportMessageFailedEvent;
+import org.correomqtt.business.importexport.messages.ExportMessageStartedEvent;
+import org.correomqtt.business.importexport.messages.ExportMessageSuccessEvent;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.MessageType;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.AutoFormatPayload;
 import org.correomqtt.gui.contextmenu.DetailContextMenu;
 import org.correomqtt.gui.contextmenu.DetailContextMenuDelegate;
 import org.correomqtt.gui.formats.Format;
-import org.correomqtt.gui.formats.Plain;
 import org.correomqtt.gui.menuitem.DetailViewManipulatorTaskMenuItem;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.Search;
@@ -48,7 +47,6 @@ import org.correomqtt.plugin.manager.DetailViewManipulatorTask;
 import org.correomqtt.plugin.manager.MessageValidator;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
-import org.correomqtt.plugin.spi.DetailViewFormatHook;
 import org.correomqtt.plugin.spi.DetailViewHook;
 import org.correomqtt.plugin.spi.DetailViewManipulatorHook;
 import org.correomqtt.plugin.spi.MessageValidatorHook;
@@ -62,16 +60,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 public class DetailViewController extends BaseConnectionController implements
-        DetailContextMenuDelegate,
-        ImportMessageObserver,
-        ExportMessageObserver {
+        DetailContextMenuDelegate
+{
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DetailViewController.class);
 
@@ -150,8 +146,6 @@ public class DetailViewController extends BaseConnectionController implements
         super(connectionId);
         this.delegate = delegate;
         inlineViewProperty = new SimpleBooleanProperty(isInlineView);
-        ExportMessageDispatcher.getInstance().addObserver(this);
-        ImportMessageDispatcher.getInstance().addObserver(this);
     }
 
     private static LoaderResult<DetailViewController> load(final String connectionId, DetailViewDelegate delegate, final boolean isInlineView) {
@@ -658,48 +652,25 @@ public class DetailViewController extends BaseConnectionController implements
         return inlineViewProperty;
     }
 
-    @Override
-    public void onExportStarted(File file, MessageDTO messageDTO) {
+
+    @SuppressWarnings("unused")
+    @Subscribe(ExportMessageStartedEvent.class)
+    public void onExportStarted() {
         Platform.runLater(() -> detailViewVBox.setDisable(true));
     }
 
-    @Override
+    @SuppressWarnings("unused")
+    @Subscribe(ExportMessageSuccessEvent.class)
     public void onExportSucceeded() {
         Platform.runLater(() -> detailViewVBox.setDisable(false));
     }
 
-    @Override
-    public void onExportCancelled(File file, MessageDTO messageDTO) {
+    @SuppressWarnings("unused")
+    @Subscribe(ExportMessageFailedEvent.class)
+    public void onExportFailed() {
         Platform.runLater(() -> detailViewVBox.setDisable(false));
-    }
-
-    @Override
-    public void onExportFailed(File file, MessageDTO messageDTO, Throwable exception) {
-        Platform.runLater(() -> detailViewVBox.setDisable(false));
-    }
-
-    @Override
-    public void onImportStarted(File file) {
-        detailViewVBox.setDisable(true);
-    }
-
-    @Override
-    public void onImportSucceeded(MessageDTO messageDTO) {
-        detailViewVBox.setDisable(false);
-    }
-
-    @Override
-    public void onImportCancelled(File file) {
-        detailViewVBox.setDisable(false);
-    }
-
-    @Override
-    public void onImportFailed(File file, Throwable exception) {
-        detailViewVBox.setDisable(false);
     }
 
     public void cleanUp() {
-        ExportMessageDispatcher.getInstance().removeObserver(this);
-        ImportMessageDispatcher.getInstance().removeObserver(this);
     }
 }

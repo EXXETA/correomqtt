@@ -22,14 +22,14 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import lombok.AllArgsConstructor;
+import org.correomqtt.business.connection.DisconnectTask;
 import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.ConnectionCell;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
@@ -500,7 +500,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl impleme
 
                 if (confirmed) {
                     LOGGER.info("Disconnect");
-                    MessageTaskFactory.disconnect(config.getId());
+                    new DisconnectTask(config.getId()).run();
                     waitForDisconnectIds.add(config.getId());
                 }
             } else {

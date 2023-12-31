@@ -9,14 +9,21 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import lombok.extern.slf4j.Slf4j;
-import org.correomqtt.business.dispatcher.PluginDisableObserver;
-import org.correomqtt.business.dispatcher.PluginEnableObserver;
-import org.correomqtt.business.dispatcher.PluginInstallDispatcher;
-import org.correomqtt.business.dispatcher.PluginInstallObserver;
-import org.correomqtt.business.dispatcher.PluginUninstallDispatcher;
-import org.correomqtt.business.dispatcher.PluginUninstallObserver;
-import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.gui.business.PluginTaskFactory;
+import org.correomqtt.business.eventbus.Subscribe;
+import org.correomqtt.business.fileprovider.SettingsProvider;
+import org.correomqtt.business.plugin.PluginDisabledEvent;
+import org.correomqtt.business.plugin.PluginDisabledFailedEvent;
+import org.correomqtt.business.plugin.PluginDisabledStartedEvent;
+import org.correomqtt.business.plugin.PluginEnabledEvent;
+import org.correomqtt.business.plugin.PluginEnabledFailedEvent;
+import org.correomqtt.business.plugin.PluginEnabledStartedEvent;
+import org.correomqtt.business.plugin.PluginInstallEvent;
+import org.correomqtt.business.plugin.PluginInstallFailedEvent;
+import org.correomqtt.business.plugin.PluginInstallStartedEvent;
+import org.correomqtt.business.plugin.PluginInstallTask;
+import org.correomqtt.business.plugin.PluginUninstallEvent;
+import org.correomqtt.business.plugin.PluginUninstallFailedEvent;
+import org.correomqtt.business.plugin.PluginUninstallStartedEvent;
 import org.correomqtt.gui.cell.PluginCell;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
@@ -27,11 +34,7 @@ import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 @Slf4j
-public class MarketplaceViewController extends BaseControllerImpl implements
-        PluginInstallObserver,
-        PluginUninstallObserver,
-        PluginDisableObserver,
-        PluginEnableObserver {
+public class MarketplaceViewController extends BaseControllerImpl{
 
     @FXML
     Pane marketplaceRootPane;
@@ -70,8 +73,6 @@ public class MarketplaceViewController extends BaseControllerImpl implements
 
     public MarketplaceViewController() {
         super();
-        PluginInstallDispatcher.getInstance().addObserver(this);
-        PluginUninstallDispatcher.getInstance().addObserver(this);
     }
 
     public static LoaderResult<MarketplaceViewController> load() {
@@ -90,7 +91,7 @@ public class MarketplaceViewController extends BaseControllerImpl implements
     @FXML
     public void onInstall() {
         PluginInfoPropertiesDTO selectedPlugin = marketplacePluginList.getSelectionModel().getSelectedItem();
-        PluginTaskFactory.install(selectedPlugin.getId(), selectedPlugin.getInstallableVersion());
+        new PluginInstallTask(selectedPlugin.getId(), selectedPlugin.getInstallableVersion());
     }
 
     private ListCell<PluginInfoPropertiesDTO> createCell(ListView<PluginInfoPropertiesDTO> pluginInfoDTOListView) {
@@ -149,9 +150,10 @@ public class MarketplaceViewController extends BaseControllerImpl implements
         }
     }
 
-    @Override
-    public void onPluginInstallSucceeded(String pluginId, String version) {
-        reloadData(pluginId);
+
+    @SuppressWarnings("unused")
+    public void onPluginInstallSucceeded(@Subscribe PluginInstallEvent event) {
+        reloadData(event.pluginId());
         Platform.runLater(() -> AlertHelper.info(resources.getString("pluginChangeTitle"),
                 resources.getString("pluginChangeContent")));
     }
@@ -172,83 +174,73 @@ public class MarketplaceViewController extends BaseControllerImpl implements
         });
     }
 
-    @Override
-    public void onPluginInstallCancelled(String pluginId, String version) {
-        showFail();
-    }
-
     private void showFail() {
         AlertHelper.warn(resources.getString("pluginOperationFailedTitle"), resources.getString("pluginOperationFailedContent"), true);
         Platform.runLater(() -> marketplaceRootPane.setDisable(false));
     }
 
-    @Override
-    public void onPluginInstallFailed(String pluginId, String version, Throwable exception) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginInstallFailedEvent.class)
+    public void onPluginInstallFailed() {
         showFail();
     }
 
-    @Override
-    public void onPluginInstallStarted(String pluginId, String version) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginInstallStartedEvent.class)
+    public void onPluginInstallStarted() {
         marketplaceRootPane.setDisable(true);
     }
 
-    @Override
-    public void onPluginUninstallSucceeded(String pluginId) {
-        reloadData(pluginId);
+
+    @SuppressWarnings("unused")
+    public void onPluginUninstallSucceeded(@Subscribe PluginUninstallEvent event) {
+        reloadData(event.pluginId());
     }
 
-    @Override
-    public void onPluginUninstallCancelled(String pluginId) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginUninstallFailedEvent.class)
+    public void onPluginUninstallFailed() {
         Platform.runLater(() -> marketplaceRootPane.setDisable(false));
     }
 
-    @Override
-    public void onPluginUninstallFailed(String pluginId, Throwable exception) {
-        Platform.runLater(() -> marketplaceRootPane.setDisable(false));
-    }
-
-    @Override
-    public void onPluginUninstallStarted(String pluginId) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginUninstallStartedEvent.class)
+    public void onPluginUninstallStarted() {
         marketplaceRootPane.setDisable(true);
     }
 
-    @Override
-    public void onPluginDisableStarted(String pluginId) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginDisabledStartedEvent.class)
+    public void onPluginDisableStarted() {
         marketplaceRootPane.setDisable(true);
     }
 
-    @Override
-    public void onPluginDisableSucceeded(String pluginId) {
-        reloadData(pluginId);
+    @SuppressWarnings("unused")
+    public void onPluginDisableSucceeded(@Subscribe PluginDisabledEvent event) {
+        reloadData(event.pluginId());
     }
 
-    @Override
-    public void onPluginDisableCancelled(String pluginId) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginDisabledFailedEvent.class)
+    public void onPluginDisableFailed() {
         Platform.runLater(() -> marketplaceRootPane.setDisable(false));
     }
 
-    @Override
-    public void onPluginDisableFailed(String pluginId, Throwable exception) {
-        Platform.runLater(() -> marketplaceRootPane.setDisable(false));
-    }
-
-    @Override
-    public void onPluginEnableStarted(String pluginId) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginEnabledStartedEvent.class)
+    public void onPluginEnableStarted() {
         marketplaceRootPane.setDisable(true);
     }
 
-    @Override
-    public void onPluginEnableSucceeded(String pluginId) {
-        reloadData(pluginId);
+
+    @SuppressWarnings("unused")
+    public void onPluginEnableSucceeded(@Subscribe PluginEnabledEvent event) {
+        reloadData(event.pluginId());
     }
 
-    @Override
-    public void onPluginEnableCancelled(String pluginId) {
-        Platform.runLater(() -> marketplaceRootPane.setDisable(false));
-    }
-
-    @Override
-    public void onPluginEnableFailed(String pluginId, Throwable exception) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginEnabledFailedEvent.class)
+    public void onPluginEnableFailed() {
         Platform.runLater(() -> marketplaceRootPane.setDisable(false));
     }
 }
