@@ -12,8 +12,6 @@ import org.correomqtt.business.connection.ConnectStartedEvent;
 import org.correomqtt.business.connection.ConnectTask;
 import org.correomqtt.business.connection.DisconnectEvent;
 import org.correomqtt.business.connection.DisconnectTask;
-import org.correomqtt.business.dispatcher.LogDispatcher;
-import org.correomqtt.business.dispatcher.LogObserver;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.fileprovider.SettingsProvider;
@@ -36,7 +34,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ResourceBundle;
 
 public class ConnectionViewController extends BaseConnectionController implements
-        LogObserver,
         PublishViewDelegate,
         SubscriptionViewDelegate,
         ControlBarDelegate {
@@ -73,7 +70,6 @@ public class ConnectionViewController extends BaseConnectionController implement
         super(connectionId);
         this.delegate = delegate;
         EventBus.register(this);
-        LogDispatcher.getInstance().addObserver(this);
     }
 
     public static LoaderResult<ConnectionViewController> load(String connectionId, ConnectionViewDelegate delegate) {
@@ -186,11 +182,6 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     @Override
-    public void updateLog(String message) {
-        // do nothing
-    }
-
-    @Override
     public void setLayout(boolean publish, boolean subscribe) {
 
         if (publish && !subscribe) {
@@ -287,8 +278,6 @@ public class ConnectionViewController extends BaseConnectionController implement
         controlBarController.cleanUp();
 
         EventBus.unregister(this);
-
-        LogDispatcher.getInstance().removeObserver(this);
     }
 
     public Pane getMainNode() {

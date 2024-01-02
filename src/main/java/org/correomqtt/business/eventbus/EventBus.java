@@ -1,20 +1,29 @@
 package org.correomqtt.business.eventbus;
 
 import lombok.AllArgsConstructor;
-import org.correomqtt.business.applifecycle.ShutdownEvent;
+import org.correomqtt.CorreoMqtt;
+import org.correomqtt.business.exception.CorreoMqttExecutionException;
+import org.correomqtt.business.utils.FrontendBinding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class EventBus {
+
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventBus.class);
 
 
     @AllArgsConstructor
@@ -135,27 +144,43 @@ public class EventBus {
 
     }
 
-    public static void fire(Event event) {
+    private static Set<Callback> getCallbacksToExecute(Event event) {
         Set<Callback> callbacks = LISTENER.get(event.getClass());
         if (callbacks == null)
-            return;
+            return Collections.emptySet();
 
-        callbacks.forEach(c -> {
-            if (isValidEvent(event, c.clazz)) {
-                try {
-                    if (c.withPayload) {
-                        c.method.invoke(c.clazz, event);
-                    } else {
-                        c.method.invoke(c.clazz);
-                    }
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
+        return callbacks.stream()
+                .filter(c -> isValidEvent(event, c.clazz))
+                .collect(Collectors.toSet());
     }
-    public static void fireAsync(Event event) {
-        CompletableFuture.runAsync(() -> fire(event)).join();
+
+    private static void executeFire(Event event, Set<Callback> callbacks) {
+        FrontendBinding.pushToFrontend(() ->
+                callbacks.forEach(c -> {
+                    try {
+                        if (c.withPayload) {
+                            c.method.invoke(c.clazz, event);
+                        } else {
+                            c.method.invoke(c.clazz);
+                        }
+                    } catch (Exception e) {
+                        LOGGER.error("Unexpected Exception firing async event. ", e);
+                        throw new EventCallbackExecutionException(e);
+                    }
+                })
+        );
+    }
+
+    public static int fire(Event event) {
+        Set<Callback> callbacks = getCallbacksToExecute(event);
+        executeFire(event, callbacks);
+        return callbacks.size();
+    }
+
+    public static int fireAsync(Event event) {
+        Set<Callback> callbacks = getCallbacksToExecute(event);
+        CompletableFuture.runAsync(() -> executeFire(event, callbacks));
+        return callbacks.size();
     }
 
     private static boolean isValidEvent(Event event, Object listener) {
@@ -173,6 +198,7 @@ public class EventBus {
             try {
                 return eventMethod.invoke(event).equals(listenerMethod.invoke(listener));
             } catch (IllegalAccessException | InvocationTargetException e) {
+                LOGGER.error("Unexpected Exception firing async event. ", e);
                 throw new RuntimeException(e);
             }
         });

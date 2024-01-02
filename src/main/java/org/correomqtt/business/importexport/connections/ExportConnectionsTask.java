@@ -1,5 +1,6 @@
 package org.correomqtt.business.importexport.connections;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.concurrent.Task;
 import org.correomqtt.business.encryption.Encryptor;
@@ -34,7 +35,7 @@ public class ExportConnectionsTask extends Task<Integer, ExportConnectionsTask.E
     }
 
     @Override
-    protected Integer execute() {
+    protected Integer execute() throws EncryptionRecoverableException, IOException {
 
         if (file == null) {
             throw createExpectedException(Error.FILE_IS_NULL);
@@ -53,20 +54,16 @@ public class ExportConnectionsTask extends Task<Integer, ExportConnectionsTask.E
 
         ConnectionExportDTO connectionExportDTO;
 
-        try {
-            if (password == null) {
-                connectionExportDTO = new ConnectionExportDTO(connectionList);
-            } else {
-                // TODO check usage of mixin? What is it here?
-                String connectionsJSON = new ObjectMapper().addMixIn(ConnectionConfigDTO.class, ConnectionConfigDTOMixin.class).writeValueAsString(connectionList);
-                Encryptor encryptor = new EncryptorAesGcm(password);
-                String encryptedData = new EncryptorAesGcm(password).encrypt(connectionsJSON);
-                connectionExportDTO = new ConnectionExportDTO(encryptor.getEncryptionTranslation(), encryptedData);
-            }
-            new ObjectMapper().writeValue(file, connectionExportDTO);
-        } catch (EncryptionRecoverableException | IOException e) {
-            throw new CorreoMqttExecutionException(e);
+        if (password == null) {
+            connectionExportDTO = new ConnectionExportDTO(connectionList);
+        } else {
+            // TODO check usage of mixin? What is it here?
+            String connectionsJSON = new ObjectMapper().addMixIn(ConnectionConfigDTO.class, ConnectionConfigDTOMixin.class).writeValueAsString(connectionList);
+            Encryptor encryptor = new EncryptorAesGcm(password);
+            String encryptedData = new EncryptorAesGcm(password).encrypt(connectionsJSON);
+            connectionExportDTO = new ConnectionExportDTO(encryptor.getEncryptionTranslation(), encryptedData);
         }
+        new ObjectMapper().writeValue(file, connectionExportDTO);
 
         return connectionList.size();
     }
