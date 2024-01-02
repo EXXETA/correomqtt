@@ -15,8 +15,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.model.Auth;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.CorreoMqttVersion;
@@ -25,7 +23,7 @@ import org.correomqtt.business.model.Lwt;
 import org.correomqtt.business.model.Proxy;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.TlsSsl;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.cell.GenericCell;
 import org.correomqtt.gui.helper.CheckTopicHelper;
@@ -38,12 +36,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Base64;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
 public class MqttSettingsViewController extends BaseControllerImpl
-        implements ConfigObserver, ConnectionSettingsDelegateController,
+        implements ConnectionSettingsDelegateController,
         LwtSettingsHook.OnSettingsChangedListener {
 
     private static final String TEXT_FIELD = "text-field";
@@ -157,10 +154,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
 
     @FXML
     private Pane lwtPayloadPane;
-
-    public MqttSettingsViewController() {
-        ConfigDispatcher.getInstance().addObserver(this);
-    }
 
     public static LoaderResult<MqttSettingsViewController> load() {
         LoaderResult<MqttSettingsViewController> result = load(MqttSettingsViewController.class, "mqttSettingsView.fxml",
@@ -536,66 +529,9 @@ public class MqttSettingsViewController extends BaseControllerImpl
         authKeyFileTextField.setText(selectedFile.toString());
     }
 
-    @Override
-    public void onConfigDirectoryEmpty() {
-        // Do nothing
-    }
-
-    @Override
-    public void onConfigDirectoryNotAccessible() {
-        // Do nothing
-    }
-
-    @Override
-    public void onAppDataNull() {
-        // Do nothing
-    }
-
-    @Override
-    public void onUserHomeNull() {
-        // Do nothing
-    }
-
-    @Override
-    public void onFileAlreadyExists() {
-        // Do nothing
-    }
-
-    @Override
-    public void onInvalidPath() {
-        // Do nothing
-    }
-
-    @Override
-    public void onInvalidJsonFormat() {
-        // Do nothing
-    }
-
-    @Override
-    public void onSavingFailed() {
-        // Do nothing
-    }
-
-    @Override
-    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
-
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Updated settings in connection settings view controller");
-        }
-    }
-
-    @Override
-    public void onConnectionsUpdated() {
-        // Do nothing
-    }
-
-    @Override
-    public void onConfigPrepareFailed() {
-        // Do nothing
-    }
 
     @Override
     public void cleanUp() {
-        ConfigDispatcher.getInstance().removeObserver(this);
+        // nothing to do
     }
 }

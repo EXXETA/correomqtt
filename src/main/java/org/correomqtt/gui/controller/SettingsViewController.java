@@ -15,7 +15,7 @@ import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.model.ThemeDTO;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.gui.cell.GenericCell;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;

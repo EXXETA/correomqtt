@@ -11,17 +11,15 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import org.apache.maven.artifact.versioning.ComparableVersion;
-import org.correomqtt.business.dispatcher.ApplicationLifecycleDispatcher;
-import org.correomqtt.business.dispatcher.PreloadingDispatcher;
-import org.correomqtt.business.dispatcher.ShortcutDispatcher;
-import org.correomqtt.business.dispatcher.ShutdownDispatcher;
-import org.correomqtt.business.dispatcher.ShutdownObserver;
-import org.correomqtt.business.dispatcher.StartupDispatcher;
-import org.correomqtt.business.dispatcher.StartupObserver;
+import org.correomqtt.business.applifecycle.ShutdownEvent;
+import org.correomqtt.business.applifecycle.ShutdownRequestEvent;
+import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.model.GlobalUISettings;
 import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.shortcut.ShortcutConnectionIdEvent;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.AlertController;
 import org.correomqtt.gui.controller.MainViewController;
@@ -31,6 +29,7 @@ import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.PluginCheckUtils;
 import org.correomqtt.plugin.PluginLauncher;
+import org.correomqtt.plugin.PreloadingProgressEvent;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +39,12 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-public class CorreoMqtt extends Application implements StartupObserver, ShutdownObserver {
+import static org.correomqtt.business.shortcut.ShortcutEvent.Shortcut.CLEAR_INCOMING;
+import static org.correomqtt.business.shortcut.ShortcutEvent.Shortcut.CLEAR_OUTGOING;
+import static org.correomqtt.business.shortcut.ShortcutEvent.Shortcut.PUBLISH;
+import static org.correomqtt.business.shortcut.ShortcutEvent.Shortcut.SUBSCRIPTION;
+
+public class CorreoMqtt extends Application {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CorreoMqtt.class);
     private ResourceBundle resources;
@@ -55,6 +59,9 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
     @Override
     public void init() throws IOException {
 
+        // TODO cleanup
+        EventBus.register(this);
+
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Application started.");
             LOGGER.info("JVM: {} {} {}", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
@@ -66,23 +73,19 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
             LOGGER.info("CorreoMQTT version is {}", VersionUtils.getVersion());
         }
 
-        StartupDispatcher.getInstance().addObserver(this);
-        ShutdownDispatcher.getInstance().addObserver(this);
-
         final SettingsDTO settings = SettingsProvider.getInstance().getSettings();
 
         handleVersionMismatch(settings);
         setLocale(settings);
         HostServicesHolder.getInstance().setHostServices(getHostServices());
-
-        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLanguageSet"));
+        EventBus.fireAsync(new PreloadingProgressEvent(resources.getString("preloaderLanguageSet")));
 
         if (settings.isFirstStart()) {
             initUpdatesOnFirstStart(settings);
         }
 
         if (settings.isSearchUpdates()) {
-            PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderSearchingUpdates"));
+            EventBus.fireAsync(new PreloadingProgressEvent(resources.getString("preloaderSearchingUpdates")));
             PluginCheckUtils.checkMigration();
             new PluginLauncher().start(false);
             try {
@@ -92,11 +95,8 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
             }
         }
 
-
-        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderKeyring"));
-
+        EventBus.fireAsync(new PreloadingProgressEvent(resources.getString("preloaderKeyring")));
         KeyringHandler.getInstance().init();
-
         KeyringHandler.getInstance().retryWithMasterPassword(
                 masterPassword -> SettingsProvider.getInstance().initializePasswords(masterPassword),
                 resources.getString("onPasswordReadFailedTitle"),
@@ -105,11 +105,8 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
                 resources.getString("onPasswordReadFailedGiveUp"),
                 resources.getString("onPasswordReadFailedTryAgain")
         );
-
-        PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderReady"));
-
+        EventBus.fireAsync(new PreloadingProgressEvent(resources.getString("preloaderReady")));
         SettingsProvider.getInstance().saveSettings(false);
-
     }
 
     private void handleVersionMismatch(SettingsDTO settings) {
@@ -232,19 +229,19 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         scene.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
 
                     if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && !event.isShiftDown()) {
-                        ShortcutDispatcher.getInstance().onSubscriptionShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        EventBus.fireAsync(new ShortcutConnectionIdEvent(SUBSCRIPTION,mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && event.isShiftDown()) {
-                        ShortcutDispatcher.getInstance().onClearIncomingShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        EventBus.fireAsync(new ShortcutConnectionIdEvent(CLEAR_INCOMING,mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && !event.isShiftDown()) {
-                        ShortcutDispatcher.getInstance().onPublishShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        EventBus.fireAsync(new ShortcutConnectionIdEvent(PUBLISH,mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && event.isShiftDown()) {
-                        ShortcutDispatcher.getInstance().onClearOutgoingShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        EventBus.fireAsync(new ShortcutConnectionIdEvent(CLEAR_OUTGOING,mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     //TODO rest
@@ -252,7 +249,7 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         );
     }
 
-    @Override
+    //TODO use
     public void onPluginUpdateFailed(String disabledPath) {
         AlertHelper.warn(
                 resources.getString("pluginUpdateErrorTitle"),
@@ -261,7 +258,7 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         );
     }
 
-    @Override
+    // TODO use
     public void onPluginLoadFailed() {
         AlertHelper.warn(
                 resources.getString("pluginErrorTitle"),
@@ -272,7 +269,7 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         System.exit(1);
     }
 
-    @Override
+    @Subscribe(ShutdownRequestEvent.class)
     public void onShutdownRequested() {
         LOGGER.info("Main window closed. Initialize shutdown.");
         LOGGER.info("Saving global UI settings.");
@@ -280,10 +277,11 @@ public class CorreoMqtt extends Application implements StartupObserver, Shutdown
         LOGGER.info("Saving connection UI settings.");
         saveConnectionUISettings();
         LOGGER.info("Shutting down connections.");
-        ApplicationLifecycleDispatcher.getInstance().onShutdown();
+        EventBus.fire(new ShutdownEvent());
         LOGGER.info("Shutting down plugins.");
         PluginManager.getInstance().stopPlugins();
         LOGGER.info("Shutting down application. Bye.");
+        AlertController.deactivate();
         Platform.exit();
         System.exit(0);
     }

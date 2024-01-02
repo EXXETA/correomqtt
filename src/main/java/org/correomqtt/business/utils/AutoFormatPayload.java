@@ -26,33 +26,33 @@ public class AutoFormatPayload {
 
     public static Format autoFormatPayload(final String payload, boolean doFormatting, String connectionId, CodeArea codeArea, ChangeListener<String> listener) {
 
+        if (!doFormatting) {
+            return null;
+        }
+
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Auto formatting payload: {}", connectionId);
         }
 
         Format foundFormat;
-        if (doFormatting) {
-            // Find the first format that is valid.
-            ArrayList<Format> availableFormats = new ArrayList<>(PluginManager.getInstance().getExtensions(DetailViewFormatHook.class));
-            availableFormats.add(new Plain());
-            foundFormat = availableFormats.stream()
-                    .filter(Objects::nonNull)
-                    .filter(format -> {
-                                try {
-                                    format.setText(payload);
-                                    return format.isValid();
-                                }catch(Exception e){
-                                    LOGGER.error("Formatting check failed. ",e);
-                                    return false;
-                                }
+        // Find the first format that is valid.
+        ArrayList<Format> availableFormats = new ArrayList<>(PluginManager.getInstance().getExtensions(DetailViewFormatHook.class));
+        availableFormats.add(new Plain());
+        foundFormat = availableFormats.stream()
+                .filter(Objects::nonNull)
+                .filter(format -> {
+                            try {
+                                format.setText(payload);
+                                return format.isValid();
+                            } catch (Exception e) {
+                                LOGGER.error("Formatting check failed. ", e);
+                                return false;
                             }
-                    )
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("Plain format did not match."));
-        } else {
-            foundFormat = new Plain();
-            foundFormat.setText(payload);
-        }
+                        }
+                )
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Plain format did not match."));
+
 
         //ChangeListener<String> listener is needed to disable it when the text of the PublishCodeArea changes. It is reenabled after the manipulation.
         if (listener != null) {
@@ -63,8 +63,8 @@ public class AutoFormatPayload {
         try {
             codeArea.replaceText(0, 0, foundFormat.getPrettyString());
             codeArea.setStyleSpans(0, foundFormat.getFxSpans());
-        }catch(Exception e){
-            LOGGER.error("Formatter failed. ",e);
+        } catch (Exception e) {
+            LOGGER.error("Formatter failed. ", e);
             foundFormat = new Plain();
             foundFormat.setText(payload);
             codeArea.replaceText(0, 0, foundFormat.getPrettyString());

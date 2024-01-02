@@ -2,14 +2,11 @@ package org.correomqtt.gui.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 public class ConnectionImportStepFinalViewController extends BaseControllerImpl implements ConnectionImportStepController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionImportStepFinalViewController.class);
 
     private static ResourceBundle resources;
     private final ConnectionImportStepDelegate delegate;

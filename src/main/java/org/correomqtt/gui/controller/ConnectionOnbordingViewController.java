@@ -15,8 +15,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.dispatcher.ConfigObserver;
+import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
+import org.correomqtt.business.fileprovider.ConnectionsUpdatedEvent;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.cell.ConnectionCell;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -31,7 +32,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class ConnectionOnbordingViewController extends BaseControllerImpl implements ConfigObserver {
+public class ConnectionOnbordingViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionOnbordingViewController.class);
     @FXML
@@ -62,7 +63,7 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl implem
         super();
         this.connectionsOnboardingDelegate = connectionsOnboardingDelegate;
         this.connectionsSettingsViewDelegate = connectionSettingsViewDelegate;
-        ConfigDispatcher.getInstance().addObserver(this);
+        EventBus.unregister(this);
     }
 
     public static LoaderResult<ConnectionOnbordingViewController> load(ConnectionOnboardingDelegate connectionsOnboardingDelegate,
@@ -220,64 +221,16 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl implem
         LOGGER.debug("Open connection settings");
     }
 
-    @Override
-    public void onConfigDirectoryEmpty() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConfigDirectoryNotAccessible() {
-        // nothing to do
-    }
-
-    @Override
-    public void onAppDataNull() {
-        // nothing to do
-    }
-
-    @Override
-    public void onUserHomeNull() {
-        // nothing to do
-    }
-
-    @Override
-    public void onFileAlreadyExists() {
-        // nothing to do
-    }
-
-    @Override
-    public void onInvalidPath() {
-        // nothing to do
-    }
-
-    @Override
-    public void onInvalidJsonFormat() {
-        // nothing to do
-    }
-
-    @Override
-    public void onSavingFailed() {
-        // nothing to do
-    }
-
-    @Override
-    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
-        // nothing to do
-    }
-
-    @Override
+    @SuppressWarnings("unused")
+    @Subscribe(ConnectionsUpdatedEvent.class)
     public void onConnectionsUpdated() {
         updateConnections();
     }
 
-    @Override
-    public void onConfigPrepareFailed() {
-        // nothing to do
-    }
 
     public void cleanUp() {
         ConnectionPropertiesDTO config = connectionListView.getSelectionModel().getSelectedItem();
         connectionsOnboardingDelegate.cleanUpProvider(config);
-        ConfigDispatcher.getInstance().removeObserver(this);
+        EventBus.unregister(this);
     }
 }

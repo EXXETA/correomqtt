@@ -9,16 +9,23 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import lombok.extern.slf4j.Slf4j;
-import org.correomqtt.business.dispatcher.PluginDisableDispatcher;
-import org.correomqtt.business.dispatcher.PluginDisableObserver;
-import org.correomqtt.business.dispatcher.PluginEnableDispatcher;
-import org.correomqtt.business.dispatcher.PluginEnableObserver;
-import org.correomqtt.business.dispatcher.PluginInstallDispatcher;
-import org.correomqtt.business.dispatcher.PluginInstallObserver;
-import org.correomqtt.business.dispatcher.PluginUninstallDispatcher;
-import org.correomqtt.business.dispatcher.PluginUninstallObserver;
-import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.gui.business.PluginTaskFactory;
+import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
+import org.correomqtt.business.fileprovider.SettingsProvider;
+import org.correomqtt.business.plugin.PluginDisableTask;
+import org.correomqtt.business.plugin.PluginDisabledEvent;
+import org.correomqtt.business.plugin.PluginDisabledFailedEvent;
+import org.correomqtt.business.plugin.PluginDisabledStartedEvent;
+import org.correomqtt.business.plugin.PluginEnableTask;
+import org.correomqtt.business.plugin.PluginEnabledEvent;
+import org.correomqtt.business.plugin.PluginEnabledFailedEvent;
+import org.correomqtt.business.plugin.PluginEnabledStartedEvent;
+import org.correomqtt.business.plugin.PluginInstallEvent;
+import org.correomqtt.business.plugin.PluginInstallFailedEvent;
+import org.correomqtt.business.plugin.PluginInstallStartedEvent;
+import org.correomqtt.business.plugin.PluginUninstallEvent;
+import org.correomqtt.business.plugin.PluginUninstallFailedEvent;
+import org.correomqtt.business.plugin.PluginUninstallTask;
 import org.correomqtt.gui.cell.PluginCell;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
@@ -29,11 +36,7 @@ import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 @Slf4j
-public class InstalledPluginsViewController extends BaseControllerImpl implements
-        PluginInstallObserver,
-        PluginUninstallObserver,
-        PluginDisableObserver,
-        PluginEnableObserver {
+public class InstalledPluginsViewController extends BaseControllerImpl {
 
     @FXML
     Pane installedPluginsRootPane;
@@ -72,10 +75,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl implement
 
     public InstalledPluginsViewController() {
         super();
-        PluginInstallDispatcher.getInstance().addObserver(this);
-        PluginUninstallDispatcher.getInstance().addObserver(this);
-        PluginDisableDispatcher.getInstance().addObserver(this);
-        PluginEnableDispatcher.getInstance().addObserver(this);
+        EventBus.register(this);
     }
 
     public static LoaderResult<InstalledPluginsViewController> load() {
@@ -137,9 +137,11 @@ public class InstalledPluginsViewController extends BaseControllerImpl implement
     public void onDisableToggle() {
         PluginInfoPropertiesDTO selectedPlugin = installedPluginList.getSelectionModel().getSelectedItem();
         if (Boolean.TRUE.equals(selectedPlugin.getDisabled())) {
-            PluginTaskFactory.enable(selectedPlugin.getId());
+            new PluginEnableTask(selectedPlugin.getId())
+                    .run();
         } else {
-            PluginTaskFactory.disable(selectedPlugin.getId());
+            new PluginDisableTask(selectedPlugin.getId())
+                    .run();
         }
         Platform.runLater(() -> installedPluginList.refresh());
     }
@@ -153,7 +155,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl implement
                 MessageFormat.format(resources.getString("reallyUninstallContent"), selectedPlugin.getName(), selectedPlugin.getInstalledVersion()),
                 resources.getString("commonCancelButton"),
                 resources.getString("reallyUninstallYesButton"))) {
-            PluginTaskFactory.uninstall(selectedPlugin.getId());
+            new PluginUninstallTask(selectedPlugin.getId()).run();
         }
     }
 
@@ -177,9 +179,9 @@ public class InstalledPluginsViewController extends BaseControllerImpl implement
         }
     }
 
-    @Override
-    public void onPluginInstallSucceeded(String pluginId, String version) {
-        reloadData(pluginId);
+    @SuppressWarnings("unused")
+    public void onPluginInstallSucceeded(@Subscribe PluginInstallEvent event) {
+        reloadData(event.pluginId());
     }
 
     private void reloadData(String pluginId) {
@@ -198,87 +200,74 @@ public class InstalledPluginsViewController extends BaseControllerImpl implement
         });
     }
 
-    @Override
-    public void onPluginInstallCancelled(String pluginId, String version) {
-        Platform.runLater(() -> installedPluginsRootPane.setDisable(false));
-    }
-
     private void showFail() {
         AlertHelper.warn(resources.getString("pluginOperationFailedTitle"), resources.getString("pluginOperationFailedContent"), true);
         Platform.runLater(() -> installedPluginsRootPane.setDisable(false));
     }
 
-    @Override
-    public void onPluginInstallFailed(String pluginId, String version, Throwable exception) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginInstallFailedEvent.class)
+    public void onPluginInstallFailed() {
         Platform.runLater(() -> installedPluginsRootPane.setDisable(false));
     }
 
-    @Override
-    public void onPluginInstallStarted(String pluginId, String version) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginInstallStartedEvent.class)
+    public void onPluginInstallStarted() {
         installedPluginsRootPane.setDisable(true);
     }
 
-    @Override
-    public void onPluginUninstallSucceeded(String pluginId) {
-        reloadData(pluginId);
+    public void onPluginUninstallSucceeded(@Subscribe PluginUninstallEvent event) {
+        reloadData(event.pluginId());
         Platform.runLater(() -> AlertHelper.info(resources.getString("pluginChangeTitle"),
                 resources.getString("pluginChangeContent")));
     }
 
-    @Override
-    public void onPluginUninstallCancelled(String pluginId) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginUninstallFailedEvent.class)
+    public void onPluginUninstallFailed() {
         showFail();
     }
 
-    @Override
-    public void onPluginUninstallFailed(String pluginId, Throwable exception) {
-        showFail();
-    }
-
-    @Override
-    public void onPluginUninstallStarted(String pluginId) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginInstallStartedEvent.class)
+    public void onPluginUninstallStarted() {
         installedPluginsRootPane.setDisable(true);
     }
 
-    @Override
-    public void onPluginDisableSucceeded(String pluginId) {
-        this.onPluginUninstallSucceeded(pluginId);
+    @SuppressWarnings("unused")
+    public void onPluginDisableSucceeded(@Subscribe PluginDisabledEvent event) {
+        //TODO?
     }
 
-    @Override
-    public void onPluginDisableCancelled(String pluginId) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginDisabledFailedEvent.class)
+    public void onPluginDisableFailed() {
         showFail();
     }
 
-    @Override
-    public void onPluginDisableFailed(String pluginId, Throwable exception) {
-        showFail();
-    }
-
-    @Override
-    public void onPluginDisableStarted(String pluginId) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginDisabledStartedEvent.class)
+    public void onPluginDisableStarted() {
         installedPluginsRootPane.setDisable(true);
     }
 
-    @Override
-    public void onPluginEnableSucceeded(String pluginId) {
-        reloadData(pluginId);
+    @SuppressWarnings("unused")
+    public void onPluginEnableSucceeded(@Subscribe PluginEnabledEvent event) {
+        reloadData(event.pluginId());
         Platform.runLater(() -> AlertHelper.info(resources.getString("pluginChangeTitle"),
                 resources.getString("pluginChangeContent")));
     }
 
-    @Override
-    public void onPluginEnableCancelled(String pluginId) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginEnabledFailedEvent.class)
+    public void onPluginEnableFailed() {
         showFail();
     }
 
-    @Override
-    public void onPluginEnableFailed(String pluginId, Throwable exception) {
-        showFail();
-    }
-
-    @Override
-    public void onPluginEnableStarted(String pluginId) {
+    @SuppressWarnings("unused")
+    @Subscribe(PluginEnabledStartedEvent.class)
+    public void onPluginEnableStarted() {
         installedPluginsRootPane.setDisable(true);
     }
 }

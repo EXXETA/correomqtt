@@ -10,27 +10,24 @@ import javafx.scene.control.ListView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
-import org.correomqtt.business.dispatcher.PersistSubscriptionHistoryDispatcher;
-import org.correomqtt.business.dispatcher.PersistSubscriptionHistoryObserver;
-import org.correomqtt.business.dispatcher.ShortcutDispatcher;
-import org.correomqtt.business.dispatcher.ShortcutObserver;
-import org.correomqtt.business.dispatcher.SubscribeDispatcher;
-import org.correomqtt.business.dispatcher.SubscribeObserver;
-import org.correomqtt.business.dispatcher.UnsubscribeDispatcher;
-import org.correomqtt.business.dispatcher.UnsubscribeObserver;
-import org.correomqtt.business.exception.CorreoMqttException;
+import org.correomqtt.business.connection.DisconnectEvent;
+import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
+import org.correomqtt.business.fileprovider.PersistSubscribeHistoryUpdateEvent;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.SubscriptionDTO;
-import org.correomqtt.business.provider.PersistSubscriptionHistoryProvider;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.PersistSubscriptionHistoryProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
+import org.correomqtt.business.pubsub.IncomingMessageEvent;
+import org.correomqtt.business.pubsub.SubscribeEvent;
+import org.correomqtt.business.pubsub.SubscribeTask;
+import org.correomqtt.business.pubsub.UnsubscribeEvent;
+import org.correomqtt.business.pubsub.UnsubscribeTask;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.QosCell;
 import org.correomqtt.gui.cell.SubscriptionViewCell;
 import org.correomqtt.gui.cell.TopicCell;
@@ -49,17 +46,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class SubscriptionViewController extends BaseMessageBasedViewController implements
-        SubscribeObserver,
-        UnsubscribeObserver,
-        ConnectionLifecycleObserver,
-        ShortcutObserver,
-        SubscriptionListMessageContextMenuDelegate,
-        PersistSubscriptionHistoryObserver {
+        SubscriptionListMessageContextMenuDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionViewController.class);
     private static ResourceBundle resources;
@@ -93,11 +84,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     public SubscriptionViewController(String connectionId, SubscriptionViewDelegate delegate) {
         super(connectionId);
         this.delegate = delegate;
-        SubscribeDispatcher.getInstance().addObserver(this);
-        UnsubscribeDispatcher.getInstance().addObserver(this);
-        ConnectionLifecycleDispatcher.getInstance().addObserver(this);
-        ShortcutDispatcher.getInstance().addObserver(this);
-        PersistSubscriptionHistoryDispatcher.getInstance().addObserver(this);
+        EventBus.register(this);
     }
 
     static LoaderResult<SubscriptionViewController> load(String connectionId, SubscriptionViewDelegate delegate) {
@@ -127,7 +114,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
 
         subscribeTopicComboBox.getEditor().lengthProperty().addListener((observable, oldValue, newValue) -> {
             CheckTopicHelper.checkSubscribeTopic(subscribeTopicComboBox, false, afterSubscribe);
-            if (newValue.toString().length() > 0) {
+            if (!newValue.toString().isEmpty()) {
                 afterSubscribe = false;
             }
         });
@@ -136,7 +123,9 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
                 .ifPresent(c -> {
-                    if (!splitPane.getDividers().isEmpty()) {splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDividerPosition());}
+                    if (!splitPane.getDividers().isEmpty()) {
+                        splitPane.getDividers().get(0).setPosition(c.getConnectionUISettings().getSubscribeDividerPosition());
+                    }
                     super.messageListViewController.showDetailViewButton.setSelected(c.getConnectionUISettings().isSubscribeDetailActive());
                     super.messageListViewController.controllerType = ControllerType.SUBSCRIBE;
                     if (c.getConnectionUISettings().isSubscribeDetailActive()) {
@@ -185,10 +174,12 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         }
 
         Qos selectedQos = qosComboBox.getSelectionModel().getSelectedItem();
-        MessageTaskFactory.subscribe(getConnectionId(), SubscriptionPropertiesDTO.builder()
-                                                                          .topic(topic)
-                                                                          .qos(selectedQos)
-                                                                          .build());
+        new SubscribeTask(getConnectionId(), SubscriptionDTO.builder()
+                .topic(topic)
+                .qos(selectedQos)
+                .build())
+                .onError(this::onSubscribedFailed)
+                .run();
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Subscribing to topic '{}': {}", topic, getConnectionId());
@@ -213,7 +204,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     public void unsubscribe(SubscriptionPropertiesDTO subscriptionDTO) {
-        MessageTaskFactory.unsubscribe(getConnectionId(), subscriptionDTO);
+        new UnsubscribeTask(getConnectionId(), SubscriptionTransformer.propsToDTO(subscriptionDTO)).run();
     }
 
     @FXML
@@ -250,10 +241,10 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
 
     public void unsubscribeAll() {
         ConnectionHolder.getInstance()
-                        .getConnection(getConnectionId())
-                        .getClient()
-                        .getSubscriptions()
-                        .forEach(s -> MessageTaskFactory.unsubscribe(getConnectionId(), SubscriptionTransformer.dtoToProps(s)));
+                .getConnection(getConnectionId())
+                .getClient()
+                .getSubscriptions()
+                .forEach(s -> new UnsubscribeTask(getConnectionId(), s));
 
         subscriptionListView.getItems().clear();
 
@@ -294,23 +285,25 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     // TODO: if all existing subscriptions are not filtered and a new comes in, no new messages are shown in the list
     // only after reclick the checkbox it works
 
-    @Override
-    public void onMessageIncoming(MessageDTO messageDTO, SubscriptionDTO subscriptionDTO) {
-        MessagePropertiesDTO messagePropertiesDTO = MessageTransformer.dtoToProps(messageDTO);
-        messagePropertiesDTO.getSubscriptionDTOProperty().setValue(SubscriptionTransformer.dtoToProps(subscriptionDTO));
+    @SuppressWarnings("unused")
+    @Subscribe
+    public void onMessageIncoming(IncomingMessageEvent event) {
+        MessagePropertiesDTO messagePropertiesDTO = MessageTransformer.dtoToProps(event.getMessageDTO());
+        messagePropertiesDTO.getSubscriptionDTOProperty().setValue(SubscriptionTransformer.dtoToProps(event.getSubscriptionDTO()));
         messageListViewController.onNewMessage(messagePropertiesDTO);
     }
 
-    @Override
-    public void onSubscribedSucceeded(SubscriptionDTO subscriptionDTO) {
+    @SuppressWarnings("unused")
+    @Subscribe
+    public void onSubscribedSucceeded(SubscribeEvent event) {
         afterSubscribe = true;
         subscribeTopicComboBox.getSelectionModel().select("");
 
-        if (subscriptionDTO.isHidden()) {
+        if (event.getSubscriptionDTO().isHidden()) {
             return;
         }
 
-        SubscriptionPropertiesDTO subscriptionPropertiesDTO = SubscriptionTransformer.dtoToProps(subscriptionDTO);
+        SubscriptionPropertiesDTO subscriptionPropertiesDTO = SubscriptionTransformer.dtoToProps(event.getSubscriptionDTO());
         subscriptionListView.getItems().add(0, subscriptionPropertiesDTO);
         unsubscribeAllButton.setDisable(false);
         selectAllButton.setDisable(false); //TODO disable on demand
@@ -323,29 +316,18 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         });
     }
 
-    @Override
-    public void onSubscribedCanceled(SubscriptionDTO subscriptionDTO) {
-        // nothing to do
-    }
-
-    @Override
-    public void onSubscribedFailed(SubscriptionDTO subscriptionDTO, Throwable exception) {
-        String msg;
-        if (exception instanceof CorreoMqttException correoMqttException) {
-            msg = correoMqttException.getInfo();
-        } else {
-            msg = "Exception in business layer: " + exception.getMessage();
-        }
+    public void onSubscribedFailed(Throwable exception) {
+        String msg = "Exception in business layer: " + exception.getMessage();
         AlertHelper.warn(resources.getString("subscribeViewControllerSubscriptionFailedTitle") + ": ", msg);
     }
 
     private void updateFilter() {
 
         Set<String> filteredTopics = subscriptionListView.getItems()
-                                                         .stream()
-                                                         .filter(dto -> dto.getFilteredProperty().getValue())
-                                                         .map(dto -> dto.getTopicProperty().getValue())
-                                                         .collect(Collectors.toSet());
+                .stream()
+                .filter(dto -> dto.getFilteredProperty().getValue())
+                .map(dto -> dto.getTopicProperty().getValue())
+                .collect(Collectors.toSet());
 
         messageListViewController.setFilterPredicate(m -> {
             SubscriptionPropertiesDTO subscription = m.getSubscription();
@@ -378,98 +360,27 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
 
     }
 
-    @Override
-    public void onDisconnectFromConnectionDeleted(String connectionId) {
-        // do nothing
-    }
 
-    @Override
-    public void onConnect() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConnectRunning() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConnectionFailed(Throwable message) {
-        // nothing to do
-    }
-
-    @Override
-    public void onConnectionCanceled() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConnectionLost() {
-        // nothing to do
-    }
-
-    @Override
+    @SuppressWarnings("unused")
+    @Subscribe(DisconnectEvent.class)
     public void onDisconnect() {
         subscriptionListView.getItems().clear();
     }
 
-    @Override
-    public void onDisconnectCanceled() {
-        // nothing to do
-    }
-
-    @Override
-    public void onDisconnectFailed(Throwable exception) {
-        // nothing to do
-    }
-
-    @Override
-    public void onDisconnectRunning() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConnectionReconnected() {
-        // nothing to do
-    }
-
-    @Override
-    public void onReconnectFailed(AtomicInteger triedReconnects, int maxReconnects) {
-// nothing to do
-    }
-
-    @Override
-    public void onSubscriptionShortcutPressed() {
-        // nothing to do
-    }
-
-    @Override
-    public void onClearIncomingShortcutPressed() {
-        // nothing to do
-    }
-
-    @Override
-    public void updateSubscriptions(String connectionId) {
+    @SuppressWarnings("unused")
+    @Subscribe(PersistSubscribeHistoryUpdateEvent.class)
+    public void updateSubscriptions() {
         initTopicComboBox();
     }
 
-    @Override
-    public void errorReadingSubscriptionHistory(Throwable exception) {
-// nothing to do
-    }
 
-    @Override
-    public void errorWritingSubscriptionHistory(Throwable exception) {
-// nothing to do
-    }
-
-    @Override
-    public void onUnsubscribeSucceeded(SubscriptionDTO subscriptionDTO) {
+    @SuppressWarnings("unused")
+    public void onUnsubscribeSucceeded(@Subscribe UnsubscribeEvent event) {
 
         SubscriptionPropertiesDTO subscriptionToRemove = subscriptionListView.getItems().stream()
-                                                                             .filter(s -> s.getTopic().equals(subscriptionDTO.getTopic()))
-                                                                             .findFirst()
-                                                                             .orElse(null);
+                .filter(s -> s.getTopic().equals(event.getSubscriptionDTO().getTopic()))
+                .findFirst()
+                .orElse(null);
 
         if (subscriptionToRemove != null) {
             subscriptionListView.getItems().remove(subscriptionToRemove);
@@ -481,16 +392,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
                 selectNoneButton.setDisable(true);
             }
         }
-    }
-
-    @Override
-    public void onUnsubscribeCanceled(SubscriptionDTO subscriptionDTO) {
-// nothing to do
-    }
-
-    @Override
-    public void onUnsubscribeFailed(SubscriptionDTO subscriptionDTO, Throwable exception) {
-// nothing to do
     }
 
     @Override
@@ -510,12 +411,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
 
     public void cleanUp() {
         this.messageListViewController.cleanUp();
-
-        SubscribeDispatcher.getInstance().removeObserver(this);
-        UnsubscribeDispatcher.getInstance().removeObserver(this);
-        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
-        ShortcutDispatcher.getInstance().removeObserver(this);
-        PersistSubscriptionHistoryDispatcher.getInstance().removeObserver(this);
+        EventBus.unregister(this);
     }
 }
 

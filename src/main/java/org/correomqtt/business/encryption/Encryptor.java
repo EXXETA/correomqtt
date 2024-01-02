@@ -1,7 +1,7 @@
 package org.correomqtt.business.encryption;
 
 import org.correomqtt.business.model.PasswordsDTO;
-import org.correomqtt.business.provider.EncryptionRecoverableException;
+import org.correomqtt.business.fileprovider.EncryptionRecoverableException;
 
 public interface Encryptor {
 

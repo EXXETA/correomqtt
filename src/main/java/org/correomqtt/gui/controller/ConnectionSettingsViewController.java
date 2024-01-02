@@ -22,14 +22,12 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import lombok.AllArgsConstructor;
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.dispatcher.ConfigObserver;
+import org.correomqtt.business.connection.DisconnectTask;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.cell.ConnectionCell;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
@@ -49,7 +47,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.UUID;
 
-public class ConnectionSettingsViewController extends BaseControllerImpl implements ConfigObserver {
+public class ConnectionSettingsViewController extends BaseControllerImpl   {
 
     @FXML
     public VBox contentHolder;
@@ -71,8 +69,6 @@ public class ConnectionSettingsViewController extends BaseControllerImpl impleme
                         resources.getString("commonDiscardButton")
                 )) {
             event.consume();
-        } else {
-            cleanUp();
         }
     }
 
@@ -86,7 +82,6 @@ public class ConnectionSettingsViewController extends BaseControllerImpl impleme
 
     public static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
 
-    private final ConnectionSettingsViewDelegate delegate;
     private final Map<String, ConnectionState> connectionStates = new HashMap<>();
 
     private final ConnectionPropertiesDTO preSelected;
@@ -119,9 +114,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl impleme
     Set<String> waitForDisconnectIds = new HashSet<>();
 
     public ConnectionSettingsViewController(ConnectionSettingsViewDelegate delegate, ConnectionPropertiesDTO preSelected) {
-        this.delegate = delegate;
         this.preSelected = preSelected;
-        ConfigDispatcher.getInstance().addObserver(this);
     }
 
     public static LoaderResult<ConnectionSettingsViewController> load(ConnectionSettingsViewDelegate delegate, ConnectionPropertiesDTO preSelected) {
@@ -389,7 +382,6 @@ public class ConnectionSettingsViewController extends BaseControllerImpl impleme
 
 
     private void closeDialog() {
-        cleanUp();
         Stage stage = (Stage) mainArea.getScene().getWindow();
         stage.close();
     }
@@ -500,7 +492,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl impleme
 
                 if (confirmed) {
                     LOGGER.info("Disconnect");
-                    MessageTaskFactory.disconnect(config.getId());
+                    new DisconnectTask(config.getId()).run();
                     waitForDisconnectIds.add(config.getId());
                 }
             } else {
@@ -513,68 +505,6 @@ public class ConnectionSettingsViewController extends BaseControllerImpl impleme
         connectionsListView.getItems().remove(config);
         persistConnections(config, true);
         deselectConnection();
-    }
-
-    @Override
-    public void onConfigDirectoryEmpty() {
-        // Do nothing
-    }
-
-    @Override
-    public void onConfigDirectoryNotAccessible() {
-        // Do nothing
-    }
-
-    @Override
-    public void onAppDataNull() {
-        // Do nothing
-    }
-
-    @Override
-    public void onUserHomeNull() {
-        // Do nothing
-    }
-
-    @Override
-    public void onFileAlreadyExists() {
-        // Do nothing
-    }
-
-    @Override
-    public void onInvalidPath() {
-        // Do nothing
-    }
-
-    @Override
-    public void onInvalidJsonFormat() {
-        // Do nothing
-    }
-
-    @Override
-    public void onSavingFailed() {
-        // Do nothing
-    }
-
-    @Override
-    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
-
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Updated settings in connection settings view controller");
-        }
-    }
-
-    @Override
-    public void onConnectionsUpdated() {
-        // Do nothing
-    }
-
-    @Override
-    public void onConfigPrepareFailed() {
-        // Do nothing
-    }
-
-    public void cleanUp() {
-        ConfigDispatcher.getInstance().removeObserver(this);
     }
 
 }

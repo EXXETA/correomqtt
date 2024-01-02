@@ -14,7 +14,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.gui.utils.PlatformUtils;
 import org.correomqtt.gui.window.StageHelper;
 import org.slf4j.Logger;

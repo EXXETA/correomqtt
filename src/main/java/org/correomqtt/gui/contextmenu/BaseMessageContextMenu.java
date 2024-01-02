@@ -2,7 +2,7 @@ package org.correomqtt.gui.contextmenu;
 
 import javafx.event.ActionEvent;
 import javafx.scene.control.MenuItem;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.gui.helper.ClipboardHelper;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.slf4j.Logger;

@@ -7,23 +7,20 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.SelectionMode;
 import org.controlsfx.control.CheckListView;
 import org.controlsfx.control.IndexedCheckModel;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.model.ConnectionConfigDTO;
-import org.correomqtt.business.provider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.cell.ExportConnectionCell;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Stream;
 
 public class ConnectionImportStepConnectionsViewController extends BaseControllerImpl implements ConnectionImportStepController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionImportStepConnectionsViewController.class);
     private static ResourceBundle resources;
     private final ConnectionImportStepDelegate delegate;
     @FXML

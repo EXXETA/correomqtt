@@ -9,7 +9,7 @@ import com.github.windpapi4j.WinDPAPI;
 import org.correomqtt.plugin.spi.KeyringHook;
 import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.keyring.KeyringException;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

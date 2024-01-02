@@ -1,5 +1,6 @@
 package org.correomqtt.gui.controller;
 
+import org.correomqtt.business.eventbus.SubscribeFilter;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -23,6 +24,7 @@ abstract class BaseConnectionController extends BaseControllerImpl {
     }
 
 
+    @SubscribeFilter(value ="connectionId")
     public String getConnectionId() {
         return connectionId;
     }

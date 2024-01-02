@@ -3,20 +3,15 @@ package org.correomqtt.gui.controller;
 import javafx.fxml.FXML;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.Tooltip;
-import org.correomqtt.business.dispatcher.ImportDecryptConnectionsDispatcher;
-import org.correomqtt.business.dispatcher.ImportDecryptConnectionsObserver;
+import org.correomqtt.business.importexport.connections.ImportDecryptConnectionsTask;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ConnectionExportDTO;
-import org.correomqtt.gui.business.ExportTaskFactory;
 import org.correomqtt.gui.helper.AlertHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class ConnectionImportStepDecryptViewController extends BaseControllerImpl implements ConnectionImportStepController, ImportDecryptConnectionsObserver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionImportStepDecryptViewController.class);
+public class ConnectionImportStepDecryptViewController extends BaseControllerImpl implements ConnectionImportStepController {
     private static ResourceBundle resources;
 
     private final ConnectionImportStepDelegate delegate;
@@ -27,7 +22,6 @@ public class ConnectionImportStepDecryptViewController extends BaseControllerImp
 
     public ConnectionImportStepDecryptViewController(ConnectionImportStepDelegate delegate) {
         this.delegate = delegate;
-        ImportDecryptConnectionsDispatcher.getInstance().addObserver(this);
     }
 
     public static LoaderResult<ConnectionImportStepDecryptViewController> load(ConnectionImportStepDelegate delegate) {
@@ -47,22 +41,17 @@ public class ConnectionImportStepDecryptViewController extends BaseControllerImp
         }
 
         ConnectionExportDTO dto = this.delegate.getOriginalImportedDTO();
-        ExportTaskFactory.decryptConnections(dto.getEncryptedData(), dto.getEncryptionType(), passwordField.getText());
+        new ImportDecryptConnectionsTask(dto.getEncryptedData(), dto.getEncryptionType(), passwordField.getText())
+                .onSuccess(this::onDecryptSucceeded)
+                .onError(this::onDecryptFailed);
     }
 
-    @Override
     public void onDecryptSucceeded(List<ConnectionConfigDTO> decryptedConnectionList) {
         this.delegate.setOriginalImportedConnections(decryptedConnectionList);
         this.delegate.goStepConnections();
     }
 
-    @Override
-    public void onDecryptCancelled() {
-        onDecryptFailed(null);
-    }
-
-    @Override
-    public void onDecryptFailed(Throwable exception) {
+    public void onDecryptFailed(ImportDecryptConnectionsTask.Error error, Throwable exception) {
         AlertHelper.warn(resources.getString("connectionImportDecryptFailedTitle"),
                 resources.getString("connectionImportDecryptFailedDescription"));
         delegate.onCancelClicked();
@@ -74,7 +63,7 @@ public class ConnectionImportStepDecryptViewController extends BaseControllerImp
 
     @Override
     public void cleanUp() {
-        ImportDecryptConnectionsDispatcher.getInstance().removeObserver(this);
+        // nothing to do
     }
 
     @Override

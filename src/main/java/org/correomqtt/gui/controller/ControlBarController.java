@@ -8,23 +8,32 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
+import org.correomqtt.business.connection.AutomaticReconnectEvent;
+import org.correomqtt.business.connection.AutomaticReconnectFailedEvent;
+import org.correomqtt.business.connection.ConnectEvent;
+import org.correomqtt.business.connection.ConnectFailedEvent;
+import org.correomqtt.business.connection.ConnectStartedEvent;
+import org.correomqtt.business.connection.ConnectTask;
+import org.correomqtt.business.connection.DisconnectEvent;
+import org.correomqtt.business.connection.DisconnectFailedEvent;
+import org.correomqtt.business.connection.DisconnectStartedEvent;
+import org.correomqtt.business.connection.DisconnectTask;
+import org.correomqtt.business.connection.ReconnectTask;
+import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.plugin.spi.MainToolbarHook;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleDispatcher;
-import org.correomqtt.business.dispatcher.ConnectionLifecycleObserver;
 import org.correomqtt.business.exception.CorreoMqttException;
 import org.correomqtt.business.model.ConnectionConfigDTO;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.MessageTaskFactory;
 import org.correomqtt.gui.model.ConnectionState;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class ControlBarController extends BaseConnectionController implements ConnectionLifecycleObserver {
+public class ControlBarController extends BaseConnectionController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ControlBarController.class);
 
     private final ControlBarDelegate delegate;
@@ -73,7 +82,7 @@ public class ControlBarController extends BaseConnectionController implements Co
     public ControlBarController(String connectionId, ControlBarDelegate delegate) {
         super(connectionId);
         this.delegate = delegate;
-        ConnectionLifecycleDispatcher.getInstance().addObserver(this);
+        EventBus.register(this);
     }
 
     static LoaderResult<ControlBarController> load(String connectionId, ControlBarDelegate delegate) {
@@ -113,8 +122,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Reconnect in control bar clicked for connection: {}", getConnectionId());
         }
-
-        MessageTaskFactory.reconnect(getConnectionId());
+        new ReconnectTask(getConnectionId()).run();
     }
 
     @FXML
@@ -123,7 +131,7 @@ public class ControlBarController extends BaseConnectionController implements Co
             LOGGER.debug("Connect in control bar clicked for connection: {}", getConnectionId());
         }
 
-        MessageTaskFactory.connect(getConnectionId());
+        new ConnectTask(getConnectionId()).run();
     }
 
     @FXML
@@ -133,7 +141,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         }
 
         gracefulDisconnenct = true;
-        MessageTaskFactory.disconnect(getConnectionId());
+        new DisconnectTask(getConnectionId()).run();
     }
 
     @FXML
@@ -298,12 +306,7 @@ public class ControlBarController extends BaseConnectionController implements Co
 
     }
 
-    @Override
-    public void onDisconnectFromConnectionDeleted(String connectionId) {
-        // do nothing
-    }
-
-    @Override
+    @Subscribe(ConnectEvent.class)
     public void onConnect() {
         Platform.runLater(() -> {
             statusInfo.setText(resources.getString("controlBarControllerConnected"));
@@ -311,17 +314,17 @@ public class ControlBarController extends BaseConnectionController implements Co
         });
     }
 
-    @Override
-    public void onConnectRunning() {
+    @Subscribe(ConnectStartedEvent.class)
+    public void onConnectStarted() {
         Platform.runLater(() -> {
             statusInfo.setText(resources.getString("controlBarControllerConnecting"));
             setGuiConnecting();
         });
     }
 
-    @Override
-    public void onConnectionFailed(Throwable e) {
+    public void onConnectionFailed(@Subscribe ConnectFailedEvent event) {
         String msg;
+        Throwable e = event.getThrowable();
         if (e instanceof CorreoMqttException correoMqttException) {
             msg = correoMqttException.getInfo();
         } else {
@@ -333,23 +336,7 @@ public class ControlBarController extends BaseConnectionController implements Co
         });
     }
 
-    @Override
-    public void onConnectionCanceled() {
-        Platform.runLater(() -> {
-            statusInfo.setText(resources.getString("controlBarControllerConnectCanceled"));
-            setGuiConnecting();
-        });
-    }
-
-    @Override
-    public void onConnectionLost() {
-        Platform.runLater(() -> {
-            statusInfo.setText(resources.getString("controlBarControllerConnectLost"));
-            setGuiConnecting();
-        });
-    }
-
-    @Override
+    @Subscribe(DisconnectEvent.class)
     public void onDisconnect() {
         Platform.runLater(() -> {
             statusInfo.setText(resources.getString("controlBarControllerDisconnected"));
@@ -357,23 +344,23 @@ public class ControlBarController extends BaseConnectionController implements Co
         });
     }
 
-    @Override
-    public void onDisconnectFailed(Throwable exception) {
+    @Subscribe(DisconnectFailedEvent.class)
+    public void onDisconnectFailed() {
         Platform.runLater(() -> {
             statusInfo.setText(resources.getString("controlBarControllerDisconnectFailed"));
             setGuiConnected();
         });
     }
 
-    @Override
-    public void onDisconnectRunning() {
+    @Subscribe(DisconnectStartedEvent.class)
+    public void onDisconnectStarted() {
         Platform.runLater(() -> {
             statusInfo.setText(resources.getString("controlBarControllerDisconnecting"));
             setGuiDisconnecting();
         });
     }
 
-    @Override
+    @Subscribe(AutomaticReconnectEvent.class)
     public void onConnectionReconnected() {
         Platform.runLater(() -> {
             statusInfo.setText(resources.getString("controlBarControllerConnected"));
@@ -381,14 +368,14 @@ public class ControlBarController extends BaseConnectionController implements Co
         });
     }
 
-    @Override
-    public void onReconnectFailed(AtomicInteger triedReconnects, int maxReconnects) {
+    public void onAutomaticReconnectFailed(@Subscribe AutomaticReconnectFailedEvent event) {
         Platform.runLater(() -> {
-            statusInfo.setText(resources.getString("controlBarControllerReconnecting") + " " + triedReconnects + "/" + maxReconnects);
+            statusInfo.setText(resources.getString("controlBarControllerReconnecting") + " " + event.getTriedConnects() + "/" + event.getMaxConnects());
             setGuiConnecting();
         });
     }
+
     public void cleanUp() {
-        ConnectionLifecycleDispatcher.getInstance().removeObserver(this);
+        EventBus.unregister(this);
     }
 }

@@ -11,7 +11,7 @@ import javafx.scene.layout.Pane;
 import org.correomqtt.business.model.LabelType;
 import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.RetainedState;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.plugin.manager.MessageValidator;
 import org.correomqtt.plugin.manager.PluginManager;

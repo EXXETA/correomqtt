@@ -4,28 +4,22 @@ import javafx.fxml.FXML;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.correomqtt.business.dispatcher.ImportConnectionsFileDispatcher;
-import org.correomqtt.business.dispatcher.ImportConnectionsFileObserver;
+import org.correomqtt.business.importexport.connections.ImportConnectionsFileTask;
 import org.correomqtt.business.model.ConnectionExportDTO;
-import org.correomqtt.gui.business.ExportTaskFactory;
 import org.correomqtt.gui.helper.AlertHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ResourceBundle;
 
-public class ConnectionImportStepChooseFileViewController extends BaseControllerImpl implements ImportConnectionsFileObserver, ConnectionImportStepController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionImportStepChooseFileViewController.class);
+public class ConnectionImportStepChooseFileViewController extends BaseControllerImpl implements ConnectionImportStepController {
     private static ResourceBundle resources;
     private final ConnectionImportStepDelegate delegate;
     @FXML
     private HBox stepHolder;
-    private File file;
+
 
     public ConnectionImportStepChooseFileViewController(ConnectionImportStepDelegate delegate) {
         this.delegate = delegate;
-        ImportConnectionsFileDispatcher.getInstance().addObserver(this);
     }
 
     public static LoaderResult<ConnectionImportStepChooseFileViewController> load(ConnectionImportStepDelegate delegate) {
@@ -36,20 +30,34 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
     }
 
     public void choseFile() {
+        File file;
         Stage stage = (Stage) stepHolder.getScene().getWindow();
 
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(resources.getString("importUtilsTitle"));
         FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(resources.getString("importUtilsDescription"), "*.cqc");
         fileChooser.getExtensionFilters().add(extFilter);
-
         file = fileChooser.showOpenDialog(stage);
-        if (file != null) {
-            ExportTaskFactory.importConnectionsFile(file);
+
+        new ImportConnectionsFileTask(file)
+                .onSuccess(this::onImportSucceeded)
+                .onError(this::onImportError)
+                .run();
+    }
+
+    private void onImportError(ImportConnectionsFileTask.Error error) {
+        switch (error) {
+            case FILE_IS_NULL -> {
+                // ignore, file dialog was aborted
+            }
+            case FILE_CAN_NOT_BE_READ_OR_PARSED -> {
+                AlertHelper.warn(resources.getString("connectionImportFileFailedTitle"),
+                        resources.getString("connectionImportFileFailedDescription"));
+                delegate.onCancelClicked();
+            }
         }
     }
 
-    @Override
     public void onImportSucceeded(ConnectionExportDTO connectionExportDTO) {
         if (connectionExportDTO != null) {
             this.delegate.setOriginalImportedDTO(connectionExportDTO);
@@ -60,17 +68,11 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
                 this.delegate.goStepConnections();
             }
         } else {
-            onImportFailed(file, null);
+            onImportFailed();
         }
     }
 
-    @Override
-    public void onImportCancelled(File file) {
-        this.onImportFailed(file,null);
-    }
-
-    @Override
-    public void onImportFailed(File file, Throwable exception) {
+    public void onImportFailed() {
         AlertHelper.warn(resources.getString("connectionImportFileFailedTitle"),
                 resources.getString("connectionImportFileFailedDescription"));
         delegate.onCancelClicked();
@@ -82,7 +84,7 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
 
     @Override
     public void cleanUp() {
-        ImportConnectionsFileDispatcher.getInstance().removeObserver(this);
+        // nothing to do
     }
 
     @Override

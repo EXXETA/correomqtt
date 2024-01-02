@@ -39,7 +39,7 @@ public class ConnectionImportViewController extends BaseControllerImpl implement
 
     @FXML
     public VBox contentHolder;
-    private static ResourceBundle resources;
+
 
     private ConnectionExportDTO originalImportedDTO;
 
@@ -50,6 +50,7 @@ public class ConnectionImportViewController extends BaseControllerImpl implement
 
 
     public static void showAsDialog() {
+        ResourceBundle resources;
 
         LOGGER.info("Open ConnectionImportView Dialog");
         Map<Object, Object> properties = new HashMap<>();

@@ -46,6 +46,17 @@
         <lombok.version>1.18.22</lombok.version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>scijava</id>
+            <url>https://maven.scijava.org/content/repositories/releases/</url>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>org.pf4j</groupId>
@@ -205,6 +216,17 @@
             <groupId>com.github.peter-gergely-horvath</groupId>
             <artifactId>windpapi4j</artifactId>
             <version>1.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.classgraph</groupId>
+            <artifactId>classgraph</artifactId>
+            <version>4.8.161</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/io.github.qupath/logviewer-ui-richtextfx -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+            <version>2.0.7</version>
         </dependency>
     </dependencies>
 

@@ -7,7 +7,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import org.correomqtt.business.provider.PluginConfigProvider;
+import org.correomqtt.business.fileprovider.PluginConfigProvider;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;

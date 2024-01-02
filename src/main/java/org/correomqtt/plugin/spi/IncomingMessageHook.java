@@ -6,8 +6,10 @@ public interface IncomingMessageHook<T extends IncomingMessageHookDTO> extends B
 
     MessageExtensionDTO onMessageIncoming(String connectionId, MessageExtensionDTO messagePropertiesDTO);
 
+    @Override
     T getConfig();
 
+    @Override
     void onConfigReceived(T config);
 
 }
