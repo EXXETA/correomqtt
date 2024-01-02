@@ -26,7 +26,7 @@ public class MessageUtils {
 
         File file = fileChooser.showSaveDialog(stage);
         if (file != null) {
-            new ExportMessageTask(connectionId, file, MessageTransformer.propsToDTO(messageDTO)).run();;
+            new ExportMessageTask(connectionId, file, MessageTransformer.propsToDTO(messageDTO)).run();
         }
     }
 }

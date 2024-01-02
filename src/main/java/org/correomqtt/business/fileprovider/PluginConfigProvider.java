@@ -2,16 +2,13 @@ package org.correomqtt.business.fileprovider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.model.HooksDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.DirectoryNotEmptyException;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.util.Iterator;
@@ -22,7 +19,6 @@ public class PluginConfigProvider extends BaseUserFileProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginConfigProvider.class);
 
     private static final String HOOK_FILE_NAME = "hooks.json";
-    private static final String EX_MSG_PREPARE_HOOK = "Exception loading hooks file.";
     private static final String EX_MSG_PREPARE_PLUGIN_FOLDER = "Could not create plugin folder.";
     private static final String PLUGIN_FOLDER = "plugins";
 
@@ -35,21 +31,9 @@ public class PluginConfigProvider extends BaseUserFileProvider {
 
         try {
             prepareFile(HOOK_FILE_NAME);
-        } catch (InvalidPathException e) {
-            LOGGER.error(EX_MSG_PREPARE_HOOK, e);
-            ConfigDispatcher.getInstance().onInvalidPath();
-        } catch (FileAlreadyExistsException e) {
-            LOGGER.error(EX_MSG_PREPARE_HOOK, e);
-            ConfigDispatcher.getInstance().onFileAlreadyExists();
-        } catch (DirectoryNotEmptyException e) {
-            LOGGER.error(EX_MSG_PREPARE_HOOK, e);
-            ConfigDispatcher.getInstance().onConfigDirectoryEmpty();
-        } catch (SecurityException | AccessDeniedException e) {
-            LOGGER.error(EX_MSG_PREPARE_HOOK, e);
-            ConfigDispatcher.getInstance().onConfigDirectoryNotAccessible();
-        } catch (UnsupportedOperationException | IOException e) {
-            LOGGER.error(EX_MSG_PREPARE_HOOK, e);
-            ConfigDispatcher.getInstance().onConfigPrepareFailure();
+        } catch (InvalidPathException | SecurityException | UnsupportedOperationException | IOException e) {
+            LOGGER.error("Error writing hook file {}. ", HOOK_FILE_NAME, e);
+            EventBus.fire(new UnaccessibleHookFileEvent(e));
         }
 
         preparePluginPath();
@@ -58,7 +42,7 @@ public class PluginConfigProvider extends BaseUserFileProvider {
             hooksDTO = new ObjectMapper().readValue(getFile(), HooksDTO.class);
         } catch (IOException e) {
             LOGGER.error("Exception parsing hooks file {}", HOOK_FILE_NAME, e);
-            ConfigDispatcher.getInstance().onInvalidJsonFormat();
+            EventBus.fire(new InvalidHooksFileEvent(e));
         }
 
     }

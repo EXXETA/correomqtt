@@ -14,7 +14,6 @@ import java.io.File;
 import java.util.ResourceBundle;
 
 public class ConnectionImportStepChooseFileViewController extends BaseControllerImpl implements ConnectionImportStepController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionImportStepChooseFileViewController.class);
     private static ResourceBundle resources;
     private final ConnectionImportStepDelegate delegate;
     @FXML
@@ -86,6 +85,7 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
 
     @Override
     public void cleanUp() {
+        // nothing to do
     }
 
     @Override

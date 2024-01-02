@@ -17,9 +17,7 @@ public class Launcher {
     public static void main(String[] args) {
         try {
 
-            Thread.setDefaultUncaughtExceptionHandler((t,e) -> {
-                LOGGER.error("Uncaught Exception: ", e);
-            });
+            Thread.setDefaultUncaughtExceptionHandler((t,e) -> LOGGER.error("Uncaught Exception: ", e));
 
             System.setProperty("javafx.preloader", CorreoPreloader.class.getCanonicalName());
 

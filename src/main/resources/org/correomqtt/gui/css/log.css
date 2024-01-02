@@ -36,6 +36,10 @@
     -fx-fill: #AA750C;
 }
 
+#logTextArea.styled-text-area .orange {
+    -fx-fill: #aa4e0c;
+}
+
 #logTextArea.styled-text-area .red {
     -fx-fill: #aa0c0c;
 }

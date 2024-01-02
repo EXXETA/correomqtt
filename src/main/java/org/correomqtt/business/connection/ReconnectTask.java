@@ -28,9 +28,7 @@ public class ReconnectTask extends Task<Void, Void> {
         CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionId);
         client.connect();
 
-        existingSubscriptions.forEach(subscriptionDTO -> {
-            new SubscribeTask(connectionId,subscriptionDTO).run();
-        });
+        existingSubscriptions.forEach(subscriptionDTO -> new SubscribeTask(connectionId,subscriptionDTO).run());
 
         EventBus.fireAsync(new ReconnectEvent(connectionId));
 

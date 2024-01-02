@@ -44,6 +44,9 @@ public class LogTabController extends BaseControllerImpl {
                 } else if(match.startsWith("[34m")) {
                     cssClass = "blue";
                     str = match.substring(4);
+                } else if(match.startsWith("[31m")) {
+                    cssClass = "orange";
+                    str = match.substring(4);
                 } else if(match.startsWith("[33m")) {
                     cssClass = "yellow";
                     str = match.substring(4);

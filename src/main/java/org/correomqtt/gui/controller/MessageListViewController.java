@@ -319,16 +319,7 @@ public class MessageListViewController extends BaseConnectionController implemen
         });
     }
 
-    private MessagePropertiesDTO executeOnMessageIncomingExtensions(MessagePropertiesDTO messageDTO) {
-        MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
-        for (IncomingMessageHook<?> p : PluginManager.getInstance().getExtensions(IncomingMessageHook.class)) {
-            LOGGER.info("Incoming {}", p);
-            messageExtensionDTO = p.onMessageIncoming(getConnectionId(), messageExtensionDTO);
-        }
-        return MessageTransformer.mergeProps(messageExtensionDTO, messageDTO);
-    }
-
-    @FXML
+     @FXML
     private void copyToForm() {
         delegate.setUpToForm(getSelectedMessage());
     }

@@ -1,8 +1,6 @@
 package org.correomqtt.business.fileprovider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.model.SubscriptionDTO;
@@ -17,8 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class PersistSubscriptionHistoryProvider extends BasePersistHistoryProvider<SubscriptionHistoryListDTO>
-        implements ConfigObserver {
+public class PersistSubscriptionHistoryProvider extends BasePersistHistoryProvider<SubscriptionHistoryListDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistSubscriptionHistoryProvider.class);
 
@@ -32,7 +29,6 @@ public class PersistSubscriptionHistoryProvider extends BasePersistHistoryProvid
     private PersistSubscriptionHistoryProvider(String id) {
         super(id);
         EventBus.register(this);
-        ConfigDispatcher.getInstance().addObserver(this);
     }
 
     @Override
@@ -101,63 +97,14 @@ public class PersistSubscriptionHistoryProvider extends BasePersistHistoryProvid
             EventBus.fireAsync(new PersistSubscribeHistoryWriteFailedEvent(getConnectionId(), e));
         }
     }
-    @Override
-    public void onConfigDirectoryEmpty() {
-        // nothing to do
-    }
 
-    @Override
-    public void onConfigDirectoryNotAccessible() {
-        // nothing to do
-    }
-
-    @Override
-    public void onAppDataNull() {
-        // nothing to do
-    }
-
-    @Override
-    public void onUserHomeNull() {
-        // nothing to do
-    }
-
-    @Override
-    public void onFileAlreadyExists() {
-        // nothing to do
-    }
-
-    @Override
-    public void onInvalidPath() {
-        // nothing to do
-    }
-
-    @Override
-    public void onInvalidJsonFormat() {
-        // nothing to do
-    }
-
-    @Override
-    public void onSavingFailed() {
-        // nothing to do
-    }
-
-    @Override
-    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
-        // nothing to do
-    }
-
-    @Override
+    @SuppressWarnings("unused")
+    @Subscribe(ConnectionsUpdatedEvent.class)
     public void onConnectionsUpdated() {
         removeFileIfConnectionDeleted();
     }
 
-    @Override
-    public void onConfigPrepareFailed() {
-        // nothing to do
-    }
-
     public void cleanUp() {
-        ConfigDispatcher.getInstance().removeObserver(this);
         EventBus.unregister(this);
 
         instances.remove(getConnectionId());

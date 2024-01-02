@@ -21,22 +21,22 @@
 
 .tab.connection.disconnecting .tab-label {
     -fx-padding: 0 10 0 20;
-    -fx-background-image: url('../icons/svg/wifi-solid-yellow.svg');
+    -fx-background-image: url('../icons/wifi-solid-yellow.png');
 }
 
 .tab.connection.graceful .tab-label {
     -fx-padding: 0 10 0 20;
-    -fx-background-image: url('../icons/svg/wifi-solid-gray.svg');
+    -fx-background-image: url('../icons/wifi-solid-gray.png');
 }
 
 .tab.connection.ungraceful .tab-label {
     -fx-padding: 0 10 0 20;
-    -fx-background-image: url('../icons/svg/wifi-solid-red.svg');
+    -fx-background-image: url('../icons/wifi-solid-red.png');
 }
 
 .tab.connection.connecting .tab-label {
     -fx-padding: 0 10 0 20;
-    -fx-background-image: url('../icons/svg/wifi-solid-yellow.svg');
+    -fx-background-image: url('../icons/wifi-solid-yellow.png');
 }
 
 .tab.connection.connected .tab-label {

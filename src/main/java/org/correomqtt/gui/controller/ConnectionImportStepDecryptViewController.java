@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class ConnectionImportStepDecryptViewController extends BaseControllerImpl implements ConnectionImportStepController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionImportStepDecryptViewController.class);
     private static ResourceBundle resources;
 
     private final ConnectionImportStepDelegate delegate;

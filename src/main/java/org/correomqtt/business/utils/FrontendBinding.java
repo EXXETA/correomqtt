@@ -15,6 +15,10 @@ public class FrontendBinding {
 
     private static TaskToFrontendPush executor;
 
+    private FrontendBinding(){
+        // private constructor
+    }
+
     public static void pushToFrontend(Runnable runnable) {
         if (executor == null) {
             searchExecutor();

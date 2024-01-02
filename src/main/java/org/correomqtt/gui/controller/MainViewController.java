@@ -12,8 +12,6 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.business.fileprovider.PersistPublishHistoryProvider;
@@ -39,7 +37,7 @@ import java.util.ResourceBundle;
 import java.util.UUID;
 
 
-public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConfigObserver, ConnectionSettingsViewDelegate {
+public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConnectionSettingsViewDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainViewController.class);
     public static final String DIRTY_CLASS = "dirty";
@@ -95,7 +93,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private String closedTabId;
 
     public MainViewController() {
-        ConfigDispatcher.getInstance().addObserver(this);
     }
 
     @FXML
@@ -278,8 +275,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         connectionViewController.cleanUp();
         connectionOnboardingViewController.cleanUp();
         logViewController.cleanUp();
-
-        ConfigDispatcher.getInstance().removeObserver(this);
         conntectionViewControllers.remove(this.closedTabId);
     }
 
@@ -315,61 +310,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                     t.getStyleClass().removeAll("connected", "connecting", "disconnecting", "graceful", "ungraceful");
                     t.getStyleClass().add(state.getCssClass());
                 });
-    }
-
-    @Override
-    public void onConfigDirectoryEmpty() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConfigDirectoryNotAccessible() {
-        // nothing to do
-    }
-
-    @Override
-    public void onAppDataNull() {
-        // nothing to do
-    }
-
-    @Override
-    public void onUserHomeNull() {
-        // nothing to do
-    }
-
-    @Override
-    public void onFileAlreadyExists() {
-        // nothing to do
-    }
-
-    @Override
-    public void onInvalidPath() {
-        // nothing to do
-    }
-
-    @Override
-    public void onInvalidJsonFormat() {
-        // nothing to do
-    }
-
-    @Override
-    public void onSavingFailed() {
-        // nothing to do
-    }
-
-    @Override
-    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
-        // nothing to do
-    }
-
-    @Override
-    public void onConnectionsUpdated() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConfigPrepareFailed() {
-        // nothing to do
     }
 
     @Override

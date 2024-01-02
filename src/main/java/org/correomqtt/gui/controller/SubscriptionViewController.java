@@ -11,8 +11,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import org.correomqtt.business.connection.DisconnectEvent;
-import org.correomqtt.business.dispatcher.ShortcutDispatcher;
-import org.correomqtt.business.dispatcher.ShortcutObserver;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.fileprovider.PersistSubscribeHistoryUpdateEvent;
@@ -52,7 +50,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class SubscriptionViewController extends BaseMessageBasedViewController implements
-        ShortcutObserver,
         SubscriptionListMessageContextMenuDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionViewController.class);
@@ -88,7 +85,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         super(connectionId);
         this.delegate = delegate;
         EventBus.register(this);
-        ShortcutDispatcher.getInstance().addObserver(this);
     }
 
     static LoaderResult<SubscriptionViewController> load(String connectionId, SubscriptionViewDelegate delegate) {
@@ -371,17 +367,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         subscriptionListView.getItems().clear();
     }
 
-    @Override
-    public void onSubscriptionShortcutPressed() {
-        // nothing to do
-    }
-
-    @Override
-    public void onClearIncomingShortcutPressed() {
-        // nothing to do
-    }
-
-
     @SuppressWarnings("unused")
     @Subscribe(PersistSubscribeHistoryUpdateEvent.class)
     public void updateSubscriptions() {
@@ -389,6 +374,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
 
+    @SuppressWarnings("unused")
     public void onUnsubscribeSucceeded(@Subscribe UnsubscribeEvent event) {
 
         SubscriptionPropertiesDTO subscriptionToRemove = subscriptionListView.getItems().stream()
@@ -426,8 +412,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     public void cleanUp() {
         this.messageListViewController.cleanUp();
         EventBus.unregister(this);
-
-        ShortcutDispatcher.getInstance().removeObserver(this);
     }
 }
 

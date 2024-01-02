@@ -1,22 +1,28 @@
 package org.correomqtt.gui.controller;
 
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.dispatcher.ConfigObserver;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
+import org.correomqtt.business.fileprovider.DirectoryCanNotBeCreatedEvent;
+import org.correomqtt.business.fileprovider.InvalidConfigFileEvent;
+import org.correomqtt.business.fileprovider.InvalidHooksFileEvent;
+import org.correomqtt.business.fileprovider.InvalidPasswordFileEvent;
 import org.correomqtt.business.fileprovider.PersistPublishHistoryReadFailedEvent;
 import org.correomqtt.business.fileprovider.PersistPublishHistoryWriteFailedEvent;
 import org.correomqtt.business.fileprovider.PersistSubscribeHistoryReadFailedEvent;
 import org.correomqtt.business.fileprovider.PersistSubscribeHistoryWriteFailedEvent;
-import org.correomqtt.business.fileprovider.SecretStoreErrorEvent;
 import org.correomqtt.business.fileprovider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsUpdatedEvent;
+import org.correomqtt.business.fileprovider.UnaccessibleConfigFileEvent;
+import org.correomqtt.business.fileprovider.UnaccessiblePasswordFileEvent;
+import org.correomqtt.business.fileprovider.UserHomeNull;
+import org.correomqtt.business.fileprovider.WindowsAppDataNullEvent;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.utils.PlatformUtils;
 
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
-public class AlertController extends BaseControllerImpl implements
-        ConfigObserver{
+public class AlertController extends BaseControllerImpl {
 
     public static final String ALERT_CONTROLLER_WARN_TITLE = "alertControllerWarnTitle";
     public static final String ALERT_EXCEPTION_TITLE = "Exception";
@@ -26,8 +32,6 @@ public class AlertController extends BaseControllerImpl implements
 
     private AlertController() {
         EventBus.register(this);
-        ConfigDispatcher.getInstance().addObserver(this);
-        //TODO cleanup
     }
 
     public static void activate() {
@@ -36,77 +40,96 @@ public class AlertController extends BaseControllerImpl implements
         }
     }
 
-    @Override
-    public void onConfigDirectoryEmpty() {
+    public static void deactivate() {
+        if(instance != null){
+            instance.cleanup();
+        }
+    }
+
+    private void cleanup() {
+        EventBus.unregister(this);
+    }
+
+    @SuppressWarnings("unused")
+    public void onConfigDirectoryEmpty(@Subscribe DirectoryCanNotBeCreatedEvent event) {
         PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
-                resources.getString("alertControllerOnConfigDirectoryEmptyContent")
+                MessageFormat.format(resources.getString("alertControllerOnConfigDirectoryEmptyContent"), event.path())
         ));
     }
 
-    @Override
+    @SuppressWarnings("unused")
+    @Subscribe(UnaccessibleConfigFileEvent.class)
     public void onConfigDirectoryNotAccessible() {
         PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 resources.getString("alertControllerOnConfigDirectoryNotAccessibleContent")
         ));
     }
 
-    @Override
+    @SuppressWarnings("unused")
+    @Subscribe(UnaccessiblePasswordFileEvent.class)
+    public void onPasswordDirectoryNotAccessible() {
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
+                resources.getString("alertControllerOnPasswordDirectoryNotAccessibleContent")
+        ));
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(UnaccessiblePasswordFileEvent.class)
+    public void onHooksDirectoryNotAccessible() {
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
+                resources.getString("alertControllerOnPasswordDirectoryNotAccessibleContent")
+        ));
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(WindowsAppDataNullEvent.class)
     public void onAppDataNull() {
         PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 resources.getString("alertControllerOnAppDataNullContent")
         ));
     }
 
-    @Override
+    @SuppressWarnings("unused")
+    @Subscribe(UserHomeNull.class)
     public void onUserHomeNull() {
         PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 resources.getString("alertControllerOnUserHomeNullContent")
         ));
     }
 
-    @Override
-    public void onFileAlreadyExists() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerOnFileAlreadyExistsTitle"),
-                resources.getString("alertControllerOnFileAlreadyExistsContent")
-        ));
-    }
 
-    @Override
-    public void onInvalidPath() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerOnInvalidPathTitle"),
-                resources.getString("alertControllerOnInvalidPathContent")
-        ));
-    }
-
-    @Override
-    public void onInvalidJsonFormat() {
+    @SuppressWarnings("unused")
+    @Subscribe(InvalidConfigFileEvent.class)
+    public void onInvalidConfigJsonFormat() {
         PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerOnInvalidJsonFormatTitle"),
                 resources.getString("alertControllerOnInvalidJsonFormatContent")
         ));
     }
 
-    @Override
-    public void onSavingFailed() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerOnSavingFailedTitle"),
-                resources.getString("alertControllerOnSavingFailedContent")
+
+    @SuppressWarnings("unused")
+    @Subscribe(InvalidPasswordFileEvent.class)
+    public void onInvalidPasswordJsonFormat() {
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(
+                resources.getString("onPasswordFileUnreadableFailedTitle"),
+                resources.getString("onPasswordFileUnreadableFailedContent"),
+                true
+        ));
+
+    }
+
+
+    @SuppressWarnings("unused")
+    @Subscribe(InvalidHooksFileEvent.class)
+    public void onInvalidHooksJsonFormat() {
+        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerOnInvalidJsonFormatTitle"),
+                resources.getString("alertControllerOnInvalidJsonFormatContent")
         ));
     }
 
-    @Override
-    public void onConnectionsUpdated() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConfigPrepareFailed() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(ALERT_EXCEPTION_TITLE,
-                resources.getString("alertControllerOnConfigPrepareFailedContent")
-        ));
-    }
-
-    @Override
-    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
-        if (showRestartRequiredDialog) {
+    @SuppressWarnings("unused")
+    public void onSettingsUpdated(@Subscribe SettingsUpdatedEvent event) {
+        if (event.restartRequired()) {
             PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.info(resources.getString("alertControllerOnSettingsUpdatedTitle"),
                     resources.getString("alertControllerOnSettingsUpdatedContent")
             ));
@@ -138,23 +161,10 @@ public class AlertController extends BaseControllerImpl implements
         ));
     }
 
-
     @SuppressWarnings("unused")
     public void errorWritingSubscriptionHistory(@Subscribe PersistSubscribeHistoryWriteFailedEvent event) {
         PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(ALERT_EXCEPTION_TITLE,
                 resources.getString("alertControllerErrorWritingSubscriptionHistoryContent") + event.throwable().getLocalizedMessage()
         ));
-    }
-
-    @Subscribe
-    @SuppressWarnings("unused")
-    public void onPasswordFileUnreadable(SecretStoreErrorEvent event) {
-        if (event.error().equals(SecretStoreErrorEvent.Error.PASSWORD_FILE_UNREADABLE)) {
-            PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(
-                    resources.getString("onPasswordFileUnreadableFailedTitle"),
-                    resources.getString("onPasswordFileUnreadableFailedContent"),
-                    true
-            ));
-        }
     }
 }

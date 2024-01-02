@@ -12,15 +12,14 @@ import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.business.applifecycle.ShutdownEvent;
-import org.correomqtt.business.dispatcher.ShortcutDispatcher;
-import org.correomqtt.business.eventbus.Event;
+import org.correomqtt.business.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.model.GlobalUISettings;
 import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.fileprovider.SettingsProvider;
-import org.correomqtt.business.applifecycle.ShutdownRequestEvent;
+import org.correomqtt.business.shortcut.ShortcutConnectionIdEvent;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.gui.controller.AlertController;
 import org.correomqtt.gui.controller.MainViewController;
@@ -39,6 +38,11 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
+
+import static org.correomqtt.business.shortcut.ShortcutEvent.Shortcut.CLEAR_INCOMING;
+import static org.correomqtt.business.shortcut.ShortcutEvent.Shortcut.CLEAR_OUTGOING;
+import static org.correomqtt.business.shortcut.ShortcutEvent.Shortcut.PUBLISH;
+import static org.correomqtt.business.shortcut.ShortcutEvent.Shortcut.SUBSCRIPTION;
 
 public class CorreoMqtt extends Application {
 
@@ -225,19 +229,19 @@ public class CorreoMqtt extends Application {
         scene.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
 
                     if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && !event.isShiftDown()) {
-                        ShortcutDispatcher.getInstance().onSubscriptionShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        EventBus.fireAsync(new ShortcutConnectionIdEvent(SUBSCRIPTION,mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && event.isShiftDown()) {
-                        ShortcutDispatcher.getInstance().onClearIncomingShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        EventBus.fireAsync(new ShortcutConnectionIdEvent(CLEAR_INCOMING,mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && !event.isShiftDown()) {
-                        ShortcutDispatcher.getInstance().onPublishShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        EventBus.fireAsync(new ShortcutConnectionIdEvent(PUBLISH,mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && event.isShiftDown()) {
-                        ShortcutDispatcher.getInstance().onClearOutgoingShortcutPressed(mainViewController.getUUIDofSelectedTab());
+                        EventBus.fireAsync(new ShortcutConnectionIdEvent(CLEAR_OUTGOING,mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     //TODO rest
@@ -277,6 +281,7 @@ public class CorreoMqtt extends Application {
         LOGGER.info("Shutting down plugins.");
         PluginManager.getInstance().stopPlugins();
         LOGGER.info("Shutting down application. Bye.");
+        AlertController.deactivate();
         Platform.exit();
         System.exit(0);
     }

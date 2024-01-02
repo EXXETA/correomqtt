@@ -3,7 +3,6 @@ package org.correomqtt.business.fileprovider;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
 import org.correomqtt.business.encryption.Encryptor;
 import org.correomqtt.business.encryption.EncryptorAesCbc;
 import org.correomqtt.business.encryption.EncryptorAesGcm;
@@ -16,9 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.DirectoryNotEmptyException;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -42,28 +38,16 @@ public class SecretStoreProvider extends BaseUserFileProvider {
 
         try {
             prepareFile(PASSWORD_FILE_NAME);
-        } catch (InvalidPathException e) {
-            LOGGER.error(EX_MSG_PREPARE_CONFIG, e);
-            ConfigDispatcher.getInstance().onInvalidPath();
-        } catch (FileAlreadyExistsException e) {
-            LOGGER.error(EX_MSG_PREPARE_CONFIG, e);
-            ConfigDispatcher.getInstance().onFileAlreadyExists();
-        } catch (DirectoryNotEmptyException e) {
-            LOGGER.error(EX_MSG_PREPARE_CONFIG, e);
-            ConfigDispatcher.getInstance().onConfigDirectoryEmpty();
-        } catch (SecurityException | AccessDeniedException e) {
-            LOGGER.error(EX_MSG_PREPARE_CONFIG, e);
-            ConfigDispatcher.getInstance().onConfigDirectoryNotAccessible();
-        } catch (UnsupportedOperationException | IOException e) {
-            LOGGER.error(EX_MSG_PREPARE_CONFIG, e);
-            ConfigDispatcher.getInstance().onConfigPrepareFailure();
+        } catch (InvalidPathException | SecurityException | UnsupportedOperationException | IOException e) {
+            LOGGER.error("Error writing passwords file {}. ", PASSWORD_FILE_NAME, e);
+            EventBus.fire(new UnaccessiblePasswordFileEvent(e));
         }
 
         try {
             passwordsDTO = new ObjectMapper().readValue(this.getFile(), PasswordsDTO.class);
         } catch (IOException e) {
             LOGGER.error("Password file can not be read {}.", PASSWORD_FILE_NAME, e);
-            EventBus.fireAsync(new SecretStoreErrorEvent(SecretStoreErrorEvent.Error.PASSWORD_FILE_UNREADABLE));
+            EventBus.fire(new InvalidPasswordFileEvent());
             passwordsDTO = new PasswordsDTO();
         }
 
@@ -171,7 +155,7 @@ public class SecretStoreProvider extends BaseUserFileProvider {
             LOGGER.info("Migrating password encryption from {} to {}", EncryptorAesCbc.ENCRYPTION_TRANSFORMATION, EncryptorAesGcm.ENCRYPTION_TRANSFORMATION);
             readDecryptedPasswords(new EncryptorAesCbc(masterPassword));
             encryptAndSavePasswords(masterPassword);
-        } else if (passwordsDTO != null && passwordsDTO.getPasswords() != null && (passwordsDTO.getEncryptionType() == null || EncryptorAesGcm.ENCRYPTION_TRANSFORMATION.equals(passwordsDTO.getEncryptionType()))) {
+        } else if (passwordsDTO != null && passwordsDTO.getPasswords() != null && EncryptorAesGcm.ENCRYPTION_TRANSFORMATION.equals(passwordsDTO.getEncryptionType())) {
             LOGGER.info("Current password encryption is {}.", EncryptorAesGcm.ENCRYPTION_TRANSFORMATION);
         } else if (passwordsDTO == null || passwordsDTO.getPasswords() == null) {
             LOGGER.info("No passwords are stored currently.");

@@ -3,7 +3,6 @@ package org.correomqtt.business.importexport.messages;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.concurrent.ConnectionTask;
 import org.correomqtt.business.eventbus.EventBus;
-import org.correomqtt.business.exception.CorreoMqttExportMessageException;
 import org.correomqtt.business.model.MessageDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,8 +11,6 @@ import java.io.File;
 import java.io.IOException;
 
 public class ExportMessageTask extends ConnectionTask<Void, Void> {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExportMessageTask.class);
 
     private final File file;
     private final MessageDTO messageDTO;

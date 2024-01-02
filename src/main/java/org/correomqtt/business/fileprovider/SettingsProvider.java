@@ -1,10 +1,7 @@
 package org.correomqtt.business.fileprovider;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.plugin.spi.ThemeProviderHook;
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.exception.CorreoMqttConfigurationMissingException;
 import org.correomqtt.business.model.ConfigDTO;
 import org.correomqtt.business.model.ConnectionConfigDTO;
@@ -16,15 +13,12 @@ import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.theme.ThemeProvider;
 import org.correomqtt.gui.theme.light_legacy.LightLegacyThemeProvider;
 import org.correomqtt.plugin.manager.PluginManager;
+import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.DirectoryNotEmptyException;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.InvalidPathException;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,8 +35,6 @@ public class SettingsProvider extends BaseUserFileProvider {
 
     private static final String CONFIG_FILE_NAME = "config.json";
     private static final String CSS_FILE_NAME = "style.css";
-    private static final String EX_MSG_PREPARE_CONFIG = "Exception preparing config file.";
-    private static final String EX_MSG_WRITE_CONFIG = "Exception writing config file.";
 
     private ThemeProvider activeThemeProvider;
 
@@ -54,28 +46,16 @@ public class SettingsProvider extends BaseUserFileProvider {
 
         try {
             prepareFile(CONFIG_FILE_NAME);
-        } catch (InvalidPathException e) {
-            LOGGER.error(EX_MSG_PREPARE_CONFIG, e);
-            ConfigDispatcher.getInstance().onInvalidPath();
-        } catch (FileAlreadyExistsException e) {
-            LOGGER.error(EX_MSG_PREPARE_CONFIG, e);
-            ConfigDispatcher.getInstance().onFileAlreadyExists();
-        } catch (DirectoryNotEmptyException e) {
-            LOGGER.error(EX_MSG_PREPARE_CONFIG, e);
-            ConfigDispatcher.getInstance().onConfigDirectoryEmpty();
-        } catch (SecurityException | AccessDeniedException e) {
-            LOGGER.error(EX_MSG_PREPARE_CONFIG, e);
-            ConfigDispatcher.getInstance().onConfigDirectoryNotAccessible();
-        } catch (UnsupportedOperationException | IOException e) {
-            LOGGER.error(EX_MSG_PREPARE_CONFIG, e);
-            ConfigDispatcher.getInstance().onConfigPrepareFailure();
+        } catch (InvalidPathException | SecurityException | UnsupportedOperationException | IOException e) {
+            LOGGER.error("Error writing config file {}. ", CONFIG_FILE_NAME, e);
+            EventBus.fire(new UnaccessibleConfigFileEvent(e));
         }
 
         try {
             configDTO = new ObjectMapper().readValue(getFile(), ConfigDTO.class);
         } catch (IOException e) {
             LOGGER.error("Exception parsing config file {}.", CONFIG_FILE_NAME, e);
-            ConfigDispatcher.getInstance().onInvalidJsonFormat();
+            EventBus.fire(new InvalidConfigFileEvent(e));
         }
 
     }
@@ -133,10 +113,10 @@ public class SettingsProvider extends BaseUserFileProvider {
         return configDTO.getThemesSettings();
     }
 
-    public void saveSettings(boolean showRestartRequiredDialog) {
+    public void saveSettings(boolean restartRequired) {
         saveDTO();
         saveToUserDirectory(CSS_FILE_NAME, getActiveTheme().getCss());
-        ConfigDispatcher.getInstance().onSettingsUpdated(showRestartRequiredDialog);
+        EventBus.fire(new SettingsUpdatedEvent(restartRequired));
     }
 
     public void saveConnections(List<ConnectionConfigDTO> connections, String masterPassword) throws EncryptionRecoverableException {
@@ -152,22 +132,15 @@ public class SettingsProvider extends BaseUserFileProvider {
         secretStoreProvider.encryptAndSavePasswords(masterPassword);
 
         ConnectionHolder.getInstance().refresh();
-        ConfigDispatcher.getInstance().onConnectionsUpdated();
+        EventBus.fire(new ConnectionsUpdatedEvent());
     }
 
     private void saveDTO() {
 
         try {
             new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(getFile(), configDTO);
-        } catch (FileNotFoundException e) {
-            LOGGER.error(EX_MSG_WRITE_CONFIG, e);
-            ConfigDispatcher.getInstance().onConfigDirectoryEmpty();
-        } catch (JsonGenerationException | JsonMappingException e) {
-            LOGGER.error(EX_MSG_WRITE_CONFIG, e);
-            ConfigDispatcher.getInstance().onInvalidJsonFormat();
         } catch (IOException e) {
-            LOGGER.error(EX_MSG_WRITE_CONFIG, e);
-            ConfigDispatcher.getInstance().onSavingFailed();
+            EventBus.fire(new ConfigSaveFailedEvent(e));
         }
     }
 

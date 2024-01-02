@@ -18,7 +18,7 @@ public class PluginLauncher {
 
     private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
-    public void start(boolean doPluginUpdates) throws IOException {
+    public void start(boolean doPluginUpdates) {
 
         PluginManager pluginManager = PluginManager.getInstance();
 

@@ -46,7 +46,8 @@ public class RepoPluginInfoDTO {
                     release.url = r.url;
                     release.sha512sum = r.sha512sum;
                     return release;
-                }).collect(Collectors.toList());
+                })
+                .toList();
         return info;
     }
 

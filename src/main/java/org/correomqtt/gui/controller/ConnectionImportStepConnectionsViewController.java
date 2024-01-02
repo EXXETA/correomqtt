@@ -23,7 +23,6 @@ import java.util.ResourceBundle;
 import java.util.stream.Stream;
 
 public class ConnectionImportStepConnectionsViewController extends BaseControllerImpl implements ConnectionImportStepController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionImportStepConnectionsViewController.class);
     private static ResourceBundle resources;
     private final ConnectionImportStepDelegate delegate;
     @FXML

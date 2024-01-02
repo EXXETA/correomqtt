@@ -1,6 +1,6 @@
 package org.correomqtt.business.fileprovider;
 
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
+import org.correomqtt.business.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ abstract class BaseUserFileProvider {
         String targetDirectoryPath = getTargetDirectoryPath();
 
         if (!new File(targetDirectoryPath).exists() && !new File(targetDirectoryPath).mkdir()) {
-            ConfigDispatcher.getInstance().onConfigDirectoryEmpty();
+            EventBus.fire(new DirectoryCanNotBeCreatedEvent(targetDirectoryPath));
         }
 
         File targetFile;
@@ -74,7 +74,7 @@ abstract class BaseUserFileProvider {
 
         String targetDirectoryPath = getTargetDirectoryPath();
         if (!new File(targetDirectoryPath).exists() && !new File(targetDirectoryPath).mkdir()) {
-            ConfigDispatcher.getInstance().onConfigDirectoryEmpty();
+            EventBus.fire(new DirectoryCanNotBeCreatedEvent(targetDirectoryPath));
         }
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(targetDirectoryPath + File.separator + filename))) {
@@ -110,21 +110,21 @@ abstract class BaseUserFileProvider {
         if (isWindows()) {
             String appData = System.getenv("APPDATA");
             if (appData == null) {
-                ConfigDispatcher.getInstance().onAppDataNull();
+                EventBus.fire(new WindowsAppDataNullEvent());
             } else {
                 targetDirectoryPathCache = appData + File.separator + WIN_APP_FOLDER_NAME;
             }
         } else if (isMacOS()) {
 
             if (USER_HOME == null) {
-                ConfigDispatcher.getInstance().onUserHomeNull();
+                EventBus.fire(new UserHomeNull());
             } else {
                 targetDirectoryPathCache = USER_HOME + File.separator + "Library" + File.separator + "Application Support" + File.separator + MAC_APP_FOLDER_NAME;
             }
         } else if (isLinux()) {
 
             if (USER_HOME == null) {
-                ConfigDispatcher.getInstance().onUserHomeNull();
+                EventBus.fire(new UserHomeNull());
             } else {
                 targetDirectoryPathCache = USER_HOME + File.separator + LIN_APP_FOLDER_NAME;
             }

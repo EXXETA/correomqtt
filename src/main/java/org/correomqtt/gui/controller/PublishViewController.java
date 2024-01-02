@@ -18,10 +18,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.correomqtt.business.concurrent.ExceptionListener;
 import org.correomqtt.business.connection.ConnectEvent;
-import org.correomqtt.business.dispatcher.ConfigDispatcher;
-import org.correomqtt.business.dispatcher.ConfigObserver;
-import org.correomqtt.business.dispatcher.ShortcutDispatcher;
-import org.correomqtt.business.dispatcher.ShortcutObserver;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.exception.CorreoMqttException;
@@ -67,10 +63,7 @@ import java.util.ResourceBundle;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public class PublishViewController extends BaseMessageBasedViewController implements
-        ConfigObserver,
-        ShortcutObserver
-         {
+public class PublishViewController extends BaseMessageBasedViewController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishViewController.class);
     private static ResourceBundle resources;
@@ -111,8 +104,6 @@ public class PublishViewController extends BaseMessageBasedViewController implem
         super(connectionId);
         this.delegate = delegate;
         EventBus.register(this);
-        ConfigDispatcher.getInstance().addObserver(this);
-        ShortcutDispatcher.getInstance().addObserver(this);
     }
 
     static LoaderResult<PublishViewController> load(String connectionId, PublishViewDelegate delegate) {
@@ -294,74 +285,6 @@ public class PublishViewController extends BaseMessageBasedViewController implem
                 .forEach(p -> p.onCopyMessageToPublishForm(getConnectionId(), new MessageExtensionDTO(messageDTO)));
     }
 
-    @Override
-    public void onConfigDirectoryEmpty() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConfigDirectoryNotAccessible() {
-        // nothing to do
-    }
-
-    @Override
-    public void onAppDataNull() {
-        // nothing to do
-    }
-
-    @Override
-    public void onUserHomeNull() {
-        // nothing to do
-    }
-
-    @Override
-    public void onFileAlreadyExists() {
-        // nothing to do
-    }
-
-    @Override
-    public void onInvalidPath() {
-        // nothing to do
-    }
-
-    @Override
-    public void onInvalidJsonFormat() {
-        // nothing to do
-    }
-
-    @Override
-    public void onSavingFailed() {
-        // nothing to do
-    }
-
-    @Override
-    public void onSettingsUpdated(boolean showRestartRequiredDialog) {
-
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Updated settings in publish view controller: {}", getConnectionId());
-        }
-    }
-
-    @Override
-    public void onConnectionsUpdated() {
-        // nothing to do
-    }
-
-    @Override
-    public void onConfigPrepareFailed() {
-        // nothing to do
-    }
-
-    @Override
-    public void onPublishShortcutPressed() {
-        // nothing to do
-    }
-
-    @Override
-    public void onClearOutgoingShortcutPressed() {
-        // nothing to do
-    }
-
     @SuppressWarnings("unused")
     public void onPublishSucceeded(@Subscribe PublishEvent event) {
         event.getMessageDTO().setPublishStatus(PublishStatus.SUCCEEDED);
@@ -436,7 +359,5 @@ public class PublishViewController extends BaseMessageBasedViewController implem
     public void cleanUp() {
         this.messageListViewController.cleanUp();
         EventBus.unregister(this);
-        ConfigDispatcher.getInstance().removeObserver(this);
-        ShortcutDispatcher.getInstance().removeObserver(this);
     }
 }

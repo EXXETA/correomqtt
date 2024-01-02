@@ -9,7 +9,6 @@ import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 public class ConnectionImportStepFinalViewController extends BaseControllerImpl implements ConnectionImportStepController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionImportStepFinalViewController.class);
 
     private static ResourceBundle resources;
     private final ConnectionImportStepDelegate delegate;
