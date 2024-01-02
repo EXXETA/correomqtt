@@ -92,9 +92,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private String closedTabId;
 
-    public MainViewController() {
-    }
-
     @FXML
     public void initialize() {
         tabPaneAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());

@@ -155,9 +155,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
     @FXML
     private Pane lwtPayloadPane;
 
-    public MqttSettingsViewController() {
-    }
-
     public static LoaderResult<MqttSettingsViewController> load() {
         LoaderResult<MqttSettingsViewController> result = load(MqttSettingsViewController.class, "mqttSettingsView.fxml",
                 MqttSettingsViewController::new);
@@ -535,5 +532,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
 
     @Override
     public void cleanUp() {
+        // nothing to do
     }
 }

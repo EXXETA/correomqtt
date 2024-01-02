@@ -7,8 +7,6 @@ import org.correomqtt.business.importexport.connections.ImportDecryptConnections
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ConnectionExportDTO;
 import org.correomqtt.gui.helper.AlertHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.ResourceBundle;
@@ -65,6 +63,7 @@ public class ConnectionImportStepDecryptViewController extends BaseControllerImp
 
     @Override
     public void cleanUp() {
+        // nothing to do
     }
 
     @Override

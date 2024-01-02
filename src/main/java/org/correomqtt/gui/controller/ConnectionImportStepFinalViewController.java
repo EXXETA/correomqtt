@@ -2,8 +2,6 @@ package org.correomqtt.gui.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.text.MessageFormat;
 import java.util.ResourceBundle;

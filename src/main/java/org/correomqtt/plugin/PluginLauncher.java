@@ -9,14 +9,13 @@ import org.pf4j.update.UpdateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ResourceBundle;
 
 public class PluginLauncher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginLauncher.class);
 
-    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+    private final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
     public void start(boolean doPluginUpdates) {
 

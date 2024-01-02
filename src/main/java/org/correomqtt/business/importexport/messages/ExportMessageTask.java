@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.concurrent.ConnectionTask;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.model.MessageDTO;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;

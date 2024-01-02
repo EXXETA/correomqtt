@@ -7,8 +7,6 @@ import javafx.stage.Stage;
 import org.correomqtt.business.importexport.connections.ImportConnectionsFileTask;
 import org.correomqtt.business.model.ConnectionExportDTO;
 import org.correomqtt.gui.helper.AlertHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ResourceBundle;
@@ -18,7 +16,7 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
     private final ConnectionImportStepDelegate delegate;
     @FXML
     private HBox stepHolder;
-    private File file;
+
 
     public ConnectionImportStepChooseFileViewController(ConnectionImportStepDelegate delegate) {
         this.delegate = delegate;
@@ -32,6 +30,7 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
     }
 
     public void choseFile() {
+        File file;
         Stage stage = (Stage) stepHolder.getScene().getWindow();
 
         FileChooser fileChooser = new FileChooser();

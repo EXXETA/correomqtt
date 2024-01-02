@@ -69,8 +69,6 @@ public class ConnectionSettingsViewController extends BaseControllerImpl   {
                         resources.getString("commonDiscardButton")
                 )) {
             event.consume();
-        } else {
-            cleanUp();
         }
     }
 
@@ -84,7 +82,6 @@ public class ConnectionSettingsViewController extends BaseControllerImpl   {
 
     public static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
 
-    private final ConnectionSettingsViewDelegate delegate;
     private final Map<String, ConnectionState> connectionStates = new HashMap<>();
 
     private final ConnectionPropertiesDTO preSelected;
@@ -117,7 +114,6 @@ public class ConnectionSettingsViewController extends BaseControllerImpl   {
     Set<String> waitForDisconnectIds = new HashSet<>();
 
     public ConnectionSettingsViewController(ConnectionSettingsViewDelegate delegate, ConnectionPropertiesDTO preSelected) {
-        this.delegate = delegate;
         this.preSelected = preSelected;
     }
 
@@ -386,7 +382,6 @@ public class ConnectionSettingsViewController extends BaseControllerImpl   {
 
 
     private void closeDialog() {
-        cleanUp();
         Stage stage = (Stage) mainArea.getScene().getWindow();
         stage.close();
     }
@@ -510,10 +505,6 @@ public class ConnectionSettingsViewController extends BaseControllerImpl   {
         connectionsListView.getItems().remove(config);
         persistConnections(config, true);
         deselectConnection();
-    }
-
-
-    public void cleanUp() {
     }
 
 }
