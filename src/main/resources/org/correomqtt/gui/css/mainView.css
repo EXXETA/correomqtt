@@ -44,11 +44,11 @@
 }
 
 .black .tab.connection.connected .tab-label {
-    -fx-background-image: url('../icons/svg/wifi-solid-green.svg');
+    -fx-background-image: url('../../../../../../../assets/icons/wifi-solid-green.svg');
 }
 
 .white .tab.connection.connected .tab-label {
-    -fx-background-image: url('../icons/svg/wifi-solid-green.svg');
+    -fx-background-image: url('../../../../../../../assets/icons/wifi-solid-green.svg');
 }
 
 .tab.connection.onboarding .tab-label {

@@ -1,3 +1,7 @@
+button {
+    -fx-background-size: 24px;
+}
+
 .noBorder {
     -fx-background-insets: 0;
     -fx-padding: 0;

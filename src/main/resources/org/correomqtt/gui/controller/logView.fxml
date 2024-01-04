@@ -9,6 +9,8 @@
 <?import org.fxmisc.richtext.CodeArea?>
 <?import java.lang.String?>
 <?import org.fxmisc.flowless.VirtualizedScrollPane?>
+<?import org.correomqtt.gui.components.ThemedFontIcon?>
+<?import org.correomqtt.gui.components.IconButton?>
 <AnchorPane fx:id="logViewAnchor" prefHeight="400.0" prefWidth="600.0" stylesheets="@../css/log.css"
             xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="org.correomqtt.gui.controller.LogTabController">
@@ -19,11 +21,11 @@
                   AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
                   AnchorPane.topAnchor="0.0">
                 <Pane HBox.hgrow="ALWAYS"/>
-                <Button fx:id="trashButton" minHeight="25.0" mnemonicParsing="false" styleClass="trash-alt-solid">
+                <IconButton fx:id="trashButton" minHeight="25.0" mnemonicParsing="false" icon="correo-eye-solid">
                     <tooltip>
                         <Tooltip text="%logViewClearLogTooltip"/>
                     </tooltip>
-                </Button>
+                </IconButton>
             </HBox>
             <styleClass>
                 <String fx:value="toolbar"/>
