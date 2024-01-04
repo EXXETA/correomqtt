@@ -7,11 +7,8 @@ import org.correomqtt.gui.utils.HostServicesHolder;
 
 public class LicenseControl extends HBox {
 
-    private final License license;
-
     public LicenseControl(License license) {
         super();
-        this.license = license;
         Hyperlink repoLink = new Hyperlink();
         repoLink.setText(license.name());
         activateLink(repoLink, license.repoLink());
