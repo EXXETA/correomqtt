@@ -10,7 +10,7 @@ import java.util.ResourceBundle;
 @Getter
 @AllArgsConstructor
 @Builder
-class LoaderResult<C extends BaseController> {
+public class LoaderResult<C extends BaseController> {
     private final C controller;
     private final Region mainRegion;
     private final ResourceBundle resourceBundle;

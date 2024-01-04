@@ -21,6 +21,7 @@ import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.business.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.business.utils.VendorConstants;
+import org.correomqtt.gui.about.AboutViewController;
 import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;

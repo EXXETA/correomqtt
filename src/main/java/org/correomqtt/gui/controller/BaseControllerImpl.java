@@ -20,12 +20,12 @@ import java.text.MessageFormat;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-abstract class BaseControllerImpl implements BaseController{
+public abstract class BaseControllerImpl implements BaseController{
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseControllerImpl.class);
     private static final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
-    static <C extends BaseControllerImpl> LoaderResult<C> load(Class<C> controllerClazz, String fxml) {
+    protected static <C extends BaseControllerImpl> LoaderResult<C> load(Class<C> controllerClazz, String fxml) {
         return load(controllerClazz,
                     fxml,
                     () -> controllerClazz.getDeclaredConstructor().newInstance());
@@ -61,13 +61,13 @@ abstract class BaseControllerImpl implements BaseController{
                 .build();
     }
 
-    static <Z extends BaseControllerImpl> void showAsDialog(LoaderResult<Z> result,
-                                                            String title,
-                                                            Map<Object, Object> windowProperties,
-                                                            boolean resizable,
-                                                            boolean alwaysOnTop,
-                                                            final EventHandler<WindowEvent> closeHandler,
-                                                            final EventHandler<KeyEvent> keyHandler) {
+    protected static <Z extends BaseControllerImpl> void showAsDialog(LoaderResult<Z> result,
+                                                                      String title,
+                                                                      Map<Object, Object> windowProperties,
+                                                                      boolean resizable,
+                                                                      boolean alwaysOnTop,
+                                                                      final EventHandler<WindowEvent> closeHandler,
+                                                                      final EventHandler<KeyEvent> keyHandler) {
         showAsDialog(result, title, windowProperties,resizable, alwaysOnTop, closeHandler, keyHandler, 300, 400);
 
     }
