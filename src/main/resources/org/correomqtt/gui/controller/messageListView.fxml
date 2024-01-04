@@ -13,6 +13,9 @@
 <?import org.correomqtt.gui.components.IconButton?>
 <?import org.correomqtt.gui.components.IconToggleButton?>
 <?import java.lang.String?>
+<?import org.correomqtt.gui.components.IconMenuButton?>
+<?import javafx.scene.control.MenuItem?>
+<?import org.correomqtt.gui.components.IconCheckMenuItem?>
 <AnchorPane fx:id="mainPane" minHeight="250.0" styleClass="noBorder" stylesheets="@../css/messageListView.css"
             xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="org.correomqtt.gui.controller.MessageListViewController">
@@ -51,24 +54,24 @@
                         <Insets left="5.0"/>
                     </HBox.margin>
                 </IconButton>
-                <MenuButton fx:id="showLabelsButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
-                            onAction="#showLabelsInListView" styleClass="eye-solid">
+                <IconMenuButton fx:id="showLabelsButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
+                                onAction="#showLabelsInListView" icon="mdi-eye">
                     <tooltip>
                         <Tooltip text="%messageListViewShowDetailsTooltip"/>
                     </tooltip>
                     <items>
-                        <CheckMenuItem fx:id="changeDisplayRetained" mnemonicParsing="false"
+                        <IconCheckMenuItem fx:id="changeDisplayRetained" mnemonicParsing="false"
                                        onAction="#changeRetainDisplay" styleClass="menuItem" text="%retainedMenuItem"/>
-                        <CheckMenuItem fx:id="changeDisplayQos" mnemonicParsing="false" onAction="#changeQosDisplay"
+                        <IconCheckMenuItem fx:id="changeDisplayQos" mnemonicParsing="false" onAction="#changeQosDisplay"
                                        styleClass="menuItem" text="%qosMenuItem"/>
-                        <CheckMenuItem fx:id="changeDisplayTimestamp" mnemonicParsing="false"
-                                       onAction="#changeTimestampDisplay" styleClass="menuItem"
-                                       text="%timestampMenuItem"/>
+                        <IconCheckMenuItem fx:id="changeDisplayTimestamp" mnemonicParsing="false"
+                                  onAction="#changeTimestampDisplay" styleClass="menuItem"
+                                  text="%timestampMenuItem"/>
                     </items>
                     <HBox.margin>
                         <Insets left="5.0"/>
                     </HBox.margin>
-                </MenuButton>
+                </IconMenuButton>
                 <IconToggleButton fx:id="showDetailViewButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
                                   onAction="#toggleDetailView" icon="correo-columns-solid-without-toolbar">
                     <tooltip>

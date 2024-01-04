@@ -31,6 +31,6 @@ public class MaterialDesignIconHandler extends AbstractIkonHandler {
 
     @Override
     public String getFontFamily() {
-        return "MaterialDesignIcons";
+        return "Material Design Icons";
     }
 }

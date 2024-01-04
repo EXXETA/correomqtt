@@ -12,6 +12,7 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
@@ -33,6 +34,7 @@ import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.gui.cell.MessageViewCell;
+import org.correomqtt.gui.components.IconCheckMenuItem;
 import org.correomqtt.gui.contextmenu.MessageListContextMenu;
 import org.correomqtt.gui.contextmenu.MessageListContextMenuDelegate;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
@@ -71,13 +73,13 @@ public class MessageListViewController extends BaseConnectionController implemen
     protected MenuButton showLabelsButton;
 
     @FXML
-    protected CheckMenuItem changeDisplayRetained;
+    protected IconCheckMenuItem changeDisplayRetained;
 
     @FXML
-    protected CheckMenuItem changeDisplayQos;
+    protected IconCheckMenuItem changeDisplayQos;
 
     @FXML
-    protected CheckMenuItem changeDisplayTimestamp;
+    protected IconCheckMenuItem changeDisplayTimestamp;
 
     @FXML
     protected HBox messagesHBox;

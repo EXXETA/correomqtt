@@ -69,7 +69,7 @@ public class DetailViewController extends BaseConnectionController implements
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DetailViewController.class);
 
-    private static final String CHECK_ICON = "mdi-checkbox-intermediate";
+    private static final String CHECK_ICON = "mdi-checkbox-marked";
     private static final String UNCHECK_ICON = "mdi-checkbox-blank-outline";
     private static ResourceBundle resources;
     private final BooleanProperty inlineViewProperty;

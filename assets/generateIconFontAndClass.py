@@ -258,9 +258,9 @@ create_font_and_class(
     "correo",
     "CorreoIcons")
 
-create_font_and_class(
-    os.path.join(scriptdir, "MaterialDesign", "svg"),
-    os.path.join(scriptdir, "..", "src", "main", "resources", "META-INF", "resources", "MaterialDesignIcons.ttf"),
-    os.path.join(scriptdir, "..", "src", "main", "resources", "META-INF", "resources", "MaterialDesignIcons.json"),
-    "mdi",
-    "MaterialDesignIcons")
+#create_font_and_class(
+#    os.path.join(scriptdir, "MaterialDesign", "svg"),
+#    os.path.join(scriptdir, "..", "src", "main", "resources", "META-INF", "resources", "MaterialDesignIcons.ttf"),
+#    os.path.join(scriptdir, "..", "src", "main", "resources", "META-INF", "resources", "MaterialDesignIcons.json"),
+#    "mdi",
+#    "Material Design Icons")
