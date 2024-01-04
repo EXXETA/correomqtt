@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.correomqtt.gui.controls.IconButton?>
+<?import org.correomqtt.gui.controls.IconCheckMenuItem?>
+<?import org.correomqtt.gui.controls.IconMenuButton?>
+<?import org.correomqtt.gui.controls.IconToggleButton?>
+<?import java.lang.String?>
+<AnchorPane fx:id="mainPane" minHeight="250.0" styleClass="noBorder" stylesheets="@../../css/messageListView.css"
+            xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.correomqtt.gui.views.connections.MessageListViewController">
+    <SplitPane fx:id="splitPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+               AnchorPane.topAnchor="0.0">
+        <VBox fx:id="messagesVBox" minWidth="250.0" styleClass="noBorder">
+            <HBox fx:id="messagesHBox" maxHeight="40.0" minHeight="40.0">
+                <styleClass>
+                    <String fx:value="toolbar"/>
+                    <String fx:value="bottom"/>
+                </styleClass>
+                <IconButton fx:id="copyToFormButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
+                            onAction="#copyToForm" icon="mdi-arrow-expand-up">
+                    <tooltip>
+                        <Tooltip text="%messageListViewCopyButtonTooltip"/>
+                    </tooltip>
+                    <HBox.margin>
+                        <Insets right="5.0"/>
+                    </HBox.margin>
+                </IconButton>
+                <IconButton fx:id="showDetailsButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
+                        onAction="#showDetailsOfMessage" icon="mdi-open-in-new">
+                    <tooltip>
+                        <Tooltip text="%messageListViewShowDetailsTooltip"/>
+                    </tooltip>
+                </IconButton>
+                <Pane HBox.hgrow="ALWAYS"/>
+
+
+                <IconButton fx:id="clearMessagesButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
+                        onAction="#clearList" icon="mdi-trash-can">
+                    <tooltip>
+                        <Tooltip text="%messageListViewClearMessagesButton"/>
+                    </tooltip>
+                    <HBox.margin>
+                        <Insets left="5.0"/>
+                    </HBox.margin>
+                </IconButton>
+                <IconMenuButton fx:id="showLabelsButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
+                                onAction="#showLabelsInListView" icon="mdi-eye">
+                    <tooltip>
+                        <Tooltip text="%messageListViewShowDetailsTooltip"/>
+                    </tooltip>
+                    <items>
+                        <IconCheckMenuItem fx:id="changeDisplayRetained" mnemonicParsing="false"
+                                       onAction="#changeRetainDisplay" styleClass="menuItem" text="%retainedMenuItem"/>
+                        <IconCheckMenuItem fx:id="changeDisplayQos" mnemonicParsing="false" onAction="#changeQosDisplay"
+                                       styleClass="menuItem" text="%qosMenuItem"/>
+                        <IconCheckMenuItem fx:id="changeDisplayTimestamp" mnemonicParsing="false"
+                                  onAction="#changeTimestampDisplay" styleClass="menuItem"
+                                  text="%timestampMenuItem"/>
+                    </items>
+                    <HBox.margin>
+                        <Insets left="5.0"/>
+                    </HBox.margin>
+                </IconMenuButton>
+                <IconToggleButton fx:id="showDetailViewButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
+                                  onAction="#toggleDetailView" icon="correo-columns-solid-without-toolbar">
+                    <tooltip>
+                        <Tooltip text="%messageListViewMessageSplitButton"/>
+                    </tooltip>
+                    <HBox.margin>
+                        <Insets left="5.0"/>
+                    </HBox.margin>
+                </IconToggleButton>
+            </HBox>
+            <ListView fx:id="listView" styleClass="noBorder" VBox.vgrow="ALWAYS">
+            </ListView>
+        </VBox>
+    </SplitPane>
+</AnchorPane>
