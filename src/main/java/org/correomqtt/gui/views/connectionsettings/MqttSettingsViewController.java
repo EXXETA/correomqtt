@@ -1,4 +1,4 @@
-package org.correomqtt.gui.views.connectionSettings;
+package org.correomqtt.gui.views.connectionsettings;
 
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;

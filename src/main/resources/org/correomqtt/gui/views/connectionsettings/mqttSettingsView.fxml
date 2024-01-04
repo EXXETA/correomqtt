@@ -9,7 +9,7 @@
 <?import org.correomqtt.gui.controls.IconTab?>
 <?import org.controlsfx.control.textfield.CustomTextField?>
 <TabPane fx:id="containerAnchorPane" prefHeight="450.0" prefWidth="800.0" stylesheets="@../../css/connections.css"
-         tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.views.connectionSettings.MqttSettingsViewController">
+         tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.views.connectionsettings.MqttSettingsViewController">
     <tabs>
         <IconTab text="MQTT" icon="mdi-cog">
             <content>

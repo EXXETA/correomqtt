@@ -28,7 +28,7 @@ import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.WindowHelper;
-import org.correomqtt.gui.views.connectionSettings.ConnectionSettingsViewController;
+import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
