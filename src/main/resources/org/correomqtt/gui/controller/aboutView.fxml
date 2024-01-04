@@ -112,9 +112,9 @@
                   </Label>
                </HBox>
                <HBox layoutX="10.0" layoutY="263.0" prefHeight="23.0">
-                  <Hyperlink fx:id="fontAwesomeRepo" text="Font Awesome Free"/>
-                  <Label prefHeight="23.0" text="© Fonticons, Inc"/>
-                  <Hyperlink fx:id="fontAwesomeLicense" text="CC BY 4.0 License"/>
+                  <Hyperlink fx:id="materialDesignIconsRepo" text="Material Design Icons"/>
+                  <Label prefHeight="23.0" text="Pictogrammers Icon Group"/>
+                  <Hyperlink fx:id="materialDesignIconsLicense" text="Pictogrammers Free License"/>
                </HBox>
             </VBox>
          </AnchorPane>

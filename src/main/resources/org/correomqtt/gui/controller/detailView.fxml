@@ -16,10 +16,11 @@
 <?import javafx.scene.text.Font?>
 <?import org.fxmisc.richtext.CodeArea?>
 <?import java.lang.String?>
-<?import org.correomqtt.gui.components.IconButton?>
-<?import org.correomqtt.gui.components.IconToggleButton?>
-<?import org.correomqtt.gui.components.IconMenuButton?>
-<?import org.correomqtt.gui.components.IconMenuItem?>
+<?import org.correomqtt.gui.controls.IconButton?>
+<?import org.correomqtt.gui.controls.IconToggleButton?>
+<?import org.correomqtt.gui.controls.IconMenuButton?>
+<?import org.correomqtt.gui.controls.IconMenuItem?>
+<?import org.correomqtt.gui.controls.IconCheckMenuItem?>
 <VBox fx:id="detailViewVBox" styleClass="content-holder" minHeight="200.0" minWidth="400" prefHeight="400.0" prefWidth="600.0" stylesheets="@../css/detailView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.DetailViewController">
     <styleClass>
         <String fx:value="noBorder" />
@@ -99,8 +100,8 @@
             </IconButton>
             <IconMenuButton fx:id="searchMenuButton" mnemonicParsing="false" icon="mdi-format-list-checks">
                 <items>
-                    <IconMenuItem fx:id="ignoreCaseMenuItem" mnemonicParsing="false" onAction="#changeIgnoreCase" text="%detailViewIgnoreCaseMenuItem" />
-                    <IconMenuItem fx:id="regexMenuItem" mnemonicParsing="false" onAction="#changeRegex" text="Regex" />
+                    <IconCheckMenuItem fx:id="ignoreCaseMenuItem" mnemonicParsing="false" onAction="#changeIgnoreCase" text="%detailViewIgnoreCaseMenuItem" />
+                    <IconCheckMenuItem fx:id="regexMenuItem" mnemonicParsing="false" onAction="#changeRegex" text="Regex" />
                 </items>
                 <HBox.margin>
                     <Insets />

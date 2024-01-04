@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 <?import java.lang.String?>
-<?import org.correomqtt.gui.components.IconButton?>
+<?import org.correomqtt.gui.controls.IconButton?>
 <AnchorPane fx:id="subscribeBodyViewAnchor" minWidth="410.0" stylesheets="@../css/subscribeBody.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.SubscriptionViewController">
     <SplitPane fx:id="splitPane" orientation="VERTICAL" prefHeight="500.0" prefWidth="300.0" styleClass="noBorder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <AnchorPane minHeight="150.0" minWidth="0.0" prefHeight="322.0" prefWidth="354.0" styleClass="noBorder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -38,11 +38,11 @@
                                 <Insets right="5.0" />
                             </HBox.margin>
                         </ComboBox>
-                        <Button fx:id="subscribeBtn" maxWidth="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#onClickSubscribe" text="Subscribe" HBox.hgrow="NEVER">
+                        <IconButton fx:id="subscribeBtn" maxWidth="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#onClickSubscribe" text="Subscribe" icon="mdi-call-received" HBox.hgrow="NEVER">
                             <tooltip>
                                 <Tooltip text="%subscriptionViewSubscribeTooltip" />
                             </tooltip>
-                        </Button>
+                        </IconButton>
                     </children>
                     <styleClass>
                         <String fx:value="toolbar" />

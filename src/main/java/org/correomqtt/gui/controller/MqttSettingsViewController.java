@@ -13,8 +13,10 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Paint;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
+import org.controlsfx.control.textfield.CustomTextField;
 import org.correomqtt.business.model.Auth;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.CorreoMqttVersion;
@@ -26,6 +28,7 @@ import org.correomqtt.business.model.TlsSsl;
 import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.cell.GenericCell;
+import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.helper.CheckTopicHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.plugin.manager.PluginManager;
@@ -60,19 +63,19 @@ public class MqttSettingsViewController extends BaseControllerImpl
     private ConnectionPropertiesDTO config;
 
     @FXML
-    private TextField nameTextField;
+    private CustomTextField nameTextField;
 
     @FXML
-    private TextField urlTextField;
+    private CustomTextField urlTextField;
 
     @FXML
-    private TextField portTextField;
+    private CustomTextField portTextField;
 
     @FXML
-    private TextField clientIdTextField;
+    private CustomTextField clientIdTextField;
 
     @FXML
-    private TextField usernameTextField;
+    private CustomTextField usernameTextField;
 
     @FXML
     private PasswordField passwordField;
@@ -93,10 +96,10 @@ public class MqttSettingsViewController extends BaseControllerImpl
     private GridPane tlsSslGridPane;
 
     @FXML
-    private TextField sslKeystoreTextField;
+    private CustomTextField sslKeystoreTextField;
 
     @FXML
-    private TextField sslKeystorePasswordTextField;
+    private CustomTextField sslKeystorePasswordTextField;
 
     @FXML
     private ComboBox<Proxy> proxyComboBox;
@@ -105,19 +108,19 @@ public class MqttSettingsViewController extends BaseControllerImpl
     private GridPane proxyGridPane;
 
     @FXML
-    private TextField sshHostTextField;
+    private CustomTextField sshHostTextField;
 
     @FXML
-    private TextField sshPortTextField;
+    private CustomTextField sshPortTextField;
 
     @FXML
-    private TextField localPortTextField;
+    private CustomTextField localPortTextField;
 
     @FXML
     private ComboBox<Auth> authComboBox;
 
     @FXML
-    private TextField authUsernameTextField;
+    private CustomTextField authUsernameTextField;
 
     @FXML
     private PasswordField authPasswordField;
@@ -126,7 +129,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
     private HBox authKeyfileHBox;
 
     @FXML
-    private TextField authKeyFileTextField;
+    private CustomTextField authKeyFileTextField;
 
     @FXML
     private TabPane containerAnchorPane;
@@ -436,8 +439,10 @@ public class MqttSettingsViewController extends BaseControllerImpl
         initialFill();
     }
 
-    private boolean checkName(TextField textField, boolean save) {
+    private boolean checkName(CustomTextField textField, boolean save) {
         if (isEmpty(textField)) {
+
+
             setError(textField, save, resources.getString("validationNameIsEmpty"));
             return false;
         }
@@ -458,23 +463,29 @@ public class MqttSettingsViewController extends BaseControllerImpl
             return false;
         }
 
-        nameTextField.getStyleClass().clear();
-        nameTextField.getStyleClass().addAll(TEXT_FIELD, TEXT_INPUT);
+        unsetError(textField);
+
+
         return true;
     }
 
-    private boolean checkUrl(TextField textField, boolean save) {
+    private void unsetError(CustomTextField textField) {
+        textField.setRight(null);
+        textField.getStyleClass().clear();
+        textField.getStyleClass().addAll(TEXT_FIELD, TEXT_INPUT);
+    }
+
+    private boolean checkUrl(CustomTextField textField, boolean save) {
         if (isEmpty(textField)) {
             setError(textField, save, resources.getString("validationConnectionIsEmpty"));
             return false;
         }
 
-        urlTextField.getStyleClass().clear();
-        urlTextField.getStyleClass().addAll(TEXT_FIELD, TEXT_INPUT);
+        unsetError(textField);
         return true;
     }
 
-    private boolean checkPort(TextField textField, boolean save) {
+    private boolean checkPort(CustomTextField textField, boolean save) {
         if (isEmpty(textField)) {
             setError(textField, save, resources.getString("validationPortIsEmpty"));
             return false;
@@ -483,12 +494,11 @@ public class MqttSettingsViewController extends BaseControllerImpl
             return false;
         }
 
-        portTextField.getStyleClass().clear();
-        portTextField.getStyleClass().addAll(TEXT_FIELD, TEXT_INPUT);
+        unsetError(textField);
         return true;
     }
 
-    private boolean checkClientID(TextField textField, boolean save) {
+    private boolean checkClientID(CustomTextField textField, boolean save) {
         if (isEmpty(textField)) {
             setError(textField, save, resources.getString("validationClientIdIsEmpty"));
             return false;
@@ -497,17 +507,18 @@ public class MqttSettingsViewController extends BaseControllerImpl
             return false;
         }
 
-        clientIdTextField.getStyleClass().clear();
-        clientIdTextField.getStyleClass().addAll(TEXT_FIELD, TEXT_INPUT);
+        unsetError(textField);
+
         return true;
     }
 
-    private void setError(TextField textField, boolean save, String tooltipText) {
+    private void setError(CustomTextField textField, boolean save, String tooltipText) {
         if (save) {
             textField.getStyleClass().add("errorOnSave");
         }
 
         textField.setTooltip(new Tooltip(tooltipText));
+        textField.setRight(new ThemedFontIcon("mdi-alert-circle", Paint.valueOf("red")));
         textField.getStyleClass().add(EXCLAMATION_CIRCLE_SOLID);
     }
 

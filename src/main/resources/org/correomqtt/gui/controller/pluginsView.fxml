@@ -4,49 +4,70 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane fx:id="pluginRootPane" minHeight="200.0" minWidth="400.0" prefHeight="500.0" prefWidth="1000.0" styleClass="dialog" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.PluginsViewController">
-   <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-     <tabs>
-       <Tab  fx:id="installedPluginsTab" text="%pluginsTabInstalledLabel">
-         <!--<content>
-           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                  <children>
-                      <VBox styleClass="pluginsHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                          <children>
-                              <TableView fx:id="pluginsTableView" VBox.vgrow="ALWAYS">
-                                  <columns>
-                                      <TableColumn fx:id="isEnabledColumn" style="-fx-alignment: center" text="Enabled">
-                    </TableColumn>
-                                      <TableColumn fx:id="nameVersionColumn" text="ID">
-                    </TableColumn>
-                                      <TableColumn fx:id="descriptionColumn" text="Description">
-                    </TableColumn>
-                                      <TableColumn fx:id="providerColumn" text="Provider">
-                    </TableColumn>
-                                      <TableColumn fx:id="permissionColumn" text="Permissions">
-                    </TableColumn>
-                                      <TableColumn fx:id="fileColumn" text="Plugin File">
-                    </TableColumn>
-                                  </columns>
-                              <VBox.margin>
-                                 <Insets bottom="10.0" top="10.0" />
-                              </VBox.margin>
-                              </TableView>
-                              <HBox alignment="CENTER_LEFT">
-                                  <Label fx:id="statusText" alignment="CENTER" />
-                                  <Region HBox.hgrow="ALWAYS" />
-                                  <Button alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#onOpenPluginFolder" text="%mainViewPluginFolderMenuItem">
-                </Button>
-                                  <VBox.margin>
-                                      <Insets />
-                                  </VBox.margin>
-                              </HBox>
-                          </children>
-                      </VBox>
-                  </children></AnchorPane>
-         </content>-->
-       </Tab>
-       <Tab fx:id="marketplaceTab" text="%pluginsTabMarketplaceLabel" />
-     </tabs>
-   </TabPane>
+<?import javafx.scene.control.Label?>
+<?import org.correomqtt.gui.controls.ThemedFontIcon?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.geometry.Insets?>
+<AnchorPane fx:id="pluginRootPane" minHeight="200.0" minWidth="400.0" prefHeight="500.0" prefWidth="1000.0"
+            styleClass="dialog" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/11.0.2"
+            xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.PluginsViewController">
+    <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+          AnchorPane.topAnchor="0.0">
+
+
+        <Label alignment="TOP_LEFT" styleClass="headline" text="%pluginViewHeaderLabel">
+            <VBox.margin>
+                <Insets bottom="10.0"/>
+            </VBox.margin>
+            <graphic>
+                <ThemedFontIcon iconLiteral="mdi-toy-brick" iconSize="50"/>
+            </graphic>
+        </Label>
+
+        <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0"
+                 AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <tabs>
+                <Tab fx:id="installedPluginsTab" text="%pluginsTabInstalledLabel">
+                    <!--<content>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                             <children>
+                                 <VBox styleClass="pluginsHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                     <children>
+                                         <TableView fx:id="pluginsTableView" VBox.vgrow="ALWAYS">
+                                             <columns>
+                                                 <TableColumn fx:id="isEnabledColumn" style="-fx-alignment: center" text="Enabled">
+                               </TableColumn>
+                                                 <TableColumn fx:id="nameVersionColumn" text="ID">
+                               </TableColumn>
+                                                 <TableColumn fx:id="descriptionColumn" text="Description">
+                               </TableColumn>
+                                                 <TableColumn fx:id="providerColumn" text="Provider">
+                               </TableColumn>
+                                                 <TableColumn fx:id="permissionColumn" text="Permissions">
+                               </TableColumn>
+                                                 <TableColumn fx:id="fileColumn" text="Plugin File">
+                               </TableColumn>
+                                             </columns>
+                                         <VBox.margin>
+                                            <Insets bottom="10.0" top="10.0" />
+                                         </VBox.margin>
+                                         </TableView>
+                                         <HBox alignment="CENTER_LEFT">
+                                             <Label fx:id="statusText" alignment="CENTER" />
+                                             <Region HBox.hgrow="ALWAYS" />
+                                             <Button alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#onOpenPluginFolder" text="%mainViewPluginFolderMenuItem">
+                           </Button>
+                                             <VBox.margin>
+                                                 <Insets />
+                                             </VBox.margin>
+                                         </HBox>
+                                     </children>
+                                 </VBox>
+                             </children></AnchorPane>
+                    </content>-->
+                </Tab>
+                <Tab fx:id="marketplaceTab" text="%pluginsTabMarketplaceLabel"/>
+            </tabs>
+        </TabPane>
+    </VBox>
 </AnchorPane>

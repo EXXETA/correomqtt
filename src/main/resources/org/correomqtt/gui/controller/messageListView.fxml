@@ -1,21 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
-<?import org.correomqtt.gui.components.IconButton?>
-<?import org.correomqtt.gui.components.IconToggleButton?>
+<?import org.correomqtt.gui.controls.IconButton?>
+<?import org.correomqtt.gui.controls.IconCheckMenuItem?>
+<?import org.correomqtt.gui.controls.IconMenuButton?>
+<?import org.correomqtt.gui.controls.IconToggleButton?>
 <?import java.lang.String?>
-<?import org.correomqtt.gui.components.IconMenuButton?>
-<?import javafx.scene.control.MenuItem?>
-<?import org.correomqtt.gui.components.IconCheckMenuItem?>
 <AnchorPane fx:id="mainPane" minHeight="250.0" styleClass="noBorder" stylesheets="@../css/messageListView.css"
             xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="org.correomqtt.gui.controller.MessageListViewController">
@@ -28,7 +25,7 @@
                     <String fx:value="bottom"/>
                 </styleClass>
                 <IconButton fx:id="copyToFormButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
-                            onAction="#copyToForm" icon="mdi-clipboard-arrow-up-outline">
+                            onAction="#copyToForm" icon="mdi-arrow-expand-up">
                     <tooltip>
                         <Tooltip text="%messageListViewCopyButtonTooltip"/>
                     </tooltip>

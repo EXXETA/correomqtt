@@ -11,8 +11,8 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
-<?import org.correomqtt.gui.components.IconButton?>
-<?import org.correomqtt.gui.components.IconToggleButton?>
+<?import org.correomqtt.gui.controls.IconButton?>
+<?import org.correomqtt.gui.controls.IconToggleButton?>
 <?import org.fxmisc.richtext.CodeArea?>
 <?import java.lang.String?>
 <AnchorPane fx:id="publishViewAnchor" minWidth="410.0" styleClass="noBorder" stylesheets="@../css/publishBody.css"
@@ -56,12 +56,12 @@
                             <Insets right="5.0"/>
                         </HBox.margin>
                     </ComboBox>
-                    <Button fx:id="publishButton" maxWidth="-Infinity" minWidth="-Infinity" mnemonicParsing="false"
-                            onAction="#publish" text="Publish">
+                    <IconButton fx:id="publishButton" maxWidth="-Infinity" minWidth="-Infinity" mnemonicParsing="false"
+                            onAction="#publish" text="Publish" icon="mdi-send">
                         <tooltip>
                             <Tooltip text="%publishViewPublishButtonTooltip"/>
                         </tooltip>
-                    </Button>
+                    </IconButton>
                     <styleClass>
                         <String fx:value="toolbar"/>
                         <String fx:value="top"/>

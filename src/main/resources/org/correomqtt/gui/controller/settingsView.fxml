@@ -4,14 +4,19 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import org.correomqtt.gui.controls.*?>
 
 <AnchorPane fx:id="settingsPane" prefWidth="600.0" styleClass="dialog" stylesheets="@../css/settings.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.SettingsViewController">
     <VBox fx:id="settingsVBox" styleClass="settingsHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <children>
             <Label alignment="TOP_LEFT" styleClass="headline" text="%settingsViewHeaderLabel">
-            <VBox.margin>
-               <Insets bottom="10.0" />
-            </VBox.margin></Label>
+                <VBox.margin>
+                    <Insets bottom="10.0" />
+                </VBox.margin>
+                <graphic>
+                    <ThemedFontIcon iconLiteral="mdi-cogs" iconSize="50" />
+                </graphic>
+            </Label>
             <GridPane styleClass="settingsGrid" VBox.vgrow="ALWAYS">
                 <columnConstraints>
                     <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="100.0" />
@@ -58,9 +63,10 @@
                     <VBox alignment="TOP_RIGHT" GridPane.columnIndex="1" GridPane.rowIndex="2">
                         <ComboBox fx:id="keyringBackendComboBox" onAction="#onKeyringBackendChanged" styleClass="keyringBackendCheckbox" />
                         <Button onAction="#onWipeKeyringClicked" styleClass="wipeKeyringButton" text="%wipeCurrentKeyring">
-                     <VBox.margin>
-                        <Insets top="30.0" />
-                     </VBox.margin></Button>
+                            <VBox.margin>
+                                <Insets top="30.0" />
+                            </VBox.margin>
+                        </Button>
                     </VBox>
 
 
@@ -81,25 +87,25 @@
                         </padding>
                     </CheckBox>
                 </children>
-            <rowConstraints>
-               <RowConstraints />
-               <RowConstraints />
-               <RowConstraints />
-               <RowConstraints />
-            </rowConstraints>
+                <rowConstraints>
+                    <RowConstraints />
+                    <RowConstraints />
+                    <RowConstraints />
+                    <RowConstraints />
+                </rowConstraints>
             </GridPane>
             <HBox alignment="CENTER_RIGHT">
                 <children>
-                    <Button fx:id="settingsCancelButton" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">
+                    <IconButton fx:id="settingsCancelButton" icon="mdi-cancel" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">
                         <HBox.margin>
                             <Insets left="5.0" />
                         </HBox.margin>
-                    </Button>
-                    <Button fx:id="settingsSaveButton" mnemonicParsing="false" onAction="#onSaveClicked" text="%commonSaveButton">
+                    </IconButton>
+                    <IconButton fx:id="settingsSaveButton" icon="mdi-content-save" mnemonicParsing="false" onAction="#onSaveClicked" text="%commonSaveButton">
                         <HBox.margin>
                             <Insets left="5.0" />
                         </HBox.margin>
-                    </Button>
+                    </IconButton>
                 </children>
                 <VBox.margin>
                     <Insets />

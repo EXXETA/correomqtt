@@ -31,7 +31,7 @@ import org.correomqtt.business.importexport.messages.ExportMessageSuccessEvent;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.AutoFormatPayload;
-import org.correomqtt.gui.components.IconMenuItem;
+import org.correomqtt.gui.controls.IconCheckMenuItem;
 import org.correomqtt.gui.contextmenu.DetailContextMenu;
 import org.correomqtt.gui.contextmenu.DetailContextMenuDelegate;
 import org.correomqtt.gui.formats.Format;
@@ -69,8 +69,6 @@ public class DetailViewController extends BaseConnectionController implements
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DetailViewController.class);
 
-    private static final String CHECK_ICON = "mdi-checkbox-marked";
-    private static final String UNCHECK_ICON = "mdi-checkbox-blank-outline";
     private static ResourceBundle resources;
     private final BooleanProperty inlineViewProperty;
     private final DetailViewDelegate delegate;
@@ -120,9 +118,9 @@ public class DetailViewController extends BaseConnectionController implements
     @FXML
     private MenuButton searchMenuButton;
     @FXML
-    private IconMenuItem ignoreCaseMenuItem;
+    private IconCheckMenuItem ignoreCaseMenuItem;
     @FXML
-    private IconMenuItem regexMenuItem;
+    private IconCheckMenuItem regexMenuItem;
     @FXML
     private Label closeLabel;
     @FXML
@@ -257,14 +255,9 @@ public class DetailViewController extends BaseConnectionController implements
             LOGGER.debug("Clicked on changeIgnoreCase: {}", getConnectionId());
         }
 
-        SettingsProvider.getInstance().getSettings().setUseIgnoreCase(!SettingsProvider.getInstance().getSettings().isUseIgnoreCase());
+        SettingsProvider.getInstance().getSettings().setUseIgnoreCase(ignoreCaseMenuItem.isSelected());
         SettingsProvider.getInstance().saveSettings(false);
         this.searchMenuButton.getItems().remove(ignoreCaseMenuItem);
-        if (SettingsProvider.getInstance().getSettings().isUseIgnoreCase()) {
-            ignoreCaseMenuItem.setIcon(CHECK_ICON);
-        } else {
-            ignoreCaseMenuItem.setIcon(UNCHECK_ICON);
-        }
         this.searchMenuButton.getItems().add(0, ignoreCaseMenuItem);
         currentSearchString = null;
         currentSearchResult = 0;
@@ -277,14 +270,9 @@ public class DetailViewController extends BaseConnectionController implements
             LOGGER.debug("Clicked on changeRegex: {}", getConnectionId());
         }
 
-        SettingsProvider.getInstance().getSettings().setUseRegexForSearch(!SettingsProvider.getInstance().getSettings().isUseRegexForSearch());
+        SettingsProvider.getInstance().getSettings().setUseRegexForSearch(regexMenuItem.isSelected());
         SettingsProvider.getInstance().saveSettings(false);
         this.searchMenuButton.getItems().remove(regexMenuItem);
-        if (SettingsProvider.getInstance().getSettings().isUseRegexForSearch()) {
-            regexMenuItem.setIcon(CHECK_ICON);
-        } else {
-            regexMenuItem.setIcon(UNCHECK_ICON);
-        }
         this.searchMenuButton.getItems().add(1, regexMenuItem);
         currentSearchString = null;
         currentSearchResult = 0;
@@ -326,16 +314,8 @@ public class DetailViewController extends BaseConnectionController implements
 
         detailViewQos.setText(messageDTO.getQos().toString());
 
-        if (SettingsProvider.getInstance().getSettings().isUseIgnoreCase()) {
-            ignoreCaseMenuItem.setIcon(CHECK_ICON);
-        }else{
-            ignoreCaseMenuItem.setIcon(UNCHECK_ICON);
-        }
-        if (SettingsProvider.getInstance().getSettings().isUseRegexForSearch()) {
-            regexMenuItem.setIcon(CHECK_ICON);
-        }else{
-            regexMenuItem.setIcon(UNCHECK_ICON);
-        }
+        ignoreCaseMenuItem.setSelected(SettingsProvider.getInstance().getSettings().isUseIgnoreCase());
+        regexMenuItem.setSelected(SettingsProvider.getInstance().getSettings().isUseRegexForSearch());
 
         detailViewSaveButton.setOnMouseClicked(this::saveMessage);
 
