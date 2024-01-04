@@ -1,6 +1,6 @@
 package org.correomqtt.gui.keyring;
 
-import org.correomqtt.business.provider.EncryptionRecoverableException;
+import org.correomqtt.business.fileprovider.EncryptionRecoverableException;
 
 @FunctionalInterface
 public interface ConsumerWithRetry {

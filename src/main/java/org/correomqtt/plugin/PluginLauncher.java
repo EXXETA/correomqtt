@@ -1,7 +1,7 @@
 package org.correomqtt.plugin;
 
-import org.correomqtt.business.dispatcher.PreloadingDispatcher;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.repository.BundledPluginList;
 import org.pf4j.update.PluginInfo;
@@ -9,27 +9,26 @@ import org.pf4j.update.UpdateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ResourceBundle;
 
 public class PluginLauncher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginLauncher.class);
 
-    private ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+    private final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
-    public void start(boolean doPluginUpdates) throws IOException {
+    public void start(boolean doPluginUpdates) {
 
         PluginManager pluginManager = PluginManager.getInstance();
 
         try {
-            PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderLoadPlugins"));
+            EventBus.fireAsync(new PreloadingProgressEvent(resources.getString("preloaderLoadPlugins")));
             pluginManager.loadPlugins();
             if(doPluginUpdates) {
-                PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderUpdatePlugins"));
+                EventBus.fireAsync(new PreloadingProgressEvent(resources.getString("preloaderUpdatePlugins")));
                 updateSystem();
             }
-            PreloadingDispatcher.getInstance().onProgress(resources.getString("preloaderStartPlugins"));
+            EventBus.fireAsync(new PreloadingProgressEvent(resources.getString("preloaderStartPlugins")));
             pluginManager.startPlugins();
         } catch (Exception e) {
             LOGGER.error("Error or Exception during loading plugins ", e);
@@ -68,13 +67,13 @@ public class PluginLauncher {
                 continue;
             }
 
-            PreloadingDispatcher.getInstance().onProgress(resources.getString("pluginUpdateManagerInstalling") + " " + pluginId);
+            EventBus.fireAsync(new PreloadingProgressEvent(resources.getString("pluginUpdateManagerInstalling")+ " " + pluginId));
             String lastVersion = lastRelease.version;
             try {
                 boolean installed = updateManager.installPlugin(pluginId, lastVersion);
                 if (installed) {
                     LOGGER.info("Installed bundled plugin '{}@{}'", pluginId, lastVersion);
-                    PreloadingDispatcher.getInstance().onProgress(resources.getString("pluginUpdateManagerInstalled") + " " + pluginId);
+                    EventBus.fireAsync(new PreloadingProgressEvent(resources.getString("pluginUpdateManagerInstalled")+ " " + pluginId));
                     installedPlugins++;
                 } else {
                     LOGGER.error("Cannot install bundled plugin '{}'", pluginId);
@@ -98,7 +97,7 @@ public class PluginLauncher {
             boolean uninstalled = pluginManager.deletePlugin(pluginId);
             if (uninstalled) {
                 LOGGER.info("Uninstalled deprecated plugin '{}'", pluginId);
-                PreloadingDispatcher.getInstance().onProgress(resources.getString("pluginUpdateManagerUninstalled") + " " + pluginId);
+                EventBus.fireAsync(new PreloadingProgressEvent(resources.getString("pluginUpdateManagerUninstalled")+ " " + pluginId));
                 return 1;
             } else {
                 LOGGER.error("Cannot uninstall plugin '{}'", pluginId);
@@ -112,7 +111,7 @@ public class PluginLauncher {
         // check for updates
         int updatedPlugins = 0;
         for (PluginInfo plugin : updateManager.getUpdates()) {
-            PreloadingDispatcher.getInstance().onProgress(resources.getString("pluginUpdateManagerUpdating") + " " + plugin.id);
+            EventBus.fireAsync(new PreloadingProgressEvent(resources.getString("pluginUpdateManagerUpdating")+ " " + plugin.id));
             PluginInfo.PluginRelease lastRelease = updateManager.getLastPluginRelease(plugin.id);
             String lastVersion = lastRelease.version;
             String installedVersion = pluginManager.getPlugin(plugin.id).getDescriptor().getVersion();
@@ -120,7 +119,7 @@ public class PluginLauncher {
                 if (updateManager.updatePlugin(plugin.id, lastVersion)) {
                     LOGGER.info("Updated plugin '{}@{}' to '{}@{}'", plugin.id, installedVersion, plugin.id, lastVersion);
                     updatedPlugins++;
-                    PreloadingDispatcher.getInstance().onProgress(resources.getString("pluginUpdateManagerUpdated") + " " + plugin.id);
+                    EventBus.fireAsync(new PreloadingProgressEvent(resources.getString("pluginUpdateManagerUpdated")+ " " + plugin.id));
                 } else {
                     LOGGER.warn("Cannot update plugin '{}'", plugin.id);
                 }

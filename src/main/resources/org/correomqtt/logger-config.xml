@@ -7,6 +7,10 @@
     <property name="COLORPATTERN"
               value="%cyan(%date{'HH:mm:ss,SSS'});%highlight(%5.5level);%yellow(%30.30logger);%magenta(%15.15thread);%magenta(%15.15marker);%0.0throwable%highlight(%0.0level%msg%xThrowable{full}%n)"/>
 
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${COLORPATTERN}</pattern>
@@ -24,10 +28,14 @@
         </encoder>
     </appender>
 
-    <appender name="GUI" class="org.correomqtt.business.dispatcher.LogDispatchAppender">
+    <appender name="GUI" class="org.correomqtt.business.log.LogDispatchAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>${GUIPATTERN}</pattern>
+            <pattern>${COLORPATTERN}</pattern>
         </encoder>
+    </appender>
+
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
     </appender>
 
     <logger name="org.correomqtt" level="INFO" additivity="false">

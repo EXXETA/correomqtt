@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import org.correomqtt.gui.controls.IconButton?>
+<?import org.correomqtt.gui.controls.IconLabel?>
+<?import org.correomqtt.gui.controls.IconToggleButton?>
+<?import java.lang.String?>
+<AnchorPane fx:id="mainViewHBoxAnchorPane" minWidth="500.0" prefHeight="32.0" prefWidth="663.0" styleClass="mainToolbar" stylesheets="@../../css/controlBarView.css" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.views.connections.ControlBarController">
+    <HBox fx:id="controllViewButtonHBox" alignment="CENTER_LEFT" prefHeight="32.0" prefWidth="270.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <IconToggleButton fx:id="controlViewPButton" icon="correo-columns-solid-left" mnemonicParsing="false" onAction="#onClickP" styleClass="columns-solid-left" textAlignment="CENTER">
+            <tooltip>
+                <Tooltip text="%mainViewPublishItem" />
+            </tooltip>
+        </IconToggleButton>
+        <IconToggleButton fx:id="controlViewPSButton" icon="correo-columns-solid" mnemonicParsing="false" onAction="#onClickPS" styleClass="columns-solid" textAlignment="CENTER">
+            <tooltip>
+                <Tooltip text="%mainViewPublishSubscribeItem" />
+            </tooltip>
+        </IconToggleButton>
+        <IconToggleButton fx:id="controlViewSButton" icon="correo-columns-solid-right" mnemonicParsing="false" onAction="#onClickS" styleClass="columns-solid-right" textAlignment="CENTER">
+            <tooltip>
+                <Tooltip text="%mainViewSubscribeItem" />
+            </tooltip>
+        </IconToggleButton>
+      <VBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
+         <children>
+              <Label fx:id="brokerInfo" styleClass="brokerInfo" text="BrokerInfo" VBox.vgrow="NEVER" />
+            <Label fx:id="statusInfo" alignment="CENTER_RIGHT" contentDisplay="RIGHT" layoutX="10.0" layoutY="10.0" styleClass="brokerStatus" text="Status" textAlignment="RIGHT" VBox.vgrow="NEVER" />
+         </children>
+         <HBox.margin>
+            <Insets right="10.0" />
+         </HBox.margin>
+      </VBox>
+        <IconLabel fx:id="statusLabel" icon="correo-wifi-solid">
+            <HBox.margin>
+                <Insets right="10.0" />
+            </HBox.margin>
+            <tooltip>
+                <Tooltip text="%controlBarViewStatusLabelTooltip" />
+            </tooltip>
+        </IconLabel>
+        <IconButton fx:id="connectBtn" minHeight="25.0" mnemonicParsing="false" onAction="#onClickConnect" icon="mdi-lan-connect" text="%commonConnectButton">
+            <HBox.margin>
+                <Insets right="5.0" />
+            </HBox.margin>
+            <tooltip>
+                <Tooltip text="%commonConnectTooltip" />
+            </tooltip>
+        </IconButton>
+        <IconButton fx:id="reconnectBtn" minHeight="25.0" mnemonicParsing="false" onAction="#onClickReconnect" icon="mdi-restore" text="%commonReconnectButton">
+            <HBox.margin>
+                <Insets right="5.0" />
+            </HBox.margin>
+            <tooltip>
+                <Tooltip text="%commonReconnectButton" />
+            </tooltip>
+        </IconButton>
+        <IconButton fx:id="disconnectBtn" minHeight="25.0" mnemonicParsing="false" onAction="#onClickDisconnect" icon="mdi-lan-disconnect" text="%commonDisconnectButton">
+            <HBox.margin>
+                <Insets />
+            </HBox.margin>
+            <tooltip>
+                <Tooltip text="%commonDisconnectTooltip" />
+            </tooltip>
+        </IconButton>
+    </HBox>
+   <styleClass>
+      <String fx:value="toolbar" />
+      <String fx:value="bottom" />
+      <String fx:value="noBorder" />
+   </styleClass>
+</AnchorPane>

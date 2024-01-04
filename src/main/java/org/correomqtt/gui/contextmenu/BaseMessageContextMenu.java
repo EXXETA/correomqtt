@@ -1,9 +1,9 @@
 package org.correomqtt.gui.contextmenu;
 
 import javafx.event.ActionEvent;
-import javafx.scene.control.MenuItem;
-import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.gui.helper.ClipboardHelper;
+import org.correomqtt.business.fileprovider.SettingsProvider;
+import org.correomqtt.gui.controls.IconMenuItem;
+import org.correomqtt.gui.utils.ClipboardHelper;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,11 +15,11 @@ abstract class BaseMessageContextMenu<D extends BaseMessageContextMenuDelegate> 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseMessageContextMenu.class);
 
-    protected MenuItem putToForm;
-    protected MenuItem showDetails;
-    protected MenuItem copyTopicToClipboard;
-    protected MenuItem copyTimeToClipboard;
-    protected MenuItem copyPayloadToClipboard;
+    protected IconMenuItem putToForm;
+    protected IconMenuItem showDetails;
+    protected IconMenuItem copyTopicToClipboard;
+    protected IconMenuItem copyTimeToClipboard;
+    protected IconMenuItem copyPayloadToClipboard;
     private ResourceBundle resources;
 
     BaseMessageContextMenu(D dispatcher) {
@@ -32,19 +32,24 @@ abstract class BaseMessageContextMenu<D extends BaseMessageContextMenuDelegate> 
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
         super.initializeItems();
 
-        putToForm = new MenuItem(resources.getString("baseMessageContextMenuPutToFormMenuItem"));
+        putToForm = new IconMenuItem(resources.getString("baseMessageContextMenuPutToFormMenuItem"));
+        putToForm.setIcon("mdi-arrow-expand-up");
         putToForm.setOnAction(this::putToForm);
 
-        showDetails = new MenuItem(resources.getString("baseMessageContextMenuShowDetailsMenuItem"));
+        showDetails = new IconMenuItem(resources.getString("baseMessageContextMenuShowDetailsMenuItem"));
+        showDetails.setIcon("mdi-open-in-new");
         showDetails.setOnAction(this::showDetails);
 
-        copyTopicToClipboard = new MenuItem(resources.getString("baseMessageContextMenuTopicMenuItem"));
+        copyTopicToClipboard = new IconMenuItem(resources.getString("baseMessageContextMenuTopicMenuItem"));
+        copyTopicToClipboard.setIcon("mdi-clipboard");
         copyTopicToClipboard.setOnAction(this::copyTopicToClipboard);
 
-        copyTimeToClipboard = new MenuItem(resources.getString("baseMessageContextMenuTimeMenuItem"));
+        copyTimeToClipboard = new IconMenuItem(resources.getString("baseMessageContextMenuTimeMenuItem"));
+        copyTimeToClipboard.setIcon("mdi-clipboard-clock");
         copyTimeToClipboard.setOnAction(this::copyTimeToClipboard);
 
-        copyPayloadToClipboard = new MenuItem(resources.getString("baseMessageContextMenuPayloadMenuItem"));
+        copyPayloadToClipboard = new IconMenuItem(resources.getString("baseMessageContextMenuPayloadMenuItem"));
+        copyPayloadToClipboard.setIcon("mdi-clipboard-text");
         copyPayloadToClipboard.setOnAction(this::copyPayloadToClipoard);
 
     }

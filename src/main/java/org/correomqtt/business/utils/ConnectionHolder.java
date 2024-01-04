@@ -2,7 +2,7 @@ package org.correomqtt.business.utils;
 
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 
 import java.util.Comparator;
 import java.util.HashSet;

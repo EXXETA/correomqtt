@@ -6,10 +6,10 @@ import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.provider.EncryptionRecoverableException;
-import org.correomqtt.business.provider.SecretStoreProvider;
-import org.correomqtt.business.provider.SettingsProvider;
-import org.correomqtt.gui.helper.AlertHelper;
+import org.correomqtt.business.fileprovider.EncryptionRecoverableException;
+import org.correomqtt.business.fileprovider.SecretStoreProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
+import org.correomqtt.gui.utils.AlertHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

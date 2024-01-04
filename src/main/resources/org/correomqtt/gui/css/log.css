@@ -1,9 +1,42 @@
 @import "global.css";
 
-.black .trash-alt-solid {
-    -fx-graphic: url('../icons/trash-alt-solid-black.png');
+
+#logTextArea.styled-text-area .caret {
+    -fx-stroke: #34c400;
 }
 
-.white .trash-alt-solid {
-    -fx-graphic: url('../icons/trash-alt-solid-white.png');
+#logTextArea.styled-text-area {
+    -fx-background-color: #000000;
+}
+
+#logTextArea.styled-text-area .default {
+    -fx-fill: #34c400;
+}
+
+#logTextArea.styled-text-area .cyan {
+    -fx-fill: #009485;
+}
+
+#logTextArea.styled-text-area .blue {
+    -fx-fill: #3993d4;
+}
+
+#logTextArea.styled-text-area .magenta {
+    -fx-fill: #a370bd;
+}
+
+#logTextArea.styled-text-area .yellow {
+    -fx-fill: #AA750C;
+}
+
+#logTextArea.styled-text-area .orange {
+    -fx-fill: #aa4e0c;
+}
+
+#logTextArea.styled-text-area .red {
+    -fx-fill: #aa0c0c;
+}
+
+#logTextArea.styled-text-area .selection {
+    -fx-fill: #444444;
 }

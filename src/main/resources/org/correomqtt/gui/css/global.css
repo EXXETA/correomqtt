@@ -1,3 +1,7 @@
+button {
+    -fx-background-size: 24px;
+}
+
 .noBorder {
     -fx-background-insets: 0;
     -fx-padding: 0;
@@ -25,53 +29,6 @@
     -fx-max-width: 16;
 }
 
-.black .mqtt3 {
-    -fx-background-image: url('../icons/circle-3-black.png');
-}
-
-.white .mqtt3 {
-    -fx-background-image: url('../icons/circle-3-white.png');
-}
-
-.black .mqtt5 {
-    -fx-background-image: url('../icons/circle-5-black.png');
-}
-
-.white .mqtt5 {
-    -fx-background-image: url('../icons/circle-5-white.png');
-}
-
-.black .key-solid {
-    -fx-background-image: url('../icons/key-solid-black.png');
-}
-
-.white .key-solid {
-    -fx-background-image: url('../icons/key-solid-white.png');
-}
-
-.black .lock-solid {
-    -fx-background-image: url('../icons/lock-solid-black.png');
-}
-
-.white .lock-solid {
-    -fx-background-image: url('../icons/lock-solid-white.png');
-}
-
-.black .archway-solid {
-    -fx-background-image: url('../icons/archway-solid-black.png');
-}
-
-.white .archway-solid {
-    -fx-background-image: url('../icons/archway-solid-white.png');
-}
-
-.black .skull-crossbones-solid {
-    -fx-background-image: url('../icons/skull-crossbones-solid-black.png');
-}
-
-.white .skull-crossbones-solid {
-    -fx-background-image: url('../icons/skull-crossbones-solid-white.png');
-}
 
 .list-view .list-cell {
     -fx-background-insets: 0;
@@ -128,11 +85,7 @@
 }
 
 .exclamationCircleSolid {
-    -fx-background-image: url('../icons/exclamation-circle-solid.png');
-    -fx-background-repeat: no-repeat;
-    -fx-background-position: right 5 center;
-    -fx-padding: 5 23 5 8;
-    -fx-background-size: 15;
+    -fx-background-color: #4b0808;
 }
 
 .sectionHeadline {
@@ -166,6 +119,7 @@
     -fx-font-size: 20;
     -fx-font-weight: bold;
     -fx-padding: 0 0 10 0;
+    -fx-graphic-text-gap: 10px;
 }
 
 /* disabled style for RichTextFX */

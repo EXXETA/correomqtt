@@ -1,6 +1,6 @@
 package org.correomqtt.business.exception;
 
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 
 import java.util.ResourceBundle;
 

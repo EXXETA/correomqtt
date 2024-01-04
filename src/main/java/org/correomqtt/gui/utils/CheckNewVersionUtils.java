@@ -1,10 +1,9 @@
 package org.correomqtt.gui.utils;
 
 import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.VendorConstants;
 import org.correomqtt.business.utils.VersionUtils;
-import org.correomqtt.gui.helper.AlertHelper;
 
 import java.io.IOException;
 import java.util.ResourceBundle;

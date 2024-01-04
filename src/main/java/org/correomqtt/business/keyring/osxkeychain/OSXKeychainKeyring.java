@@ -5,7 +5,7 @@ import com.github.javakeyring.internal.osx.ModernOsxKeychainBackend;
 import org.correomqtt.plugin.spi.KeyringHook;
 import org.correomqtt.business.keyring.BaseKeyring;
 import org.correomqtt.business.keyring.KeyringException;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.pf4j.Extension;
 
 import java.util.ResourceBundle;

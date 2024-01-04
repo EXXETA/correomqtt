@@ -6,7 +6,9 @@ public interface OutgoingMessageHook<T extends OutgoingMessageHookDTO> extends B
 
     MessageExtensionDTO onPublishMessage(String connectionId, MessageExtensionDTO message);
 
+    @Override
     T getConfig();
 
+    @Override
     void onConfigReceived(T config);
 }

@@ -14,25 +14,27 @@ import javafx.scene.Scene;
 import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import org.correomqtt.business.dispatcher.PreloadingDispatcher;
-import org.correomqtt.business.dispatcher.PreloadingObserver;
-import org.correomqtt.business.provider.SettingsProvider;
+import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.VersionUtils;
-import org.correomqtt.gui.controller.PreloaderViewController;
+import org.correomqtt.gui.views.PreloaderViewController;
 import org.correomqtt.gui.window.StageHelper;
+import org.correomqtt.plugin.PreloadingProgressEvent;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-public class CorreoPreloader extends Preloader implements PreloadingObserver {
+public class CorreoPreloader extends Preloader {
 
     PreloaderViewController preloaderViewController;
     private Scene scene;
     private Stage preloaderStage;
 
     public CorreoPreloader() {
-        PreloadingDispatcher.getInstance().addObserver(this);
+        EventBus.register(this);
+        // TODO Cleanup
     }
 
     @Override
@@ -94,9 +96,9 @@ public class CorreoPreloader extends Preloader implements PreloadingObserver {
         }
     }
 
-    @Override
-    public void onProgress(Double progress, String message) {
-        Platform.runLater(() -> preloaderViewController.getPreloaderStepLabel().setText(message));
+    @SuppressWarnings("unused")
+    public void onProgress(@Subscribe PreloadingProgressEvent event) {
+        Platform.runLater(() -> preloaderViewController.getPreloaderStepLabel().setText(event.msg()));
     }
 
 }
