@@ -72,9 +72,9 @@ public class AboutViewController extends BaseControllerImpl {
     @FXML
     private Hyperlink windpapi4jLicense;
     @FXML
-    private Hyperlink fontAwesomeRepo;
+    private Hyperlink materialDesignIconsRepo;
     @FXML
-    private Hyperlink fontAwesomeLicense;
+    private Hyperlink materialDesignIconsLicense;
     @FXML
     private Hyperlink exxetaLink;
 
@@ -130,8 +130,8 @@ public class AboutViewController extends BaseControllerImpl {
         secretServiceLicense.getProperties().put("link", "https://github.com/swiesend/secret-service/blob/v1.0.0/LICENSE");
         windpapi4j.getProperties().put("link", "https://github.com/peter-gergely-horvath/windpapi4j/tree/1.0");
         windpapi4jLicense.getProperties().put("link", "https://github.com/peter-gergely-horvath/windpapi4j/blob/1.0/LICENSE");
-        fontAwesomeRepo.getProperties().put("link", "https://github.com/FortAwesome/Font-Awesome");
-        fontAwesomeLicense.getProperties().put("link", "https://fontawesome.com/license/free");
+        materialDesignIconsRepo.getProperties().put("link", "https://github.com/Templarian/MaterialDesign");
+        materialDesignIconsLicense.getProperties().put("link", "https://github.com/Templarian/MaterialDesign/blob/master/LICENSE");
         exxetaLink.getProperties().put("link", "https://www.exxeta.com");
 
         links.addAll(Arrays.asList(
@@ -148,7 +148,7 @@ public class AboutViewController extends BaseControllerImpl {
                 javaKeyring, javaKeyringLicense,
                 secretService, secretServiceLicense,
                 windpapi4j, windpapi4jLicense,
-                fontAwesomeRepo, fontAwesomeLicense,
+                materialDesignIconsRepo, materialDesignIconsLicense,
                 exxetaLink)
         );
 

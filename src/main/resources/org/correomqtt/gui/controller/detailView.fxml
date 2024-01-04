@@ -16,6 +16,11 @@
 <?import javafx.scene.text.Font?>
 <?import org.fxmisc.richtext.CodeArea?>
 <?import java.lang.String?>
+<?import org.correomqtt.gui.controls.IconButton?>
+<?import org.correomqtt.gui.controls.IconToggleButton?>
+<?import org.correomqtt.gui.controls.IconMenuButton?>
+<?import org.correomqtt.gui.controls.IconMenuItem?>
+<?import org.correomqtt.gui.controls.IconCheckMenuItem?>
 <VBox fx:id="detailViewVBox" styleClass="content-holder" minHeight="200.0" minWidth="400" prefHeight="400.0" prefWidth="600.0" stylesheets="@../css/detailView.css" xmlns="http://javafx.com/javafx/8.0.172" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.DetailViewController">
     <styleClass>
         <String fx:value="noBorder" />
@@ -26,22 +31,22 @@
             <String fx:value="toolbar" />
             <String fx:value="bottom" />
         </styleClass>
-        <Button fx:id="detailViewSaveButton" mnemonicParsing="false" styleClass="save-solid">
+        <IconButton fx:id="detailViewSaveButton" mnemonicParsing="false" icon="mdi-content-save">
             <tooltip>
                 <Tooltip text="%detailViewSaveButtonTooltip" />
             </tooltip>
             <HBox.margin>
                 <Insets right="5.0" />
             </HBox.margin>
-        </Button>
-        <ToggleButton fx:id="detailViewFormatToggleButton" mnemonicParsing="false" styleClass="highlighter-solid">
+        </IconButton>
+        <IconToggleButton fx:id="detailViewFormatToggleButton" mnemonicParsing="false" icon="mdi-marker">
             <tooltip>
                 <Tooltip text="%detailViewAutoFormatToggleButtonTooltip" />
             </tooltip>
             <HBox.margin>
                 <Insets right="5.0"/>
             </HBox.margin>
-        </ToggleButton>
+        </IconToggleButton>
         <SplitMenuButton fx:id="manipulateSelectionButton" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="120.0"
                          text="Manipulate">
             <tooltip>
@@ -51,21 +56,21 @@
                 <Insets right="5.0"/>
             </HBox.margin>
         </SplitMenuButton>
-        <Button fx:id="detailViewRevertManipulationButton" mnemonicParsing="false" styleClass="ban-solid" disable="true">
+        <IconButton fx:id="detailViewRevertManipulationButton" mnemonicParsing="false" icon="mdi-cancel" disable="true">
             <tooltip>
                 <Tooltip text="Revert manipulation" />
             </tooltip>
             <HBox.margin>
                 <Insets right="5.0" />
             </HBox.margin>
-        </Button>
+        </IconButton>
         <Pane HBox.hgrow="ALWAYS"/>
-        <Button fx:id="detailViewSearchButton" mnemonicParsing="false" onAction="#toggleSearchBar"
-                styleClass="search-solid">
+        <IconButton fx:id="detailViewSearchButton" mnemonicParsing="false" onAction="#toggleSearchBar"
+                icon="mdi-magnify">
             <tooltip>
                 <Tooltip text="%detailViewSearchButtonTooltip" />
             </tooltip>
-        </Button>
+        </IconButton>
 
         <HBox fx:id="detailViewSearchHBox" alignment="CENTER_LEFT">
             <Label fx:id="resultsLabel" alignment="CENTER_RIGHT" contentDisplay="RIGHT">
@@ -77,36 +82,36 @@
                     <Insets right="5.0" />
                 </HBox.margin>
             </TextField>
-            <Button fx:id="selectPreviousResult" disable="true" mnemonicParsing="false" onAction="#selectPreviousResult" styleClass="angle-up-solid">
+            <IconButton fx:id="selectPreviousResult" disable="true" mnemonicParsing="false" onAction="#selectPreviousResult" icon="mdi-chevron-up">
                 <HBox.margin>
                     <Insets />
                 </HBox.margin>
                 <tooltip>
                     <Tooltip text="%detailViewPreviousResultButtonTooltip" />
                 </tooltip>
-            </Button>
-            <Button fx:id="selectNextResult" disable="true" mnemonicParsing="false" onAction="#selectNextResult" styleClass="angle-down-solid">
+            </IconButton>
+            <IconButton fx:id="selectNextResult" disable="true" mnemonicParsing="false" onAction="#selectNextResult" icon="mdi-chevron-down">
                 <tooltip>
                     <Tooltip text="%detailViewNextResultButtonTooltip" />
                 </tooltip>
                 <HBox.margin>
                     <Insets left="-1.0" right="5.0" />
                 </HBox.margin>
-            </Button>
-            <MenuButton fx:id="searchMenuButton" mnemonicParsing="false" styleClass="tasks-solid">
+            </IconButton>
+            <IconMenuButton fx:id="searchMenuButton" mnemonicParsing="false" icon="mdi-format-list-checks">
                 <items>
-                    <MenuItem fx:id="ignoreCaseMenuItem" mnemonicParsing="false" onAction="#changeIgnoreCase" styleClass="menuItem" text="%detailViewIgnoreCaseMenuItem" />
-                    <MenuItem fx:id="regexMenuItem" mnemonicParsing="false" onAction="#changeRegex" styleClass="menuItem" text="Regex" />
+                    <IconCheckMenuItem fx:id="ignoreCaseMenuItem" mnemonicParsing="false" onAction="#changeIgnoreCase" text="%detailViewIgnoreCaseMenuItem" />
+                    <IconCheckMenuItem fx:id="regexMenuItem" mnemonicParsing="false" onAction="#changeRegex" text="Regex" />
                 </items>
                 <HBox.margin>
                     <Insets />
                 </HBox.margin>
-            </MenuButton>
-            <Button mnemonicParsing="false" onAction="#closeSearch" styleClass="times-solid">
+            </IconMenuButton>
+            <IconButton mnemonicParsing="false" onAction="#closeSearch" icon="mdi-close">
                 <HBox.margin>
                     <Insets left="5.0" />
                 </HBox.margin>
-            </Button>
+            </IconButton>
             <HBox.margin>
                 <Insets left="10.0" />
             </HBox.margin>

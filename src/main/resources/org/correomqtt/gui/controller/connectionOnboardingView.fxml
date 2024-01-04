@@ -9,6 +9,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
+<?import org.correomqtt.gui.controls.IconButton?>
 <AnchorPane fx:id="helloViewAnchor" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" styleClass="onBoardingHolder"
             AnchorPane.topAnchor="0.0" stylesheets="@../css/helloView.css" xmlns="http://javafx.com/javafx/8.0.191"
             xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ConnectionOnbordingViewController">
@@ -36,16 +37,16 @@
                   prefWidth="250.0" styleClass="connectionListView" VBox.vgrow="ALWAYS"/>
         <HBox fx:id="buttonBar" alignment="CENTER" maxWidth="250.0" minWidth="200.0" styleClass="buttonBar">
             <children>
-                <Button fx:id="helloViewConnectButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false"
-                        onAction="#onClickConnect" text="%commonConnectButton">
+                <IconButton fx:id="helloViewConnectButton" mnemonicParsing="false"
+                            onAction="#onClickConnect" text="%commonConnectButton" icon="mdi-lan-connect">
                     <tooltip>
                         <Tooltip text="%commonConnectTooltip"/>
                     </tooltip>
-                </Button>
+                </IconButton>
                 <Pane HBox.hgrow="ALWAYS"/>
-                <Button fx:id="editConnectionsButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false"
-                        onAction="#openSettings" text="%connectionOnboardingViewEditButton">
-                </Button>
+                <IconButton fx:id="editConnectionsButton"  mnemonicParsing="false"
+                        onAction="#openSettings" text="%connectionOnboardingViewEditButton" icon="mdi-connection">
+                </IconButton>
             </children>
             <VBox.margin>
                 <Insets/>

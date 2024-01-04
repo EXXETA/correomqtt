@@ -19,11 +19,3 @@
     -fx-min-width: 16;
     -fx-max-width: 16;
 }
-
-.black .preloaderProgressLabel {
-    -fx-background-image: url('../icons/oval-black.png');
-}
-
-.white .preloaderProgressLabel {
-    -fx-background-image: url('../icons/oval-white.png');
-}

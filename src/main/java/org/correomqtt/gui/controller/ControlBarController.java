@@ -21,6 +21,7 @@ import org.correomqtt.business.connection.DisconnectTask;
 import org.correomqtt.business.connection.ReconnectTask;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
+import org.correomqtt.gui.controls.IconLabel;
 import org.correomqtt.plugin.spi.MainToolbarHook;
 import org.correomqtt.business.exception.CorreoMqttException;
 import org.correomqtt.business.model.ConnectionConfigDTO;
@@ -65,7 +66,7 @@ public class ControlBarController extends BaseConnectionController {
     public ToggleButton controlViewSButton;
 
     @FXML
-    public Label statusLabel;
+    public IconLabel statusLabel;
 
     @FXML
     public Label statusInfo;
@@ -210,11 +211,10 @@ public class ControlBarController extends BaseConnectionController {
             LOGGER.debug("Set gui to disconnected state: {}", getConnectionId());
         }
 
-        statusLabel.getStyleClass().clear();
 
         if (gracefulDisconnenct) {
-            statusLabel.getStyleClass().add("grayStatus");
             delegate.setConnectionState(ConnectionState.DISCONNECTED_GRACEFUL);
+            statusLabel.setIconColor(ConnectionState.DISCONNECTED_GRACEFUL.getIconColor());
             gracefulDisconnenct = false;
             connectBtn.setVisible(true);
             connectBtn.setManaged(true);
@@ -223,8 +223,8 @@ public class ControlBarController extends BaseConnectionController {
             reconnectBtn.setManaged(true);
             connectBtn.setVisible(false);
             connectBtn.setManaged(false);
-            statusLabel.getStyleClass().add("redStatus");
             delegate.setConnectionState(ConnectionState.DISCONNECTED_UNGRACEFUL);
+            statusLabel.setIconColor(ConnectionState.DISCONNECTED_UNGRACEFUL.getIconColor());
         }
 
         statusInfo.setVisible(true);
@@ -261,9 +261,8 @@ public class ControlBarController extends BaseConnectionController {
         disconnectBtn.setVisible(true);
         disconnectBtn.setManaged(true);
         disconnectBtn.setDisable(false);
-        statusLabel.getStyleClass().clear();
-        statusLabel.getStyleClass().add("greenStatus");
         delegate.setConnectionState(ConnectionState.CONNECTED);
+        statusLabel.setIconColor(ConnectionState.CONNECTED.getIconColor());
         controlViewPSButton.setDisable(false);
         controlViewPButton.setDisable(false);
         controlViewSButton.setDisable(false);
@@ -279,9 +278,8 @@ public class ControlBarController extends BaseConnectionController {
         statusInfo.setManaged(true);
         updateBrokerInfo();
         connectBtn.setDisable(true);
-        statusLabel.getStyleClass().clear();
-        statusLabel.getStyleClass().add("yellowStatus");
         delegate.setConnectionState(ConnectionState.CONNECTING);
+        statusLabel.setIconColor(ConnectionState.CONNECTING.getIconColor());
         controlViewPSButton.setDisable(true);
         controlViewPButton.setDisable(true);
         controlViewSButton.setDisable(true);
@@ -297,9 +295,8 @@ public class ControlBarController extends BaseConnectionController {
         statusInfo.setManaged(true);
         updateBrokerInfo();
         disconnectBtn.setDisable(true);
-        statusLabel.getStyleClass().clear();
-        statusLabel.getStyleClass().add("yellowStatus");
         delegate.setConnectionState(ConnectionState.DISCONNECTING);
+        statusLabel.setIconColor(ConnectionState.DISCONNECTING.getIconColor());
         controlViewPSButton.setDisable(true);
         controlViewPButton.setDisable(true);
         controlViewSButton.setDisable(true);

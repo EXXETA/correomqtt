@@ -5,6 +5,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import org.correomqtt.gui.controls.ThemedFontIcon?>
 <AnchorPane prefHeight="450.0" prefWidth="800.0" stylesheets="@../css/exportconnections.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ConnectionImportViewController">
 
     <VBox fx:id="contentHolder" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
@@ -13,12 +14,10 @@
                 <VBox.margin>
                     <Insets bottom="10.0" />
                 </VBox.margin>
+                <graphic>
+                    <ThemedFontIcon iconLiteral="mdi-import" iconSize="50"/>
+                </graphic>
             </Label>
         </HBox>
-
-
-
-
-
     </VBox>
 </AnchorPane>

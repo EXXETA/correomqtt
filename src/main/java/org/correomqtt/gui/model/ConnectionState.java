@@ -1,19 +1,21 @@
 package org.correomqtt.gui.model;
 
+import javafx.scene.paint.Paint;
+
 public enum ConnectionState {
-    CONNECTED("connected"),
-    CONNECTING("connecting"),
-    DISCONNECTING("disconnecting"),
-    DISCONNECTED_GRACEFUL("graceful"),
-    DISCONNECTED_UNGRACEFUL("ungraceful");
+    CONNECTED(Paint.valueOf("green")),
+    CONNECTING(Paint.valueOf("orange")),
+    DISCONNECTING(Paint.valueOf("orange")),
+    DISCONNECTED_GRACEFUL(Paint.valueOf("gray")),
+    DISCONNECTED_UNGRACEFUL(Paint.valueOf("red"));
 
-    private final String cssClass;
+    private final Paint paint;
 
-    ConnectionState(String cssClass) {
-        this.cssClass = cssClass;
+    ConnectionState(Paint paint) {
+        this.paint = paint;
     }
 
-    public String getCssClass() {
-        return cssClass;
+    public Paint getIconColor() {
+        return paint;
     }
 }

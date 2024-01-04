@@ -10,8 +10,8 @@ public enum IconMode {
 
     private final String jsonValue;
 
-    IconMode(String white) {
-        this.jsonValue = white;
+    IconMode(String value) {
+        this.jsonValue = value;
     }
 
     @Override

@@ -3,7 +3,9 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import org.correomqtt.gui.controls.*?>
 
+<?import org.correomqtt.gui.controls.IconButton?>
 <AnchorPane fx:id="containerAnchorPane" prefHeight="450.0" prefWidth="800.0" stylesheets="@../css/connections.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ConnectionSettingsViewController">
     <VBox prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <VBox fx:id="contentHolder" VBox.vgrow="ALWAYS">
@@ -12,9 +14,12 @@
                     <VBox.margin>
                         <Insets bottom="10.0" />
                     </VBox.margin>
+                    <graphic>
+                        <ThemedFontIcon iconLiteral="mdi-connection" iconSize="50" />
+                    </graphic>
                 </Label>
                 <VBox HBox.hgrow="ALWAYS" />
-                <Button fx:id="addButton" mnemonicParsing="false" onAction="#onAddClicked" text="%connectionOnboardingViewAddConnectionButton" />
+                <IconButton fx:id="addButton" mnemonicParsing="false" onAction="#onAddClicked" text="%connectionOnboardingViewAddConnectionButton" icon="mdi-plus-box"/>
                 <VBox.margin>
                     <Insets right="10.0" />
                 </VBox.margin>
@@ -34,27 +39,27 @@
                         </VBox.margin>
                     </Label>
                     <HBox alignment="CENTER_RIGHT" minHeight="30.0">
-                        <Button fx:id="discardButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onDiscardClicked" text="%commonDiscardButton">
+                        <IconButton fx:id="discardButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onDiscardClicked" text="%commonDiscardButton" icon="mdi-cancel">
                             <HBox.margin>
                                 <Insets right="5.0" />
                             </HBox.margin>
                             <tooltip>
                                 <Tooltip text="%commonCancelTooltip" />
                             </tooltip>
-                        </Button>
-                        <Button fx:id="deleteButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onRemoveClicked" text="%commonDeleteButton">
+                        </IconButton>
+                        <IconButton fx:id="deleteButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onRemoveClicked" text="%commonDeleteButton" icon="mdi-trash-can">
                             <HBox.margin>
                                 <Insets right="5.0" />
                             </HBox.margin>
                             <tooltip>
                                 <Tooltip text="%commonDeleteTooltip" />
                             </tooltip>
-                        </Button>
-                        <Button fx:id="saveButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onSaveClicked" text="%commonSaveButton">
+                        </IconButton>
+                        <IconButton fx:id="saveButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onSaveClicked" text="%commonSaveButton" icon="mdi-content-save">
                             <tooltip>
                                 <Tooltip text="%commonSaveTooltip" />
                             </tooltip>
-                        </Button>
+                        </IconButton>
                         <VBox.margin>
                             <Insets bottom="10.0" right="10.0" />
                         </VBox.margin>

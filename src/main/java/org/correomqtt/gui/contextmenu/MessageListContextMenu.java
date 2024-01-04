@@ -1,8 +1,8 @@
 package org.correomqtt.gui.contextmenu;
 
 import javafx.event.ActionEvent;
-import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import org.correomqtt.gui.controls.IconMenuItem;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,9 +12,9 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageListContextMenu.class);
 
-    private MenuItem removeMessage;
-    private MenuItem saveMessage;
-    private MenuItem timeInfo;
+    private IconMenuItem removeMessage;
+    private IconMenuItem saveMessage;
+    private IconMenuItem timeInfo;
 
     private SeparatorMenuItem separator1;
     private SeparatorMenuItem separator2;
@@ -28,17 +28,20 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
     protected void initializeItems() {
 
         super.initializeItems();
-        removeMessage = new MenuItem(getResources().getString("messageListContextMenuRemoveMenuItem"));
+        removeMessage = new IconMenuItem(getResources().getString("messageListContextMenuRemoveMenuItem"));
+        removeMessage.setIcon("mdi-trash-can");
         removeMessage.setOnAction(this::removeMessage);
 
-        saveMessage = new MenuItem(getResources().getString("messageListContextMenuSaveMenuItem"));
+        saveMessage = new IconMenuItem(getResources().getString("messageListContextMenuSaveMenuItem"));
+        saveMessage.setIcon("mdi-content-save");
         saveMessage.setOnAction(this::saveMessage);
 
-        timeInfo = new MenuItem();
+        timeInfo = new IconMenuItem();
         timeInfo.setVisible(false);
         timeInfo.setDisable(true);
 
-        MenuItem clearList = new MenuItem(getResources().getString("messageListContextMenuClearMenuItem"));
+        IconMenuItem clearList = new IconMenuItem(getResources().getString("messageListContextMenuClearMenuItem"));
+        clearList.setIcon("mdi-notification-clear-all");
         clearList.setOnAction(this::clearList);
 
         separator1 = new SeparatorMenuItem();

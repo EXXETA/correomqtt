@@ -5,7 +5,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.*?>
-
+<?import org.correomqtt.gui.controls.IconButton?>
+<?import org.correomqtt.gui.controls.ThemedFontIcon?>
 <AnchorPane fx:id="containerAnchorPane" minHeight="450.0" minWidth="650.0" prefHeight="450.0" prefWidth="800.0" styleClass="dialog" stylesheets="@../css/exportconnections.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.controller.ConnectionExportViewController">
     <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
         <HBox alignment="CENTER_LEFT" VBox.vgrow="NEVER">
@@ -13,6 +14,9 @@
                 <VBox.margin>
                     <Insets bottom="10.0" />
                 </VBox.margin>
+                <graphic>
+                    <ThemedFontIcon iconLiteral="mdi-export" iconSize="50"/>
+                </graphic>
             </Label>
         </HBox>
         <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
@@ -43,16 +47,16 @@
                             </styleClass>
                         </Label>
                         <HBox>
-                            <Button minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#checkAll" text="%exportConnectionsSelectAll">
+                            <IconButton minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#checkAll" text="%exportConnectionsSelectAll" icon="mdi-checkbox-multiple-marked">
                                 <HBox.margin>
                                     <Insets right="5.0" />
                                 </HBox.margin>
-                            </Button>
-                            <Button minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#checkNone" text="%exportConnectionsSelectNone">
+                            </IconButton>
+                            <IconButton minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#checkNone" text="%exportConnectionsSelectNone" icon="mdi-checkbox-multiple-blank-outline">
                                 <HBox.margin>
                                     <Insets right="5.0" />
                                 </HBox.margin>
-                            </Button>
+                            </IconButton>
                      <VBox.margin>
                         <Insets bottom="20.0" />
                      </VBox.margin>
@@ -85,23 +89,23 @@
 
                 </GridPane>
                 <HBox alignment="BOTTOM_RIGHT" minWidth="30.0" VBox.vgrow="ALWAYS">
-                    <Button fx:id="cancelButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton">
+                    <IconButton fx:id="cancelButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onCancelClicked" text="%commonCancelButton" icon="mdi-cancel">
                         <HBox.margin>
                             <Insets right="5.0" />
                         </HBox.margin>
                         <tooltip>
                             <Tooltip text="%commonCancelTooltip" />
                         </tooltip>
-                    </Button>
+                    </IconButton>
                <VBox HBox.hgrow="ALWAYS" />
-                    <Button fx:id="exportButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onExportClicked" text="%connectionExportSelectionButton">
+                    <IconButton fx:id="exportButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false" onAction="#onExportClicked" text="%connectionExportSelectionButton" icon="mdi-export">
                         <HBox.margin>
                             <Insets right="5.0" />
                         </HBox.margin>
                         <tooltip>
                             <Tooltip text="%commonApplyTooltip" />
                         </tooltip>
-                    </Button>
+                    </IconButton>
 
                     <VBox.margin>
                         <Insets />

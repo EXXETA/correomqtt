@@ -21,6 +21,7 @@ import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.business.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.business.utils.VendorConstants;
+import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.helper.AlertHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.ConnectionState;
@@ -127,6 +128,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void setupAddTab() {
         addTab.setClosable(false);
+        addTab.setGraphic(new ThemedFontIcon("mdi-home"));
         LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this,this);
         addTab.setContent(loadResult.getMainRegion());
         resources = loadResult.getResourceBundle();
@@ -140,6 +142,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         LoaderResult<LogTabController> result = LogTabController.load();
         logViewController = result.getController();
         logTab.setClosable(false);
+        logTab.setGraphic(new ThemedFontIcon("mdi-chart-box"));
         logAnchorPane.getChildren().add(logViewController.logViewAnchor);
         logViewController.logViewAnchor.prefWidthProperty().bind(logAnchorPane.widthProperty());
         logViewController.logViewAnchor.prefHeightProperty().bind(logAnchorPane.heightProperty());
@@ -193,6 +196,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
             Tab tab = new Tab();
             tab.setId(tabId);
+            tab.setGraphic(new ThemedFontIcon("correo-wifi-solid"));
             tab.setClosable(true);
             tab.setText(config.getName());
             tab.setOnSelectionChanged(event -> {
@@ -200,7 +204,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                     tab.getStyleClass().removeAll(DIRTY_CLASS);
                 }
             });
-            tab.getStyleClass().add("connection");
 
             config.getNameProperty().addListener(((observableValue, s, t1) -> tab.setText(t1)));
 
@@ -210,7 +213,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             tab.setOnCloseRequest(event -> this.onTabClose(result, tabId));
 
             conntectionViewControllers.put(tabId, result.getController());
-            System.out.println("Main connect: " + conntectionViewControllers.toString());
 
             tabPane.getTabs().add(tabPane.getTabs().size() - 1, tab);
             selectionModel = tabPane.getSelectionModel();
@@ -304,8 +306,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                 .filter(t -> t.getId().equals(tabId))
                 .findFirst()
                 .ifPresent(t -> {
-                    t.getStyleClass().removeAll("connected", "connecting", "disconnecting", "graceful", "ungraceful");
-                    t.getStyleClass().add(state.getCssClass());
+                    ((ThemedFontIcon) t.getGraphic()).setIconColor(state.getIconColor());
                 });
     }
 

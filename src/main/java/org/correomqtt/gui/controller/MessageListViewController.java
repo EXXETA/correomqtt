@@ -8,7 +8,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuButton;
@@ -33,6 +32,7 @@ import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
 import org.correomqtt.gui.cell.MessageViewCell;
+import org.correomqtt.gui.controls.IconCheckMenuItem;
 import org.correomqtt.gui.contextmenu.MessageListContextMenu;
 import org.correomqtt.gui.contextmenu.MessageListContextMenuDelegate;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
@@ -71,13 +71,13 @@ public class MessageListViewController extends BaseConnectionController implemen
     protected MenuButton showLabelsButton;
 
     @FXML
-    protected CheckMenuItem changeDisplayRetained;
+    protected IconCheckMenuItem changeDisplayRetained;
 
     @FXML
-    protected CheckMenuItem changeDisplayQos;
+    protected IconCheckMenuItem changeDisplayQos;
 
     @FXML
-    protected CheckMenuItem changeDisplayTimestamp;
+    protected IconCheckMenuItem changeDisplayTimestamp;
 
     @FXML
     protected HBox messagesHBox;
@@ -371,19 +371,19 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     @FXML
     private void changeRetainDisplay(ActionEvent actionEvent) {
-        CheckMenuItem checkMenuItem = (CheckMenuItem) actionEvent.getSource();
+        IconCheckMenuItem checkMenuItem = (IconCheckMenuItem) actionEvent.getSource();
         setLabelVisibility(LabelType.RETAINED, checkMenuItem.isSelected());
     }
 
     @FXML
     private void changeQosDisplay(ActionEvent actionEvent) {
-        CheckMenuItem checkMenuItem = (CheckMenuItem) actionEvent.getSource();
+        IconCheckMenuItem checkMenuItem = (IconCheckMenuItem) actionEvent.getSource();
         setLabelVisibility(LabelType.QOS, checkMenuItem.isSelected());
     }
 
     @FXML
     private void changeTimestampDisplay(ActionEvent actionEvent) {
-        CheckMenuItem checkMenuItem = (CheckMenuItem) actionEvent.getSource();
+        IconCheckMenuItem checkMenuItem = (IconCheckMenuItem) actionEvent.getSource();
         setLabelVisibility(LabelType.TIMESTAMP, checkMenuItem.isSelected());
     }
 

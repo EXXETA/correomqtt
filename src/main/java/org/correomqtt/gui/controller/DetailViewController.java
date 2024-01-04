@@ -12,7 +12,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.IndexRange;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
@@ -32,6 +31,7 @@ import org.correomqtt.business.importexport.messages.ExportMessageSuccessEvent;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.AutoFormatPayload;
+import org.correomqtt.gui.controls.IconCheckMenuItem;
 import org.correomqtt.gui.contextmenu.DetailContextMenu;
 import org.correomqtt.gui.contextmenu.DetailContextMenuDelegate;
 import org.correomqtt.gui.formats.Format;
@@ -69,7 +69,6 @@ public class DetailViewController extends BaseConnectionController implements
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DetailViewController.class);
 
-    private static final String CHECK_SOLID_CLASS = "check-solid";
     private static ResourceBundle resources;
     private final BooleanProperty inlineViewProperty;
     private final DetailViewDelegate delegate;
@@ -119,9 +118,9 @@ public class DetailViewController extends BaseConnectionController implements
     @FXML
     private MenuButton searchMenuButton;
     @FXML
-    private MenuItem ignoreCaseMenuItem;
+    private IconCheckMenuItem ignoreCaseMenuItem;
     @FXML
-    private MenuItem regexMenuItem;
+    private IconCheckMenuItem regexMenuItem;
     @FXML
     private Label closeLabel;
     @FXML
@@ -256,14 +255,9 @@ public class DetailViewController extends BaseConnectionController implements
             LOGGER.debug("Clicked on changeIgnoreCase: {}", getConnectionId());
         }
 
-        SettingsProvider.getInstance().getSettings().setUseIgnoreCase(!SettingsProvider.getInstance().getSettings().isUseIgnoreCase());
+        SettingsProvider.getInstance().getSettings().setUseIgnoreCase(ignoreCaseMenuItem.isSelected());
         SettingsProvider.getInstance().saveSettings(false);
         this.searchMenuButton.getItems().remove(ignoreCaseMenuItem);
-        if (SettingsProvider.getInstance().getSettings().isUseIgnoreCase()) {
-            ignoreCaseMenuItem.getStyleClass().add(CHECK_SOLID_CLASS);
-        } else {
-            ignoreCaseMenuItem.getStyleClass().remove(CHECK_SOLID_CLASS);
-        }
         this.searchMenuButton.getItems().add(0, ignoreCaseMenuItem);
         currentSearchString = null;
         currentSearchResult = 0;
@@ -276,14 +270,9 @@ public class DetailViewController extends BaseConnectionController implements
             LOGGER.debug("Clicked on changeRegex: {}", getConnectionId());
         }
 
-        SettingsProvider.getInstance().getSettings().setUseRegexForSearch(!SettingsProvider.getInstance().getSettings().isUseRegexForSearch());
+        SettingsProvider.getInstance().getSettings().setUseRegexForSearch(regexMenuItem.isSelected());
         SettingsProvider.getInstance().saveSettings(false);
         this.searchMenuButton.getItems().remove(regexMenuItem);
-        if (SettingsProvider.getInstance().getSettings().isUseRegexForSearch()) {
-            regexMenuItem.getStyleClass().add(CHECK_SOLID_CLASS);
-        } else {
-            regexMenuItem.getStyleClass().remove(CHECK_SOLID_CLASS);
-        }
         this.searchMenuButton.getItems().add(1, regexMenuItem);
         currentSearchString = null;
         currentSearchResult = 0;
@@ -325,12 +314,8 @@ public class DetailViewController extends BaseConnectionController implements
 
         detailViewQos.setText(messageDTO.getQos().toString());
 
-        if (SettingsProvider.getInstance().getSettings().isUseIgnoreCase()) {
-            ignoreCaseMenuItem.getStyleClass().add(CHECK_SOLID_CLASS);
-        }
-        if (SettingsProvider.getInstance().getSettings().isUseRegexForSearch()) {
-            regexMenuItem.getStyleClass().add(CHECK_SOLID_CLASS);
-        }
+        ignoreCaseMenuItem.setSelected(SettingsProvider.getInstance().getSettings().isUseIgnoreCase());
+        regexMenuItem.setSelected(SettingsProvider.getInstance().getSettings().isUseRegexForSearch());
 
         detailViewSaveButton.setOnMouseClicked(this::saveMessage);
 
