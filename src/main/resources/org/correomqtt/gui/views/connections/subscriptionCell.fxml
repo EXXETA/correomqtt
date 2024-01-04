@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import java.lang.String?>
+<VBox fx:id="mainNode" stylesheets="@../../css/subscriptionView.css" AnchorPane.leftAnchor="0.0"
+      AnchorPane.rightAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.191" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.correomqtt.gui.views.connections.SubscriptionViewCell">
+    <styleClass>
+        <String fx:value="basicColors"/>
+        <String fx:value="subscriptionView"/>
+    </styleClass>
+    <HBox alignment="CENTER_LEFT">
+        <Label fx:id="topicLabel" styleClass="topic" text="/topic" HBox.hgrow="NEVER">
+        </Label>
+        <Region HBox.hgrow="SOMETIMES"/>
+        <Label fx:id="qosTag" alignment="CENTER" maxWidth="-Infinity" minWidth="-Infinity" styleClass="tag" text="QoS2"
+               textAlignment="CENTER">
+        </Label>
+        <CheckBox fx:id="filterCheckbox" mnemonicParsing="false" onAction="#onFilteredChanged"
+                  styleClass="filterCheckbox">
+            <tooltip>
+                <Tooltip text="%subscriptionViewAddFilterTooltip"/>
+            </tooltip>
+
+        </CheckBox>
+    </HBox>
+</VBox>

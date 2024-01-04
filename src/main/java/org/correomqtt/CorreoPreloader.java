@@ -18,7 +18,7 @@ import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.VersionUtils;
-import org.correomqtt.gui.controller.PreloaderViewController;
+import org.correomqtt.gui.views.PreloaderViewController;
 import org.correomqtt.gui.window.StageHelper;
 import org.correomqtt.plugin.PreloadingProgressEvent;
 import org.slf4j.LoggerFactory;
