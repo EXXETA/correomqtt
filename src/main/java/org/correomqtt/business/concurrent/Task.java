@@ -8,11 +8,17 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
-public abstract class Task<T, E> {
+public abstract class Task<T, P, E> {
+
 
     private final Set<SuccessListener<T>> successListener = new HashSet<>();
 
     private final Set<StartListener> startListener = new HashSet<>();
+
+    private final Set<ProgressListener<P>> progressListener = new HashSet<>();
+
+
+    private final Set<FinallyListener> finallyListeners = new HashSet<>();
 
     private final Set<ErrorListener<E>> errorListeners = new HashSet<>();
     private final Set<ErrorListenerWithException<E>> errorListenerWithExceptions = new HashSet<>();
@@ -27,8 +33,15 @@ public abstract class Task<T, E> {
         this.errorListeners.add(errorListener);
     }
 
+    private void addFinallyListener(FinallyListener finallyListener) {
+        this.finallyListeners.add(finallyListener);
+    }
     private void addStartListener(StartListener startListener) {
         this.startListener.add(startListener);
+    }
+
+    private void addProgressListener(ProgressListener progressListener) {
+        this.progressListener.add(progressListener);
     }
 
     private void addErrorListener(ErrorListenerWithException<E> errorListenerWithException) {
@@ -46,30 +59,40 @@ public abstract class Task<T, E> {
 
     protected abstract T execute() throws Exception;
 
-    public Task<T, E> onStarted(StartListener listener) {
+    public Task<T, P, E> onStarted(StartListener listener) {
         this.addStartListener(listener);
         return this;
     }
 
-    public Task<T, E> onSuccess(SuccessListener<T> listener) {
+    public Task<T, P, E> onProgress(ProgressListener<P> listener) {
+        this.addProgressListener(listener);
+        return this;
+    }
+
+    public Task<T, P, E> onSuccess(SuccessListener<T> listener) {
         this.addSuccessListener(listener);
         return this;
     }
 
-    public Task<T, E> onError(ErrorListener<E> listener) {
+    public Task<T, P, E> onError(ErrorListener<E> listener) {
         this.addErrorListener(listener);
         return this;
     }
 
 
-    public Task<T, E> onError(ErrorListenerWithException<E> listener) {
+    public Task<T, P, E> onError(ErrorListenerWithException<E> listener) {
         this.addErrorListener(listener);
         return this;
     }
 
 
-    public Task<T, E> onError(ExceptionListener listener) {
+    public Task<T, P, E> onError(ExceptionListener listener) {
         this.addErrorListener(listener);
+        return this;
+    }
+
+    public Task<T,P,E> onFinally(FinallyListener listener){
+        this.addFinallyListener(listener);
         return this;
     }
 
@@ -79,6 +102,10 @@ public abstract class Task<T, E> {
 
     protected void success(T result) {
 
+    }
+
+    protected void reportProgress(P progress) {
+        progressListener.forEach(l -> FrontendBinding.pushToFrontend(() -> l.progress(progress)));
     }
 
     protected void error(E error, Throwable ex) {
@@ -93,9 +120,12 @@ public abstract class Task<T, E> {
 
     }
 
-    public void run() {
+    public CompletableFuture<Void> run() {
+
+        startListener.forEach(l -> FrontendBinding.pushToFrontend(l::start));
+
         before();
-        this.getFuture()
+        return this.getFuture()
                 .handleAsync((result, ex) -> {
                     if (ex != null) {
                         error(expectedError);
@@ -114,10 +144,12 @@ public abstract class Task<T, E> {
                                         errorListenerWithExceptions.isEmpty())) {
                             EventBus.fireAsync(new UnhandledTaskExceptionEvent<E>(expectedError, ex));
                         }
+                    } else {
+                        success(result);
+                        successListener.forEach(l -> FrontendBinding.pushToFrontend(() -> l.success(result)));
                     }
-                    success(result);
-                    successListener.forEach(l -> FrontendBinding.pushToFrontend(() -> l.success(result)));
-                    return result;
+                    finallyListeners.forEach(l -> FrontendBinding.pushToFrontend(l::run));
+                    return null;
                 });
     }
 
@@ -131,6 +163,4 @@ public abstract class Task<T, E> {
             }
         });
     }
-
-
 }

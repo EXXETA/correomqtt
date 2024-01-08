@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import org.correomqtt.gui.controls.IconLabel?>
+<?import java.lang.String?>
+<AnchorPane fx:id="mainNode" stylesheets="@../../css/connectionButtonCell.css"
+            xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1">
+    <styleClass>
+        <String fx:value="connectionButtonView"/>
+    </styleClass>
+    <HBox alignment="CENTER_LEFT">
+        <IconLabel fx:id="nameLabel" icon="mdi-wifi" styleClass="topic" text="Name" HBox.hgrow="NEVER" iconSize="18"
+                   prefHeight="18" minHeight="18">
+        </IconLabel>
+    </HBox>
+</AnchorPane>

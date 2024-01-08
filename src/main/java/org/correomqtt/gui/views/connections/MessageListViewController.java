@@ -22,7 +22,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.controlsfx.control.textfield.TextFields;
-import org.correomqtt.business.connection.ConnectEvent;
+import org.correomqtt.business.connection.ConnectionState;
+import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.fileprovider.SettingsProvider;
@@ -42,6 +43,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.Predicate;
+
+import static org.correomqtt.business.connection.ConnectionState.CONNECTED;
 
 public class MessageListViewController extends BaseConnectionController implements
         MessageListContextMenuDelegate,
@@ -315,7 +318,7 @@ public class MessageListViewController extends BaseConnectionController implemen
         });
     }
 
-     @FXML
+    @FXML
     private void copyToForm() {
         delegate.setUpToForm(getSelectedMessage());
     }
@@ -394,9 +397,11 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     }
 
-    @Subscribe(ConnectEvent.class)
-    public void onConnect() {
-        setUpShortcuts();
+    @SuppressWarnings("unused")
+    public void onConnectionChangedEvent(@Subscribe ConnectionStateChangedEvent event) {
+        if (event.getState() == CONNECTED) {
+            setUpShortcuts();
+        }
     }
 
 

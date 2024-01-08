@@ -33,9 +33,10 @@ import org.correomqtt.gui.views.importexport.ConnectionExportViewController;
 import org.correomqtt.gui.views.importexport.ConnectionImportViewController;
 import org.correomqtt.gui.views.log.LogTabController;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import org.correomqtt.gui.model.ConnectionState;
+import org.correomqtt.gui.model.GuiConnectionState;
 import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewController;
 import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewDelegate;
+import org.correomqtt.gui.views.scripting.ScriptingViewController;
 import org.correomqtt.gui.views.settings.SettingsViewController;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
@@ -247,7 +248,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void onTabClose(LoaderResult<ConnectionViewController> result, String tabId) {
         closedTabId = tabId;
-        result.getController().disconnect(true);
+        result.getController().close();
     }
 
     @FXML
@@ -316,7 +317,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     @Override
-    public void setConnectionState(String tabId, ConnectionState state) {
+    public void setConnectionState(String tabId, GuiConnectionState state) {
         tabPane.getTabs().stream()
                 .filter(t -> t.getId().equals(tabId))
                 .findFirst()

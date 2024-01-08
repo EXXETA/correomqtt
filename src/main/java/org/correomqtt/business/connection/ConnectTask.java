@@ -1,13 +1,13 @@
 package org.correomqtt.business.connection;
 
-import org.correomqtt.business.concurrent.Task;
+import org.correomqtt.business.concurrent.NoProgressTask;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.mqtt.CorreoMqttClientFactory;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.business.utils.CorreoMqttConnection;
 
-public class ConnectTask extends Task<Void, Void> {
+public class ConnectTask extends NoProgressTask<Void, Void> {
 
     private final String connectionId;
 
@@ -16,23 +16,19 @@ public class ConnectTask extends Task<Void, Void> {
     }
 
     @Override
-    protected void before() {
-        EventBus.fireAsync(new ConnectStartedEvent(connectionId));
-    }
-
-    @Override
     protected Void execute() throws Exception {
-        CorreoMqttConnection connection = ConnectionHolder.getInstance().getConnection(connectionId);
-        connection.setClient(CorreoMqttClientFactory.createClient(connection.getConfigDTO()));
+
         CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionId);
-        client.connect();
-        EventBus.fireAsync(new ConnectEvent(connectionId));
+        if (client == null) {
+            CorreoMqttConnection connection = ConnectionHolder.getInstance().getConnection(connectionId);
+            connection.setClient(CorreoMqttClientFactory.createClient(connection.getConfigDTO()));
+            client = ConnectionHolder.getInstance().getClient(connectionId);
+        }
+
+        if (client.getState() == ConnectionState.DISCONNECTED_GRACEFUL ||
+                client.getState() == ConnectionState.DISCONNECTED_UNGRACEFUL) {
+            client.connect();
+        }
         return null;
     }
-
-    @Override
-    protected void error(Throwable t) {
-        EventBus.fireAsync(new ConnectFailedEvent(connectionId, t));
-    }
-
 }

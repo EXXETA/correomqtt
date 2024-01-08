@@ -48,14 +48,6 @@ class CorreoMqtt5Client extends BaseCorreoMqttClient {
         return LOGGER;
     }
 
-    @Override
-    MqttClientState getClientState() {
-        if(mqtt5BlockingClient != null) {
-            return mqtt5BlockingClient.getState();
-        }
-        return null;
-    }
-
     void executeConnect() throws SSLException, InterruptedException, ExecutionException, TimeoutException {
 
         ConnectionConfigDTO configDTO = getConfigDTO();
@@ -163,14 +155,6 @@ class CorreoMqtt5Client extends BaseCorreoMqttClient {
     @Override
     void doDisconnect() {
         getCheckedClient().disconnect();
-    }
-
-    @Override
-    boolean isConnected() {
-        if (mqtt5BlockingClient == null) {
-            return false;
-        }
-        return mqtt5BlockingClient.getState().isConnected();
     }
 
 

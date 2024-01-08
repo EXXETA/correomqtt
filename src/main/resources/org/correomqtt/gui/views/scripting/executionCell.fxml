@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.correomqtt.gui.controls.*?>
+
+<AnchorPane fx:id="mainNode" styleClass="scriptMainNode" stylesheets="@../../css/scriptCell.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1">
+    <styleClass>
+        <String fx:value="basicColors" />
+        <String fx:value="messageView" />
+    </styleClass>
+    <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <HBox alignment="CENTER_LEFT" styleClass="firstLine">
+            <Label fx:id="nameLabel" styleClass="topic">
+                <graphic>
+                    <ThemedFontIcon fx:id="themedIcon" iconLiteral="mdi-script" />
+                </graphic>
+            </Label>
+            <Label fx:id="executionTimeLabel" styleClass="secondaryText">
+            <HBox.margin>
+               <Insets left="10.0" />
+            </HBox.margin></Label>
+        </HBox>
+        <Label fx:id="descriptionLabel">
+            <styleClass>
+                <String fx:value="secondLine" />
+                <String fx:value="secondaryText" />
+            </styleClass>
+        </Label>
+    </VBox>
+</AnchorPane>

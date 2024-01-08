@@ -1,10 +1,10 @@
 package org.correomqtt.business.plugin;
 
-import org.correomqtt.business.concurrent.Task;
+import org.correomqtt.business.concurrent.NoProgressTask;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.plugin.manager.PluginManager;
 
-public class PluginDisableTask extends Task<Void,Void> {
+public class PluginDisableTask extends NoProgressTask<Void,Void> {
 
     private final String pluginId;
 

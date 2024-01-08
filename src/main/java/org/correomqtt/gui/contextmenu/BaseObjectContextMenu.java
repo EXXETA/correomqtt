@@ -2,12 +2,12 @@ package org.correomqtt.gui.contextmenu;
 
 import javafx.scene.control.ContextMenu;
 
-abstract class BaseObjectContextMenu<O, D extends BaseObjectContextMenuDelegate> extends ContextMenu {
+public abstract class BaseObjectContextMenu<O, D extends BaseObjectContextMenuDelegate> extends ContextMenu {
 
     protected final D delegate;
     protected O dto;
 
-    BaseObjectContextMenu(D delegate) {
+    protected BaseObjectContextMenu(D delegate) {
         super();
         this.delegate = delegate;
         initializeItems();

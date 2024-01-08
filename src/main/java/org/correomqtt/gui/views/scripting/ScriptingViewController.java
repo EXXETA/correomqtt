@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.scripting;
 
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -9,99 +10,87 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.SplitPane;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
-import org.correomqtt.business.dispatcher.ScriptCancelDispatcher;
-import org.correomqtt.business.dispatcher.ScriptCancelObserver;
-import org.correomqtt.business.dispatcher.ScriptLoadDispatcher;
-import org.correomqtt.business.dispatcher.ScriptLoadObserver;
-import org.correomqtt.business.dispatcher.ScriptResultDispatcher;
-import org.correomqtt.business.dispatcher.ScriptResultObserver;
-import org.correomqtt.business.dispatcher.ScriptSubmitDispatcher;
-import org.correomqtt.business.dispatcher.ScriptSubmitObserver;
+import javafx.scene.layout.Region;
+import javafx.stage.WindowEvent;
+import lombok.AllArgsConstructor;
+import org.correomqtt.business.concurrent.ErrorListener;
+import org.correomqtt.business.connection.ConnectionStateChangedEvent;
+import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.fileprovider.ScriptingProvider;
 import org.correomqtt.business.fileprovider.SettingsProvider;
-import org.correomqtt.business.model.ScriptExecutionDTO;
-import org.correomqtt.business.model.ScriptingDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
-import org.correomqtt.business.mqtt.CorreoMqttClientState;
-import org.correomqtt.business.scripting.ScriptingBackend;
+import org.correomqtt.business.connection.ConnectionState;
+import org.correomqtt.business.scripting.ScriptDeleteTask;
+import org.correomqtt.business.scripting.ScriptExecutionFailedEvent;
+import org.correomqtt.business.scripting.ScriptExecutionProgressEvent;
+import org.correomqtt.business.scripting.ScriptExecutionSuccessEvent;
+import org.correomqtt.business.scripting.ScriptFileDTO;
+import org.correomqtt.business.scripting.ScriptLoadTask;
+import org.correomqtt.business.scripting.ScriptNewTask;
+import org.correomqtt.business.scripting.ScriptRenameTask;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.business.ScriptingTaskFactory;
-import org.correomqtt.gui.cell.ConnectionCellButton;
-import org.correomqtt.gui.cell.ExecutionCell;
-import org.correomqtt.gui.cell.ScriptCell;
+import org.correomqtt.gui.controls.IconButton;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import org.correomqtt.gui.model.ExecutionPropertiesDTO;
-import org.correomqtt.gui.model.ScriptingPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
-import org.correomqtt.gui.transformer.ExecutionTransformer;
-import org.correomqtt.gui.transformer.ScriptingTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
-import org.correomqtt.gui.utils.PlatformUtils;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
+import org.correomqtt.gui.views.cell.ConnectionCell;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.correomqtt.gui.views.cell.ConnectionCell;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.text.MessageFormat;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-public class ScriptingViewController extends BaseControllerImpl implements ScriptLoadObserver, ScriptSubmitObserver, ScriptCancelObserver, ScriptResultObserver {
+public class ScriptingViewController extends BaseControllerImpl implements ScriptContextMenuDelegate, SingleEditorViewDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptingViewController.class);
 
+
+    @AllArgsConstructor
+    private static class ScriptEditorState {
+        private SingleEditorViewController controller;
+        private Region region;
+    }
+
+    private final HashMap<String, ScriptEditorState> editorStates = new HashMap<>();
+    @FXML
+    public AnchorPane executionHolder;
+    @FXML
+    public SplitPane mainSplitPane;
+    @FXML
+    public AnchorPane scriptListSidebar;
+    @FXML
+    public AnchorPane editorPane;
+    @FXML
+    public SplitPane scriptSplitPane;
+    @FXML
+    public AnchorPane emptyView;
     @FXML
     private Pane scriptingRootPane;
-
     @FXML
-    private CodeArea codeArea;
-
-    @FXML
-    private CodeArea logArea;
-
-    @FXML
-    private Pane scriptingViewCodeAreaPane;
-
-    @FXML
-    private Pane scriptingViewLogAreaPane;
-
-    @FXML
-    private Label statusText;
-
-    @FXML
-    private ListView<ScriptingPropertiesDTO> scriptListView;
-
-    @FXML
-    private ListView<ExecutionPropertiesDTO> executionList;
-
-    @FXML
-    private Button scriptingRunButton;
-
-    @FXML
-    private Button scriptingStopButton;
-
-    @FXML
-    private ComboBox<ConnectionPropertiesDTO> connectionList;
-
+    private ListView<ScriptFilePropertiesDTO> scriptListView;
     private static ResourceBundle resources;
-
-    private ObservableList<ScriptingPropertiesDTO> scripts;
+    private ExecutionViewController executionController;
+    private ObservableList<ScriptFilePropertiesDTO> scriptList;
 
     public ScriptingViewController() {
-        ScriptLoadDispatcher.getInstance().addObserver(this);
-        ScriptSubmitDispatcher.getInstance().addObserver(this);
-        ScriptCancelDispatcher.getInstance().addObserver(this);
-        ScriptResultDispatcher.getInstance().addObserver(this);
+        EventBus.register(this);
     }
 
     public static void showAsDialog() {
@@ -115,239 +104,155 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
 
         LoaderResult<ScriptingViewController> result = load(ScriptingViewController.class, "scriptingView.fxml");
         resources = result.getResourceBundle();
-        showAsDialog(result, resources.getString("scriptingViewControllerTitle"), properties,false, false, null, null, 400, 300);
+        showAsDialog(result, resources.getString("scriptingViewControllerTitle"), properties, false, false,
+                event -> result.getController().onCloseRequest(event),
+                null, 400, 300);
+    }
+
+    private void onCloseRequest(WindowEvent event) {
+        executionController.onCloseRequest();
+        EventBus.unregister(this);
     }
 
     @FXML
     public void initialize() throws IOException {
 
         scriptingRootPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
-
-        scriptingViewCodeAreaPane.setVisible(false);
-        scriptingViewLogAreaPane.setVisible(false);
-
         scriptListView.setCellFactory(this::createScriptCell);
 
-        List<ScriptingPropertiesDTO> scriptsList = ScriptingProvider.getInstance().getScripts()
-                .stream()
-                .map(ScriptingTransformer::dtoToProps)
-                .toList();
+        List<ScriptFilePropertiesDTO> scriptsList = null;
+        try {
+            scriptsList = ScriptingProvider.getInstance().getScripts()
+                    .stream()
+                    .map(ScriptingTransformer::dtoToProps)
+                    .toList();
+        } catch (IOException e) {
+            LOGGER.error("Error reading scripts. ", e);
+            //TODO ioerror
+        }
 
-        scripts = FXCollections.observableList(scriptsList);
-        scriptListView.setItems(scripts);
+        scriptList = FXCollections.observableArrayList(scriptsList);
+        scriptList.addListener(this::onScriptListChanged);
+        scriptListView.setItems(scriptList);
+        onScriptListChanged(null);
 
-
-        connectionList.setCellFactory(ConnectionCell::new);
-        connectionList.setButtonCell(new ConnectionCellButton(null));
-
-        ObservableList<ConnectionPropertiesDTO> connectionItems = FXCollections.observableArrayList(
-                ConnectionTransformer.dtoListToPropList(ConnectionHolder.getInstance().getSortedConnections())
-        );
-
-        connectionList.setItems(connectionItems);
-
-        ConnectionPropertiesDTO selectedItem = connectionItems.stream()
-                .filter(c -> {
-                    CorreoMqttClient client = ConnectionHolder.getInstance().getClient(c.getId());
-                    if (client == null) {
-                        return false;
-                    }
-                    return client.getState() == CorreoMqttClientState.CONNECTED;
-                })
-                .findFirst()
-                .orElseGet(() -> {
-                    if (!connectionItems.isEmpty()) {
-                        return connectionItems.get(0);
-                    }
-                    return null;
-                });
-
-        connectionList.getSelectionModel().select(selectedItem);
-
-        executionList.setItems(FXCollections.observableArrayList(ScriptingBackend.getInstance().getExecutions()
-                .stream()
-                .map(ExecutionTransformer::dtoToProps)
-                .toList()));
-
-        executionList.setCellFactory(this::createExcecutionCell);
-        executionList.getSelectionModel().selectFirst();
+        LoaderResult<ExecutionViewController> result = ExecutionViewController.load();
+        executionController = result.getController();
+        executionHolder.getChildren().add(result.getMainRegion());
 
     }
 
+    @SuppressWarnings("unused")
+    @Subscribe(ScriptExecutionSuccessEvent.class)
+    public void onScriptExecutionSuccess() {
+        scriptListView.refresh();
+    }
 
-    private ListCell<ScriptingPropertiesDTO> createScriptCell(ListView<ScriptingPropertiesDTO> scriptListView) {
+
+    @SuppressWarnings("unused")
+    @Subscribe(ScriptExecutionProgressEvent.class)
+    public void onScriptExecutionProgress() {
+        scriptListView.refresh();
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(ScriptExecutionFailedEvent.class)
+    public void onScriptExecutionFailed() {
+        scriptListView.refresh();
+    }
+
+
+    private void onScriptListChanged(ListChangeListener.Change<? extends ScriptFilePropertiesDTO> changedItem) {
+
+        // avoid endless loop on sorting
+        if (changedItem != null) {
+            while (changedItem.next()) {
+                if (changedItem.wasPermutated()) {
+                    return;
+                }
+            }
+        }
+
+        // keep list sorted
+        FXCollections.sort(scriptListView.getItems());
+
+        // show or hide list etc.
+        if (scriptListView.getItems().isEmpty()) {
+            scriptSplitPane.getItems().remove(scriptListSidebar);
+            scriptSplitPane.getItems().remove(editorPane);
+            if (!scriptSplitPane.getItems().contains(emptyView)) {
+                scriptSplitPane.getItems().add(emptyView);
+            }
+        } else {
+            scriptSplitPane.getItems().remove(emptyView);
+            if (!scriptSplitPane.getItems().contains(scriptListSidebar)) {
+                scriptSplitPane.getItems().add(scriptListSidebar);
+            }
+            if (!scriptSplitPane.getItems().contains(editorPane)) {
+                scriptSplitPane.getItems().add(editorPane);
+            }
+        }
+
+        if (scriptListView.getSelectionModel().getSelectedIndices().isEmpty()) {
+            scriptListView.getSelectionModel().selectFirst();
+        }
+    }
+
+    private ListCell<ScriptFilePropertiesDTO> createScriptCell(ListView<ScriptFilePropertiesDTO> scriptListView) {
         ScriptCell cell = new ScriptCell(scriptListView);
         cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            ScriptingPropertiesDTO selectedItem = scriptListView.getSelectionModel().getSelectedItem();
+            ScriptFilePropertiesDTO selectedItem = scriptListView.getSelectionModel().getSelectedItem();
             onSelectScript(selectedItem);
         });
+        ScriptContextMenu contextMenu = new ScriptContextMenu(this);
+        cell.setContextMenu(contextMenu);
+        cell.itemProperty().addListener((observable, oldValue, newValue) -> contextMenu.setObject(newValue));
         return cell;
     }
 
-    private void onSelectScript(ScriptingPropertiesDTO selectedItem) {
-        ScriptingTaskFactory.loadScript(selectedItem);
-    }
+    private void onSelectScript(ScriptFilePropertiesDTO selectedItem) {
 
-    private ListCell<ExecutionPropertiesDTO> createExcecutionCell(ListView<ExecutionPropertiesDTO> executionListView) {
-        ExecutionCell cell = new ExecutionCell(executionList);
-        cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            ExecutionPropertiesDTO selectedItem = executionList.getSelectionModel().getSelectedItem();
-            onSelectExecution(selectedItem);
-        });
-        return cell;
-    }
-
-    private void onSelectExecution(ExecutionPropertiesDTO selectedItem) {
-        if(selectedItem != null && selectedItem.getLog() != null) {
-            logArea.replaceText(selectedItem.getLog());
-        }
-    }
-
-    @Override
-    public void onLoadScriptSucceeded(ScriptingDTO scriptingDTO, String scriptCode) {
-        scripts.stream()
-                .filter(script -> script.getPath().equals(scriptingDTO.getPath()))
-                .findFirst()
-                .ifPresent(script -> {
-                    script.getCodeProperty().set(scriptCode);
-                    showScript(script);
-                });
-    }
-
-    private void showScript(ScriptingPropertiesDTO script) {
-        codeArea.replaceText(script.getCode());
-        scriptingViewCodeAreaPane.setManaged(true);
-        scriptingViewCodeAreaPane.setVisible(true);
-        scriptingViewCodeAreaPane.getChildren().add(new VirtualizedScrollPane<>(codeArea));
-        codeArea.prefWidthProperty().bind(scriptingViewCodeAreaPane.widthProperty());
-        codeArea.prefHeightProperty().bind(scriptingViewCodeAreaPane.heightProperty());
-
-        logArea.replaceText("");
-        scriptingViewLogAreaPane.setManaged(true);
-        scriptingViewLogAreaPane.setVisible(true);
-        scriptingViewLogAreaPane.getChildren().add(new VirtualizedScrollPane<>(logArea));
-        logArea.prefWidthProperty().bind(scriptingViewLogAreaPane.widthProperty());
-        logArea.prefHeightProperty().bind(scriptingViewLogAreaPane.heightProperty());
-
-        scriptingRunButton.setDisable(false);
-    }
-
-    @Override
-    public void onLoadScriptCancelled(ScriptingDTO scriptingDTO) {
-
-    }
-
-    @Override
-    public void onLoadScriptFailed(ScriptingDTO scriptingDTO, Throwable exception) {
-
-    }
-
-    public void onRunClicked(ActionEvent actionEvent) {
-        ConnectionPropertiesDTO selectedConnection = connectionList.getSelectionModel().getSelectedItem();
-
-        if (selectedConnection == null) {
-            AlertHelper.warn(resources.getString("scriptStartWithoutConnectionNotPossibleTitle"), resources.getString("scriptStartWithoutConnectionNotPossibleContent"));
+        if (selectedItem == null)
             return;
+
+        ScriptingViewController.ScriptEditorState editorState = editorStates.computeIfAbsent(selectedItem.getName(),
+                id -> {
+                    LoaderResult<SingleEditorViewController> loaderResult = SingleEditorViewController.load(this, selectedItem);
+                    return new ScriptingViewController.ScriptEditorState(loaderResult.getController(), loaderResult.getMainRegion());
+                });
+
+        editorPane.getChildren().clear();
+        editorPane.getChildren().add(editorState.region);
+        this.executionController.filterByScript(selectedItem.getName());
+
+        /*
+
+
+
+        if (selectedItem == null)
+            return;
+
+        if (!selectedItem.isLoaded()) {
+            ScriptFileDTO scriptFileDTO = ScriptingTransformer.propsToDTO(selectedItem);
+
+            new ScriptLoadTask(scriptFileDTO)
+                    .onSuccess(scriptCode -> onLoadScriptSucceeded(scriptFileDTO, scriptCode))
+                    .onError(this::onLoadScriptFailed)
+                    .run();
+        } else {
+            showScript(selectedItem);
         }
 
-
-        scriptingStopButton.setDisable(false);
-        scriptingRunButton.setDisable(true);
-        statusText.setText(resources.getString("scriptExecutionRunning"));
-        logArea.clear();
-
-        ScriptingTaskFactory.submitScript(ScriptExecutionDTO.builder()
-                .jsCode(codeArea.getText())
-                .connectionId(selectedConnection.getId())
-                .build());
-    }
-
-    @Override
-    public void onSubmitScriptSucceeded(ScriptExecutionDTO scriptExecutionDTO) {
-        executionList.setItems(FXCollections.observableArrayList(ScriptingBackend.getInstance().getExecutions()
-                .stream()
-                .map(ExecutionTransformer::dtoToProps)
-                .toList()));
-    }
-
-    @Override
-    public void onSubmitScriptCancelled(ScriptExecutionDTO scriptExecutionDTO) {
-        PlatformUtils.runLaterIfNotInFxThread(() -> {
-            scriptingStopButton.setDisable(true);
-            scriptingRunButton.setDisable(false);
-            statusText.setText(resources.getString("scriptCancelExecution"));
-        });
-    }
-
-    @Override
-    public void onSubmitScriptFailed(ScriptExecutionDTO scriptExecutionDTO, Throwable exception) {
-        PlatformUtils.runLaterIfNotInFxThread(() -> {
-            scriptingStopButton.setDisable(true);
-            scriptingRunButton.setDisable(false);
-            statusText.setText(resources.getString("scriptFailedExecution"));
-
-            if (exception != null) {
-                logArea.appendText(exception.getMessage());
-            } else {
-                logArea.appendText("Script Submission Failed.");
-            }
-        });
-    }
-
-    @Override
-    public void onCancelScriptSucceeded(ScriptExecutionDTO scriptExecutionDTO) {
+        ;*/
 
     }
 
-    @Override
-    public void onCancelScriptCancelled(ScriptExecutionDTO scriptExecutionDTO) {
 
+    public void onNewScriptClicked() {
+        showNewScriptDialog(".js");
     }
 
-    @Override
-    public void onCancelScriptFailed(ScriptExecutionDTO scriptExecutionDTO, Throwable exception) {
-
-    }
-
-    @Override
-    public void onScriptExecutionSucceeded(ScriptExecutionDTO scriptExecutionDTO, long executionTimeInMilliseconds) {
-
-        PlatformUtils.runLaterIfNotInFxThread(() -> {
-            scriptingStopButton.setDisable(true);
-            scriptingRunButton.setDisable(false);
-            statusText.setText(MessageFormat.format(resources.getString("scriptSuccessExecution"), executionTimeInMilliseconds));
-        });
-
-    }
-
-    @Override
-    public void onScriptExecutionTimeout(ScriptExecutionDTO scriptExecutionDTO) {
-
-    }
-
-    @Override
-    public void onScriptExecutionCancelled(ScriptExecutionDTO scriptExecutionDTO) {
-
-    }
-
-    @Override
-    public void onScriptExecutionFailed(ScriptExecutionDTO scriptExecutionDTO, long executionTimeInMilliseconds, Throwable t) {
-
-    }
-
-    @Override
-    public void onScriptExecutionLogUpdate(String executionId, char i) {
-        System.out.println(i);
-        ExecutionPropertiesDTO selectedItem = executionList.getSelectionModel().getSelectedItem();
-        if (selectedItem != null) {
-            String selectedExecutionId = selectedItem.getExecutionId();
-            if (selectedExecutionId.equals(executionId)) {
-                PlatformUtils.runLaterIfNotInFxThread(() -> logArea.appendText(String.valueOf(i)));
-            }
-        }
-    }
-
-    private void showNewScriptDialog(String defaultValue){
+    private void showNewScriptDialog(String defaultValue) {
 
         String dialogTitle = resources.getString("scripting.newscript.dialog.title");
 
@@ -356,43 +261,141 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                 resources.getString("scripting.newscript.dialog.content"),
                 defaultValue);
 
-        if(filename == null){
-            return;
-        }
+        new ScriptNewTask(filename)
+                .onSuccess(this::onNewScriptCreated)
+                .onError((ErrorListener<ScriptNewTask.Error>) e -> onNewScriptCreatedFailed(e, filename))
+                .run();
+    }
 
-        if(filename.length() < 4 || !filename.endsWith(".js")){
-            AlertHelper.warn(dialogTitle,
-                    resources.getString("scripting.newscript.dialog.extension.content"),
-                    true);
-            showNewScriptDialog(".js");
-            return;
-        }
-
-        boolean alreadyExists;
+    private void onNewScriptCreated(Path path) {
+        ScriptFileDTO newScriptDTO;
         try {
-            alreadyExists = ScriptingProvider.getInstance().getScripts()
+            newScriptDTO = ScriptingProvider.getInstance().getScripts()
                     .stream()
-                    .anyMatch(s -> s.getName().equals(filename));
+                    .filter(sfd -> sfd.getPath().equals(path))
+                    .findFirst()
+                    .orElseThrow();
         } catch (IOException e) {
-            //TODO
-            throw new RuntimeException(e);
-        }
-
-        if (alreadyExists){
-            AlertHelper.warn(dialogTitle,
-                    resources.getString("scripting.newscript.dialog.alreadyexists.content"),
-                    true);
-
-            showNewScriptDialog(filename);
+            //TODO ioerror
             return;
         }
 
-        ScriptingTaskFactory.createScript(filename);
+        scriptListView.getItems().add(ScriptingTransformer.dtoToProps(newScriptDTO));
+    }
 
+    private void onNewScriptCreatedFailed(ScriptNewTask.Error error, String filename) {
+
+        String dialogTitle = resources.getString("scripting.newscript.dialog.title");
+
+        switch (error) {
+            case FILENAME_NULL -> {
+                // ignore -> file chooser was cancelled
+            }
+            case FILENAME_EMPTY_OR_WRONG_EXTENSION -> {
+                AlertHelper.warn(dialogTitle,
+                        resources.getString("scripting.newscript.dialog.extension.content"),
+                        true);
+                showNewScriptDialog(".js");
+            }
+            case FILE_ALREADY_EXISTS -> {
+                AlertHelper.warn(dialogTitle,
+                        resources.getString("scripting.newscript.dialog.alreadyexists.content"),
+                        true);
+
+                showNewScriptDialog(filename);
+            }
+            case IOERROR -> {
+                // TODO
+            }
+        }
+    }
+
+    private void renameScript(ScriptFilePropertiesDTO dto, String defaultFilename) {
+        String dialogTitle = resources.getString("scripting.renamescript.dialog.title");
+
+        String newFilename = AlertHelper.input(dialogTitle,
+                resources.getString("scripting.renamescript.dialog.header"),
+                resources.getString("scripting.renamescript.dialog.content"),
+                defaultFilename);
+
+        new ScriptRenameTask(ScriptingTransformer.propsToDTO(dto), newFilename)
+                .onSuccess(newPath -> {
+                    executionController.renameScript(dto.getName(), newFilename);
+                    dto.getNameProperty().setValue(newFilename);
+                    dto.getPathProperty().setValue(newPath);
+                    scriptListView.refresh();
+                })
+                .onError((ErrorListener<ScriptRenameTask.Error>) error -> {
+                    switch (error) {
+                        case FILENAME_NULL -> {
+                            // ignore -> file chooser was cancelled
+                        }
+                        case FILENAME_EMPTY_OR_WRONG_EXTENSION -> {
+                            AlertHelper.warn(dialogTitle,
+                                    resources.getString("scripting.renamescript.dialog.extension.content"),
+                                    true);
+                            renameScript(dto, newFilename);
+                        }
+                        case FILE_ALREADY_EXISTS -> {
+                            AlertHelper.warn(dialogTitle,
+                                    resources.getString("scripting.renamescript.dialog.alreadyexists.content"),
+                                    true);
+                            renameScript(dto, newFilename);
+                        }
+                        case FILENAME_NOT_CHANGED -> {
+                            AlertHelper.warn(dialogTitle,
+                                    resources.getString("scripting.renamescript.dialog.alreadyexists.content"), //TODO translation
+                                    true);
+                            renameScript(dto, newFilename);
+                        }
+                        case IOERROR -> {
+                            // TODO
+                        }
+                    }
+                })
+                .run();
+    }
+
+    @Override
+    public void renameScript(ScriptFilePropertiesDTO dto) {
+        renameScript(dto, dto.getName());
 
     }
 
-    public void onNewScriptClicked() {
-        showNewScriptDialog(".js");
+    @Override
+    public void deleteScript(ScriptFilePropertiesDTO dto) {
+
+        String dialogTitle = resources.getString("scripting.deletescript.dialog.title");
+
+        if (!AlertHelper.confirm(dialogTitle,
+                resources.getString("scripting.deletescript.dialog.header"),
+                MessageFormat.format(resources.getString("scripting.deletescript.dialog.content"), dto.getName()),
+                resources.getString("commonNoButton"),
+                resources.getString("commonYesButton"))) {
+            return;
+        }
+
+        new ScriptDeleteTask(ScriptingTransformer.propsToDTO(dto))
+                .onSuccess(v -> scriptList.remove(dto))
+                .onError((ErrorListener<ScriptDeleteTask.Error>) error -> {
+                    if (error == ScriptDeleteTask.Error.IOERROR) {
+                        AlertHelper.warn(dialogTitle,
+                                resources.getString("scripting.deletescript.dialog.ioerror.content"), //TODO translation
+                                true);
+                    }
+                })
+                .run();
     }
+
+    @Override
+    public boolean addExecution(ScriptFilePropertiesDTO dto, ConnectionPropertiesDTO selectedConnection, String scriptCode) {
+        return executionController.addExecution(dto, selectedConnection, scriptCode);
+    }
+
+    @Override
+    public void runScript(ScriptFilePropertiesDTO dto) {
+        //TODO
+    }
+
+
 }

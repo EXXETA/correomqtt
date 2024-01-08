@@ -1,7 +1,7 @@
 package org.correomqtt.business.importexport.connections;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.business.concurrent.Task;
+import org.correomqtt.business.concurrent.NoProgressTask;
 import org.correomqtt.business.encryption.Encryptor;
 import org.correomqtt.business.encryption.EncryptorAesGcm;
 import org.correomqtt.business.fileprovider.EncryptionRecoverableException;
@@ -13,7 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-public class ExportConnectionsTask extends Task<Integer, ExportConnectionsTask.Error> {
+public class ExportConnectionsTask extends NoProgressTask<Integer, ExportConnectionsTask.Error> {
 
     public enum Error {
         EMPTY_COLLECTION_LIST,

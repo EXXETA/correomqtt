@@ -49,14 +49,6 @@ class CorreoMqtt3Client extends BaseCorreoMqttClient {
         return LOGGER;
     }
 
-    @Override
-    MqttClientState getClientState() {
-        if(mqtt3BlockingClient != null) {
-            return mqtt3BlockingClient.getState();
-        }
-        return null;
-    }
-
     void executeConnect() throws SSLException, InterruptedException, ExecutionException, TimeoutException {
 
         ConnectionConfigDTO configDTO = getConfigDTO();
@@ -166,14 +158,6 @@ class CorreoMqtt3Client extends BaseCorreoMqttClient {
     @Override
     void doDisconnect() {
         getCheckedClient().disconnect();
-    }
-
-    @Override
-    boolean isConnected() {
-        if (mqtt3BlockingClient == null) {
-            return false;
-        }
-        return mqtt3BlockingClient.getState().isConnected();
     }
 
     private Mqtt3AsyncClient getCheckedAsyncClient() {

@@ -1,27 +1,36 @@
 package org.correomqtt.business.scripting;
 
-import lombok.*;
-import org.correomqtt.business.model.ScriptExecutionDTO;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.io.OutputStream;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import java.io.PipedInputStream;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ExecutionDTO {
 
-    private ExecutorService executorService;
-    private Context context;
-    private StringBuilder log;
-    private ScriptExecutionDTO scriptExecutionDTO;
-    private long startTime;
-    private ScriptingLogOutputStream out;
+    @Builder.Default
+    private String executionId = UUID.randomUUID().toString();
+    private String connectionId;
+    private ScriptFileDTO scriptFile;
+    private String jsCode;
+    private PipedInputStream in;
+    private ScriptExecutionError error;
+    private LocalDateTime startTime;
+    private Long executionTime;
+    @Builder.Default
+    private boolean cancelled = false;
 
+    public void updateExecutionTime() {
+        executionTime = getStartTime().until(LocalDateTime.now(), ChronoUnit.MILLIS);
+    }
 }

@@ -5,7 +5,7 @@ import org.correomqtt.business.utils.ConnectionHolder;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-public abstract class ConnectionTask<T, E> extends Task<T,E>{
+public abstract class ConnectionTask<T, E> extends NoProgressTask<T,E> {
 
     protected final String connectionId;
 

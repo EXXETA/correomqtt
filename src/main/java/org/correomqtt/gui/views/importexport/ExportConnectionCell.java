@@ -51,7 +51,7 @@ public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesD
 
             if (loader == null) {
                 try {
-                    loader = new FXMLLoader(SubscriptionViewCell.class.getResource("exportConnectionCell.fxml"),
+                    loader = new FXMLLoader(ExportConnectionCell.class.getResource("exportConnectionCell.fxml"),
                             ResourceBundle.getBundle("org.correomqtt.i18n",
                                     SettingsProvider.getInstance().getSettings().getCurrentLocale()));
                     loader.setController(this);

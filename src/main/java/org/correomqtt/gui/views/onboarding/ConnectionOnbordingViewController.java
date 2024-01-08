@@ -15,6 +15,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.fileprovider.ConnectionsUpdatedEvent;
@@ -67,7 +68,7 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
         super();
         this.connectionsOnboardingDelegate = connectionsOnboardingDelegate;
         this.connectionsSettingsViewDelegate = connectionSettingsViewDelegate;
-        EventBus.unregister(this);
+        EventBus.register(this);
     }
 
     public static LoaderResult<ConnectionOnbordingViewController> load(ConnectionOnboardingDelegate connectionsOnboardingDelegate,
@@ -231,6 +232,11 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
         updateConnections();
     }
 
+    @SuppressWarnings("unused")
+    @Subscribe(ConnectionStateChangedEvent.class)
+    public void onConnectionStateChanged() {
+        connectionListView.refresh();
+    }
 
     public void cleanUp() {
         ConnectionPropertiesDTO config = connectionListView.getSelectionModel().getSelectedItem();

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.correomqtt.gui.controls.*?>
+<?import org.fxmisc.flowless.*?>
+<?import org.fxmisc.richtext.*?>
+
+<VBox fx:id="mainNode" prefHeight="277.0" prefWidth="401.0" stylesheets="@../../css/scriptingView.css"
+      AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"
+      HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/17.0.2-ea"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.correomqtt.gui.views.scripting.SingleEditorViewController">
+
+    <HBox alignment="CENTER_LEFT" minHeight="46.0" prefHeight="46.0">
+
+        <IconButton fx:id="scriptingRunButton" disable="true" icon="mdi-play" mnemonicParsing="false"
+                    onAction="#onRunClicked" text="%scripting.button.run">
+            <tooltip>
+                <Tooltip text="%scriptingViewRunButtonTooltip"/>
+            </tooltip>
+            <HBox.margin>
+                <Insets left="10.0" right="10.0"/>
+            </HBox.margin>
+        </IconButton>
+
+        <IconButton fx:id="scriptingSaveButton" disable="true" icon="mdi-content-save" mnemonicParsing="false"
+                    onAction="#onSaveClicked">
+            <tooltip>
+                <Tooltip text="%scriptingViewSaveButtonTooltip"/>
+            </tooltip>
+            <HBox.margin>
+                <Insets right="10.0"/>
+            </HBox.margin>
+        </IconButton>
+
+
+        <IconButton fx:id="scriptingRenameButton" icon="mdi-rename" mnemonicParsing="false" onAction="#onRenameClicked">
+            <tooltip>
+                <Tooltip text="%scriptingViewRenameButtonTooltip"/>
+            </tooltip>
+            <HBox.margin>
+                <Insets right="10.0"/>
+            </HBox.margin>
+        </IconButton>
+
+
+        <IconButton fx:id="scriptingDeleteButton" icon="mdi-trash-can" mnemonicParsing="false"
+                    onAction="#onDeleteClicked">
+            <tooltip>
+                <Tooltip text="%scriptingViewDeleteButtonTooltip"/>
+            </tooltip>
+            <HBox.margin>
+                <Insets right="10.0"/>
+            </HBox.margin>
+        </IconButton>
+
+        <Pane HBox.hgrow="ALWAYS"/>
+
+        <ComboBox fx:id="connectionList" prefWidth="300.0">
+            <HBox.margin>
+                <Insets right="10.0"/>
+            </HBox.margin>
+        </ComboBox>
+    </HBox>
+    <Pane fx:id="scriptingViewCodeAreaPane" styleClass="codeAreaBackground" VBox.vgrow="ALWAYS">
+        <CodeArea fx:id="codeArea" styleClass="codeArea" disable="true"/>
+    </Pane>
+</VBox>

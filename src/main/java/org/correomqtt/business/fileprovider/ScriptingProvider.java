@@ -1,11 +1,14 @@
 package org.correomqtt.business.fileprovider;
 
-import org.correomqtt.business.model.ScriptingDTO;
+import org.correomqtt.business.scripting.ScriptFileDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,11 +32,15 @@ public class ScriptingProvider extends BaseUserFileProvider {
         }
     }
 
-    public List<ScriptingDTO> getScripts() throws IOException {
+    private String getScriptFolder() {
+        return getTargetDirectoryPath() + File.separator + SCRIPT_FOLDER;
+    }
+
+    public List<ScriptFileDTO> getScripts() throws IOException {
 
         LOGGER.info("Read available scripts");
 
-        String scriptFolder = getTargetDirectoryPath() + File.separator + SCRIPT_FOLDER;
+        String scriptFolder = getScriptFolder();
         Path scriptPath = Paths.get(scriptFolder);
         if (!Files.exists(scriptPath)) {
             Files.createDirectory(scriptPath);
@@ -44,7 +51,7 @@ public class ScriptingProvider extends BaseUserFileProvider {
                     .filter(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".js"))
                     .map(f -> {
                         LOGGER.info("Found script \"{}\"", f.toAbsolutePath());
-                        return ScriptingDTO.builder()
+                        return ScriptFileDTO.builder()
                                 .name(f.getFileName().toString())
                                 .path(f.toAbsolutePath())
                                 .build();
@@ -53,4 +60,41 @@ public class ScriptingProvider extends BaseUserFileProvider {
         }
     }
 
+    public Path createScript(String filename, String content) throws IOException {
+        String absoluteFilename = getScriptFolder() + File.separator + filename;
+        File file = new File(absoluteFilename);
+        if (!file.createNewFile()) {
+            throw new FileAlreadyExistsException(absoluteFilename);
+        }
+
+        try (FileWriter fileWriter = new FileWriter(absoluteFilename)) {
+            fileWriter.write(content);
+        }
+
+        return Path.of(absoluteFilename);
+    }
+
+    public Path renameScript(String oldName, String newName) throws FileAlreadyExistsException {
+        String absoluteOldFilename = getScriptFolder() + File.separator + oldName;
+        String absoluteNewFilename = getScriptFolder() + File.separator + newName;
+        File oldFile = new File(absoluteOldFilename);
+        File newFile = new File(absoluteNewFilename);
+        if (!oldFile.renameTo(newFile)) {
+            throw new FileAlreadyExistsException(absoluteNewFilename);
+        }
+        return newFile.toPath();
+    }
+
+    public void deleteScript(String filename) throws IOException {
+        String absoluteFilename = getScriptFolder() + File.separator + filename;
+        File file = new File(absoluteFilename);
+        Files.delete(file.toPath());
+    }
+
+    public void saveScript(ScriptFileDTO scriptFileDTO, String content) throws IOException {
+
+        try (FileWriter fileWriter = new FileWriter(scriptFileDTO.getPath().toFile())) {
+            fileWriter.write(content);
+        }
+    }
 }

@@ -6,12 +6,18 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
+import org.correomqtt.business.connection.ConnectionState;
 import org.correomqtt.business.model.CorreoMqttVersion;
 import org.correomqtt.business.model.Lwt;
 import org.correomqtt.business.model.Proxy;
 import org.correomqtt.business.model.TlsSsl;
 import org.correomqtt.business.fileprovider.SettingsProvider;
+import org.correomqtt.business.mqtt.CorreoMqttClient;
+import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.gui.controls.IconLabel;
+import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.model.GuiConnectionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +34,7 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
     @FXML
     private Pane mainNode;
     @FXML
-    private Label nameLabel;
+    private IconLabel nameLabel;
     @FXML
     private Label descriptionLabel;
     @FXML
@@ -165,7 +171,16 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
         boolean lwt = connectionDTO.getLwtProperty().getValue().equals(Lwt.ON);
         lwtTag.setVisible(lwt);
         lwtTag.setManaged(lwt);
+
+        CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionDTO.getId());
+
+        ConnectionState state = ConnectionState.DISCONNECTED_GRACEFUL;
+        if (client != null) {
+            state = client.getState();
+        }
+        GuiConnectionState guiState = GuiConnectionState.of(state);
+        nameLabel.setIconColor(guiState.getIconColor());
     }
 
-    // TODO auto connection state update
+
 }

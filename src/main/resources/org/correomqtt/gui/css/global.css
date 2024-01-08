@@ -122,4 +122,10 @@ button {
     -fx-graphic-text-gap: 10px;
 }
 
+.smallheadline {
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-graphic: 10px;
+}
+
 /* disabled style for RichTextFX */

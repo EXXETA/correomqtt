@@ -1,5 +1,6 @@
 package org.correomqtt.business.mqtt;
 
+import org.correomqtt.business.connection.ConnectionState;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.SubscriptionDTO;
 
@@ -13,7 +14,7 @@ public interface CorreoMqttClient {
 
     void connect() throws InterruptedException, ExecutionException, TimeoutException, SSLException;
 
-    void disconnect(boolean graceful);
+    void disconnect();
 
     void publish(MessageDTO messageDTO) throws InterruptedException, ExecutionException, TimeoutException;
 
@@ -23,6 +24,6 @@ public interface CorreoMqttClient {
 
     Set<SubscriptionDTO> getSubscriptions();
 
-    CorreoMqttClientState getState();
+    ConnectionState getState();
 
 }

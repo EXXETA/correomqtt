@@ -187,13 +187,20 @@ public class EventBus {
         HashMap<String, Method> listenerFilter = LISTENER_FILTER.get(listener);
         HashMap<String, Method> eventFilter = EVENT_FILTER.get(event.getClass());
 
+        // Either listener or event does not have filter -> is valid for sure
         if (listenerFilter == null || eventFilter == null)
             return true;
 
-        return listenerFilter.entrySet().stream().anyMatch(lf -> {
+        // Iterate listener filter
+        return listenerFilter.entrySet().stream().allMatch(lf -> {
             Method eventMethod = eventFilter.get(lf.getKey());
+
+            // Event has filters, but no corresponding to this listener filter
             if (eventMethod == null)
-                return false;
+                return true;
+
+            // Event has a corresponding filter -> check if it matches.
+            // The only way to invalidate an event is when both have the same filter but the content does not match.
             Method listenerMethod = lf.getValue();
             try {
                 return eventMethod.invoke(event).equals(listenerMethod.invoke(listener));

@@ -16,8 +16,8 @@
     <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
           AnchorPane.topAnchor="0.0">
         <HBox alignment="CENTER_LEFT" styleClass="firstLine">
-            <Label fx:id="nameLabel" styleClass="topic" text="Name" HBox.hgrow="NEVER">
-            </Label>
+            <IconLabel fx:id="nameLabel" styleClass="topic" text="Name" HBox.hgrow="NEVER" icon="mdi-wifi" prefHeight="20" iconSize="20" minHeight="20">
+            </IconLabel>
             <Region HBox.hgrow="SOMETIMES"/>
             <IconLabel fx:id="mqtt3Tag" alignment="CENTER" layoutX="43.0" layoutY="10.0" maxWidth="-Infinity"
                        minWidth="5.0" textAlignment="CENTER" icon="mdi-numeric-3-circle">

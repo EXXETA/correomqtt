@@ -3,14 +3,14 @@ package org.correomqtt.business.importexport.connections;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.business.concurrent.Task;
+import org.correomqtt.business.concurrent.NoProgressTask;
 import org.correomqtt.business.encryption.EncryptorAesGcm;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.fileprovider.EncryptionRecoverableException;
 
 import java.util.List;
 
-public class ImportDecryptConnectionsTask extends Task<List<ConnectionConfigDTO>, ImportDecryptConnectionsTask.Error> {
+public class ImportDecryptConnectionsTask extends NoProgressTask<List<ConnectionConfigDTO>, ImportDecryptConnectionsTask.Error> {
 
 
     public enum Error {

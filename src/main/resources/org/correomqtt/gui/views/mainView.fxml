@@ -18,6 +18,7 @@
             <IconMenuItem fx:id="pluginSettingsItem" mnemonicParsing="false" text="%mainViewPluginSettingsMenuItem" icon="mdi-toy-brick"/>
             <IconMenuItem fx:id="exportConnectionsItem" mnemonicParsing="false" text="%mainViewExportConnectionsMenuItem" icon="mdi-export"/>
             <IconMenuItem fx:id="importConnectionsItem" mnemonicParsing="false" text="%mainViewImportConnectionsMenuItem" icon="mdi-import"/>
+            <IconMenuItem fx:id="scriptingItem" mnemonicParsing="false" text="%mainViewScriptingMenuItem" icon="mdi-script"/>
         </Menu>
         <Menu fx:id="viewMenu" mnemonicParsing="false" text="%mainViewViewMenu">
             <items>

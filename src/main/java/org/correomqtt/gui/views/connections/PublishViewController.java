@@ -17,7 +17,7 @@ import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.correomqtt.business.concurrent.ExceptionListener;
-import org.correomqtt.business.connection.ConnectEvent;
+import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.exception.CorreoMqttException;
@@ -63,6 +63,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 import java.util.function.Supplier;
+
+import static org.correomqtt.business.connection.ConnectionState.CONNECTED;
 
 public class PublishViewController extends BaseMessageBasedViewController {
 
@@ -231,19 +233,21 @@ public class PublishViewController extends BaseMessageBasedViewController {
         File file = fileChooser.showOpenDialog(stage);
 
         if (file != null) {
-            new ImportMessageTask(getConnectionId(),file)
+            new ImportMessageTask(getConnectionId(), file)
                     .run();
             //TODO Direct handler
         }
     }
 
-    @Subscribe(ConnectEvent.class)
-    public void onConnect() {
-        // reverse order, because first message in history must be last one to add
-        new LinkedList<>(PersistPublishMessageHistoryProvider.getInstance(getConnectionId())
-                .getMessages(getConnectionId()))
-                .descendingIterator()
-                .forEachRemaining(messageDTO -> messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO)));
+    @SuppressWarnings("unused")
+    public void onConnectionChangedEvent(@Subscribe ConnectionStateChangedEvent event) {
+        if (event.getState() == CONNECTED) {
+            // reverse order, because first message in history must be last one to add
+            new LinkedList<>(PersistPublishMessageHistoryProvider.getInstance(getConnectionId())
+                    .getMessages(getConnectionId()))
+                    .descendingIterator()
+                    .forEachRemaining(messageDTO -> messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO)));
+        }
     }
 
     @Override
