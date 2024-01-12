@@ -1,6 +1,7 @@
 package org.correomqtt.business.scripting;
 
 import org.correomqtt.business.concurrent.NoProgressTask;
+import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.fileprovider.ScriptingProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,7 @@ import static org.correomqtt.business.scripting.ScriptRenameTask.Error.IOERROR;
 
 public class ScriptRenameTask extends NoProgressTask<Path, ScriptRenameTask.Error> {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(ScriptRenameTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScriptRenameTask.class);
 
     public enum Error {
         FILENAME_NULL,
@@ -41,15 +42,15 @@ public class ScriptRenameTask extends NoProgressTask<Path, ScriptRenameTask.Erro
     protected Path execute() {
 
         if (filename == null) {
-            throw createExpectedException(FILENAME_NULL);
+            throw new TaskException(FILENAME_NULL);
         }
 
         if (filename.length() < 4 || !filename.endsWith(".js")) {
-            throw createExpectedException(FILENAME_EMPTY_OR_WRONG_EXTENSION);
+            throw new TaskException(FILENAME_EMPTY_OR_WRONG_EXTENSION);
         }
 
         if (filename.equals(dto.getName())) {
-            throw createExpectedException(FILENAME_NOT_CHANGED);
+            throw new TaskException(FILENAME_NOT_CHANGED);
         }
 
         String ioErrorMsg = "Error renaming script. ";
@@ -61,22 +62,23 @@ public class ScriptRenameTask extends NoProgressTask<Path, ScriptRenameTask.Erro
                     .anyMatch(s -> s.getName().equals(filename));
         } catch (IOException e) {
             LOGGER.debug(ioErrorMsg, e);
-            throw createExpectedException(IOERROR);
+            throw new TaskException(IOERROR);
         }
 
         if (alreadyExists) {
-            throw createExpectedException(FILE_ALREADY_EXISTS);
+            throw new TaskException(FILE_ALREADY_EXISTS);
         }
 
         try {
-            // updat existing excutions
-            ScriptingBackend.getInstance().getExecutions().stream()
+            // update existing executions
+            ScriptingBackend.getExecutions()
+                    .stream()
                     .filter(e -> e.getScriptFile().getName().equals(dto.getName()))
                     .forEach(e -> e.getScriptFile().setName(filename));
             return ScriptingProvider.getInstance().renameScript(dto.getName(), filename);
         } catch (FileAlreadyExistsException e) {
-            LOGGER.debug(MarkerFactory.getMarker(dto.getName()),ioErrorMsg, e);
-            throw createExpectedException(FILE_ALREADY_EXISTS);
+            LOGGER.debug(MarkerFactory.getMarker(dto.getName()), ioErrorMsg, e);
+            throw new TaskException(FILE_ALREADY_EXISTS);
         }
     }
 }

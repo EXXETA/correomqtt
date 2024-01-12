@@ -1,10 +1,11 @@
 package org.correomqtt.business.plugin;
 
-import org.correomqtt.business.concurrent.NoProgressTask;
+import org.correomqtt.business.concurrent.SimpleTask;
+import org.correomqtt.business.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.plugin.manager.PluginManager;
 
-public class PluginInstallTask extends NoProgressTask<Void, Void> {
+public class PluginInstallTask extends SimpleTask {
 
     private final String pluginId;
     private final String version;
@@ -15,19 +16,18 @@ public class PluginInstallTask extends NoProgressTask<Void, Void> {
     }
 
     @Override
-    protected Void execute() throws Exception {
-        PluginManager.getInstance().getUpdateManager().installPlugin(pluginId,version);
-        EventBus.fireAsync(new PluginInstallEvent(pluginId,version));
-        return null;
+    protected void execute() throws Exception {
+        PluginManager.getInstance().getUpdateManager().installPlugin(pluginId, version);
+        EventBus.fireAsync(new PluginInstallEvent(pluginId, version));
     }
 
     @Override
-    protected void before() {
+    protected void beforeHook() {
         EventBus.fireAsync(new PluginInstallStartedEvent(pluginId, version));
     }
 
     @Override
-    protected void error(Throwable throwable) {
+    protected void errorHook(SimpleTaskErrorResult ignore) {
         EventBus.fireAsync(new PluginInstallFailedEvent(pluginId, version));
     }
 }

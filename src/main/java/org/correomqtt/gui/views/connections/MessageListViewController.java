@@ -248,7 +248,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     @Override
     public void saveMessage(MessagePropertiesDTO messageDTO) {
         Stage stage = (Stage) messagesVBox.getScene().getWindow();
-        MessageUtils.saveMessage(getConnectionId(), messageDTO, stage);
+        MessageUtils.saveMessage(messageDTO, stage);
     }
 
     void setFilterPredicate(Predicate<MessagePropertiesDTO> filterPredicate) {

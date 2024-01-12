@@ -1,25 +1,25 @@
 package org.correomqtt.business.importexport.messages;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.business.concurrent.ConnectionTask;
+import org.correomqtt.business.concurrent.OnlyResultTask;
+import org.correomqtt.business.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.model.MessageDTO;
 
 import java.io.File;
 import java.io.IOException;
 
-public class ImportMessageTask extends ConnectionTask<MessageDTO, Void> {
+public class ImportMessageTask extends OnlyResultTask<MessageDTO> {
 
     private final File file;
 
-    public ImportMessageTask(String connectionId, File file) {
-        super(connectionId);
+    public ImportMessageTask( File file) {
         this.file = file;
     }
 
 
     @Override
-    protected void before() {
+    protected void beforeHook() {
         EventBus.fireAsync(new ImportMessageStartedEvent(file));
     }
 
@@ -29,12 +29,12 @@ public class ImportMessageTask extends ConnectionTask<MessageDTO, Void> {
     }
 
     @Override
-    protected void success(MessageDTO messageDTO) {
+    protected void successHook(MessageDTO messageDTO) {
         EventBus.fireAsync(new ImportMessageSuccessEvent(messageDTO));
     }
 
     @Override
-    protected void error(Throwable throwable) {
-        EventBus.fireAsync(new ImportMessageFailedEvent(file, throwable));
+    protected void errorHook(SimpleTaskErrorResult errorResult) {
+        EventBus.fireAsync(new ImportMessageFailedEvent(file, errorResult.getUnexpectedError()));
     }
 }

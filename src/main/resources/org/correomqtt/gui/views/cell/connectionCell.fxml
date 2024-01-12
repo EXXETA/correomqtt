@@ -1,63 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.VBox?>
-<?import org.correomqtt.gui.controls.IconLabel?>
-<?import java.lang.String?>
-<AnchorPane fx:id="mainNode" stylesheets="@../../css/messageView.css" xmlns="http://javafx.com/javafx/8.0.172"
-            xmlns:fx="http://javafx.com/fxml/1">
+<?import java.lang.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.correomqtt.gui.controls.*?>
+
+<AnchorPane fx:id="mainNode" stylesheets="@../../css/messageView.css" xmlns="http://javafx.com/javafx/11.0.14-internal" xmlns:fx="http://javafx.com/fxml/1">
     <styleClass>
-        <String fx:value="basicColors"/>
-        <String fx:value="messageView"/>
+        <String fx:value="basicColors" />
+        <String fx:value="messageView" />
     </styleClass>
-    <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
-          AnchorPane.topAnchor="0.0">
+    <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <HBox alignment="CENTER_LEFT" styleClass="firstLine">
-            <IconLabel fx:id="nameLabel" styleClass="topic" text="Name" HBox.hgrow="NEVER" icon="mdi-wifi" prefHeight="20" iconSize="20" minHeight="20">
-            </IconLabel>
-            <Region HBox.hgrow="SOMETIMES"/>
-            <IconLabel fx:id="mqtt3Tag" alignment="CENTER" layoutX="43.0" layoutY="10.0" maxWidth="-Infinity"
-                       minWidth="5.0" textAlignment="CENTER" icon="mdi-numeric-3-circle">
+            <IconLabel fx:id="nameLabel" icon="mdi-wifi" iconSize="20" minHeight="20" prefHeight="20" text="Name" HBox.hgrow="NEVER">
+            <styleClass>
+               <String fx:value="topic" />
+               <String fx:value="primaryText" />
+            </styleClass></IconLabel>
+            <Region HBox.hgrow="SOMETIMES" />
+            <IconLabel fx:id="mqtt3Tag" alignment="CENTER" icon="mdi-numeric-3-circle" layoutX="43.0" layoutY="10.0" maxWidth="-Infinity" minWidth="5.0" textAlignment="CENTER">
                 <styleClass>
-                    <String fx:value="connectionIconTag"/>
+                    <String fx:value="connectionIconTag" />
                 </styleClass>
             </IconLabel>
-            <IconLabel fx:id="mqtt5Tag" alignment="CENTER" layoutX="46.0" layoutY="10.0" maxWidth="-Infinity"
-                       minWidth="5.0" textAlignment="CENTER" icon="mdi-numeric-5-circle">
+            <IconLabel fx:id="mqtt5Tag" alignment="CENTER" icon="mdi-numeric-5-circle" layoutX="46.0" layoutY="10.0" maxWidth="-Infinity" minWidth="5.0" textAlignment="CENTER">
                 <styleClass>
-                    <String fx:value="connectionIconTag"/>
+                    <String fx:value="connectionIconTag" />
                 </styleClass>
             </IconLabel>
-            <IconLabel fx:id="credentialsTag" alignment="CENTER" maxWidth="-Infinity" minWidth="5.0"
-                       textAlignment="CENTER" HBox.hgrow="NEVER" icon="mdi-key-variant">
+            <IconLabel fx:id="credentialsTag" alignment="CENTER" icon="mdi-key-variant" maxWidth="-Infinity" minWidth="5.0" textAlignment="CENTER" HBox.hgrow="NEVER">
                 <styleClass>
-                    <String fx:value="connectionIconTag"/>
+                    <String fx:value="connectionIconTag" />
                 </styleClass>
             </IconLabel>
-            <IconLabel fx:id="sslTag" alignment="CENTER" layoutX="68.0" layoutY="16.0" maxWidth="-Infinity"
-                       minWidth="5.0" textAlignment="CENTER" HBox.hgrow="NEVER" icon="mdi-lock">
+            <IconLabel fx:id="sslTag" alignment="CENTER" icon="mdi-lock" layoutX="68.0" layoutY="16.0" maxWidth="-Infinity" minWidth="5.0" textAlignment="CENTER" HBox.hgrow="NEVER">
                 <styleClass>
-                    <String fx:value="connectionIconTag"/>
+                    <String fx:value="connectionIconTag" />
                 </styleClass>
             </IconLabel>
-            <IconLabel fx:id="proxyTag" alignment="CENTER" maxWidth="-Infinity" minWidth="5.0" textAlignment="CENTER" icon="mdi-tunnel">
+            <IconLabel fx:id="proxyTag" alignment="CENTER" icon="mdi-tunnel" maxWidth="-Infinity" minWidth="5.0" textAlignment="CENTER">
                 <styleClass>
-                    <String fx:value="connectionIconTag"/>
+                    <String fx:value="connectionIconTag" />
                 </styleClass>
             </IconLabel>
-            <IconLabel fx:id="lwtTag" alignment="CENTER" maxWidth="-Infinity" minWidth="5.0" textAlignment="CENTER" icon="mdi-grave-stone">
+            <IconLabel fx:id="lwtTag" alignment="CENTER" icon="mdi-grave-stone" maxWidth="-Infinity" minWidth="5.0" textAlignment="CENTER">
                 <styleClass>
-                    <String fx:value="connectionIconTag"/>
+                    <String fx:value="connectionIconTag" />
                 </styleClass>
             </IconLabel>
         </HBox>
         <Label fx:id="descriptionLabel" text="127.0.0.1:1883">
             <styleClass>
-                <String fx:value="secondLine"/>
-                <String fx:value="secondaryText"/>
+                <String fx:value="secondLine" />
+                <String fx:value="secondaryText" />
             </styleClass>
         </Label>
     </VBox>

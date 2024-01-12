@@ -1,18 +1,18 @@
 package org.correomqtt.gui.views.scripting;
 
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.eventbus.SubscribeFilter;
-import org.correomqtt.business.scripting.ExecutionDTO;
 import org.correomqtt.business.scripting.ScriptCancelTask;
-import org.correomqtt.business.scripting.ScriptExecutionError;
+import org.correomqtt.business.scripting.ScriptExecutionFailedEvent;
+import org.correomqtt.business.scripting.ScriptExecutionProgressEvent;
+import org.correomqtt.business.scripting.ScriptExecutionSuccessEvent;
+import org.correomqtt.gui.utils.LogAreaUtils;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.fxmisc.richtext.CodeArea;
@@ -22,16 +22,19 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PipedInputStream;
 import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.correomqtt.business.eventbus.SubscribeFilterNames.SCRIPT_EXECUTION_ID;
 
 public class SingleExecutionViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleExecutionViewController.class);
+    private static final int MAX_WAIT_FOR_SNK_CONNECTED = 5000;
     private static ResourceBundle resources;
     @FXML
     public VBox mainNode;
@@ -64,7 +67,8 @@ public class SingleExecutionViewController extends BaseControllerImpl {
         scriptingStopButton.setDisable(true);
     }
 
-    public void onScriptExecutionProgress(ExecutionDTO dto) {
+    @SuppressWarnings("unused")
+    public void onScriptExecutionProgress(@Subscribe(sync = true) ScriptExecutionProgressEvent event) {
 
         if (logPipeFuture != null) {
             return;
@@ -72,45 +76,65 @@ public class SingleExecutionViewController extends BaseControllerImpl {
 
         scriptingStopButton.setDisable(false);
 
+        // Barrier to wait till log is connected before script is started
+        CountDownLatch pisConnected = new CountDownLatch(1);
+
         logPipeFuture = CompletableFuture.runAsync(() -> {
-                    final int BUFFER_SIZE = 8192;
+            final int BUFFER_SIZE = 8192;
+            try (final PipedInputStream snk = new PipedInputStream();
+                 final InputStreamReader isr = new InputStreamReader(snk, StandardCharsets.UTF_8);
+                 final BufferedReader br = new BufferedReader(isr, BUFFER_SIZE);
+            ) {
 
-                    try (final InputStreamReader isr = new InputStreamReader(dto.getIn(), StandardCharsets.UTF_8);
-                         final BufferedReader br = new BufferedReader(isr, BUFFER_SIZE);
-                    ) {
-                        String line;
-                        while ((line = br.readLine()) != null) {
-                            final String text = line;
-                            Platform.runLater(() -> addLog(text));
-                        }
+                // connect snk
+                event.getExecutionDTO().getConnectSnk().accept(snk);
+                pisConnected.countDown();
 
-                    } catch (IOException e) {
-                        LOGGER.debug("Pipe to script log broke.");
-                    }
-                }).
+                // stream log output
+                String line;
+                while ((line = br.readLine()) != null) {
+                    final String text = line;
+                    Platform.runLater(() -> addLog(text));
+                }
 
-                exceptionallyAsync(e -> {
-                    LOGGER.error("Exception listening to script pipe. ", e);
-                    return null;
-                });
+            } catch (IOException e) {
+                // this is normal if SNK is closed.
+                LOGGER.trace("Pipe to script log broke.", e);
+            }
+        }).exceptionallyAsync(e -> {
+            LOGGER.error("Exception listening to script pipe. ", e);
+            return null;
+        });
+
+        try {
+            if (!pisConnected.await(MAX_WAIT_FOR_SNK_CONNECTED, TimeUnit.MILLISECONDS)) {
+                throw new IllegalStateException("Snk not connected in " + MAX_WAIT_FOR_SNK_CONNECTED + "ms.");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
     }
 
-
-
     private void addLog(String msg) {
-        this.logArea.append(msg + "\n", "default");
-        this.logArea.requestFollowCaret();
+        LogAreaUtils.appendColorful(logArea, msg + "\n");
+        logArea.requestFollowCaret();
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("[{}] {} ", getExecutionId(), msg);
         }
     }
 
     @SuppressWarnings("unused")
-    public void onScriptExecutionSuccess(ExecutionDTO dto) {
+    @Subscribe(ScriptExecutionSuccessEvent.class)
+    public void onScriptExecutionSuccess() {
+
         scriptingStopButton.setDisable(true);
     }
 
-    public void onScriptExecutionFailed(ExecutionDTO dto) {
+    @SuppressWarnings("unused")
+    @Subscribe(ScriptExecutionFailedEvent.class)
+
+    public void onScriptExecutionFailed() {
         scriptingStopButton.setDisable(true);
     }
 
@@ -126,7 +150,8 @@ public class SingleExecutionViewController extends BaseControllerImpl {
 
     @FXML
     public void onStopButtonClicked() {
-       new ScriptCancelTask(getExecutionId()).run();
+        new ScriptCancelTask(getExecutionId())
+                .run();
     }
 
 }

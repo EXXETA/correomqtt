@@ -3,11 +3,7 @@ package org.correomqtt.gui.views.scripting;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SplitPane;
@@ -16,42 +12,31 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.stage.WindowEvent;
 import lombok.AllArgsConstructor;
-import org.correomqtt.business.concurrent.ErrorListener;
-import org.correomqtt.business.connection.ConnectionStateChangedEvent;
+import org.correomqtt.business.concurrent.TaskErrorResult;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.fileprovider.ScriptingProvider;
 import org.correomqtt.business.fileprovider.SettingsProvider;
-import org.correomqtt.business.mqtt.CorreoMqttClient;
-import org.correomqtt.business.connection.ConnectionState;
 import org.correomqtt.business.scripting.ScriptDeleteTask;
 import org.correomqtt.business.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.business.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.business.scripting.ScriptExecutionSuccessEvent;
 import org.correomqtt.business.scripting.ScriptFileDTO;
-import org.correomqtt.business.scripting.ScriptLoadTask;
 import org.correomqtt.business.scripting.ScriptNewTask;
 import org.correomqtt.business.scripting.ScriptRenameTask;
-import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.controls.IconButton;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
-import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.cell.ConnectionCell;
-import org.fxmisc.flowless.VirtualizedScrollPane;
-import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,6 +95,19 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     }
 
     private void onCloseRequest(WindowEvent event) {
+        if (scriptListView.getItems().stream()
+                .anyMatch(ScriptFilePropertiesDTO::isDirty) &&
+                !AlertHelper.confirm(
+                        resources.getString("scriptingUnsavedCheckTitle"),
+                        null,
+                        resources.getString("scriptingUnsavedCheckDescription"),
+                        resources.getString("commonNoButton"),
+                        resources.getString("commonYesButton")
+                )) {
+            event.consume();
+            return;
+        }
+
         executionController.onCloseRequest();
         EventBus.unregister(this);
     }
@@ -263,7 +261,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
 
         new ScriptNewTask(filename)
                 .onSuccess(this::onNewScriptCreated)
-                .onError((ErrorListener<ScriptNewTask.Error>) e -> onNewScriptCreatedFailed(e, filename))
+                .onError(r -> onNewScriptCreatedFailed(r, filename))
                 .run();
     }
 
@@ -280,33 +278,40 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
             return;
         }
 
-        scriptListView.getItems().add(ScriptingTransformer.dtoToProps(newScriptDTO));
+        ScriptFilePropertiesDTO dto = ScriptingTransformer.dtoToProps(newScriptDTO);
+        scriptListView.getItems().add(dto);
+        scriptListView.getSelectionModel().select(dto);
+        onSelectScript(dto);
     }
 
-    private void onNewScriptCreatedFailed(ScriptNewTask.Error error, String filename) {
+    private void onNewScriptCreatedFailed(TaskErrorResult<ScriptNewTask.Error> result, String filename) {
 
         String dialogTitle = resources.getString("scripting.newscript.dialog.title");
 
-        switch (error) {
-            case FILENAME_NULL -> {
-                // ignore -> file chooser was cancelled
-            }
-            case FILENAME_EMPTY_OR_WRONG_EXTENSION -> {
-                AlertHelper.warn(dialogTitle,
-                        resources.getString("scripting.newscript.dialog.extension.content"),
-                        true);
-                showNewScriptDialog(".js");
-            }
-            case FILE_ALREADY_EXISTS -> {
-                AlertHelper.warn(dialogTitle,
-                        resources.getString("scripting.newscript.dialog.alreadyexists.content"),
-                        true);
+        if (result.isExpected()) {
+            switch (result.getExpectedError()) {
+                case FILENAME_NULL -> {
+                    // ignore -> file chooser was cancelled
+                }
+                case FILENAME_EMPTY_OR_WRONG_EXTENSION -> {
+                    AlertHelper.warn(dialogTitle,
+                            resources.getString("scripting.newscript.dialog.extension.content"),
+                            true);
+                    showNewScriptDialog(".js");
+                }
+                case FILE_ALREADY_EXISTS -> {
+                    AlertHelper.warn(dialogTitle,
+                            resources.getString("scripting.newscript.dialog.alreadyexists.content"),
+                            true);
 
-                showNewScriptDialog(filename);
+                    showNewScriptDialog(filename);
+                }
+                case IOERROR -> {
+                    // TODO
+                }
             }
-            case IOERROR -> {
-                // TODO
-            }
+        } else {
+            AlertHelper.unexpectedAlert(result.getUnexpectedError());
         }
     }
 
@@ -325,32 +330,36 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                     dto.getPathProperty().setValue(newPath);
                     scriptListView.refresh();
                 })
-                .onError((ErrorListener<ScriptRenameTask.Error>) error -> {
-                    switch (error) {
-                        case FILENAME_NULL -> {
-                            // ignore -> file chooser was cancelled
+                .onError(r -> {
+                    if (r.isExpected()) {
+                        switch (r.getExpectedError()) {
+                            case FILENAME_NULL -> {
+                                // ignore -> file chooser was cancelled
+                            }
+                            case FILENAME_EMPTY_OR_WRONG_EXTENSION -> {
+                                AlertHelper.warn(dialogTitle,
+                                        resources.getString("scripting.renamescript.dialog.extension.content"),
+                                        true);
+                                renameScript(dto, newFilename);
+                            }
+                            case FILE_ALREADY_EXISTS -> {
+                                AlertHelper.warn(dialogTitle,
+                                        resources.getString("scripting.renamescript.dialog.alreadyexists.content"),
+                                        true);
+                                renameScript(dto, newFilename);
+                            }
+                            case FILENAME_NOT_CHANGED -> {
+                                AlertHelper.warn(dialogTitle,
+                                        resources.getString("scripting.renamescript.dialog.alreadyexists.content"), //TODO translation
+                                        true);
+                                renameScript(dto, newFilename);
+                            }
+                            case IOERROR -> {
+                                // TODO
+                            }
                         }
-                        case FILENAME_EMPTY_OR_WRONG_EXTENSION -> {
-                            AlertHelper.warn(dialogTitle,
-                                    resources.getString("scripting.renamescript.dialog.extension.content"),
-                                    true);
-                            renameScript(dto, newFilename);
-                        }
-                        case FILE_ALREADY_EXISTS -> {
-                            AlertHelper.warn(dialogTitle,
-                                    resources.getString("scripting.renamescript.dialog.alreadyexists.content"),
-                                    true);
-                            renameScript(dto, newFilename);
-                        }
-                        case FILENAME_NOT_CHANGED -> {
-                            AlertHelper.warn(dialogTitle,
-                                    resources.getString("scripting.renamescript.dialog.alreadyexists.content"), //TODO translation
-                                    true);
-                            renameScript(dto, newFilename);
-                        }
-                        case IOERROR -> {
-                            // TODO
-                        }
+                    } else {
+                        AlertHelper.unexpectedAlert(r.getUnexpectedError());
                     }
                 })
                 .run();
@@ -359,6 +368,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     @Override
     public void renameScript(ScriptFilePropertiesDTO dto) {
         renameScript(dto, dto.getName());
+
 
     }
 
@@ -376,20 +386,37 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         }
 
         new ScriptDeleteTask(ScriptingTransformer.propsToDTO(dto))
-                .onSuccess(v -> scriptList.remove(dto))
-                .onError((ErrorListener<ScriptDeleteTask.Error>) error -> {
-                    if (error == ScriptDeleteTask.Error.IOERROR) {
-                        AlertHelper.warn(dialogTitle,
-                                resources.getString("scripting.deletescript.dialog.ioerror.content"), //TODO translation
-                                true);
+                .onSuccess(() -> onScriptDeleted(dto))
+                .onError(r -> {
+                    if (r.isExpected()) {
+                        if (r.getExpectedError() == ScriptDeleteTask.Error.IOERROR) {
+                            AlertHelper.warn(dialogTitle,
+                                    resources.getString("scripting.deletescript.dialog.ioerror.content"), //TODO translation
+                                    true);
+                        }
+                    } else {
+                        AlertHelper.unexpectedAlert(r.getUnexpectedError());
                     }
                 })
                 .run();
     }
 
+    private void onScriptDeleted(ScriptFilePropertiesDTO dto) {
+        scriptListView.getItems().remove(dto);
+        scriptListView.refresh();
+        if (scriptListView.getSelectionModel().getSelectedIndices().isEmpty()) {
+            scriptListView.getSelectionModel().selectFirst();
+        }
+    }
+
     @Override
     public boolean addExecution(ScriptFilePropertiesDTO dto, ConnectionPropertiesDTO selectedConnection, String scriptCode) {
         return executionController.addExecution(dto, selectedConnection, scriptCode);
+    }
+
+    @Override
+    public void onPlainTextChange(ScriptFilePropertiesDTO dto) {
+        scriptListView.refresh();
     }
 
     @Override

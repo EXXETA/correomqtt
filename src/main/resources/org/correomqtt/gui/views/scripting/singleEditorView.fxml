@@ -36,6 +36,15 @@
             </HBox.margin>
         </IconButton>
 
+        <IconButton fx:id="scriptingRevertButton" disable="true" icon="mdi-file-undo" mnemonicParsing="false"
+                    onAction="#onRevertClicked">
+            <tooltip>
+                <Tooltip text="%scriptingViewResetButtonTooltip"/>
+            </tooltip>
+            <HBox.margin>
+                <Insets right="10.0"/>
+            </HBox.margin>
+        </IconButton>
 
         <IconButton fx:id="scriptingRenameButton" icon="mdi-rename" mnemonicParsing="false" onAction="#onRenameClicked">
             <tooltip>
@@ -66,6 +75,6 @@
         </ComboBox>
     </HBox>
     <Pane fx:id="scriptingViewCodeAreaPane" styleClass="codeAreaBackground" VBox.vgrow="ALWAYS">
-        <CodeArea fx:id="codeArea" styleClass="codeArea" disable="true"/>
+        <CodeArea fx:id="codeArea" styleClass="log" disable="true"/>
     </Pane>
 </VBox>

@@ -15,7 +15,6 @@ class ExecutionContextDTO {
 
     private Context context;
     private ExecutionDTO executionDTO;
-
     private PipedOutputStream out;
 
 }

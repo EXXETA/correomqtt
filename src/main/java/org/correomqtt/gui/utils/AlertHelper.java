@@ -284,4 +284,7 @@ public class AlertHelper {
         return result.get();
     }
 
+    public static void unexpectedAlert(Throwable unexpectedError) {
+        warn("Unexpected Error", "Operation failed: " + unexpectedError.getMessage(), true);
+    }
 }

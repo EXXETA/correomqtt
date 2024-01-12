@@ -1,11 +1,10 @@
 package org.correomqtt.business.connection;
 
-import org.correomqtt.business.concurrent.NoProgressTask;
-import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.concurrent.SimpleTask;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.utils.ConnectionHolder;
 
-public class DisconnectTask extends NoProgressTask<Void, Void> {
+public class DisconnectTask extends SimpleTask {
 
     private final String connectionId;
 
@@ -14,15 +13,14 @@ public class DisconnectTask extends NoProgressTask<Void, Void> {
     }
 
     @Override
-    protected Void execute() throws Exception {
+    protected void execute() {
         CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionId);
         client.disconnect();
-        return null;
     }
 
 
     @Override
-    protected void success(Void ignored) {
+    protected void successHook() {
         ConnectionHolder.getInstance().getConnection(connectionId).setClient(null); // TODO extract
     }
 }

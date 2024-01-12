@@ -2,11 +2,13 @@ package org.correomqtt.business.pubsub;
 
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
-import org.correomqtt.business.concurrent.ConnectionTask;
+import org.correomqtt.business.concurrent.SimpleTask;
+import org.correomqtt.business.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.utils.ConnectionHolder;
+import org.correomqtt.business.utils.LoggerUtils;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
@@ -15,33 +17,34 @@ import org.correomqtt.plugin.spi.OutgoingMessageHookDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PublishTask extends ConnectionTask<Void, Void> {
+import static org.correomqtt.business.utils.LoggerUtils.getConnectionMarker;
+
+public class PublishTask extends SimpleTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishTask.class);
 
 
+    private final String connectionId;
     private final MessageDTO messageDTO;
 
     public PublishTask(String connectionId, MessageDTO messageDTO) {
-        super(connectionId);
+        this.connectionId = connectionId;
         this.messageDTO = messageDTO;
     }
 
     @Override
-    protected Void execute() throws Exception {
-        LOGGER.info(getConnectionMarker(), "Start publishing to topic: {}", messageDTO.getTopic());
+    protected void execute() throws Exception {
+        LOGGER.info(getConnectionMarker(connectionId), "Start publishing to topic: {}", messageDTO.getTopic());
         CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionId);
         MessageDTO manipulatedMessageDTO = executeOnPublishMessageExtensions(connectionId, messageDTO);
         client.publish(manipulatedMessageDTO);
         EventBus.fireAsync(new PublishEvent(connectionId, manipulatedMessageDTO));
-        return null;
     }
 
     @Override
-    protected void error(Void error, Throwable ex) {
+    protected void errorHook(SimpleTaskErrorResult ignore) {
         EventBus.fireAsync(new PublishFailedEvent(connectionId, messageDTO));
     }
-
 
     private MessageDTO executeOnPublishMessageExtensions(String connectionId, MessageDTO messageDTO) {
         MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
@@ -54,7 +57,7 @@ public class PublishTask extends ConnectionTask<Void, Void> {
                                     .matches(MqttTopic.of(messageDTO.getTopic()))
                             )
             )) {
-                LOGGER.info(getConnectionMarker(), "[HOOK] Manipulated outgoing message on {} with {}", messageDTO.getTopic(), p.getClass().getName());
+                LOGGER.info(getConnectionMarker(connectionId), "[HOOK] Manipulated outgoing message on {} with {}", messageDTO.getTopic(), p.getClass().getName());
                 messageExtensionDTO = p.onPublishMessage(connectionId, messageExtensionDTO);
             }
         }

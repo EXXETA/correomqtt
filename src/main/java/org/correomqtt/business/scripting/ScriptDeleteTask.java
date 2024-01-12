@@ -1,6 +1,8 @@
 package org.correomqtt.business.scripting;
 
 import org.correomqtt.business.concurrent.NoProgressTask;
+import org.correomqtt.business.concurrent.OnlyErrorTask;
+import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.fileprovider.ScriptingProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,12 +13,11 @@ import java.io.IOException;
 import static org.correomqtt.business.scripting.ScriptDeleteTask.Error.IOERROR;
 
 
-public class ScriptDeleteTask extends NoProgressTask<Void, ScriptDeleteTask.Error> {
+public class ScriptDeleteTask extends OnlyErrorTask<ScriptDeleteTask.Error> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptDeleteTask.class);
 
     public enum Error {
-
         IOERROR
     }
 
@@ -27,19 +28,16 @@ public class ScriptDeleteTask extends NoProgressTask<Void, ScriptDeleteTask.Erro
     }
 
     @Override
-    protected Void execute() {
+    protected void execute() throws TaskException {
 
         String ioErrorMsg = "Error delete script. ";
 
         try {
-            ScriptingBackend.getInstance().getExecutions()
-                            .removeIf(e -> e.getScriptFile().getName().equals(dto.getName()));
+            ScriptingBackend.removeExecutionsForScript(dto.getName());
             ScriptingProvider.getInstance().deleteScript(dto.getName());
         } catch (IOException e) {
-            LOGGER.error(MarkerFactory.getMarker(dto.getName()),ioErrorMsg, e);
-            throw createExpectedException(IOERROR);
+            LOGGER.error(MarkerFactory.getMarker(dto.getName()), ioErrorMsg, e);
+            throw new TaskException(IOERROR);
         }
-
-        return null;
     }
 }

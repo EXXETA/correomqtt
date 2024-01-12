@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.groupingBy;
 public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptCell.class);
+    private static final String DIRTY_CLASS = "dirty";
     private final ListView<ScriptFilePropertiesDTO> listView;
 
     @FXML
@@ -96,9 +97,16 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
 
     private void setScript(ScriptFilePropertiesDTO scriptingDTO) {
 
-        nameLabel.setText(scriptingDTO.getName());
+        nameLabel.setText(scriptingDTO.getName() + (scriptingDTO.isDirty()?" *":""));
 
-        List<ExecutionPropertiesDTO> executions = ScriptingBackend.getInstance().getExecutions().stream()
+        if(scriptingDTO.isDirty()){
+            mainNode.getStyleClass().add(DIRTY_CLASS);
+        }else{
+            mainNode.getStyleClass().remove(DIRTY_CLASS);
+        }
+
+        List<ExecutionPropertiesDTO> executions = ScriptingBackend.getExecutions()
+                .stream()
                 .filter(e -> scriptingDTO.getName().equals(e.getScriptFile().getName()))
                 .map(ExecutionTransformer::dtoToProps)
                 .toList();

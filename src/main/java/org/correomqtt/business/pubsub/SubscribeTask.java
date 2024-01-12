@@ -2,7 +2,8 @@ package org.correomqtt.business.pubsub;
 
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
-import org.correomqtt.business.concurrent.ConnectionTask;
+import org.correomqtt.business.concurrent.SimpleTask;
+import org.correomqtt.business.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.SubscriptionDTO;
@@ -16,29 +17,31 @@ import org.correomqtt.plugin.spi.IncomingMessageHookDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SubscribeTask extends ConnectionTask<Void, Void> {
+import static org.correomqtt.business.utils.LoggerUtils.getConnectionMarker;
+
+public class SubscribeTask extends SimpleTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscribeTask.class);
 
 
+    private final String connectionId;
     private final SubscriptionDTO subscriptionDTO;
 
     public SubscribeTask(String connectionId, SubscriptionDTO subscriptionDTO) {
-        super(connectionId);
+        this.connectionId = connectionId;
         this.subscriptionDTO = subscriptionDTO;
     }
 
     @Override
-    protected Void execute() throws Exception {
+    protected void execute() throws Exception {
         CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionId);
         client.subscribe(subscriptionDTO, this::onIncomingMessage);
-        EventBus.fireAsync(new SubscribeEvent(connectionId,subscriptionDTO));
-        return null;
+        EventBus.fireAsync(new SubscribeEvent(connectionId, subscriptionDTO));
     }
 
     @Override
-    protected void error(Void error, Throwable ex){
-        EventBus.fireAsync(new SubscribeFailedEvent(connectionId,subscriptionDTO));
+    protected void errorHook(SimpleTaskErrorResult ignore) {
+        EventBus.fireAsync(new SubscribeFailedEvent(connectionId, subscriptionDTO));
     }
 
     private void onIncomingMessage(MessageDTO messageDTO) {
@@ -60,7 +63,7 @@ public class SubscribeTask extends ConnectionTask<Void, Void> {
                                     .matches(MqttTopic.of(messageDTO.getTopic()))
                             )
             )) {
-                LOGGER.info(getConnectionMarker(), "[HOOK] Manipulated incoming message on {} with {}", messageDTO.getTopic(), p.getClass().getName());
+                LOGGER.info(getConnectionMarker(connectionId), "[HOOK] Manipulated incoming message on {} with {}", messageDTO.getTopic(), p.getClass().getName());
                 messageExtensionDTO = p.onMessageIncoming(connectionId, messageExtensionDTO);
             }
         }

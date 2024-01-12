@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.concurrent.NoProgressTask;
+import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.encryption.EncryptorAesGcm;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.fileprovider.EncryptionRecoverableException;
@@ -17,6 +18,7 @@ public class ImportDecryptConnectionsTask extends NoProgressTask<List<Connection
         ENCRYPTION_TYPE_NOT_ALLOWED,
         FILE_CAN_NOT_BE_READ_OR_PARSED
     }
+
     private final String encryptedData;
     private final String encryptionType;
     private final String password;
@@ -29,19 +31,15 @@ public class ImportDecryptConnectionsTask extends NoProgressTask<List<Connection
     }
 
     @Override
-    protected List<ConnectionConfigDTO> execute() {
+    protected List<ConnectionConfigDTO> execute() throws TaskException, EncryptionRecoverableException, JsonProcessingException {
         EncryptorAesGcm encryptor = new EncryptorAesGcm(password);
         if (!encryptor.getEncryptionTranslation().equals(encryptionType)) {
-            throw createExpectedException(Error.ENCRYPTION_TYPE_NOT_ALLOWED);
+            throw new TaskException(Error.ENCRYPTION_TYPE_NOT_ALLOWED);
         }
 
-        try {
-            String connectionsString = encryptor.decrypt(this.encryptedData);
-            return new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>() {
-            }).readValue(connectionsString);
+        String connectionsString = encryptor.decrypt(this.encryptedData);
+        return new ObjectMapper().readerFor(new TypeReference<List<ConnectionConfigDTO>>() {
+        }).readValue(connectionsString);
 
-        } catch (EncryptionRecoverableException | JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

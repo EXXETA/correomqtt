@@ -10,6 +10,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
+import org.correomqtt.business.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
@@ -318,8 +319,8 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         });
     }
 
-    public void onSubscribedFailed(Throwable exception) {
-        String msg = "Exception in business layer: " + exception.getMessage();
+    public void onSubscribedFailed(SimpleTaskErrorResult result) {
+        String msg = "Exception in business layer: " + result.getUnexpectedError().getMessage();
         AlertHelper.warn(resources.getString("subscribeViewControllerSubscriptionFailedTitle") + ": ", msg);
     }
 

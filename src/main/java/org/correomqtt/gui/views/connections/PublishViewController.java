@@ -16,7 +16,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.correomqtt.business.concurrent.ExceptionListener;
+import org.correomqtt.business.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
@@ -212,7 +212,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
                 .build();
 
         new PublishTask(getConnectionId(), messageDTO)
-                .onError((ExceptionListener) ex -> this.onPublishFailed(messageDTO, ex))
+                .onError(r -> this.onPublishFailed(r, messageDTO))
                 .run();
 
         if (LOGGER.isDebugEnabled()) {
@@ -233,7 +233,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
         File file = fileChooser.showOpenDialog(stage);
 
         if (file != null) {
-            new ImportMessageTask(getConnectionId(), file)
+            new ImportMessageTask(file)
                     .run();
             //TODO Direct handler
         }
@@ -296,15 +296,15 @@ public class PublishViewController extends BaseMessageBasedViewController {
         messageListViewController.onNewMessage(MessageTransformer.dtoToProps(event.getMessageDTO()));
     }
 
-    private void onPublishFailed(MessageDTO messageDTO, Throwable exception) {
+    private void onPublishFailed(SimpleTaskErrorResult result , MessageDTO messageDTO) {
         messageDTO.setPublishStatus(PublishStatus.FAILED);
         messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO));
 
         String msg;
-        if (exception instanceof CorreoMqttException) {
-            msg = ((CorreoMqttException) exception).getInfo();
+        if (result.getUnexpectedError() instanceof CorreoMqttException correoMqttException) {
+            msg = correoMqttException.getInfo();
         } else {
-            msg = "Exception in business layer: " + exception.getMessage();
+            msg = "Exception in business layer: " + result.getUnexpectedError().getMessage();
         }
         AlertHelper.warn(resources.getString("publishViewControllerPublishFailedTitle"),
                 resources.getString("publishViewControllerPublishFailedContent") + ": " + messageDTO.getTopic() + ": " + msg);

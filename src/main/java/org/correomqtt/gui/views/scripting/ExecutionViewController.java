@@ -18,7 +18,7 @@ import org.correomqtt.business.scripting.ExecutionDTO;
 import org.correomqtt.business.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.business.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.business.scripting.ScriptExecutionSuccessEvent;
-import org.correomqtt.business.scripting.ScriptSubmitTask;
+import org.correomqtt.business.scripting.ScriptExecutionTask;
 import org.correomqtt.business.scripting.ScriptingBackend;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.utils.AlertHelper;
@@ -31,7 +31,6 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.function.BiConsumer;
 
 public class ExecutionViewController extends BaseControllerImpl {
 
@@ -106,7 +105,7 @@ public class ExecutionViewController extends BaseControllerImpl {
     @FXML
     public void initialize() {
 
-        executionList = FXCollections.observableArrayList(ScriptingBackend.getInstance().getExecutions()
+        executionList = FXCollections.observableArrayList(ScriptingBackend.getExecutions()
                 .stream()
                 .map(ExecutionTransformer::dtoToProps)
                 .toList());
@@ -168,35 +167,32 @@ public class ExecutionViewController extends BaseControllerImpl {
         updateExistence();
 
         // Events used here to keep state in background even if window is closed in the meantime.
-        new ScriptSubmitTask(executionDTO).run();
+        new ScriptExecutionTask(executionDTO).run();
         return true;
     }
 
     @SuppressWarnings("unused")
     public void onScriptExecutionSuccess(@Subscribe ScriptExecutionSuccessEvent event) {
-        handleScriptExecutionResult(event, SingleExecutionViewController::onScriptExecutionSuccess);
+        handleScriptExecutionResult(event);
     }
 
     @SuppressWarnings("unused")
     public void onScriptExecutionFailed(@Subscribe ScriptExecutionFailedEvent event) {
-        handleScriptExecutionResult(event, SingleExecutionViewController::onScriptExecutionFailed);
+        handleScriptExecutionResult(event);
     }
 
     @SuppressWarnings("unused")
     public void onScriptExecutionProgress(@Subscribe ScriptExecutionProgressEvent event) {
-        handleScriptExecutionResult(event, SingleExecutionViewController::onScriptExecutionProgress);
+        handleScriptExecutionResult(event);
     }
 
-    private void handleScriptExecutionResult(BaseExecutionEvent event,
-                                             BiConsumer<SingleExecutionViewController, ExecutionDTO> controllerCallback) {
+    private void handleScriptExecutionResult(BaseExecutionEvent event) {
         ExecutionDTO dto = event.getExecutionDTO();
         ExecutionPropertiesDTO props = executionList.stream()
                 .filter(epd -> epd.getExecutionId().equals(dto.getExecutionId()))
                 .findFirst()
                 .orElseThrow();
         ExecutionTransformer.updatePropsByDto(props, dto);
-        ScriptExecutionState state = getExecutionState(props);
-        controllerCallback.accept(state.controller, dto);
     }
 
     private ScriptExecutionState getExecutionState(ExecutionPropertiesDTO dto) {

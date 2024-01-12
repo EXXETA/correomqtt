@@ -1,6 +1,8 @@
 package org.correomqtt.business.scripting;
 
 import org.correomqtt.business.concurrent.NoProgressTask;
+import org.correomqtt.business.concurrent.TaskException;
+import org.correomqtt.business.fileprovider.ScriptingProvider;
 
 import java.io.IOException;
 
@@ -21,9 +23,9 @@ public class ScriptLoadTask extends NoProgressTask<String, ScriptLoadTask.Error>
     @Override
     protected String execute() {
         try {
-            return ScriptingBackend.loadScript(scriptFileDTO);
+            return ScriptingProvider.getInstance().loadScript(scriptFileDTO);
         } catch (IOException e) {
-            throw createExpectedException(IOERROR);
+            throw new TaskException(IOERROR);
         }
     }
 }

@@ -1,6 +1,7 @@
 package org.correomqtt.business.scripting;
 
 import org.correomqtt.business.concurrent.NoProgressTask;
+import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.fileprovider.ScriptingProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,7 @@ import static org.correomqtt.business.scripting.ScriptNewTask.Error.IOERROR;
 
 public class ScriptNewTask extends NoProgressTask<Path, ScriptNewTask.Error> {
 
-    private final Logger LOGGER = LoggerFactory.getLogger(ScriptNewTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScriptNewTask.class);
 
     public enum Error {
         FILENAME_NULL,
@@ -36,11 +37,11 @@ public class ScriptNewTask extends NoProgressTask<Path, ScriptNewTask.Error> {
     protected Path execute() {
 
         if (filename == null) {
-            throw createExpectedException(FILENAME_NULL);
+            throw new TaskException(FILENAME_NULL);
         }
 
         if (filename.length() < 4 || !filename.endsWith(".js")) {
-            throw createExpectedException(FILENAME_EMPTY_OR_WRONG_EXTENSION);
+            throw new TaskException(FILENAME_EMPTY_OR_WRONG_EXTENSION);
         }
 
         String ioErrorMsg = "Error creating new script. ";
@@ -52,21 +53,21 @@ public class ScriptNewTask extends NoProgressTask<Path, ScriptNewTask.Error> {
                     .anyMatch(s -> s.getName().equals(filename));
         } catch (IOException e) {
             LOGGER.debug(ioErrorMsg, e);
-            throw createExpectedException(IOERROR);
+            throw new TaskException(IOERROR);
         }
 
         if (alreadyExists) {
-            throw createExpectedException(FILE_ALREADY_EXISTS);
+            throw new TaskException(FILE_ALREADY_EXISTS);
         }
 
         try {
             return ScriptingProvider.getInstance().createScript(filename, "// Start writing javascript code here.");
         } catch (FileAlreadyExistsException e) {
             LOGGER.debug(MarkerFactory.getMarker(filename),ioErrorMsg, e);
-            throw createExpectedException(FILE_ALREADY_EXISTS);
+            throw new TaskException(FILE_ALREADY_EXISTS);
         } catch (IOException e) {
             LOGGER.debug(MarkerFactory.getMarker(filename),ioErrorMsg, e);
-            throw createExpectedException(IOERROR);
+            throw new TaskException(IOERROR);
         }
     }
 }

@@ -460,7 +460,7 @@ public class DetailViewController extends BaseConnectionController implements
         }
 
         Stage stage = (Stage) detailViewVBox.getScene().getWindow();
-        MessageUtils.saveMessage(getConnectionId(), messageDTO, stage);
+        MessageUtils.saveMessage(messageDTO, stage);
     }
 
     private void showSearchResult() {

@@ -1,19 +1,16 @@
-package org.correomqtt.business.concurrent;
+package org.correomqtt.business.utils;
 
 import org.correomqtt.business.model.ConnectionConfigDTO;
-import org.correomqtt.business.utils.ConnectionHolder;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-public abstract class ConnectionTask<T, E> extends NoProgressTask<T,E> {
+public class LoggerUtils {
 
-    protected final String connectionId;
-
-    protected ConnectionTask(String connectionId){
-        this.connectionId = connectionId;
+    private LoggerUtils(){
+        // private constructor
     }
 
-    protected Marker getConnectionMarker() {
+    public static Marker getConnectionMarker(String connectionId) {
         ConnectionConfigDTO connectionConfig = ConnectionHolder.getInstance().getConfig(connectionId);
         if (connectionConfig == null) {
             return MarkerFactory.getMarker("Unknown");

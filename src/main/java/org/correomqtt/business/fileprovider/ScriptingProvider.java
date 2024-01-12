@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -83,6 +84,15 @@ public class ScriptingProvider extends BaseUserFileProvider {
             throw new FileAlreadyExistsException(absoluteNewFilename);
         }
         return newFile.toPath();
+    }
+
+
+    public String loadScript(ScriptFileDTO scriptFileDTO) throws IOException {
+        StringBuilder codeBuilder = new StringBuilder();
+        try (Stream<String> lines = Files.lines(scriptFileDTO.getPath(), StandardCharsets.UTF_8)) {
+            lines.forEach(s -> codeBuilder.append(s).append("\n"));
+            return codeBuilder.toString();
+        }
     }
 
     public void deleteScript(String filename) throws IOException {

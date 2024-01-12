@@ -233,6 +233,12 @@
             <version>${graalvm.version}</version>
             <type>pom</type>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.graalvm.truffle/truffle-api -->
+        <dependency>
+            <groupId>org.graalvm.truffle</groupId>
+            <artifactId>truffle-api</artifactId>
+            <version>${graalvm.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>

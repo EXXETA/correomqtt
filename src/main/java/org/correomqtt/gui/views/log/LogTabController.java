@@ -7,6 +7,7 @@ import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.log.LogEvent;
 import org.correomqtt.business.log.PopLogCache;
+import org.correomqtt.gui.utils.LogAreaUtils;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.gui.views.LoaderResult;
 import org.fxmisc.richtext.CodeArea;
@@ -36,37 +37,7 @@ public class LogTabController extends BaseControllerImpl {
 
     @SuppressWarnings("unused")
     public void updateLog(@Subscribe LogEvent event) {
-        String[] matches = event.logMsg().split("\u001B");
-        String cssClass;
-        for (String match : matches) {
-            String str;
-                if(match.startsWith("[36m")) {
-                    cssClass = "cyan";
-                    str = match.substring(4);
-                } else if(match.startsWith("[34m")) {
-                    cssClass = "blue";
-                    str = match.substring(4);
-                } else if(match.startsWith("[31m")) {
-                    cssClass = "orange";
-                    str = match.substring(4);
-                } else if(match.startsWith("[33m")) {
-                    cssClass = "yellow";
-                    str = match.substring(4);
-                } else if(match.startsWith("[35m")) {
-                    cssClass = "magenta";
-                    str = match.substring(4);
-                } else if (match.startsWith("[1;31m")) {
-                    cssClass = "red";
-                    str = match.substring(6);
-                } else if (match.startsWith("[0;39m")) {
-                    cssClass = "default";
-                    str = match.substring(6);
-                } else {
-                    cssClass = "default";
-                    str = match;
-                }
-            logTextArea.append(str, cssClass);
-        }
+        LogAreaUtils.appendColorful(logTextArea,event.logMsg());
         logTextArea.requestFollowCaret();
     }
 

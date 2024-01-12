@@ -95,7 +95,6 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
 
     private void setConnection(ConnectionPropertiesDTO connectionDTO) {
 
-        //TODO parent css class only
         if (connectionDTO.isDirty() || connectionDTO.isNew()) {
             nameLabel.setText(connectionDTO.getName() + " *");
             nameLabel.getStyleClass().removeAll(DIRTY_CLASS);
@@ -125,7 +124,7 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
 
         } else {
             nameLabel.setText(connectionDTO.getName());
-            nameLabel.getStyleClass().removeAll(DIRTY_CLASS);
+            mainNode.getStyleClass().removeAll(DIRTY_CLASS);
             descriptionLabel.getStyleClass().removeAll(DIRTY_CLASS);
             mqtt3Tag.getStyleClass().removeAll(INACTIVE_CLASS);
             mqtt5Tag.getStyleClass().removeAll(INACTIVE_CLASS);

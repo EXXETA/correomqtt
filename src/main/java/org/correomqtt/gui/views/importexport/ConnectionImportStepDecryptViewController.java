@@ -3,6 +3,7 @@ package org.correomqtt.gui.views.importexport;
 import javafx.fxml.FXML;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.Tooltip;
+import org.correomqtt.business.concurrent.TaskErrorResult;
 import org.correomqtt.business.importexport.connections.ImportDecryptConnectionsTask;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ConnectionExportDTO;
@@ -53,7 +54,7 @@ public class ConnectionImportStepDecryptViewController extends BaseControllerImp
         this.delegate.goStepConnections();
     }
 
-    public void onDecryptFailed(ImportDecryptConnectionsTask.Error error, Throwable exception) {
+    public void onDecryptFailed(TaskErrorResult<ImportDecryptConnectionsTask.Error> result) {
         AlertHelper.warn(resources.getString("connectionImportDecryptFailedTitle"),
                 resources.getString("connectionImportDecryptFailedDescription"));
         delegate.onCancelClicked();

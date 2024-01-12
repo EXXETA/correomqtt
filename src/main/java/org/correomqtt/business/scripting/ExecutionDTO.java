@@ -7,9 +7,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.PipedInputStream;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 @Getter
 @Setter
@@ -23,7 +25,7 @@ public class ExecutionDTO {
     private String connectionId;
     private ScriptFileDTO scriptFile;
     private String jsCode;
-    private PipedInputStream in;
+    private Consumer<PipedInputStream> connectSnk;
     private ScriptExecutionError error;
     private LocalDateTime startTime;
     private Long executionTime;

@@ -1,8 +1,6 @@
 package org.correomqtt.business.eventbus;
 
 import lombok.AllArgsConstructor;
-import org.correomqtt.CorreoMqtt;
-import org.correomqtt.business.exception.CorreoMqttExecutionException;
 import org.correomqtt.business.utils.FrontendBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +14,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class EventBus {
@@ -31,6 +31,7 @@ public class EventBus {
         private Object clazz;
         private Method method;
         private boolean withPayload;
+        private boolean sync;
     }
 
     private EventBus() {
@@ -45,18 +46,26 @@ public class EventBus {
         Arrays.stream(listener.getClass().getDeclaredMethods())
                 .forEach(m -> {
 
-                    Class<Event> eventTypeFromMethod = getEventType(m);
-                    Class<Event> eventTypeFromParameter = getEventTypeFromParameter(m);
+                    EventSubscription annotationInfoFromMethod = getEventType(m);
+                    EventSubscription annotationInfoFromParameter = getEventTypeFromParameter(m);
 
-                    if (eventTypeFromMethod != null && eventTypeFromParameter != null) {
+                    if (annotationInfoFromMethod != null && annotationInfoFromParameter != null) {
                         throw new IllegalArgumentException("Only one Subscribe annotation per method is allowed. Either at method level or at parameter level.");
                     }
 
-                    Class<Event> eventType = eventTypeFromMethod == null ? eventTypeFromParameter : eventTypeFromMethod;
+                    Class<Event> eventType = null;
+                    boolean sync = false;
+                    if (annotationInfoFromMethod != null) {
+                        eventType = annotationInfoFromMethod.event;
+                        sync = annotationInfoFromMethod.sync;
+                    } else if (annotationInfoFromParameter != null) {
+                        eventType = annotationInfoFromParameter.event;
+                        sync = annotationInfoFromParameter.sync;
+                    }
 
                     if (eventType != null) {
                         LISTENER.computeIfAbsent(eventType, k -> new HashSet<>())
-                                .add(new Callback(listener, m, m.getParameters().length > 0));
+                                .add(new Callback(listener, m, m.getParameters().length > 0, sync));
                         registerEventType(eventType);
                     }
 
@@ -70,7 +79,7 @@ public class EventBus {
                 });
     }
 
-    private static Class<Event> getEventType(Method m) {
+    private static EventSubscription getEventType(Method m) {
 
         if (!m.isAnnotationPresent(Subscribe.class)) {
             return null;
@@ -99,7 +108,7 @@ public class EventBus {
         @SuppressWarnings("unchecked")
         Class<Event> castedType = (Class<Event>) type;
 
-        return castedType;
+        return new EventSubscription(castedType, annotation.sync());
     }
 
     private static void registerEventType(Class<Event> eventType) {
@@ -123,12 +132,20 @@ public class EventBus {
         EventBus.LISTENER.values().forEach(s -> s.removeIf(c -> c.clazz == listener));
     }
 
-    private static Class<Event> getEventTypeFromParameter(Method m) {
+    private static EventSubscription getEventTypeFromParameter(Method m) {
 
         Annotation[][] annotatedParams = m.getParameterAnnotations();
-        if (Arrays.stream(annotatedParams).noneMatch(a1 ->
-                Arrays.stream(a1).anyMatch(a2 ->
-                        a2.annotationType().isAssignableFrom(Subscribe.class))))
+        Subscribe annotation = (Subscribe) Arrays.stream(annotatedParams).map(a1 ->
+                        Arrays.stream(a1)
+                                .filter(a2 -> a2.annotationType().isAssignableFrom(Subscribe.class))
+                                .findFirst()
+                                .orElse(null))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+
+
+        if (annotation == null)
             return null;
 
         if (annotatedParams.length != 1) {
@@ -140,7 +157,7 @@ public class EventBus {
         }
 
         //noinspection unchecked
-        return (Class<Event>) params[0].getType();
+        return new EventSubscription((Class<Event>) params[0].getType(), annotation.sync());
 
     }
 
@@ -155,20 +172,29 @@ public class EventBus {
     }
 
     private static void executeFire(Event event, Set<Callback> callbacks) {
-        FrontendBinding.pushToFrontend(() ->
-                callbacks.forEach(c -> {
-                    try {
-                        if (c.withPayload) {
-                            c.method.invoke(c.clazz, event);
-                        } else {
-                            c.method.invoke(c.clazz);
-                        }
-                    } catch (Exception e) {
-                        LOGGER.error("Unexpected Exception firing async event. ", e);
-                        throw new EventCallbackExecutionException(e);
-                    }
-                })
-        );
+        callbacks.forEach(c -> {
+            if (c.sync) {
+                executeMethod(c, event);
+            } else {
+                FrontendBinding.pushToFrontend(() -> {
+                    executeMethod(c, event);
+                });
+            }
+        });
+    }
+
+    private static void executeMethod(Callback c, Event event) {
+
+        try {
+            if (c.withPayload) {
+                c.method.invoke(c.clazz, event);
+            } else {
+                c.method.invoke(c.clazz);
+            }
+        } catch (Exception e) {
+            LOGGER.error("Unexpected Exception firing event. ", e);
+            throw new EventCallbackExecutionException(e);
+        }
     }
 
     public static int fire(Event event) {
@@ -209,5 +235,9 @@ public class EventBus {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+
+    private record EventSubscription(Class<Event> event, boolean sync) {
     }
 }

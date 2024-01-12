@@ -1,8 +1,8 @@
 package org.correomqtt.business.scripting;
 
-import org.correomqtt.business.concurrent.NoProgressTask;
+import org.correomqtt.business.concurrent.SimpleTask;
 
-public class ScriptCancelTask extends NoProgressTask<Void, Void> {
+public class ScriptCancelTask extends SimpleTask {
 
     private final String executionId;
 
@@ -11,9 +11,11 @@ public class ScriptCancelTask extends NoProgressTask<Void, Void> {
     }
 
     @Override
-    protected Void execute() throws Exception {
-        ExecutionContextDTO dto = ScriptingBackend.getInstance().getExecutionContextDTO(executionId);
-        dto.getContext().close(true);
-        return null;
+    protected void execute() throws Exception {
+        ScriptExecutionTask task = ScriptingBackend.getExecutionTask(executionId);
+        if (task == null) {
+            throw new IllegalStateException("Task for executionId " + executionId + " does not exist.");
+        }
+        task.cancel();
     }
 }

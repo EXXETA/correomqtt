@@ -185,7 +185,8 @@
 }
 
 
-.list-view .list-cell .dirty {
+.list-view .list-cell .dirty .primaryText,
+.list-view .list-cell .dirty .secondaryText{
     -fx-text-fill: #931410; /* Breeze */
 }
 

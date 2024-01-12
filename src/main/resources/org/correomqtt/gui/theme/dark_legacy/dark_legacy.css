@@ -176,8 +176,9 @@
     -fx-text-fill: #dddddd;
 }
 
-.list-view .list-cell .dirty {
-    -fx-text-fill: #e21e18;
+.list-view .list-cell .dirty .primaryText,
+.list-view .list-cell .dirty .secondaryText{
+    -fx-text-fill: #ff8242;
 }
 
 .combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected:odd  {
