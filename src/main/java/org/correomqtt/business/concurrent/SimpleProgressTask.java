@@ -1,25 +1,35 @@
 package org.correomqtt.business.concurrent;
 
-public abstract class SimpleTask extends TaskImpl<Void, Void, Void, SimpleTaskErrorResult> {
+public abstract class SimpleProgressTask<P> extends TaskImpl<Void, P, Void, SimpleTaskErrorResult> {
 
-    public SimpleTask onStarted(StartListener listener) {
+    public SimpleProgressTask<P> onStarted(StartListener listener) {
         onStartedImpl(listener);
         return this;
     }
 
-    public SimpleTask onSuccess(SimpleSuccessListener listener) {
+    public SimpleProgressTask<P> onProgress(ProgressListener<P> listener) {
+        onProgressImpl(listener);
+        return this;
+    }
+
+    public SimpleProgressTask<P> onSuccess(SimpleSuccessListener listener) {
         onSuccessImpl(ignore -> listener.success());
+
         return this;
     }
 
-    public SimpleTask onError(SimpleTaskErrorResultListener listener) {
-        onErrorImpl(errorResult -> listener.error(TaskErrorResultTransformer.implToSimple(errorResult)));
+    public SimpleProgressTask<P> onError(TaskErrorResultListener<SimpleTaskErrorResult> listener) {
+        onErrorImpl(listener);
         return this;
     }
 
-    public SimpleTask onFinally(FinallyListener listener) {
+    public SimpleProgressTask<P> onFinally(FinallyListener listener) {
         onFinallyImpl(listener);
         return this;
+    }
+
+    protected void reportProgress(P progress) {
+        reportProgressImpl(progress);
     }
 
     protected abstract void execute() throws Exception;
@@ -56,13 +66,13 @@ public abstract class SimpleTask extends TaskImpl<Void, Void, Void, SimpleTaskEr
     }
 
     @Override
-    void successHookImpl(Void ignore) {
+    void successHookImpl(Void result) {
         successHook();
     }
 
     @Override
     void errorHookImpl(SimpleTaskErrorResult errorResult) {
-        errorHook(TaskErrorResultTransformer.implToSimple(errorResult));
+        errorHook(errorResult);
     }
 
     @Override

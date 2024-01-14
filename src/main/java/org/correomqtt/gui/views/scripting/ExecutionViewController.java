@@ -167,7 +167,9 @@ public class ExecutionViewController extends BaseControllerImpl {
         updateExistence();
 
         // Events used here to keep state in background even if window is closed in the meantime.
-        new ScriptExecutionTask(executionDTO).run();
+        new ScriptExecutionTask(executionDTO)
+                .onError(error -> AlertHelper.unexpectedAlert(error.getUnexpectedError()))
+                .run();
         return true;
     }
 
@@ -188,6 +190,8 @@ public class ExecutionViewController extends BaseControllerImpl {
 
     private void handleScriptExecutionResult(BaseExecutionEvent event) {
         ExecutionDTO dto = event.getExecutionDTO();
+        if (dto == null)
+            return;
         ExecutionPropertiesDTO props = executionList.stream()
                 .filter(epd -> epd.getExecutionId().equals(dto.getExecutionId()))
                 .findFirst()

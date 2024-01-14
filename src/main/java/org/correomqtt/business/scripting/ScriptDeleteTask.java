@@ -1,7 +1,6 @@
 package org.correomqtt.business.scripting;
 
-import org.correomqtt.business.concurrent.NoProgressTask;
-import org.correomqtt.business.concurrent.OnlyErrorTask;
+import org.correomqtt.business.concurrent.SimpleErrorTask;
 import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.fileprovider.ScriptingProvider;
 import org.slf4j.Logger;
@@ -13,7 +12,7 @@ import java.io.IOException;
 import static org.correomqtt.business.scripting.ScriptDeleteTask.Error.IOERROR;
 
 
-public class ScriptDeleteTask extends OnlyErrorTask<ScriptDeleteTask.Error> {
+public class ScriptDeleteTask extends SimpleErrorTask<ScriptDeleteTask.Error> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptDeleteTask.class);
 

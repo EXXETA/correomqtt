@@ -1,10 +1,12 @@
 package org.correomqtt.business.scripting.binding;
 
 import org.correomqtt.business.connection.ConnectTask;
+import org.correomqtt.business.connection.ConnectionState;
 import org.correomqtt.business.connection.DisconnectTask;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.model.MessageDTO;
+import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.SubscriptionDTO;
 import org.correomqtt.business.pubsub.IncomingMessageEvent;
@@ -16,43 +18,38 @@ import org.graalvm.polyglot.HostAccess.Export;
 import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import static org.correomqtt.business.connection.ConnectionState.DISCONNECTED_UNGRACEFUL;
+import static org.correomqtt.business.connection.ConnectionState.RECONNECTING;
 import static org.correomqtt.business.scripting.JsContextBuilder.CORREO_CONNECTION_ID;
 import static org.correomqtt.business.scripting.JsContextBuilder.CORREO_SCRIPT_LOGGER;
+import static org.correomqtt.business.scripting.JsContextBuilder.CORREO_SCRIPT_QUEUE;
 
 public class Client {
 
     private final String connectionId;
     private final Logger scriptLogger;
+    private final Queue queue;
     private AsyncClient asyncClient;
     private PromiseClient promiseClient;
     private BlockingClient blockingClient;
 
-    public interface SubscriptionInterface {
-        @SuppressWarnings("unused")
-        Value handle(Value callback) throws InterruptedException;
-    }
-
-    public interface QueueInterface {
-        @SuppressWarnings("unused")
-        void work() throws InterruptedException;
-
-        @SuppressWarnings("unused")
-        void finish();
-    }
-
-    private final LinkedBlockingDeque<IncomingMessageEvent> eventQueue = new LinkedBlockingDeque<>();
-    private final Map<String, Value> subscriptions = new HashMap<>();
+    private final Map<String, Consumer<String>> subscriptions = new HashMap<>();
     private final Context context;
 
     Client() {
         context = Context.getCurrent();
         connectionId = context.getPolyglotBindings().getMember(CORREO_CONNECTION_ID).as(String.class);
         scriptLogger = context.getPolyglotBindings().getMember(CORREO_SCRIPT_LOGGER).as(Logger.class);
+        queue = context.getPolyglotBindings().getMember(CORREO_SCRIPT_QUEUE).as(Queue.class);
         EventBus.register(this);
     }
 
@@ -82,174 +79,109 @@ public class Client {
 
 
     void connect(Runnable onSuccess, Consumer<Throwable> onError) {
-        new ConnectTask(connectionId)
-                .onSuccess(() -> {
-                    scriptLogger.info("Client successful connected.");
-                    onSuccess.run();
-                })
-                .onError(r -> {
-                    scriptLogger.error("Client could not connect: {}", r.getUnexpectedError().getMessage());
-                    onError.accept(r.getUnexpectedError());
-                })
-                .run();
+        new ConnectTask(connectionId).onSuccess(() -> {
+            scriptLogger.info("Client successful connected.");
+            onSuccess.run();
+        }).onProgress(ev -> {
+            String msg = "Connection state changed to {}. Retry {}/{}";
+            if (ev.getState() == RECONNECTING) {
+                scriptLogger.warn(msg, ev.getState(), ev.getRetries(), ev.getMaxRetries());
+            } else if (ev.getState() == DISCONNECTED_UNGRACEFUL) {
+                scriptLogger.error(msg, ev.getState(), ev.getRetries(), ev.getMaxRetries());
+            } else {
+                scriptLogger.info(msg, ev.getState(), ev.getRetries(), ev.getMaxRetries());
+            }
+        }).onError(r -> {
+            scriptLogger.error("Client could not connect: {}", r.getUnexpectedError().getMessage());
+            onError.accept(r.getUnexpectedError());
+        }).run();
     }
 
     void disconnect(Runnable onSuccess, Consumer<Throwable> onError) {
-        new DisconnectTask(connectionId)
-                .onSuccess(() -> {
-                    scriptLogger.info("Client successful disconnected.");
-                    onSuccess.run();
-                })
-                .onError(r -> {
-                    scriptLogger.error("Client could not disconnect: {}", r.getUnexpectedError().getMessage());
-                    onError.accept(r.getUnexpectedError());
-                })
-                .run();
+        new DisconnectTask(connectionId).onSuccess(() -> {
+            scriptLogger.info("Client successful disconnected.");
+            onSuccess.run();
+        }).onError(r -> {
+            scriptLogger.error("Client could not disconnect: {}", r.getUnexpectedError().getMessage());
+            onError.accept(r.getUnexpectedError());
+        }).run();
     }
 
-    /**
-     * @param topic   Topic
-     * @param qos     QoS
-     * @param payload Payload
-     * @return Value true if success, other false
-     */
-    @SuppressWarnings("unused")
-    @Export
-    public Value publish(String topic, Integer qos, String payload) throws InterruptedException {
-
-        LinkedBlockingDeque<Value> queue = new LinkedBlockingDeque<>();
+    void publish(String topic, int qos, boolean retained, String payload, Runnable onSuccess, Consumer<Throwable> onError) {
         new PublishTask(connectionId, MessageDTO.builder()
                 .topic(topic)
                 .qos(Qos.fromJsonValue(qos))
-                .payload(payload).build())
-                .onSuccess(() -> {
-                    scriptLogger.info("Published message to {} with qos {}.", topic, qos);
-                    offerTrue(queue);
-                })
-                .onError(r -> {
-                    scriptLogger.error("Failed to publish message to {} with qos {}: {}", topic, qos, r.getUnexpectedError().getMessage());
-                    offerFalse(queue);
-                })
-                .run();
-
-        return queue.take();
+                .payload(payload)
+                .isRetained(false) //TODO
+                .messageId(UUID.randomUUID().toString())
+                .messageType(MessageType.OUTGOING)
+                .dateTime(LocalDateTime.now())
+                .build()
+        ).onSuccess(() -> {
+            scriptLogger.info("Published message to {} with qos {}.", topic, qos);
+            onSuccess.run();
+        }).onError(r -> {
+            scriptLogger.error("Failed to publish message to {} with qos {}: {}", topic, qos, r.getUnexpectedError().getMessage());
+            onError.accept(r.getUnexpectedError());
+        }).run();
     }
 
-    /**
-     * @param topic Topic
-     * @param qos   QoS
-     * @return SubscriptionInterface for callback -> handle()
-     */
-    @SuppressWarnings("unused")
-    @Export
-    public Value subscribe(String topic, Integer qos) {
-        return Value.asValue((SubscriptionInterface) callback -> {
-            LinkedBlockingDeque<Value> queue = new LinkedBlockingDeque<>();
-            subscriptions.put(topic, callback);
-            new SubscribeTask(connectionId, SubscriptionDTO.builder()
-                    .topic(topic)
-                    .qos(Qos.fromJsonValue(qos))
-                    .build())
-                    .onSuccess(() -> {
-                        scriptLogger.info("Subscribed to {} with qos {}.", topic, qos);
-                        offerTrue(queue);
-                    })
-                    .onError(r -> {
-                        scriptLogger.error("Failed to subscribe to {} with qos {}: {}", topic, qos, r.getUnexpectedError().getMessage());
-                        offerFalse(queue);
-                    })
-                    .run();
-            return queue.take();
-        });
+    void subscribe(String topic, Integer qos, Runnable onSuccess, Consumer<Throwable> onError, Consumer<String> onIncomingMessage) {
+        subscriptions.put(topic, onIncomingMessage);
+        new SubscribeTask(connectionId, SubscriptionDTO.builder().topic(topic).qos(Qos.fromJsonValue(qos)).build()).onSuccess(() -> {
+            scriptLogger.info("Subscribed to {} with qos {}.", topic, qos);
+            onSuccess.run();
+        }).onError(r -> {
+            scriptLogger.error("Failed to subscribe to {} with qos {}: {}", topic, qos, r.getUnexpectedError().getMessage());
+            onError.accept(r.getUnexpectedError());
+        }).run();
     }
 
-
-    /**
-     * @param topic Topic
-     * @return Value true if success, other false
-     */
-    @SuppressWarnings("unused")
-    @Export
-    public Value unsubscribe(String topic) throws InterruptedException {
-        LinkedBlockingDeque<Value> queue = new LinkedBlockingDeque<>();
-        new UnsubscribeTask(connectionId, SubscriptionDTO.builder()
-                .topic(topic)
-                .build())
-                .onSuccess(() -> {
-                    scriptLogger.info("Unsubscribed from {}.", topic);
-                    offerTrue(queue);
-                })
-                .onError(r -> {
-                    scriptLogger.error("Failed to unsubscribe from {}: {}", topic, r.getUnexpectedError().getMessage());
-                    offerFalse(queue);
-                })
-                .run();
-        return queue.take();
+    void unsubscribe(String topic, Runnable onSuccess, Consumer<Throwable> onError) {
+        new UnsubscribeTask(connectionId, SubscriptionDTO.builder().topic(topic).build()).onSuccess(() -> {
+            scriptLogger.info("Unsubscribed from {}.", topic);
+            onSuccess.run();
+        }).onError(r -> {
+            scriptLogger.error("Failed to unsubscribe from {}: {}", topic, r.getUnexpectedError().getMessage());
+            onError.accept(r.getUnexpectedError());
+        }).run();
     }
 
-    /**
-     * @return Value true if success, other false
-     */
-    @SuppressWarnings("unused")
-    @Export
-    public Value unsubscribeAll() throws InterruptedException {
-        boolean success = true;
+    void unsubscribeAll(Runnable onSuccess, Consumer<Throwable> onError) {
+
+        AtomicBoolean success = new AtomicBoolean(true);
+        AtomicInteger count = new AtomicInteger(subscriptions.size());
+
         for (String topic : subscriptions.keySet()) {
-            success = unsubscribe(topic).asBoolean() && success;
-        }
-        return Value.asValue(success);
-    }
-
-
-    /**
-     * @return Value true if success, other false
-     */
-    @SuppressWarnings("unused")
-    @Export
-    public Value queue() {
-        return Value.asValue(new QueueInterface() {
-            @Override
-            public void work() throws InterruptedException {
-                IncomingMessageEvent event;
-                do {
-                    event = eventQueue.take();
-                    if (event.getConnectionId() == null)
-                        continue;
-                    String topic = event.getSubscriptionDTO().getTopic();
-                    if (subscriptions.containsKey(topic)) {
-                        Value sub = subscriptions.get(topic);
-                        sub.execute(event.getMessageDTO().getPayload());
-                    }
-
-                } while (event.getConnectionId() != null);
-            }
-
-            @Override
-            public void finish() {
-                if (!eventQueue.offer(new IncomingMessageEvent(null, null, null))) {
-                    scriptLogger.error("Internal event queue is out of capacity.");
+            unsubscribe(topic, () -> {
+                int c = count.decrementAndGet();
+                if (c == 0 && success.get()) {
+                    onSuccess.run();
+                } else if (c == 0) {
+                    onError.accept(null);
                 }
-            }
-        });
+            }, r -> {
+                int c = count.decrementAndGet();
+                if (c == 0 && success.get()) {
+                    onSuccess.run();
+                } else if (c == 0) {
+                    onError.accept(null);
+                }
+                success.set(false);
+            });
+        }
     }
 
     @SuppressWarnings("unused")
     public void onSubscribe(@Subscribe IncomingMessageEvent event) {
-        eventQueue.add(event);
+        queue.add(new QueueEvent(() -> {
+            String topic = event.getSubscriptionDTO().getTopic();
+            if (subscriptions.containsKey(topic)) {
+                Consumer<String> sub = subscriptions.get(topic);
+                sub.accept(event.getMessageDTO().getPayload());
+            }
+        }));
     }
 
-    private void offerTrue(LinkedBlockingDeque<Value> queue) {
-        offerToQueue(queue, Value.asValue(true));
-    }
-
-    private void offerFalse(LinkedBlockingDeque<Value> queue) {
-        offerToQueue(queue, Value.asValue(false));
-    }
-
-    private void offerToQueue(LinkedBlockingDeque<Value> queue, Value value) {
-        if (!queue.offer(value)) {
-            scriptLogger.error("Internal event queue is out of capacity.");
-        }
-    }
 
 }

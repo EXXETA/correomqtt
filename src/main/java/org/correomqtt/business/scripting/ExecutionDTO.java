@@ -25,7 +25,8 @@ public class ExecutionDTO {
     private String connectionId;
     private ScriptFileDTO scriptFile;
     private String jsCode;
-    private Consumer<PipedInputStream> connectSnk;
+    //private Consumer<PipedInputStream> connectSnk;
+    private PipedInputStream snk;
     private ScriptExecutionError error;
     private LocalDateTime startTime;
     private Long executionTime;

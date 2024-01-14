@@ -17,18 +17,15 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.time.LocalDateTime;
 
-import static java.text.MessageFormat.format;
 import static org.correomqtt.business.scripting.ScriptExecutionError.Type.GUEST;
 import static org.correomqtt.business.scripting.ScriptExecutionError.Type.HOST;
 import static org.slf4j.MarkerFactory.getMarker;
 
 public class ScriptExecutionTask extends Task<ExecutionDTO, ExecutionDTO, ExecutionDTO> {
 
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptExecutionTask.class);
     private static final int MAX_WAIT = 5000;
     private static final int WAIT_STEP = 100;
-    private PipedInputStream snk = null;
     @Getter
     private final ExecutionDTO dto;
     private Context context;
@@ -38,43 +35,28 @@ public class ScriptExecutionTask extends Task<ExecutionDTO, ExecutionDTO, Execut
     }
 
     public ExecutionDTO execute() throws TaskException {
-        LOGGER.debug(getMarker(dto.getScriptFile().getName()),
-                "Submit script: {}", dto.getExecutionId());
+        LOGGER.debug(getMarker(dto.getScriptFile().getName()), "Submit script: {}", dto.getExecutionId());
 
         ScriptingBackend.putExecutionTask(dto.getExecutionId(), this);
 
         try (PipedOutputStream out = new PipedOutputStream();
-             ScriptLoggerContext slc = new ScriptLoggerContext(out, dto.getScriptFile().getName());
-             Context c = new JsContextBuilder()
-                     .dto(dto)
-                     .out(out)
-                     .logger(slc.getLogger())
-                     .build();
-        ) {
-
+             PipedInputStream snk = new PipedInputStream(out);
+             ScriptLoggerContext slc = new ScriptLoggerContext(out, dto.getExecutionId(), dto.getScriptFile().getName());
+             Context c = new JsContextBuilder().dto(dto).out(out).logger(slc.getScriptLogger()).build();) {
             context = c;
-
-            Logger scriptLogger = slc.getLogger();
-
+            Logger scriptLogger = slc.getScriptLogger();
             dto.setStartTime(LocalDateTime.now());
-
-            dto.setConnectSnk(incSnk -> this.connectSnkToOut(incSnk, out));
-
+            dto.setSnk(snk);
             EventBus.fireAsync(new ScriptExecutionProgressEvent(dto));
             reportProgress(dto);
-
-            executeContext(context, scriptLogger);
-
+            if (!executeContext(context, scriptLogger)) {
+                throw new TaskException(dto);
+            }
             dto.updateExecutionTime();
-
-            outlog(scriptLogger, format("Script returned and succeeded in {0}ms.", dto.getExecutionTime()));
-
-            waitForSnk();
-
+            scriptLogger.info("Script returned in {}ms.", dto.getExecutionTime());
+            waitForSnk(snk);
             EventBus.fire(new ScriptExecutionSuccessEvent(dto));
-
             return dto;
-
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOGGER.info("InterruptedException during Script execution", e);
@@ -89,39 +71,39 @@ public class ScriptExecutionTask extends Task<ExecutionDTO, ExecutionDTO, Execut
         }
     }
 
-    private void executeContext(Context context, Logger scriptLogger) throws IOException {
+    private boolean executeContext(Context context, Logger scriptLogger) throws IOException {
         try {
-            //context.eval("js", dto.getJsCode());
-            Source source = Source.newBuilder("js", dto.getJsCode(), "test")
-                    .mimeType("application/javascript+module").build();
+            Source source = Source.newBuilder("js", dto.getJsCode() + "\njoin();", "test")
+                    .mimeType("application/javascript+module") // required for top level await
+                    .build();
             context.eval(source);
+            return true;
         } catch (PolyglotException pge) {
-            outlog(scriptLogger, pge.getMessage());
-            dto.updateExecutionTime();
-            handlePolyglotException(pge, scriptLogger);
-            throw new TaskException(dto);
+            return handlePolyglotException(pge, scriptLogger);
         }
     }
 
-    private void handlePolyglotException(PolyglotException pge, Logger scriptLogger) {
-
+    private boolean handlePolyglotException(PolyglotException pge, Logger scriptLogger) {
+        dto.updateExecutionTime();
         if (pge.isGuestException()) {
             dto.setError(new ScriptExecutionError(GUEST, pge));
             if (pge.isCancelled()) {
                 dto.setCancelled(true);
-                outlog(scriptLogger, format("Script cancelled after {0}ms.\n{1}", dto.getExecutionTime(), pge.getMessage()));
+                scriptLogger.info("Script cancelled after {}ms.\n{}", dto.getExecutionTime(), pge.getMessage());
+                return true;
             } else {
-                outlog(scriptLogger, format("Script failed after {0}ms.\n{1}", dto.getExecutionTime(), pge.getMessage()));
+                scriptLogger.error("Script failed after {}ms.\n{}", dto.getExecutionTime(), pge.getMessage());
+                return false;
             }
         } else {
             dto.setError(new ScriptExecutionError(HOST, pge));
-            outlog(scriptLogger, format("Script failed caused by host after {0}ms.\n{1}", dto.getExecutionTime(), pge.getMessage()));
+            scriptLogger.error("Script failed caused by host after {}ms.\n{}", dto.getExecutionTime(), pge.getMessage());
+            return false;
         }
     }
 
-    private void waitForSnk() throws IOException, InterruptedException {
-        if (snk == null)
-            return;
+    private void waitForSnk(PipedInputStream snk) throws IOException, InterruptedException {
+        if (snk == null) return;
 
         for (int currentWait = 0; currentWait < MAX_WAIT; currentWait += WAIT_STEP) {
             if (snk.available() <= 0) {
@@ -134,26 +116,10 @@ public class ScriptExecutionTask extends Task<ExecutionDTO, ExecutionDTO, Execut
             LOGGER.debug("SNK still has data available after {}ms => Stopping now.", MAX_WAIT);
     }
 
-    private void outlog(Logger scriptLogger, String msg) {
-        scriptLogger.info(msg);
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(marker(), msg);
-        }
-    }
-
     private Marker marker() {
         return getMarker(dto.getScriptFile().getName());
     }
 
-    private void connectSnkToOut(PipedInputStream snk, PipedOutputStream out) throws TaskException {
-        this.snk = snk;
-        try {
-            out.connect(snk);
-        } catch (IOException e) {
-            LOGGER.error("Unable to connect out to snk", e);
-            throw new TaskException(dto);
-        }
-    }
 
     public void cancel() {
         dto.setCancelled(true);

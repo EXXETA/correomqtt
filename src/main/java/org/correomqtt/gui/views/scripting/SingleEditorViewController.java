@@ -19,6 +19,7 @@ import org.correomqtt.business.scripting.ScriptExecutionSuccessEvent;
 import org.correomqtt.business.scripting.ScriptFileDTO;
 import org.correomqtt.business.scripting.ScriptLoadTask;
 import org.correomqtt.business.scripting.ScriptSaveTask;
+import org.correomqtt.business.scripting.ScriptingBackend;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.controls.IconButton;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -78,7 +80,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() throws IOException {
+    public void initialize() {
 
         updateConnections();
 
@@ -90,7 +92,6 @@ public class SingleEditorViewController extends BaseControllerImpl {
 
         connectionList.setCellFactory(ConnectionCell::new);
         connectionList.setButtonCell(new ConnectionCellButton(null));
-
 
     }
 
@@ -106,7 +107,21 @@ public class SingleEditorViewController extends BaseControllerImpl {
         scriptingViewCodeAreaPane.getChildren().add(new VirtualizedScrollPane<>(codeArea));
         codeArea.prefWidthProperty().bind(scriptingViewCodeAreaPane.widthProperty());
         codeArea.prefHeightProperty().bind(scriptingViewCodeAreaPane.heightProperty());
-        scriptingRunButton.setDisable(false);
+
+        List<ExecutionPropertiesDTO> executions = ScriptingBackend.getExecutions()
+                .stream()
+                .filter(e -> scriptFileDTO.getName().equals(e.getScriptFile().getName()))
+                .map(ExecutionTransformer::dtoToProps)
+                .toList();
+
+        long running = executions.stream()
+                .filter(e -> e.getState() == ScriptState.RUNNING)
+                .count();
+        if(running > 0){
+            scriptingRunButton.setDisable(true);
+        }else{
+            scriptingRunButton.setDisable(false);
+        }
         codeArea.setDisable(false);
         codeArea.plainTextChanges()
                 .filter(ch -> !ch.isIdentity())

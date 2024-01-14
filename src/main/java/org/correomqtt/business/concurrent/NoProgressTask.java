@@ -45,6 +45,10 @@ public abstract class NoProgressTask<T, E> extends TaskImpl<T, Void, E, TaskErro
         // to be overridden by child on demand
     }
 
+    protected void finalHook() {
+        // to be overridden by child on demand
+    }
+
     @Override
     void beforeHookImpl() {
         beforeHook();
@@ -58,6 +62,11 @@ public abstract class NoProgressTask<T, E> extends TaskImpl<T, Void, E, TaskErro
     @Override
     void errorHookImpl(TaskErrorResult<E> errorResult) {
         errorHook(errorResult);
+    }
+
+    @Override
+    void finalHookImpl() {
+        finalHook();
     }
 
 }

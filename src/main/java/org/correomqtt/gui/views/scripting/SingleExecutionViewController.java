@@ -8,10 +8,14 @@ import javafx.scene.layout.VBox;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.eventbus.SubscribeFilter;
+import org.correomqtt.business.scripting.ExecutionDTO;
 import org.correomqtt.business.scripting.ScriptCancelTask;
 import org.correomqtt.business.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.business.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.business.scripting.ScriptExecutionSuccessEvent;
+import org.correomqtt.business.scripting.ScriptExecutionTask;
+import org.correomqtt.business.scripting.ScriptingBackend;
+import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.LogAreaUtils;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
@@ -64,31 +68,34 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     public void initialize() {
         logArea.prefWidthProperty().bind(logHolder.widthProperty());
         logArea.prefHeightProperty().bind(logHolder.heightProperty());
-        scriptingStopButton.setDisable(true);
+        ScriptExecutionTask task = ScriptingBackend.getExecutionTask(executionPropertiesDTO.getExecutionId());
+        if (executionPropertiesDTO.getState() == ScriptState.RUNNING) {
+            scriptingStopButton.setDisable(false);
+            connectLog(task.getDto());
+        } else {
+            scriptingStopButton.setDisable(true);
+        }
     }
 
     @SuppressWarnings("unused")
     public void onScriptExecutionProgress(@Subscribe(sync = true) ScriptExecutionProgressEvent event) {
+        connectLog(event.getExecutionDTO());
+    }
 
+    private void connectLog(ExecutionDTO dto) {
         if (logPipeFuture != null) {
             return;
         }
 
         scriptingStopButton.setDisable(false);
 
-        // Barrier to wait till log is connected before script is started
-        CountDownLatch pisConnected = new CountDownLatch(1);
 
         logPipeFuture = CompletableFuture.runAsync(() -> {
             final int BUFFER_SIZE = 8192;
-            try (final PipedInputStream snk = new PipedInputStream();
-                 final InputStreamReader isr = new InputStreamReader(snk, StandardCharsets.UTF_8);
-                 final BufferedReader br = new BufferedReader(isr, BUFFER_SIZE);
+            try (
+                    final InputStreamReader isr = new InputStreamReader(dto.getSnk(), StandardCharsets.UTF_8);
+                    final BufferedReader br = new BufferedReader(isr, BUFFER_SIZE);
             ) {
-
-                // connect snk
-                event.getExecutionDTO().getConnectSnk().accept(snk);
-                pisConnected.countDown();
 
                 // stream log output
                 String line;
@@ -96,6 +103,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
                     final String text = line;
                     Platform.runLater(() -> addLog(text));
                 }
+
 
             } catch (IOException e) {
                 // this is normal if SNK is closed.
@@ -105,7 +113,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
             LOGGER.error("Exception listening to script pipe. ", e);
             return null;
         });
-
+/*
         try {
             if (!pisConnected.await(MAX_WAIT_FOR_SNK_CONNECTED, TimeUnit.MILLISECONDS)) {
                 throw new IllegalStateException("Snk not connected in " + MAX_WAIT_FOR_SNK_CONNECTED + "ms.");
@@ -113,7 +121,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(e);
-        }
+        }*/
     }
 
     private void addLog(String msg) {
@@ -151,6 +159,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     @FXML
     public void onStopButtonClicked() {
         new ScriptCancelTask(getExecutionId())
+                .onError(error -> AlertHelper.unexpectedAlert(error.getUnexpectedError()))
                 .run();
     }
 

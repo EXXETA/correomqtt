@@ -1,7 +1,5 @@
 package org.correomqtt;
 
-import java.util.PropertyPermission;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;

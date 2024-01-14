@@ -1,12 +1,18 @@
 package org.correomqtt.business.connection;
 
+import org.correomqtt.business.concurrent.SimpleProgressTask;
 import org.correomqtt.business.concurrent.SimpleTask;
+import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
+import org.correomqtt.business.eventbus.SubscribeFilter;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.mqtt.CorreoMqttClientFactory;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.business.utils.CorreoMqttConnection;
 
-public class ConnectTask extends SimpleTask {
+import static org.correomqtt.business.eventbus.SubscribeFilterNames.CONNECTION_ID;
+
+public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent> {
 
     private final String connectionId;
 
@@ -16,7 +22,6 @@ public class ConnectTask extends SimpleTask {
 
     @Override
     protected void execute() throws Exception {
-
         CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionId);
         if (client == null) {
             CorreoMqttConnection connection = ConnectionHolder.getInstance().getConnection(connectionId);
@@ -24,9 +29,28 @@ public class ConnectTask extends SimpleTask {
             client = ConnectionHolder.getInstance().getClient(connectionId);
         }
 
-        if (client.getState() == ConnectionState.DISCONNECTED_GRACEFUL ||
-                client.getState() == ConnectionState.DISCONNECTED_UNGRACEFUL) {
+        if (client.getState() == ConnectionState.DISCONNECTED_GRACEFUL || client.getState() == ConnectionState.DISCONNECTED_UNGRACEFUL) {
             client.connect();
         }
     }
+
+    @Override
+    protected void beforeHook() {
+        EventBus.register(this);
+    }
+
+    @Override
+    protected void finalHook() {
+        EventBus.unregister(this);
+    }
+
+    public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {
+        reportProgress(event);
+    }
+
+    @SubscribeFilter(CONNECTION_ID)
+    public String getConnectionId() {
+        return connectionId;
+    }
+
 }

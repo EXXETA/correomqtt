@@ -54,6 +54,9 @@ public abstract class Task<T, P, E> extends TaskImpl<T, P, E, TaskErrorResult<E>
         // to be overridden by child on demand
     }
 
+    protected void finalHook() {
+        // to be overridden by child on demand
+    }
     @Override
     void beforeHookImpl() {
         beforeHook();
@@ -67,5 +70,10 @@ public abstract class Task<T, P, E> extends TaskImpl<T, P, E, TaskErrorResult<E>
     @Override
     void errorHookImpl(TaskErrorResult<E> errorResult) {
         errorHook(errorResult);
+    }
+
+    @Override
+    void finalHookImpl() {
+        finalHook();
     }
 }

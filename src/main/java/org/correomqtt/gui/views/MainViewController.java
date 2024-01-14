@@ -12,7 +12,9 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
+import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.business.fileprovider.PersistPublishHistoryProvider;
 import org.correomqtt.business.fileprovider.PersistPublishMessageHistoryProvider;
@@ -108,6 +110,11 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private String closedTabId;
 
+    public MainViewController() {
+        EventBus.register(this);
+    }
+
+
     @FXML
     public void initialize() {
         tabPaneAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
@@ -144,7 +151,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private void setupAddTab() {
         addTab.setClosable(false);
         addTab.setGraphic(new ThemedFontIcon("mdi-home"));
-        LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this,this);
+        LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this, this);
         addTab.setContent(loadResult.getMainRegion());
         resources = loadResult.getResourceBundle();
         connectionOnboardingViewController = loadResult.getController();
@@ -176,8 +183,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             }
         });
         scriptingItem.setOnAction(event -> ScriptingViewController.showAsDialog());
-        websiteItem.setOnAction(event -> HostServicesHolder.getInstance().getHostServices().showDocument(
-                new Hyperlink(VendorConstants.WEBSITE()).getText()));
+        websiteItem.setOnAction(event -> HostServicesHolder.getInstance().getHostServices().showDocument(new Hyperlink(VendorConstants.WEBSITE()).getText()));
         pluginSettingsItem.setOnAction(event -> openPluginSettings());
         exportConnectionsItem.setOnAction(event -> ConnectionExportViewController.showAsDialog());
         importConnectionsItem.setOnAction(event -> ConnectionImportViewController.showAsDialog());
@@ -194,61 +200,70 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     @Override
     public void setTabName(String tabId, String name) {
-        tabPane.getTabs().stream()
-                .filter(t -> t.getId().equals(tabId))
-                .findFirst()
-                .ifPresent(t -> t.setText(name));
+        tabPane.getTabs().stream().filter(t -> t.getId().equals(tabId)).findFirst().ifPresent(t -> t.setText(name));
         calcTabWidth();
+    }
+
+    @SuppressWarnings("unused")
+    public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {
+        if (conntectionViewControllers.values().stream().noneMatch(ctrl -> ctrl.getConnectionId().equals(event.getConnectionId()))) {
+            getConnectionViewControllerLoaderResult(ConnectionTransformer.dtoToProps(ConnectionHolder.getInstance().getConfig(event.getConnectionId())));
+        }
     }
 
     @Override
     public void onConnect(ConnectionPropertiesDTO config) {
         if (ConnectionHolder.getInstance().isConnectionUnused(ConnectionTransformer.propsToDto(config))) {
-            String tabId = UUID.randomUUID().toString();
-
-            PersistPublishHistoryProvider.activate(config.getId());
-            PersistPublishMessageHistoryProvider.activate(config.getId());
-            PersistSubscriptionHistoryProvider.activate(config.getId());
-
-            Tab tab = new Tab();
-            tab.setId(tabId);
-            tab.setGraphic(new ThemedFontIcon("correo-wifi-solid"));
-            tab.setClosable(true);
-            tab.setText(config.getName());
-            tab.setOnSelectionChanged(event -> {
-                if (tab.isSelected()) {
-                    tab.getStyleClass().removeAll(DIRTY_CLASS);
-                }
-            });
-
-            config.getNameProperty().addListener(((observableValue, s, t1) -> tab.setText(t1)));
-
-            LoaderResult<ConnectionViewController> result = ConnectionViewController.load(config.getId(), this);
-            result.getController().setTabId(tabId);
-            tab.setContent(result.getMainRegion());
-            tab.setOnCloseRequest(event -> this.onTabClose(result, tabId));
-
-            conntectionViewControllers.put(tabId, result.getController());
-
-            tabPane.getTabs().add(tabPane.getTabs().size() - 1, tab);
-            selectionModel = tabPane.getSelectionModel();
-            selectionModel.select(tab);
-
-            LOGGER.debug("New tab created");
+            LoaderResult<ConnectionViewController> result = getConnectionViewControllerLoaderResult(config);
 
             result.getController().connect(config);
 
-            calcTabWidth();
         } else {
-            AlertHelper.warn(resources.getString("mainViewControllerAlreadyUsedTitle"),
-                    resources.getString("mainViewControllerAlreadyUsedContent"));
+            AlertHelper.warn(resources.getString("mainViewControllerAlreadyUsedTitle"), resources.getString("mainViewControllerAlreadyUsedContent"));
         }
 
+    }
+
+    private LoaderResult<ConnectionViewController> getConnectionViewControllerLoaderResult(ConnectionPropertiesDTO config) {
+        String tabId = UUID.randomUUID().toString();
+
+        PersistPublishHistoryProvider.activate(config.getId());
+        PersistPublishMessageHistoryProvider.activate(config.getId());
+        PersistSubscriptionHistoryProvider.activate(config.getId());
+
+        Tab tab = new Tab();
+        tab.setId(tabId);
+        tab.setGraphic(new ThemedFontIcon("correo-wifi-solid"));
+        tab.setClosable(true);
+        tab.setText(config.getName());
+        tab.setOnSelectionChanged(event -> {
+            if (tab.isSelected()) {
+                tab.getStyleClass().removeAll(DIRTY_CLASS);
+            }
+        });
+
+        config.getNameProperty().addListener(((observableValue, s, t1) -> tab.setText(t1)));
+
+        LoaderResult<ConnectionViewController> result = ConnectionViewController.load(config.getId(), this);
+        result.getController().setTabId(tabId);
+        tab.setContent(result.getMainRegion());
+        tab.setOnCloseRequest(event -> this.onTabClose(result, tabId));
+
+        conntectionViewControllers.put(tabId, result.getController());
+
+        tabPane.getTabs().add(tabPane.getTabs().size() - 1, tab);
+        selectionModel = tabPane.getSelectionModel();
+        selectionModel.select(tab);
+
+        LOGGER.debug("New tab created");
+        calcTabWidth();
+        return result;
     }
 
     private void onTabClose(LoaderResult<ConnectionViewController> result, String tabId) {
         closedTabId = tabId;
         result.getController().close();
+        conntectionViewControllers.remove(closedTabId);
     }
 
     @FXML
@@ -291,6 +306,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         connectionOnboardingViewController.cleanUp();
         logViewController.cleanUp();
         conntectionViewControllers.remove(this.closedTabId);
+        EventBus.unregister(this);
     }
 
     @Override
@@ -303,35 +319,27 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     public void onDisconnect() {
         calcTabWidth();
     }
+
     @Override
     public void setTabDirty(String tabId) {
-        tabPane.getTabs().stream()
-                .filter(t -> tabId.equals(t.getId()))
-                .findFirst()
-                .ifPresent(t -> {
-                    if (!t.isSelected()) {
-                        t.getStyleClass().removeAll(DIRTY_CLASS);
-                        t.getStyleClass().add(DIRTY_CLASS);
-                    }
-                });
+        tabPane.getTabs().stream().filter(t -> tabId.equals(t.getId())).findFirst().ifPresent(t -> {
+            if (!t.isSelected()) {
+                t.getStyleClass().removeAll(DIRTY_CLASS);
+                t.getStyleClass().add(DIRTY_CLASS);
+            }
+        });
     }
 
     @Override
     public void setConnectionState(String tabId, GuiConnectionState state) {
-        tabPane.getTabs().stream()
-                .filter(t -> t.getId().equals(tabId))
-                .findFirst()
-                .ifPresent(t -> {
-                    ((ThemedFontIcon) t.getGraphic()).setIconColor(state.getIconColor());
-                });
+        tabPane.getTabs().stream().filter(t -> t.getId().equals(tabId)).findFirst().ifPresent(t -> {
+            ((ThemedFontIcon) t.getGraphic()).setIconColor(state.getIconColor());
+        });
     }
 
     @Override
     public void closeTab(String connectionName) {
-        tabPane.getTabs().stream()
-                .filter(t -> connectionName.equals(t.getText()))
-                .findFirst()
-                .ifPresent(t -> tabPane.getTabs().remove(t));
+        tabPane.getTabs().stream().filter(t -> connectionName.equals(t.getText())).findFirst().ifPresent(t -> tabPane.getTabs().remove(t));
         LOGGER.info("Closing tab for connection: {}", connectionName);
     }
 }

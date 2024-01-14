@@ -1,6 +1,7 @@
 package org.correomqtt.business.scripting.binding;
 
 import org.graalvm.polyglot.HostAccess.Export;
+import org.graalvm.polyglot.Value;
 
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicReference;
@@ -12,6 +13,17 @@ public class BlockingClient {
 
     BlockingClient(Client client) {
         this.client = client;
+    }
+
+
+    @Export
+    public PromiseClient toPromised() {
+        return new ClientFactory().getPromiseClient();
+    }
+
+    @Export
+    public AsyncClient toAsync() {
+        return new ClientFactory().getAsyncClient();
     }
 
     @Export
@@ -27,6 +39,63 @@ public class BlockingClient {
     @Export
     public void disconnect() throws Throwable {
         blockify((q, t) -> client.disconnect(
+                () -> q.add(true),
+                ex -> {
+                    t.set(ex);
+                    q.add(false);
+                }));
+    }
+
+    @Export
+    public void publish(String topic, int qos) throws Throwable {
+        publish(topic, qos, false, null);
+    }
+
+    @Export
+    public void publish(String topic, int qos, boolean retained) throws Throwable {
+        publish(topic, qos, retained, null);
+    }
+
+    @Export
+    public void publish(String topic, int qos, String payload) throws Throwable {
+        publish(topic, qos, false, payload);
+    }
+
+    @Export
+    public void publish(String topic, int qos, boolean retained, String payload) throws Throwable {
+        blockify((q, t) -> client.publish(topic, qos, retained, payload,
+                () -> q.add(true),
+                ex -> {
+                    t.set(ex);
+                    q.add(false);
+                }));
+    }
+
+    @Export
+    public void subscribe(String topic, Integer qos, Value onIncomingMessage) throws Throwable {
+        blockify((q, t) -> client.subscribe(topic, qos,
+                () -> q.add(true),
+                ex -> {
+                    t.set(ex);
+                    q.add(false);
+                },
+                onIncomingMessage::executeVoid));
+    }
+
+
+    @Export
+    public void unsubscribe(String topic) throws Throwable {
+        blockify((q, t) -> client.unsubscribe(topic,
+                () -> q.add(true),
+                ex -> {
+                    t.set(ex);
+                    q.add(false);
+                }));
+    }
+
+    @Export
+    public void unsubscribeAll() throws Throwable {
+        blockify((q, t) -> client.unsubscribeAll(
                 () -> q.add(true),
                 ex -> {
                     t.set(ex);

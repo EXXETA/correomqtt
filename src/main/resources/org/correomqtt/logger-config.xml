@@ -44,6 +44,17 @@
         <appender-ref ref="GUI"/>
     </logger>
 
+    <!-- required to find SCRIPT appender in code -->
+    <logger name="dummyScriptLogger" additivity="false">
+        <appender-ref ref="SCRIPT"/>
+    </logger>
+
+    <appender name="SCRIPT" class="org.correomqtt.business.log.CompositeAppender">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+        <appender-ref ref="GUI"/>
+    </appender>
+
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>

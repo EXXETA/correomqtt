@@ -1,23 +1,23 @@
 package org.correomqtt.business.concurrent;
 
-public abstract class OnlyResultTask<T> extends TaskImpl<T, Void, Void, SimpleTaskErrorResult> {
+public abstract class SimpleResultTask<T> extends TaskImpl<T, Void, Void, SimpleTaskErrorResult> {
 
-    public OnlyResultTask<T> onStarted(StartListener listener) {
+    public SimpleResultTask<T> onStarted(StartListener listener) {
         onStartedImpl(listener);
         return this;
     }
 
-    public OnlyResultTask<T> onSuccess(SuccessListener<T> listener) {
+    public SimpleResultTask<T> onSuccess(SuccessListener<T> listener) {
         onSuccessImpl(listener);
         return this;
     }
 
-    public OnlyResultTask<T> onError(SimpleTaskErrorResultListener listener) {
+    public SimpleResultTask<T> onError(SimpleTaskErrorResultListener listener) {
         onErrorImpl(errorResult -> listener.error(TaskErrorResultTransformer.implToSimple(errorResult)));
         return this;
     }
 
-    public OnlyResultTask<T> onFinally(FinallyListener listener) {
+    public SimpleResultTask<T> onFinally(FinallyListener listener) {
         onFinallyImpl(listener);
         return this;
     }
@@ -45,6 +45,9 @@ public abstract class OnlyResultTask<T> extends TaskImpl<T, Void, Void, SimpleTa
         // to be overridden by child on demand
     }
 
+    protected void finalHook() {
+        // to be overridden by child on demand
+    }
     @Override
     void beforeHookImpl() {
         beforeHook();
@@ -60,5 +63,9 @@ public abstract class OnlyResultTask<T> extends TaskImpl<T, Void, Void, SimpleTa
         errorHook(errorResult);
     }
 
+    @Override
+    void finalHookImpl() {
+        finalHook();
+    }
 
 }

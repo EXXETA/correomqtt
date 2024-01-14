@@ -1,6 +1,6 @@
 package org.correomqtt.business.scripting;
 
-import org.correomqtt.business.concurrent.OnlyErrorTask;
+import org.correomqtt.business.concurrent.SimpleErrorTask;
 import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.fileprovider.ScriptingProvider;
 
@@ -8,7 +8,7 @@ import java.io.IOException;
 
 import static org.correomqtt.business.scripting.ScriptSaveTask.Error.IOERROR;
 
-public class ScriptSaveTask extends OnlyErrorTask<ScriptSaveTask.Error> {
+public class ScriptSaveTask extends SimpleErrorTask<ScriptSaveTask.Error> {
 
     public enum Error {
         IOERROR

@@ -1,7 +1,7 @@
 package org.correomqtt.business.importexport.messages;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.business.concurrent.OnlyResultTask;
+import org.correomqtt.business.concurrent.SimpleResultTask;
 import org.correomqtt.business.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.model.MessageDTO;
@@ -9,7 +9,7 @@ import org.correomqtt.business.model.MessageDTO;
 import java.io.File;
 import java.io.IOException;
 
-public class ImportMessageTask extends OnlyResultTask<MessageDTO> {
+public class ImportMessageTask extends SimpleResultTask<MessageDTO> {
 
     private final File file;
 

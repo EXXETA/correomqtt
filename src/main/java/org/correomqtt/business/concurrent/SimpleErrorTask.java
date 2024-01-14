@@ -1,23 +1,23 @@
 package org.correomqtt.business.concurrent;
 
-public abstract class OnlyErrorTask<E> extends TaskImpl<Void, Void, E, TaskErrorResult<E>> {
+public abstract class SimpleErrorTask<E> extends TaskImpl<Void, Void, E, TaskErrorResult<E>> {
 
-    public OnlyErrorTask<E> onStarted(StartListener listener) {
+    public SimpleErrorTask<E> onStarted(StartListener listener) {
         onStartedImpl(listener);
         return this;
     }
 
-    public OnlyErrorTask<E> onSuccess(SimpleSuccessListener listener) {
+    public SimpleErrorTask<E> onSuccess(SimpleSuccessListener listener) {
         onSuccessImpl(ignore -> listener.success());
         return this;
     }
 
-    public OnlyErrorTask<E> onError(TaskErrorResultListener<TaskErrorResult<E>> listener) {
+    public SimpleErrorTask<E> onError(TaskErrorResultListener<TaskErrorResult<E>> listener) {
         onErrorImpl(listener);
         return this;
     }
 
-    public OnlyErrorTask<E> onFinally(FinallyListener listener) {
+    public SimpleErrorTask<E> onFinally(FinallyListener listener) {
         onFinallyImpl(listener);
         return this;
     }
@@ -46,6 +46,10 @@ public abstract class OnlyErrorTask<E> extends TaskImpl<Void, Void, E, TaskError
         // to be overridden by child on demand
     }
 
+    protected void finalHook() {
+        // to be overridden by child on demand
+    }
+
     @Override
     void beforeHookImpl() {
         beforeHook();
@@ -59,6 +63,11 @@ public abstract class OnlyErrorTask<E> extends TaskImpl<Void, Void, E, TaskError
     @Override
     void errorHookImpl(TaskErrorResult<E> errorResult) {
         errorHook(errorResult);
+    }
+
+    @Override
+    void finalHookImpl() {
+        finalHook();
     }
 
 }

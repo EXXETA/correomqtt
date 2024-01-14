@@ -21,6 +21,7 @@ abstract class TaskImpl<T, P, E, R> {
 
     abstract void errorHookImpl(R errorResult);
 
+    abstract void finalHookImpl();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskImpl.class);
     private final Set<SuccessListener<T>> successListener = new HashSet<>();
@@ -81,10 +82,12 @@ abstract class TaskImpl<T, P, E, R> {
                         successHookImpl(result);
                         successListener.forEach(l -> FrontendBinding.pushToFrontend(() -> l.success(result)));
                     }
+                    finalHookImpl();
                     finallyListener.forEach(l -> FrontendBinding.pushToFrontend(l::run));
                     return null;
                 });
     }
+
 
     abstract R createTaskErrorResult(E expectedError, Throwable throwable);
 
