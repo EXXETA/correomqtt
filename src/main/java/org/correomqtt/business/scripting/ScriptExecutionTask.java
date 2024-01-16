@@ -1,10 +1,12 @@
 package org.correomqtt.business.scripting;
 
+import com.oracle.truffle.polyglot.PolyglotImpl;
 import lombok.Getter;
 import org.correomqtt.business.concurrent.Task;
 import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.fileprovider.ScriptingProvider;
+import org.graalvm.home.HomeFinder;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Source;
@@ -60,9 +62,12 @@ public class ScriptExecutionTask extends Task<ExecutionDTO, ExecutionDTO, Execut
                      .build()) {
             context = c;
             slc.connectSnk(out);
-            EventBus.fireAsync(new ScriptExecutionProgressEvent(dto));
+            EventBus.fire(new ScriptExecutionProgressEvent(dto));
             reportProgress(dto);
-            Source source = Source.newBuilder("js", dto.getJsCode() + "\njoin();", "jscode")
+            Source source = Source.newBuilder("js",
+                            "logger.info(marker,\"Running script with ECMAScript {} on GraalJS.\", Graal.versionECMAScript);\n" +
+                                    dto.getJsCode() +
+                                    "\njoin();", "jscode")
                     .mimeType("application/javascript+module") // required for top level await
                     .build();
             context.eval(source);

@@ -196,7 +196,7 @@ public class ScriptingProvider extends BaseUserFileProvider {
         }
     }
 
-    public void saveExecution(ExecutionDTO dto) throws IOException {
+    public void saveExecution(ExecutionDTO dto) throws IOException, InterruptedException {
         ObjectMapper om = new ObjectMapper();
         om.registerModule(new JavaTimeModule());
         om.writeValue(new File(getScriptExecutionsDirectory(dto.getScriptFile().getName()) + File.separator + dto.getExecutionId() + ".json"), dto);

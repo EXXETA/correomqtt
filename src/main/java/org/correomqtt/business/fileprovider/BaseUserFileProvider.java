@@ -183,13 +183,9 @@ abstract class BaseUserFileProvider {
             return path;
 
         return cache.computeIfAbsent(dir, d -> {
-            try {
-                if (!new File(path).exists()) {
-                    Files.createDirectories(new File(path).toPath());
-                }
-            } catch (IOException e) {
+            if (!new File(path).exists() && !new File(path).mkdirs()) {
                 EventBus.fire(new DirectoryCanNotBeCreatedEvent(path));
-                throw new IllegalStateException("Can not create directory: " + dir, e);
+                throw new IllegalStateException("Can not create directory: " + path);
             }
             return path;
         });

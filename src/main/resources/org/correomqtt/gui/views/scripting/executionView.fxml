@@ -16,7 +16,11 @@
             <children>
                <Label fx:id="headerLabel" text="%scripting.executions" />
                <Pane HBox.hgrow="ALWAYS" />
-                <IconButton icon="mdi-notification-clear-all" onAction="#onClearExecutionsClicked"/>
+                <IconButton icon="mdi-notification-clear-all" onAction="#onClearExecutionsClicked">
+                <tooltip>
+                    <Tooltip text="%scriptingViewClearExecutionsButtonTooltip"/>
+                </tooltip>
+                </IconButton>
             </children>
             </HBox>
             <ListView fx:id="executionListView" VBox.vgrow="ALWAYS" />

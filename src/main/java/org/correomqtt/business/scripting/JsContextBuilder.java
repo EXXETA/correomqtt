@@ -73,7 +73,7 @@ public class JsContextBuilder {
     private void bindContext() {
         Value binding = context.getBindings("js");
         Queue queue = new Queue();
-        AsyncLatch asyncLatch = new AsyncLatch();
+        AsyncLatch asyncLatch = new AsyncLatch(marker);
 
         Value polyglotBindings = context.getPolyglotBindings();
         polyglotBindings.putMember(CORREO_CONNECTION_ID, dto.getConnectionId());
@@ -85,6 +85,7 @@ public class JsContextBuilder {
         binding.putMember("sleep", (Consumer<Integer>) this::sleepCmd);
         binding.putMember("ClientFactory", ClientFactory.class);
         binding.putMember(CORREO_SCRIPT_LOGGER, scriptLogger);
+        binding.putMember(CORREO_SCRIPT_MARKER, marker);
         binding.putMember(CORREO_SCRIPT_QUEUE, queue);
         binding.putMember("join", (Runnable) () -> joinAsyncLatch(asyncLatch));
 
