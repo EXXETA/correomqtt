@@ -5,29 +5,45 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ScriptingBackend {
-    private static final Map<String, ScriptExecutionTask> EXECUTIONS = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, ExecutionDTO> EXECUTIONS_DTOS = new ConcurrentHashMap<>();
+
+    private static final ConcurrentHashMap<String, ScriptExecutionTask> EXECUTION_TASKS = new ConcurrentHashMap<>();
 
     private ScriptingBackend() {
         // private constructor
     }
 
     public static List<ExecutionDTO> getExecutions() {
-        return EXECUTIONS.values()
+        return EXECUTIONS_DTOS.values()
                 .stream()
-                .map(ScriptExecutionTask::getDto)
                 .toList();
     }
 
-    public static void putExecutionTask(String executionId, ScriptExecutionTask task) {
-        EXECUTIONS.put(executionId, task);
+    public static void putExecutionDTO(String executionId, ExecutionDTO dto) {
+        EXECUTIONS_DTOS.put(executionId, dto);
     }
 
-    public static ScriptExecutionTask getExecutionTask(String executionId) {
-        return EXECUTIONS.get(executionId);
+    public static ExecutionDTO getExecutionDTO(String executionId) {
+        return EXECUTIONS_DTOS.get(executionId);
     }
 
     public static void removeExecutionsForScript(String filename) {
-        EXECUTIONS.entrySet().removeIf(exec -> exec.getValue().getDto().getScriptFile().getName().equals(filename));
+        EXECUTION_TASKS.entrySet().removeIf(task -> task.getValue().getDto().getScriptFile().getName().equals(filename));
+        EXECUTIONS_DTOS.entrySet().removeIf(exec -> exec.getValue().getScriptFile().getName().equals(filename));
 
+    }
+
+    public static ScriptExecutionTask getExecutionTask(String executionId) {
+        return EXECUTION_TASKS.get(executionId);
+    }
+
+    public static void removeExecutionTask(String executionId) {
+        EXECUTION_TASKS.remove(executionId);
+    }
+
+    public static void putExecutionTask(ScriptExecutionTask scriptExecutionTask) {
+        putExecutionDTO(scriptExecutionTask.getDto().getExecutionId(),scriptExecutionTask.getDto());
+        EXECUTION_TASKS.put(scriptExecutionTask.getDto().getExecutionId(), scriptExecutionTask);
     }
 }

@@ -285,6 +285,7 @@ public class AlertHelper {
     }
 
     public static void unexpectedAlert(Throwable unexpectedError) {
+        LOGGER.error("Unexpected Error", unexpectedError);
         warn("Unexpected Error", "Operation failed: " + unexpectedError.getMessage(), true);
     }
 }

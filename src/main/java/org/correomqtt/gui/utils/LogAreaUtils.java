@@ -1,6 +1,6 @@
 package org.correomqtt.gui.utils;
 
-import org.fxmisc.richtext.CodeArea;
+import org.fxmisc.richtext.StyleClassedTextArea;
 
 public class LogAreaUtils {
 
@@ -8,7 +8,10 @@ public class LogAreaUtils {
         // private constructor
     }
 
-    public static void appendColorful(CodeArea logTextArea, String msg) {
+    public static void appendColorful(StyleClassedTextArea area, String msg) {
+
+        if (msg == null)
+            return;
 
         String[] matches = msg.split("\u001B");
         String cssClass;
@@ -39,7 +42,7 @@ public class LogAreaUtils {
                 cssClass = "default";
                 str = match;
             }
-            logTextArea.append(str, cssClass);
+            area.append(str, cssClass);
         }
     }
 }

@@ -1,6 +1,9 @@
 package org.correomqtt.gui.views.scripting;
 
-import javafx.application.Platform;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.encoder.Encoder;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
@@ -10,11 +13,15 @@ import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.eventbus.SubscribeFilter;
 import org.correomqtt.business.scripting.ExecutionDTO;
 import org.correomqtt.business.scripting.ScriptCancelTask;
+import org.correomqtt.business.scripting.ScriptExecutionCancelledEvent;
 import org.correomqtt.business.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.business.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.business.scripting.ScriptExecutionSuccessEvent;
 import org.correomqtt.business.scripting.ScriptExecutionTask;
+import org.correomqtt.business.scripting.ScriptLoadLogTask;
 import org.correomqtt.business.scripting.ScriptingBackend;
+import org.correomqtt.business.utils.LoggerUtils;
+import org.correomqtt.gui.log.LogToRichtTextFxAppender;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.LogAreaUtils;
 import org.correomqtt.gui.views.LoaderResult;
@@ -23,22 +30,15 @@ import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PipedInputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ResourceBundle;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.correomqtt.business.eventbus.SubscribeFilterNames.SCRIPT_EXECUTION_ID;
+import static org.correomqtt.business.utils.LoggerUtils.SCRIPT_COLOR_PATTERN_APPENDER_NAME;
+import static org.correomqtt.business.utils.LoggerUtils.findPatternEncoder;
 
 public class SingleExecutionViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleExecutionViewController.class);
-    private static final int MAX_WAIT_FOR_SNK_CONNECTED = 5000;
     private static ResourceBundle resources;
     @FXML
     public VBox mainNode;
@@ -49,7 +49,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     @FXML
     private Button scriptingStopButton;
     private final ExecutionPropertiesDTO executionPropertiesDTO;
-    private CompletableFuture<Void> logPipeFuture;
+    private LogToRichtTextFxAppender appender;
 
     public SingleExecutionViewController(ExecutionPropertiesDTO executionPropertiesDTO) {
         this.executionPropertiesDTO = executionPropertiesDTO;
@@ -68,12 +68,21 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     public void initialize() {
         logArea.prefWidthProperty().bind(logHolder.widthProperty());
         logArea.prefHeightProperty().bind(logHolder.heightProperty());
-        ScriptExecutionTask task = ScriptingBackend.getExecutionTask(executionPropertiesDTO.getExecutionId());
-        if (executionPropertiesDTO.getState() == ScriptState.RUNNING) {
-            scriptingStopButton.setDisable(false);
-            connectLog(task.getDto());
-        } else {
-            scriptingStopButton.setDisable(true);
+        ExecutionDTO dto = ScriptingBackend.getExecutionDTO(executionPropertiesDTO.getExecutionId());
+
+        if (dto != null) {
+            new ScriptLoadLogTask(dto)
+                    .onSuccess(log -> {
+                        LogAreaUtils.appendColorful(logArea, log);
+                        if (executionPropertiesDTO.getState() == ScriptState.RUNNING) {
+                            scriptingStopButton.setDisable(false);
+                            connectLog(dto);
+                        } else {
+                            scriptingStopButton.setDisable(true);
+                        }
+                    })
+                    .onError(error -> AlertHelper.unexpectedAlert(error.getUnexpectedError()))
+                    .run();
         }
     }
 
@@ -83,68 +92,52 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     }
 
     private void connectLog(ExecutionDTO dto) {
-        if (logPipeFuture != null) {
+        if (appender != null) {
             return;
         }
 
         scriptingStopButton.setDisable(false);
 
+        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
 
-        logPipeFuture = CompletableFuture.runAsync(() -> {
-            final int BUFFER_SIZE = 8192;
-            try (
-                    final InputStreamReader isr = new InputStreamReader(dto.getSnk(), StandardCharsets.UTF_8);
-                    final BufferedReader br = new BufferedReader(isr, BUFFER_SIZE);
-            ) {
+        Encoder<ILoggingEvent> encoder = findPatternEncoder(SCRIPT_COLOR_PATTERN_APPENDER_NAME);
 
-                // stream log output
-                String line;
-                while ((line = br.readLine()) != null) {
-                    final String text = line;
-                    Platform.runLater(() -> addLog(text));
-                }
+        appender = new LogToRichtTextFxAppender(logArea);
+        appender.setName(executionPropertiesDTO.getExecutionId());
+        appender.setContext(context);
+        appender.setEncoder(encoder);
+        appender.start();
 
+        ch.qos.logback.classic.Logger scriptLogger = dto.getLogger();
+        scriptLogger.addAppender(appender);
 
-            } catch (IOException e) {
-                // this is normal if SNK is closed.
-                LOGGER.trace("Pipe to script log broke.", e);
-            }
-        }).exceptionallyAsync(e -> {
-            LOGGER.error("Exception listening to script pipe. ", e);
-            return null;
-        });
-/*
-        try {
-            if (!pisConnected.await(MAX_WAIT_FOR_SNK_CONNECTED, TimeUnit.MILLISECONDS)) {
-                throw new IllegalStateException("Snk not connected in " + MAX_WAIT_FOR_SNK_CONNECTED + "ms.");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException(e);
-        }*/
     }
 
-    private void addLog(String msg) {
-        LogAreaUtils.appendColorful(logArea, msg + "\n");
-        logArea.requestFollowCaret();
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[{}] {} ", getExecutionId(), msg);
+    @SuppressWarnings("unused")
+    public void onScriptExecutionCancelled(@Subscribe ScriptExecutionCancelledEvent event) {
+        scriptingStopButton.setDisable(true);
+        disconnectLog(event.getExecutionDTO());
+    }
+
+    @SuppressWarnings("unused")
+    public void onScriptExecutionSuccess(@Subscribe ScriptExecutionSuccessEvent event) {
+        scriptingStopButton.setDisable(true);
+        disconnectLog(event.getExecutionDTO());
+    }
+
+    @SuppressWarnings("unused")
+    public void onScriptExecutionFailed(@Subscribe ScriptExecutionFailedEvent event) {
+        scriptingStopButton.setDisable(true);
+        disconnectLog(event.getExecutionDTO());
+    }
+
+    private void disconnectLog(ExecutionDTO dto) {
+        ch.qos.logback.classic.Logger scriptLogger = dto.getLogger();
+        if (scriptLogger != null) {
+            scriptLogger.detachAppender(appender);
         }
     }
 
-    @SuppressWarnings("unused")
-    @Subscribe(ScriptExecutionSuccessEvent.class)
-    public void onScriptExecutionSuccess() {
-
-        scriptingStopButton.setDisable(true);
-    }
-
-    @SuppressWarnings("unused")
-    @Subscribe(ScriptExecutionFailedEvent.class)
-
-    public void onScriptExecutionFailed() {
-        scriptingStopButton.setDisable(true);
-    }
 
     @SuppressWarnings("unused")
     @SubscribeFilter(SCRIPT_EXECUTION_ID)
@@ -153,6 +146,9 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     }
 
     public void onCloseRequest() {
+        if (appender != null) {
+            appender.stop();
+        }
         EventBus.unregister(this);
     }
 

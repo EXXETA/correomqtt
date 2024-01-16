@@ -6,6 +6,10 @@
               value="%date{'HH:mm:ss,SSS'} [%5.-5level] [%15.15logger{15}] [%-10.-10marker] %0.0throwable%msg%xThrowable{full}%n"/>
     <property name="COLORPATTERN"
               value="%cyan(%date{'HH:mm:ss,SSS'});%highlight(%5.5level);%yellow(%30.30logger);%magenta(%15.15thread);%magenta(%15.15marker);%0.0throwable%highlight(%0.0level%msg%xThrowable{full}%n)"/>
+    <property name="SCRIPTPATTERN"
+              value="%date{'HH:mm:ss,SSS'};%5.5level;%0.0level%msg%xThrowable{full}%n"/>
+    <property name="SCRIPTCOLORPATTERN"
+              value="%cyan(%date{'HH:mm:ss,SSS'});%highlight(%5.5level);%highlight(%0.0level%msg%xThrowable{full}%n)"/>
 
     <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
         <resetJUL>true</resetJUL>
@@ -44,10 +48,24 @@
         <appender-ref ref="GUI"/>
     </logger>
 
-    <!-- required to find SCRIPT appender in code -->
+    <!-- required to automatically start SCRIPT appender and encoder -->
     <logger name="dummyScriptLogger" additivity="false">
         <appender-ref ref="SCRIPT"/>
+        <appender-ref ref="SCRIPT_DUMMY_PATTERN"/>
+        <appender-ref ref="SCRIPT_DUMMY_COLOR_PATTERN"/>
     </logger>
+
+    <appender name="SCRIPT_DUMMY_COLOR_PATTERN" class="ch.qos.logback.core.FileAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${SCRIPTCOLORPATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="SCRIPT_DUMMY_PATTERN" class="ch.qos.logback.core.FileAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${SCRIPTPATTERN}</pattern>
+        </encoder>
+    </appender>
 
     <appender name="SCRIPT" class="org.correomqtt.business.log.CompositeAppender">
         <appender-ref ref="CONSOLE"/>

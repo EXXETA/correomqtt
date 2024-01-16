@@ -14,6 +14,7 @@ import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.eventbus.SubscribeFilter;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
+import org.correomqtt.business.scripting.ScriptExecutionCancelledEvent;
 import org.correomqtt.business.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.business.scripting.ScriptExecutionSuccessEvent;
 import org.correomqtt.business.scripting.ScriptFileDTO;
@@ -53,6 +54,8 @@ public class SingleEditorViewController extends BaseControllerImpl {
     @FXML
     public IconButton scriptingSaveButton;
     public IconButton scriptingRevertButton;
+    public IconButton scriptingRenameButton;
+    public IconButton scriptingDeleteButton;
     @FXML
     private CodeArea codeArea;
     @FXML
@@ -118,9 +121,9 @@ public class SingleEditorViewController extends BaseControllerImpl {
                 .filter(e -> e.getState() == ScriptState.RUNNING)
                 .count();
         if(running > 0){
-            scriptingRunButton.setDisable(true);
+            disableActionsOnRunningScript(true);
         }else{
-            scriptingRunButton.setDisable(false);
+            disableActionsOnRunningScript(false);
         }
         codeArea.setDisable(false);
         codeArea.plainTextChanges()
@@ -152,7 +155,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
         ConnectionPropertiesDTO selectedConnection = connectionList.getSelectionModel().getSelectedItem();
 
         if (delegate.addExecution(dto, selectedConnection, codeArea.getText())) {
-            scriptingRunButton.setDisable(true);
+            disableActionsOnRunningScript(true);
         }
 
     }
@@ -222,16 +225,30 @@ public class SingleEditorViewController extends BaseControllerImpl {
         delegate.onPlainTextChange(scriptFilePropertiesDTO);
     }
 
+    public void disableActionsOnRunningScript(boolean disable){
+       scriptingRunButton.setDisable(disable);
+       scriptingRenameButton.setDisable(disable);
+       scriptingDeleteButton.setDisable(disable);
+       scriptingSaveButton.setDisable(disable);
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(ScriptExecutionCancelledEvent.class)
+    public void onScriptExecutionCancelled() {
+        disableActionsOnRunningScript(false);
+    }
+
+
     @SuppressWarnings("unused")
     @Subscribe(ScriptExecutionSuccessEvent.class)
     public void onScriptExecutionSuccess() {
-        scriptingRunButton.setDisable(false);
+        disableActionsOnRunningScript(false);
     }
 
     @SuppressWarnings("unused")
     @Subscribe(ScriptExecutionFailedEvent.class)
     public void onScriptExecutionFailed() {
-        scriptingRunButton.setDisable(false);
+        disableActionsOnRunningScript(false);
     }
 
 

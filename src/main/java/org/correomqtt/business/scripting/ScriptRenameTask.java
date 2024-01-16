@@ -61,11 +61,12 @@ public class ScriptRenameTask extends NoProgressTask<Path, ScriptRenameTask.Erro
                     .stream()
                     .anyMatch(s -> s.getName().equals(filename));
         } catch (IOException e) {
-            LOGGER.debug(ioErrorMsg, e);
+            LOGGER.error(ioErrorMsg, e);
             throw new TaskException(IOERROR);
         }
 
         if (alreadyExists) {
+            LOGGER.error("Script already exists.");
             throw new TaskException(FILE_ALREADY_EXISTS);
         }
 
@@ -77,7 +78,7 @@ public class ScriptRenameTask extends NoProgressTask<Path, ScriptRenameTask.Erro
                     .forEach(e -> e.getScriptFile().setName(filename));
             return ScriptingProvider.getInstance().renameScript(dto.getName(), filename);
         } catch (FileAlreadyExistsException e) {
-            LOGGER.debug(MarkerFactory.getMarker(dto.getName()), ioErrorMsg, e);
+            LOGGER.error(MarkerFactory.getMarker(dto.getName()), ioErrorMsg, e);
             throw new TaskException(FILE_ALREADY_EXISTS);
         }
     }

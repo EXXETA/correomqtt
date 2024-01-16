@@ -3,6 +3,7 @@ package org.correomqtt.gui.views.scripting;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -13,12 +14,18 @@ import javafx.scene.layout.Region;
 import lombok.AllArgsConstructor;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
+import org.correomqtt.business.eventbus.SubscribeFilter;
+import org.correomqtt.business.eventbus.SubscribeFilterNames;
+import org.correomqtt.business.fileprovider.ScriptingProvider;
 import org.correomqtt.business.scripting.BaseExecutionEvent;
 import org.correomqtt.business.scripting.ExecutionDTO;
+import org.correomqtt.business.scripting.ScriptDeleteExecutionsTask;
+import org.correomqtt.business.scripting.ScriptExecutionCancelledEvent;
 import org.correomqtt.business.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.business.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.business.scripting.ScriptExecutionSuccessEvent;
 import org.correomqtt.business.scripting.ScriptExecutionTask;
+import org.correomqtt.business.scripting.ScriptExecutionsDeletedEvent;
 import org.correomqtt.business.scripting.ScriptingBackend;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.utils.AlertHelper;
@@ -27,6 +34,7 @@ import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +55,9 @@ public class ExecutionViewController extends BaseControllerImpl {
     @FXML
     public Label emptyLabel;
 
+    @FXML
+    private ListView<ExecutionPropertiesDTO> executionListView;
+
     private ObservableList<ExecutionPropertiesDTO> executionList;
     private FilteredList<ExecutionPropertiesDTO> filteredList;
     private String currentName;
@@ -57,15 +68,28 @@ public class ExecutionViewController extends BaseControllerImpl {
                 .forEach(e -> e.getScriptFilePropertiesDTO().getNameProperty().set(newName));
     }
 
+    public void onClearExecutionsClicked(ActionEvent actionEvent) throws IOException {
+        new ScriptDeleteExecutionsTask(currentName)
+                .onError(error -> AlertHelper.unexpectedAlert(error.getUnexpectedError()))
+                .run();
+
+    }
+
+    @Subscribe(ScriptExecutionsDeletedEvent.class)
+    public void onExecutionsDeleted() {
+        executionList.clear();
+    }
+
+    @SubscribeFilter(SubscribeFilterNames.SCRIPT_NAME)
+    public String getScriptFileName() {
+        return currentName;
+    }
 
     @AllArgsConstructor
     private static class ScriptExecutionState {
         private SingleExecutionViewController controller;
         private Region region;
     }
-
-    @FXML
-    private ListView<ExecutionPropertiesDTO> executionListView;
 
     public AnchorPane executionHolder;
 
@@ -171,6 +195,11 @@ public class ExecutionViewController extends BaseControllerImpl {
                 .onError(error -> AlertHelper.unexpectedAlert(error.getUnexpectedError()))
                 .run();
         return true;
+    }
+
+    @SuppressWarnings("unused")
+    public void onScriptExecutionCancelled(@Subscribe ScriptExecutionCancelledEvent event) {
+        handleScriptExecutionResult(event);
     }
 
     @SuppressWarnings("unused")

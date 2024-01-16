@@ -17,6 +17,7 @@ import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess.Export;
 import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
+import org.slf4j.Marker;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import static org.correomqtt.business.connection.ConnectionState.DISCONNECTED_UN
 import static org.correomqtt.business.connection.ConnectionState.RECONNECTING;
 import static org.correomqtt.business.scripting.JsContextBuilder.CORREO_CONNECTION_ID;
 import static org.correomqtt.business.scripting.JsContextBuilder.CORREO_SCRIPT_LOGGER;
+import static org.correomqtt.business.scripting.JsContextBuilder.CORREO_SCRIPT_MARKER;
 import static org.correomqtt.business.scripting.JsContextBuilder.CORREO_SCRIPT_QUEUE;
 
 public class Client {
@@ -38,16 +40,16 @@ public class Client {
     private final String connectionId;
     private final Logger scriptLogger;
     private final Queue queue;
+    private final Marker marker;
     private AsyncClient asyncClient;
     private PromiseClient promiseClient;
     private BlockingClient blockingClient;
-
     private final Map<String, Consumer<String>> subscriptions = new HashMap<>();
-    private final Context context;
 
     Client() {
-        context = Context.getCurrent();
+        Context context = Context.getCurrent();
         connectionId = context.getPolyglotBindings().getMember(CORREO_CONNECTION_ID).as(String.class);
+        marker = context.getPolyglotBindings().getMember(CORREO_SCRIPT_MARKER).as(Marker.class);
         scriptLogger = context.getPolyglotBindings().getMember(CORREO_SCRIPT_LOGGER).as(Logger.class);
         queue = context.getPolyglotBindings().getMember(CORREO_SCRIPT_QUEUE).as(Queue.class);
         EventBus.register(this);
@@ -77,32 +79,31 @@ public class Client {
         return promiseClient;
     }
 
-
     void connect(Runnable onSuccess, Consumer<Throwable> onError) {
         new ConnectTask(connectionId).onSuccess(() -> {
-            scriptLogger.info("Client successful connected.");
+            scriptLogger.info(marker, "Client successful connected.");
             onSuccess.run();
         }).onProgress(ev -> {
             String msg = "Connection state changed to {}. Retry {}/{}";
             if (ev.getState() == RECONNECTING) {
-                scriptLogger.warn(msg, ev.getState(), ev.getRetries(), ev.getMaxRetries());
+                scriptLogger.warn(marker, msg, ev.getState(), ev.getRetries(), ev.getMaxRetries());
             } else if (ev.getState() == DISCONNECTED_UNGRACEFUL) {
-                scriptLogger.error(msg, ev.getState(), ev.getRetries(), ev.getMaxRetries());
+                scriptLogger.error(marker, msg, ev.getState(), ev.getRetries(), ev.getMaxRetries());
             } else {
-                scriptLogger.info(msg, ev.getState(), ev.getRetries(), ev.getMaxRetries());
+                scriptLogger.info(marker, msg, ev.getState(), ev.getRetries(), ev.getMaxRetries());
             }
         }).onError(r -> {
-            scriptLogger.error("Client could not connect: {}", r.getUnexpectedError().getMessage());
+            scriptLogger.error(marker, "Client could not connect: {}", r.getUnexpectedError().getMessage());
             onError.accept(r.getUnexpectedError());
         }).run();
     }
 
     void disconnect(Runnable onSuccess, Consumer<Throwable> onError) {
         new DisconnectTask(connectionId).onSuccess(() -> {
-            scriptLogger.info("Client successful disconnected.");
+            scriptLogger.info(marker, "Client successful disconnected.");
             onSuccess.run();
         }).onError(r -> {
-            scriptLogger.error("Client could not disconnect: {}", r.getUnexpectedError().getMessage());
+            scriptLogger.error(marker, "Client could not disconnect: {}", r.getUnexpectedError().getMessage());
             onError.accept(r.getUnexpectedError());
         }).run();
     }
@@ -112,16 +113,16 @@ public class Client {
                 .topic(topic)
                 .qos(Qos.fromJsonValue(qos))
                 .payload(payload)
-                .isRetained(false) //TODO
+                .isRetained(retained)
                 .messageId(UUID.randomUUID().toString())
                 .messageType(MessageType.OUTGOING)
                 .dateTime(LocalDateTime.now())
                 .build()
         ).onSuccess(() -> {
-            scriptLogger.info("Published message to {} with qos {}.", topic, qos);
+            scriptLogger.info(marker, "Published message to {} with qos {}.", topic, qos);
             onSuccess.run();
         }).onError(r -> {
-            scriptLogger.error("Failed to publish message to {} with qos {}: {}", topic, qos, r.getUnexpectedError().getMessage());
+            scriptLogger.error(marker, "Failed to publish message to {} with qos {}: {}", topic, qos, r.getUnexpectedError().getMessage());
             onError.accept(r.getUnexpectedError());
         }).run();
     }
@@ -129,20 +130,20 @@ public class Client {
     void subscribe(String topic, Integer qos, Runnable onSuccess, Consumer<Throwable> onError, Consumer<String> onIncomingMessage) {
         subscriptions.put(topic, onIncomingMessage);
         new SubscribeTask(connectionId, SubscriptionDTO.builder().topic(topic).qos(Qos.fromJsonValue(qos)).build()).onSuccess(() -> {
-            scriptLogger.info("Subscribed to {} with qos {}.", topic, qos);
+            scriptLogger.info(marker, "Subscribed to {} with qos {}.", topic, qos);
             onSuccess.run();
         }).onError(r -> {
-            scriptLogger.error("Failed to subscribe to {} with qos {}: {}", topic, qos, r.getUnexpectedError().getMessage());
+            scriptLogger.error(marker, "Failed to subscribe to {} with qos {}: {}", topic, qos, r.getUnexpectedError().getMessage());
             onError.accept(r.getUnexpectedError());
         }).run();
     }
 
     void unsubscribe(String topic, Runnable onSuccess, Consumer<Throwable> onError) {
         new UnsubscribeTask(connectionId, SubscriptionDTO.builder().topic(topic).build()).onSuccess(() -> {
-            scriptLogger.info("Unsubscribed from {}.", topic);
+            scriptLogger.info(marker, "Unsubscribed from {}.", topic);
             onSuccess.run();
         }).onError(r -> {
-            scriptLogger.error("Failed to unsubscribe from {}: {}", topic, r.getUnexpectedError().getMessage());
+            scriptLogger.error(marker, "Failed to unsubscribe from {}: {}", topic, r.getUnexpectedError().getMessage());
             onError.accept(r.getUnexpectedError());
         }).run();
     }
@@ -182,6 +183,4 @@ public class Client {
             }
         }));
     }
-
-
 }

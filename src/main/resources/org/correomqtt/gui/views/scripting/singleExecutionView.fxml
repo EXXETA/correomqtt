@@ -28,7 +28,7 @@
         <VirtualizedScrollPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
             <!-- do not remove this wrapper. VirtualizedScrollPane does not work without it -->
             <content>
-                <CodeArea fx:id="logArea" editable="false" styleClass="log" />
+                <CodeArea fx:id="logArea" editable="false" styleClass="log" text=""/>
             </content>
         </VirtualizedScrollPane>
     </Pane>

@@ -17,5 +17,6 @@ public class ScriptCancelTask extends SimpleTask {
             throw new IllegalStateException("Task for executionId " + executionId + " does not exist.");
         }
         task.cancel();
+        ScriptingBackend.removeExecutionTask(executionId);
     }
 }

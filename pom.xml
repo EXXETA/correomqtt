@@ -295,7 +295,7 @@
                 <configuration>
                     <jlinkImageName>CorreoMQTT</jlinkImageName>
                     <launcher>launcher</launcher>
-                    <mainClass>correomqtt.client/org.correomqtt.CorreoMqtt</mainClass>
+                    <mainClass>org.correomqtt.CorreoMqtt</mainClass>
                 </configuration>
             </plugin>
             <plugin>

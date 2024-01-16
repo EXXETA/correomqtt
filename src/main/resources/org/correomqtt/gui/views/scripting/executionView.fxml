@@ -3,8 +3,9 @@
 <?import java.lang.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import org.correomqtt.gui.controls.*?>
 
-<SplitPane fx:id="splitPane" dividerPositions="0.3, 0.7" stylesheets="@../../css/scriptingView.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.views.scripting.ExecutionViewController">
+<SplitPane fx:id="splitPane" dividerPositions="0.3, 0.7" stylesheets="@../../css/scriptingView.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/11.0.14-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.views.scripting.ExecutionViewController">
     <AnchorPane fx:id="executionSidebar" minHeight="100.0" minWidth="100.0">
         <VBox prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <HBox alignment="BOTTOM_LEFT" maxHeight="40.0" minHeight="40.0" VBox.vgrow="ALWAYS">
@@ -14,6 +15,8 @@
                 </styleClass>
             <children>
                <Label fx:id="headerLabel" text="%scripting.executions" />
+               <Pane HBox.hgrow="ALWAYS" />
+                <IconButton icon="mdi-notification-clear-all" onAction="#onClearExecutionsClicked"/>
             </children>
             </HBox>
             <ListView fx:id="executionListView" VBox.vgrow="ALWAYS" />

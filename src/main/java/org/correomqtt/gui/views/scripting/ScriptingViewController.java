@@ -18,9 +18,11 @@ import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.fileprovider.ScriptingProvider;
 import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.scripting.ScriptDeleteTask;
+import org.correomqtt.business.scripting.ScriptExecutionCancelledEvent;
 import org.correomqtt.business.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.business.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.business.scripting.ScriptExecutionSuccessEvent;
+import org.correomqtt.business.scripting.ScriptExecutionsDeletedEvent;
 import org.correomqtt.business.scripting.ScriptFileDTO;
 import org.correomqtt.business.scripting.ScriptNewTask;
 import org.correomqtt.business.scripting.ScriptRenameTask;
@@ -140,6 +142,13 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
 
     }
 
+
+    @SuppressWarnings("unused")
+    @Subscribe(ScriptExecutionCancelledEvent.class)
+    public void onScriptExecutionCancelled() {
+        scriptListView.refresh();
+    }
+
     @SuppressWarnings("unused")
     @Subscribe(ScriptExecutionSuccessEvent.class)
     public void onScriptExecutionSuccess() {
@@ -159,6 +168,10 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         scriptListView.refresh();
     }
 
+    @Subscribe(ScriptExecutionsDeletedEvent.class)
+    public void onExecutionsDeleted() {
+        scriptListView.refresh();
+    }
 
     private void onScriptListChanged(ListChangeListener.Change<? extends ScriptFilePropertiesDTO> changedItem) {
 
@@ -222,26 +235,6 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         editorPane.getChildren().clear();
         editorPane.getChildren().add(editorState.region);
         this.executionController.filterByScript(selectedItem.getName());
-
-        /*
-
-
-
-        if (selectedItem == null)
-            return;
-
-        if (!selectedItem.isLoaded()) {
-            ScriptFileDTO scriptFileDTO = ScriptingTransformer.propsToDTO(selectedItem);
-
-            new ScriptLoadTask(scriptFileDTO)
-                    .onSuccess(scriptCode -> onLoadScriptSucceeded(scriptFileDTO, scriptCode))
-                    .onError(this::onLoadScriptFailed)
-                    .run();
-        } else {
-            showScript(selectedItem);
-        }
-
-        ;*/
 
     }
 
