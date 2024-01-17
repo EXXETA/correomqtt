@@ -218,7 +218,7 @@ public class CorreoMqtt extends Application {
     }
 
     private void saveConnectionUISettings() {
-        mainViewController.tabPane.getTabs().forEach(tab -> {
+        mainViewController.getTabPane().getTabs().forEach(tab -> {
             if (mainViewController.getConnectionViewControllers().get(tab.getId()) != null) {
                 mainViewController.getConnectionViewControllers().get(tab.getId()).saveConnectionUISettings();
             }

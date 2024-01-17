@@ -53,7 +53,7 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
     private FXMLLoader loader;
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         mainNode.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
     }
 

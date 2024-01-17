@@ -40,15 +40,15 @@ public class ExecutionViewController extends BaseControllerImpl {
     private static ResourceBundle resources;
     private final Map<String, ScriptExecutionState> executionStates = new HashMap<>();
     @FXML
-    public AnchorPane executionSidebar;
+    private AnchorPane executionSidebar;
     @FXML
-    public SplitPane splitPane;
+    private SplitPane splitPane;
     @FXML
-    public AnchorPane emptyExecution;
+    private AnchorPane emptyExecution;
     @FXML
-    public Label headerLabel;
+    private Label headerLabel;
     @FXML
-    public Label emptyLabel;
+    private Label emptyLabel;
     @FXML
     private AnchorPane executionHolder;
     @FXML
@@ -132,7 +132,7 @@ public class ExecutionViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
 
         executionList = FXCollections.observableArrayList(ScriptingBackend.getExecutions()
                 .stream()

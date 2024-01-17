@@ -3,6 +3,7 @@ package org.correomqtt.gui.views.log;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.layout.AnchorPane;
+import lombok.Getter;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.log.LogEvent;
@@ -14,10 +15,11 @@ import org.fxmisc.richtext.CodeArea;
 
 public class LogTabController extends BaseControllerImpl {
 
+    @Getter
     @FXML
-    public AnchorPane logViewAnchor;
+    private AnchorPane logViewAnchor;
     @FXML
-    public CodeArea logTextArea;
+    private CodeArea logTextArea;
     @FXML
     private Button trashButton;
 

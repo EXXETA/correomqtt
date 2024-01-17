@@ -13,7 +13,7 @@ public class ConnectionImportStepFinalViewController extends BaseControllerImpl 
     private static ResourceBundle resources;
     private final ConnectionImportStepDelegate delegate;
     @FXML
-    public Label description;
+    private Label description;
 
     public ConnectionImportStepFinalViewController(ConnectionImportStepDelegate delegate) {
         this.delegate = delegate;

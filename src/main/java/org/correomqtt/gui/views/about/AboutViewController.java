@@ -28,11 +28,11 @@ public class AboutViewController extends BaseControllerImpl {
     private static final URL LICENSE_JSON = AboutViewController.class.getResource("/META-INF/resources/licenses.json");
 
     @FXML
-    public HBox libsHeadline;
+    private HBox libsHeadline;
     @FXML
-    public VBox contentHolder;
+    private VBox contentHolder;
     @FXML
-    public HBox iconsHeadline;
+    private HBox iconsHeadline;
 
     List<Hyperlink> links = new ArrayList<>();
 
@@ -61,7 +61,7 @@ public class AboutViewController extends BaseControllerImpl {
 
 
     @FXML
-    public void initialize() {
+    private void initialize() {
 
         appNameLabel.setText("CorreoMQTT v" + VersionUtils.getVersion());
 

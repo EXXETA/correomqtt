@@ -60,16 +60,16 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     private final SubscriptionViewDelegate delegate;
 
     @FXML
-    public AnchorPane subscribeBodyViewAnchor;
+    private AnchorPane subscribeBodyViewAnchor;
 
     @FXML
-    public ComboBox<Qos> qosComboBox;
+    private ComboBox<Qos> qosComboBox;
 
     @FXML
-    public ComboBox<String> subscribeTopicComboBox;
+    private ComboBox<String> subscribeTopicComboBox;
 
     @FXML
-    public ListView<SubscriptionPropertiesDTO> subscriptionListView;
+    private ListView<SubscriptionPropertiesDTO> subscriptionListView;
 
     @FXML
     private Button unsubscribeButton;
@@ -98,7 +98,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
 
         initMessageListView();
 
@@ -278,7 +278,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     @FXML
-    public void onSubscriptionSelected(SubscriptionPropertiesDTO subscriptionDTO) {
+    private void onSubscriptionSelected(SubscriptionPropertiesDTO subscriptionDTO) {
         unsubscribeButton.setDisable(subscriptionDTO == null);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Subscription selected '{}': {}", subscriptionDTO == null ? "N/A" : subscriptionDTO.getTopic(), getConnectionId());

@@ -25,7 +25,7 @@ public class ConnectionImportStepConnectionsViewController extends BaseControlle
     private static ResourceBundle resources;
     private final ConnectionImportStepDelegate delegate;
     @FXML
-    public CheckListView<ConnectionPropertiesDTO> connectionsListView;
+    private CheckListView<ConnectionPropertiesDTO> connectionsListView;
     private final ObservableList<ConnectionPropertiesDTO> connectionConfigDTOS = FXCollections.observableArrayList();
     private List<ConnectionPropertiesDTO> disabledConnections;
 
@@ -47,7 +47,7 @@ public class ConnectionImportStepConnectionsViewController extends BaseControlle
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         connectionsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     }
 

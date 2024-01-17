@@ -37,37 +37,37 @@ public class ControlBarController extends BaseConnectionController {
     private final PluginManager pluginSystem = PluginManager.getInstance();
 
     @FXML
-    public AnchorPane mainViewHBoxAnchorPane;
+    private AnchorPane mainViewHBoxAnchorPane;
 
     @FXML
-    public HBox controllViewButtonHBox;
+    private HBox controllViewButtonHBox;
 
     @FXML
-    public Button connectBtn;
+    private Button connectBtn;
 
     @FXML
-    public Button disconnectBtn;
+    private Button disconnectBtn;
 
     @FXML
-    public Button reconnectBtn;
+    private Button reconnectBtn;
 
     @FXML
-    public ToggleButton controlViewPButton;
+    private ToggleButton controlViewPButton;
 
     @FXML
-    public ToggleButton controlViewPSButton;
+    private ToggleButton controlViewPSButton;
 
     @FXML
-    public ToggleButton controlViewSButton;
+    private ToggleButton controlViewSButton;
 
     @FXML
-    public IconLabel statusLabel;
+    private IconLabel statusLabel;
 
     @FXML
-    public Label statusInfo;
+    private Label statusInfo;
 
     @FXML
-    public Label brokerInfo;
+    private Label brokerInfo;
 
     @FXML
     private ResourceBundle resources;
@@ -87,7 +87,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         SettingsProvider.getInstance().getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
@@ -113,7 +113,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void onClickReconnect(ActionEvent actionEvent) {
+    private void onClickReconnect(ActionEvent actionEvent) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Reconnect in control bar clicked for connection: {}", getConnectionId());
         }
@@ -121,7 +121,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void onClickConnect(ActionEvent actionEvent) {
+    private void onClickConnect(ActionEvent actionEvent) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Connect in control bar clicked for connection: {}", getConnectionId());
         }
@@ -130,7 +130,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void onClickDisconnect() {
+    private void onClickDisconnect() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Disconnect in control bar clicked for connection: {}", getConnectionId());
         }
@@ -139,7 +139,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void onClickP() {
+    private void onClickP() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Show only publish clicked: {}", getConnectionId());
         }
@@ -151,7 +151,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void onClickPS() {
+    private void onClickPS() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Show publish AND subscribe clicked: {}", getConnectionId());
         }
@@ -163,7 +163,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void onClickS() {
+    private void onClickS() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Show only subscribe clicked: {}", getConnectionId());
         }
@@ -175,7 +175,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void saveUISettings() {
+    private void saveUISettings() {
         if (controlViewPButton.isSelected()) {
             connectionConfigDTO.getConnectionUISettings().setShowPublish(true);
             connectionConfigDTO.getConnectionUISettings().setShowSubscribe(false);
@@ -191,7 +191,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void resetUISettings() {
+    private void resetUISettings() {
         controlViewPButton.setSelected(false);
         controlViewPSButton.setSelected(true);
         controlViewSButton.setSelected(false);

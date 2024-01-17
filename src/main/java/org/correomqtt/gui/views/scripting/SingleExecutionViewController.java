@@ -38,9 +38,9 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleExecutionViewController.class);
     private static ResourceBundle resources;
     @FXML
-    public VBox mainNode;
+    private VBox mainNode;
     @FXML
-    public Pane logHolder;
+    private Pane logHolder;
     @FXML
     private CodeArea logArea;
     @FXML
@@ -62,7 +62,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         logArea.prefWidthProperty().bind(logHolder.widthProperty());
         logArea.prefHeightProperty().bind(logHolder.heightProperty());
         ExecutionDTO dto = ScriptingBackend.getExecutionDTO(executionPropertiesDTO.getExecutionId());
@@ -150,7 +150,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void onStopButtonClicked() {
+    private void onStopButtonClicked() {
         new ScriptCancelTask(getExecutionId())
                 .onError(error -> AlertHelper.unexpectedAlert(error.getUnexpectedError()))
                 .run();

@@ -44,7 +44,7 @@ public class ConnectionExportViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
     @FXML
-    public Label passwordLabel;
+    private Label passwordLabel;
 
     private static ResourceBundle resources;
 
@@ -81,7 +81,7 @@ public class ConnectionExportViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
 
         // improve list style
 
@@ -190,7 +190,7 @@ public class ConnectionExportViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void onCancelClicked() {
+    private void onCancelClicked() {
         closeDialog();
     }
 

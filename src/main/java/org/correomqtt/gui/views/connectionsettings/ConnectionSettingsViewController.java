@@ -52,10 +52,10 @@ import java.util.UUID;
 public class ConnectionSettingsViewController extends BaseControllerImpl {
 
     @FXML
-    public VBox contentHolder;
+    private VBox contentHolder;
 
     @FXML
-    public Button discardButton;
+    private Button discardButton;
     private ConnectionState connectionState;
 
     private void onCloseRequest(WindowEvent event) {
@@ -89,16 +89,16 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
     private final ConnectionPropertiesDTO preSelected;
 
     @FXML
-    public VBox editConnectionContainer;
+    private VBox editConnectionContainer;
 
     @FXML
-    public HBox emptyHint;
+    private HBox emptyHint;
     @FXML
-    public Label connectionSettingsViewHint;
+    private Label connectionSettingsViewHint;
     @FXML
-    public HBox mainArea;
+    private HBox mainArea;
     @FXML
-    public Button deleteButton;
+    private Button deleteButton;
 
     @FXML
     private ListView<ConnectionPropertiesDTO> connectionsListView;
@@ -150,7 +150,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
         loadConnectionListFromBackground();
         connectionsListView.setCellFactory(this::createCell);
@@ -308,14 +308,14 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
 
 
     @FXML
-    public void onAddClicked() {
+    private void onAddClicked() {
         LOGGER.debug("Add new connection clicked");
 
         addConnection();
     }
 
     @FXML
-    public void onRemoveClicked() {
+    private void onRemoveClicked() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Remove connection clicked: {}", connectionState.controller.getDTO().getId());
         }
@@ -326,7 +326,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void onDiscardClicked() {
+    private void onDiscardClicked() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Discard editing clicked.");
         }
@@ -339,7 +339,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void onSaveClicked() {
+    private void onSaveClicked() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Save changes clicked: {}", connectionState.controller.getDTO().getId());
         }

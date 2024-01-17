@@ -74,22 +74,22 @@ public class PublishViewController extends BaseMessageBasedViewController {
     private final PluginManager pluginSystem = PluginManager.getInstance();
 
     @FXML
-    public AnchorPane publishViewAnchor;
+    private AnchorPane publishViewAnchor;
 
     @FXML
-    public ComboBox<Qos> qosComboBox;
+    private ComboBox<Qos> qosComboBox;
 
     @FXML
-    public ComboBox<String> topicComboBox;
+    private ComboBox<String> topicComboBox;
 
     @FXML
-    public HBox pluginControlBox;
+    private HBox pluginControlBox;
 
     @FXML
-    public CheckBox retainedCheckBox;
+    private CheckBox retainedCheckBox;
 
     @FXML
-    public Button publishButton;
+    private Button publishButton;
 
     @FXML
     private CodeArea payloadCodeArea;
@@ -118,7 +118,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         initMessageListView();
 
         qosComboBox.setItems(FXCollections.observableArrayList(Qos.values()));
@@ -181,7 +181,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     @FXML
-    public void onClickPublishKey(KeyEvent actionEvent) {
+    private void onClickPublishKey(KeyEvent actionEvent) {
         if (actionEvent.getCode() == KeyCode.ENTER) {
             topicComboBox.setValue(topicComboBox.getEditor().getText());
             if (topicComboBox.getValue() == null) {
@@ -221,7 +221,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     @FXML
-    public void onClickScan() {
+    private void onClickScan() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Open file button clicked: {}", getConnectionId());
         }

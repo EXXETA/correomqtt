@@ -19,7 +19,7 @@ public class ConnectionImportStepDecryptViewController extends BaseControllerImp
 
     private final ConnectionImportStepDelegate delegate;
     @FXML
-    public PasswordField passwordField;
+    private PasswordField passwordField;
 
     private static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
 

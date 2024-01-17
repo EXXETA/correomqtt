@@ -49,17 +49,17 @@ public class SingleEditorViewController extends BaseControllerImpl {
     private final SingleEditorViewDelegate delegate;
     private final ScriptFilePropertiesDTO scriptFilePropertiesDTO;
     @FXML
-    public AnchorPane scriptEditor;
+    private AnchorPane scriptEditor;
     @FXML
-    public AnchorPane emptyView;
+    private AnchorPane emptyView;
     @FXML
-    public IconButton scriptingSaveButton;
+    private IconButton scriptingSaveButton;
     @FXML
-    public IconButton scriptingRevertButton;
+    private IconButton scriptingRevertButton;
     @FXML
-    public IconButton scriptingRenameButton;
+    private IconButton scriptingRenameButton;
     @FXML
-    public IconButton scriptingDeleteButton;
+    private IconButton scriptingDeleteButton;
     @FXML
     private CodeArea codeArea;
     @FXML
@@ -87,7 +87,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
 
         updateConnections();
 

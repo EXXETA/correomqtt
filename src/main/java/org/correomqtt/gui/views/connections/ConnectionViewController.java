@@ -74,7 +74,7 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         SettingsProvider.getInstance().getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()

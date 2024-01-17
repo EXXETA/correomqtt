@@ -57,20 +57,20 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     public static final String DIRTY_CLASS = "dirty";
 
     @FXML
-    public TabPane tabPane;
-
+    @Getter
+    private TabPane tabPane;
     @FXML
-    public Tab logTab;
+    private Tab logTab;
     @FXML
-    public AnchorPane logAnchorPane;
+    private AnchorPane logAnchorPane;
     @FXML
-    public Tab addTab;
+    private Tab addTab;
     @FXML
-    public AnchorPane tabPaneAnchorPane;
+    private AnchorPane tabPaneAnchorPane;
     @FXML
-    public MenuItem exportConnectionsItem;
+    private MenuItem exportConnectionsItem;
     @FXML
-    public MenuItem importConnectionsItem;
+    private MenuItem importConnectionsItem;
     @FXML
     private MenuBar menuBar;
     @FXML
@@ -109,7 +109,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         tabPaneAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
 
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
@@ -153,9 +153,9 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         logViewController = result.getController();
         logTab.setClosable(false);
         logTab.setGraphic(new ThemedFontIcon("mdi-chart-box"));
-        logAnchorPane.getChildren().add(logViewController.logViewAnchor);
-        logViewController.logViewAnchor.prefWidthProperty().bind(logAnchorPane.widthProperty());
-        logViewController.logViewAnchor.prefHeightProperty().bind(logAnchorPane.heightProperty());
+        logAnchorPane.getChildren().add(logViewController.getLogViewAnchor());
+        logViewController.getLogViewAnchor().prefWidthProperty().bind(logAnchorPane.widthProperty());
+        logViewController.getLogViewAnchor().prefHeightProperty().bind(logAnchorPane.heightProperty());
     }
 
     private void setMenuEventHandler() {
@@ -258,28 +258,28 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     @FXML
-    public void resetUISettings() {
+    private void resetUISettings() {
         if (connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
             connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).resetConnectionUISettings();
         }
     }
 
     @FXML
-    public void onClickP() {
+    private void onClickP() {
         if (connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
             connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(true, false);
         }
     }
 
     @FXML
-    public void onClickPS() {
+    private void onClickPS() {
         if (connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
             connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(true, true);
         }
     }
 
     @FXML
-    public void onClickS() {
+    private void onClickS() {
         if (connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
             connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(false, true);
         }

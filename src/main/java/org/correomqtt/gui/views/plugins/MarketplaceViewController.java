@@ -81,7 +81,7 @@ public class MarketplaceViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         marketplacePluginList.setCellFactory(this::createCell);
         marketplacePluginList.setItems(FXCollections.observableArrayList(
                 PluginTransformer.dtoListToPropList(PluginManager.getInstance().getAllPluginsAvailableFromRepos())
@@ -90,7 +90,7 @@ public class MarketplaceViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void onInstall() {
+    private void onInstall() {
         PluginInfoPropertiesDTO selectedPlugin = marketplacePluginList.getSelectionModel().getSelectedItem();
         new PluginInstallTask(selectedPlugin.getId(), selectedPlugin.getInstallableVersion());
     }

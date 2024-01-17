@@ -79,7 +79,7 @@ public class PluginsViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
 
         setupInstalledPluginTab();
         setupMarketplaceTab();
@@ -96,7 +96,7 @@ public class PluginsViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void onOpenPluginFolder() {
+    private void onOpenPluginFolder() {
         HostServicesHolder.getInstance().getHostServices().showDocument(new File(PluginConfigProvider.getInstance().getPluginPath()).toURI().toString());
     }
 }

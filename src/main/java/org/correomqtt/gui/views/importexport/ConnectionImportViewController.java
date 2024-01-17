@@ -40,7 +40,7 @@ public class ConnectionImportViewController extends BaseControllerImpl implement
     private final Map<Step, StepState> stepStates = new EnumMap<>(Step.class);
 
     @FXML
-    public VBox contentHolder;
+    private VBox contentHolder;
 
 
     private ConnectionExportDTO originalImportedDTO;
@@ -70,7 +70,7 @@ public class ConnectionImportViewController extends BaseControllerImpl implement
 
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         goStepChooseFile();
     }
 

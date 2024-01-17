@@ -29,7 +29,7 @@ public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesD
     @FXML
     private CheckBox checkbox;
     @FXML
-    public AnchorPane mainNode;
+    private AnchorPane mainNode;
     @FXML
     private ResourceBundle resources;
     private FXMLLoader loader;

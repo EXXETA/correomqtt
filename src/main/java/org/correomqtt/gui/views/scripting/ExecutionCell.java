@@ -43,7 +43,7 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
     private RotateTransition rotateTransition;
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         mainNode.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
 
         rotateTransition = new RotateTransition();

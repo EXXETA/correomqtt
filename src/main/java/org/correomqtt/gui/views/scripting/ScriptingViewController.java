@@ -62,19 +62,19 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     private static ResourceBundle resources;
     private final HashMap<String, ScriptEditorState> editorStates = new HashMap<>();
     @FXML
-    public IconLabel statusLabel;
+    private IconLabel statusLabel;
     @FXML
-    public AnchorPane executionHolder;
+    private AnchorPane executionHolder;
     @FXML
-    public SplitPane mainSplitPane;
+    private SplitPane mainSplitPane;
     @FXML
-    public AnchorPane scriptListSidebar;
+    private AnchorPane scriptListSidebar;
     @FXML
-    public AnchorPane editorPane;
+    private AnchorPane editorPane;
     @FXML
-    public SplitPane scriptSplitPane;
+    private SplitPane scriptSplitPane;
     @FXML
-    public AnchorPane emptyView;
+    private AnchorPane emptyView;
     @FXML
     private Pane scriptingRootPane;
     @FXML
@@ -123,7 +123,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     }
 
     @FXML
-    public void initialize() throws IOException {
+    private void initialize() throws IOException {
         rotateTransition = new RotateTransition();
         rotateTransition.setAxis(Rotate.Z_AXIS);
         rotateTransition.setByAngle(360);
@@ -463,7 +463,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     }
 
     @FXML
-    public void onHelpLinkClicked() {
+    private void onHelpLinkClicked() {
         HostServicesHolder.getInstance()
                 .getHostServices()
                 .showDocument(HELP_LINK);

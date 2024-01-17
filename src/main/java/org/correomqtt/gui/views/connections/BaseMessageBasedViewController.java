@@ -7,8 +7,9 @@ import org.correomqtt.gui.views.LoaderResult;
 
 public abstract class BaseMessageBasedViewController extends BaseConnectionController implements MessageListViewDelegate {
 
+
     @FXML
-    public SplitPane splitPane;
+    protected SplitPane splitPane;
 
     protected MessageListViewController messageListViewController;
 

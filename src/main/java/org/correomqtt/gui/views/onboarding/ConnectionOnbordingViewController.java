@@ -41,25 +41,25 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionOnbordingViewController.class);
     @FXML
-    public AnchorPane helloViewAnchor;
+    private AnchorPane helloViewAnchor;
     @FXML
-    public ComboBox<String> helloViewComboBox;
+    private ComboBox<String> helloViewComboBox;
     @FXML
-    public Button helloViewConnectButton;
+    private Button helloViewConnectButton;
     @FXML
-    public Button editConnectionsButton;
+    private Button editConnectionsButton;
     @FXML
-    public HBox mainHBox;
+    private HBox mainHBox;
     @FXML
-    public Label noConnectionsLabel;
+    private Label noConnectionsLabel;
     @FXML
-    public VBox helloViewVBox;
+    private VBox helloViewVBox;
     @FXML
-    public ListView<ConnectionPropertiesDTO> connectionListView;
+    private ListView<ConnectionPropertiesDTO> connectionListView;
     @FXML
-    public HBox buttonBar;
+    private HBox buttonBar;
     @FXML
-    public HBox noConnectionsButtonBar;
+    private HBox noConnectionsButtonBar;
     private ConnectionOnboardingDelegate connectionsOnboardingDelegate;
     private ConnectionSettingsViewDelegate connectionsSettingsViewDelegate;
 
@@ -82,7 +82,7 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
 
         connectionListView.setCellFactory(this::createCell);
 
@@ -200,7 +200,7 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void addConnection(ActionEvent actionEvent) {
+    private void addConnection(ActionEvent actionEvent) {
         openSettings();
     }
 
@@ -210,7 +210,7 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void onClickConnect(ActionEvent actionEvent) {
+    private void onClickConnect(ActionEvent actionEvent) {
         LOGGER.debug("Clicked on connect button");
         connect();
     }
@@ -221,7 +221,7 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void openSettings() {
+    private void openSettings() {
         ConnectionSettingsViewController.showAsDialog(connectionsSettingsViewDelegate, connectionListView.getSelectionModel().getSelectedItem());
         LOGGER.debug("Open connection settings");
     }

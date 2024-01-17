@@ -62,7 +62,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
 
     private static ResourceBundle resources;
     @FXML
-    public CheckBox sslHostVerificationCheckBox;
+    private CheckBox sslHostVerificationCheckBox;
 
     private ConnectionPropertiesDTO config;
 
@@ -171,7 +171,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
 
 
     @FXML
-    public void initialize() {
+    private void initialize() {
 
         containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
 
@@ -381,7 +381,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
     }
 
     @FXML
-    public void onGenerateClientIdClick() {
+    private void onGenerateClientIdClick() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Generating Client ID for connection clicked: {}", config.getId());
         }

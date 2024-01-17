@@ -82,7 +82,7 @@ public class SettingsViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         settings = SettingsProvider.getInstance().getSettings();
         setupGUI();
 
@@ -96,20 +96,20 @@ public class SettingsViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void onCancelClicked() {
+    private void onCancelClicked() {
         LOGGER.debug("Cancel in settings clicked");
         closeDialog();
     }
 
     @FXML
-    public void onSaveClicked() {
+    private void onSaveClicked() {
         LOGGER.debug("Save in settings clicked");
         saveSettings();
         closeDialog();
     }
 
     @FXML
-    public void onWipeKeyringClicked() {
+    private void onWipeKeyringClicked() {
         boolean confirmed = AlertHelper.confirm(
                 resources.getString("wipeCurrentKeyringTitle"),
                 resources.getString("wipeCurrentKeyringHeader"),
@@ -130,12 +130,12 @@ public class SettingsViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void onThemeChanged() {
+    private void onThemeChanged() {
         LOGGER.debug("Theme changed in settings");
     }
 
     @FXML
-    public void onKeyringBackendChanged() {
+    private void onKeyringBackendChanged() {
         LOGGER.debug("Keyring backend changed in settings");
     }
 

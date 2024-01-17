@@ -104,7 +104,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         TextField messageSearchTextField;
 
         messageSearchTextField = TextFields.createClearableTextField();
@@ -214,6 +214,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     }
 
 
+    @Override
     @FXML
     public void clearList() {
 
