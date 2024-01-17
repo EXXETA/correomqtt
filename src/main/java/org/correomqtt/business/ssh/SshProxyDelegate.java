@@ -1,4 +1,4 @@
-package org.correomqtt.business.mqtt;
+package org.correomqtt.business.ssh;
 
 public interface SshProxyDelegate {
     void onProxyFailed();

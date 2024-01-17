@@ -69,7 +69,7 @@ public class SettingsProvider extends BaseUserFileProvider {
         }
     }
 
-    private ThemeProvider getActiveTheme() {
+    public ThemeProvider getActiveTheme() {
         if (activeThemeProvider == null) {
             if(configDTO.getThemesSettings().getNextTheme() != null) {
                 configDTO.getThemesSettings().setActiveTheme(configDTO.getThemesSettings().getNextTheme());
@@ -172,7 +172,7 @@ public class SettingsProvider extends BaseUserFileProvider {
     }
 
     public String getIconModeCssClass() {
-        return configDTO.getThemesSettings().getActiveTheme().getIconMode().toString();
+        return SettingsProvider.getInstance().getActiveTheme().getIconMode().toString();
     }
 
     public void initializePasswords(String masterPassword) throws EncryptionRecoverableException {

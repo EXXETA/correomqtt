@@ -1,7 +1,6 @@
 package org.correomqtt.business.connection;
 
 import org.correomqtt.business.concurrent.NoProgressTask;
-import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.model.SubscriptionDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.mqtt.CorreoMqttClientFactory;

@@ -14,7 +14,7 @@ public class PluginEnableTask extends SimpleTask {
     }
 
     @Override
-    protected void execute() throws Exception {
+    protected void execute() {
         PluginManager.getInstance().enablePlugin(pluginId);
         EventBus.fireAsync(new PluginEnabledEvent(pluginId));
     }

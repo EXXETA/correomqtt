@@ -6,8 +6,8 @@ import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.PublishMessageHistoryListDTO;
 import org.correomqtt.business.pubsub.PublishEvent;
-import org.correomqtt.business.pubsub.PublishListRemovedEvent;
 import org.correomqtt.business.pubsub.PublishListClearEvent;
+import org.correomqtt.business.pubsub.PublishListRemovedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

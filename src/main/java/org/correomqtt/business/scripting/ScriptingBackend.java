@@ -1,7 +1,6 @@
 package org.correomqtt.business.scripting;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ScriptingBackend {

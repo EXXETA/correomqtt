@@ -8,8 +8,8 @@ import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.log.LogEvent;
 import org.correomqtt.business.log.PopLogCache;
 import org.correomqtt.gui.utils.LogAreaUtils;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.fxmisc.richtext.CodeArea;
 
 public class LogTabController extends BaseControllerImpl {

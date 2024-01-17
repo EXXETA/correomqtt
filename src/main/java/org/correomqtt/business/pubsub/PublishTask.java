@@ -8,7 +8,6 @@ import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.business.utils.LoggerUtils;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
@@ -16,6 +15,9 @@ import org.correomqtt.plugin.spi.OutgoingMessageHook;
 import org.correomqtt.plugin.spi.OutgoingMessageHookDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static org.correomqtt.business.utils.LoggerUtils.getConnectionMarker;
 
@@ -33,11 +35,19 @@ public class PublishTask extends SimpleTask {
     }
 
     @Override
-    protected void execute() throws Exception {
+    protected void execute() {
         LOGGER.info(getConnectionMarker(connectionId), "Start publishing to topic: {}", messageDTO.getTopic());
         CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionId);
         MessageDTO manipulatedMessageDTO = executeOnPublishMessageExtensions(connectionId, messageDTO);
-        client.publish(manipulatedMessageDTO);
+        try {
+            client.publish(manipulatedMessageDTO);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
         EventBus.fireAsync(new PublishEvent(connectionId, manipulatedMessageDTO));
     }
 

@@ -1,7 +1,6 @@
 package org.correomqtt.business.scripting.binding;
 
 import org.correomqtt.business.connection.ConnectTask;
-import org.correomqtt.business.connection.ConnectionState;
 import org.correomqtt.business.connection.DisconnectTask;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
@@ -15,7 +14,6 @@ import org.correomqtt.business.pubsub.SubscribeTask;
 import org.correomqtt.business.pubsub.UnsubscribeTask;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess.Export;
-import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 
@@ -23,7 +21,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;

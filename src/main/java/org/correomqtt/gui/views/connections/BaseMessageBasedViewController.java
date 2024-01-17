@@ -10,7 +10,7 @@ public abstract class BaseMessageBasedViewController extends BaseConnectionContr
     @FXML
     public SplitPane splitPane;
 
-    public MessageListViewController messageListViewController;
+    protected MessageListViewController messageListViewController;
 
     protected BaseMessageBasedViewController(String connectionId) {
         super(connectionId);

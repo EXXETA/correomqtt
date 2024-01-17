@@ -32,10 +32,10 @@ public abstract class SimpleProgressTask<P> extends TaskImpl<Void, P, Void, Simp
         reportProgressImpl(progress);
     }
 
-    protected abstract void execute() throws Exception;
+    protected abstract void execute();
 
     @Override
-    Void executeImpl() throws Exception {
+    Void executeImpl() {
         execute();
         return null;
     }

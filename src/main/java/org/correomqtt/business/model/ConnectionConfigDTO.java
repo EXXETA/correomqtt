@@ -36,6 +36,8 @@ public class ConnectionConfigDTO {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // do never save passwords
     private String sslKeystorePassword;
     @Builder.Default
+    private boolean sslHostVerification = false;
+    @Builder.Default
     private Proxy proxy = Proxy.OFF;
     private String sshHost;
     @Builder.Default

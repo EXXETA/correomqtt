@@ -1,12 +1,10 @@
 package org.correomqtt.business.scripting;
 
-import com.oracle.truffle.polyglot.PolyglotImpl;
 import lombok.Getter;
 import org.correomqtt.business.concurrent.Task;
 import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.fileprovider.ScriptingProvider;
-import org.graalvm.home.HomeFinder;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Source;

@@ -19,7 +19,6 @@ public class IconMenuButton extends MenuButton {
         themedFontIcon.setIconLiteral(newValue);
         themedFontIcon.setIconSize(18);
         this.setGraphic(themedFontIcon);
-        //this.setPadding(new Insets(1,8,1,8));
         this.setHeight(28);
         this.setMinHeight(28);
     }

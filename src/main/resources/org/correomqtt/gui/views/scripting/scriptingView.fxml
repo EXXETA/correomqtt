@@ -4,9 +4,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import org.correomqtt.gui.controls.*?>
-<?import org.fxmisc.richtext.*?>
 
-<AnchorPane fx:id="scriptingRootPane" minHeight="300.0" minWidth="400.0" prefHeight="800.0" prefWidth="1000.0" styleClass="dialog" stylesheets="@../../css/scriptingView.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.views.scripting.ScriptingViewController">
+<AnchorPane fx:id="scriptingRootPane" minHeight="300.0" minWidth="400.0" prefHeight="800.0" prefWidth="1000.0" styleClass="dialog" stylesheets="@../../css/scriptingView.css" xmlns="http://javafx.com/javafx/11.0.14-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.views.scripting.ScriptingViewController">
 
     <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
 
@@ -60,5 +59,19 @@
             <AnchorPane fx:id="executionHolder" minHeight="100.0" minWidth="100.0" prefHeight="100.0">
             </AnchorPane>
         </SplitPane>
+      <HBox minHeight="30.0">
+         <children>
+            <IconLabel fx:id="statusLabel" minHeight="30.0" text="Label" HBox.hgrow="NEVER" icon="mdi-script">
+               <HBox.margin>
+                  <Insets left="10.0" />
+               </HBox.margin>
+            </IconLabel>
+            <Pane HBox.hgrow="ALWAYS" />
+            <Hyperlink minHeight="30.0" onAction="#onHelpLinkClicked" text="%scriptingHelpLink" />
+         </children>
+         <padding>
+            <Insets right="10.0" />
+         </padding>
+      </HBox>
     </VBox>
 </AnchorPane>

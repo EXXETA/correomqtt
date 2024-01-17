@@ -17,6 +17,7 @@ import javafx.scene.paint.Paint;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.CustomTextField;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.model.Auth;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.CorreoMqttVersion;
@@ -25,14 +26,13 @@ import org.correomqtt.business.model.Lwt;
 import org.correomqtt.business.model.Proxy;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.TlsSsl;
-import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.views.cell.GenericCell;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.controls.ThemedFontIcon;
-import org.correomqtt.gui.utils.CheckTopicHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.utils.CheckTopicHelper;
+import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
+import org.correomqtt.gui.views.cell.GenericCell;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.spi.LwtSettingsHook;
 import org.fxmisc.flowless.VirtualizedScrollPane;
@@ -61,6 +61,8 @@ public class MqttSettingsViewController extends BaseControllerImpl
     public static final String EMPTY_ERROR_CLASS = "emptyError";
 
     private static ResourceBundle resources;
+    @FXML
+    public CheckBox sslHostVerificationCheckBox;
 
     private ConnectionPropertiesDTO config;
 
@@ -230,6 +232,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
         }));
         sslKeystoreTextField.textProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
         sslKeystorePasswordTextField.textProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
+        sslHostVerificationCheckBox.selectedProperty().addListener((observable,oldValue, newValue) -> setDirty(true));
         proxyComboBox.getSelectionModel().selectedItemProperty().addListener(((observable, oldValue, newValue) -> {
             setDirty(true);
             if (newValue.equals(Proxy.OFF)) {
@@ -332,6 +335,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
         tlsComboBox.getSelectionModel().select(config.getSsl());
         sslKeystoreTextField.setText(config.getSslKeystore());
         sslKeystorePasswordTextField.setText(config.getSslKeystorePassword());
+        sslHostVerificationCheckBox.setSelected(config.isSslHostVerification());
         proxyGridPane.setDisable(config.getProxyProperty().getValue().equals(Proxy.OFF));
         proxyComboBox.getSelectionModel().select(config.getProxy());
         sshHostTextField.setText(config.getSshHost());
@@ -398,6 +402,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
             config.getSslProperty().setValue(tlsComboBox.getSelectionModel().getSelectedItem());
             config.getSslKeystoreProperty().set(sslKeystoreTextField.getText());
             config.getSslKeystorePasswordProperty().set(sslKeystorePasswordTextField.getText());
+            config.getSslHostVerificationProperty().set(sslHostVerificationCheckBox.isSelected());
             config.getProxyProperty().setValue(proxyComboBox.getSelectionModel().getSelectedItem());
             config.getSshHostProperty().set(sshHostTextField.getText());
             config.getSshPortProperty().set(Integer.parseInt(sshPortTextField.getText()));

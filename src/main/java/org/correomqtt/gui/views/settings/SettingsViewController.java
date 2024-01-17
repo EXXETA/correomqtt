@@ -11,15 +11,10 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.LoaderResult;
-import org.correomqtt.plugin.spi.ThemeProviderHook;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.model.ThemeDTO;
-import org.correomqtt.business.fileprovider.SettingsProvider;
-import org.correomqtt.gui.views.cell.GenericCell;
-import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.KeyringModel;
 import org.correomqtt.gui.model.LanguageModel;
@@ -27,7 +22,12 @@ import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.theme.ThemeProvider;
 import org.correomqtt.gui.theme.light_legacy.LightLegacyThemeProvider;
+import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
+import org.correomqtt.gui.views.cell.GenericCell;
 import org.correomqtt.plugin.manager.PluginManager;
+import org.correomqtt.plugin.spi.ThemeProviderHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -143,7 +143,7 @@ public class SettingsViewController extends BaseControllerImpl {
         searchUpdatesCheckbox.setSelected(settings.isSearchUpdates());
 
         ArrayList<ThemeProvider> themes = new ArrayList<>(PluginManager.getInstance().getExtensions(ThemeProviderHook.class));
-        if(LOGGER.isInfoEnabled()) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info(themes.stream().map(ThemeProvider::getName).collect(Collectors.joining(",")));
         }
 
@@ -168,7 +168,7 @@ public class SettingsViewController extends BaseControllerImpl {
         themeComboBox.getSelectionModel().select(themes.
                 stream()
                 .filter(t -> {
-                    if(SettingsProvider.getInstance().getThemeSettings().getNextTheme() != null) {
+                    if (SettingsProvider.getInstance().getThemeSettings().getNextTheme() != null) {
                         return t.getName().equals(SettingsProvider.getInstance().getThemeSettings().getNextTheme().getName());
                     }
                     return t.getName().equals(SettingsProvider.getInstance().getThemeSettings().getActiveTheme().getName());
@@ -267,7 +267,8 @@ public class SettingsViewController extends BaseControllerImpl {
         settings.setSearchUpdates(searchUpdatesCheckbox.isSelected());
         ThemeProvider selectedTheme = themeComboBox.getSelectionModel().getSelectedItem();
         settings.setSavedLocale(languageComboBox.getSelectionModel().getSelectedItem().getLocale());
-        SettingsProvider.getInstance().getThemeSettings().setNextTheme(new ThemeDTO(selectedTheme.getName(), selectedTheme.getIconMode()));
+        SettingsProvider.getInstance().getThemeSettings().setNextTheme(
+                new ThemeDTO(selectedTheme.getName()));
         SettingsProvider.getInstance().saveSettings(true);
     }
 

@@ -12,6 +12,8 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
+import lombok.Getter;
+import org.correomqtt.business.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
@@ -21,36 +23,32 @@ import org.correomqtt.business.fileprovider.PersistPublishMessageHistoryProvider
 import org.correomqtt.business.fileprovider.PersistSubscriptionHistoryProvider;
 import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.business.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.business.utils.VendorConstants;
-import org.correomqtt.gui.views.connections.ConnectionViewController;
-import org.correomqtt.gui.views.connections.ConnectionViewDelegate;
-import org.correomqtt.gui.views.about.AboutViewController;
 import org.correomqtt.gui.controls.ThemedFontIcon;
-import org.correomqtt.gui.views.onboarding.ConnectionOnboardingDelegate;
-import org.correomqtt.gui.views.onboarding.ConnectionOnbordingViewController;
-import org.correomqtt.gui.views.plugins.PluginsViewController;
-import org.correomqtt.gui.utils.AlertHelper;
-import org.correomqtt.gui.views.importexport.ConnectionExportViewController;
-import org.correomqtt.gui.views.importexport.ConnectionImportViewController;
-import org.correomqtt.gui.views.log.LogTabController;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.GuiConnectionState;
-import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewController;
-import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewDelegate;
-import org.correomqtt.gui.views.scripting.ScriptingViewController;
-import org.correomqtt.gui.views.settings.SettingsViewController;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
+import org.correomqtt.gui.views.about.AboutViewController;
+import org.correomqtt.gui.views.connections.ConnectionViewController;
+import org.correomqtt.gui.views.connections.ConnectionViewDelegate;
+import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewController;
+import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewDelegate;
+import org.correomqtt.gui.views.importexport.ConnectionExportViewController;
+import org.correomqtt.gui.views.importexport.ConnectionImportViewController;
+import org.correomqtt.gui.views.log.LogTabController;
+import org.correomqtt.gui.views.onboarding.ConnectionOnboardingDelegate;
+import org.correomqtt.gui.views.onboarding.ConnectionOnbordingViewController;
+import org.correomqtt.gui.views.plugins.PluginsViewController;
+import org.correomqtt.gui.views.scripting.ScriptingViewController;
+import org.correomqtt.gui.views.settings.SettingsViewController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.UUID;
 
 
 public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConnectionSettingsViewDelegate {
@@ -80,13 +78,9 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     @FXML
     private MenuItem closeItem;
     @FXML
-    private Menu toolsMenu;
-    @FXML
     private MenuItem connectionsItem;
     @FXML
     private MenuItem settingsItem;
-    @FXML
-    private Menu helpMenu;
     @FXML
     private MenuItem aboutItem;
     @FXML
@@ -94,15 +88,14 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     @FXML
     private MenuItem websiteItem;
     @FXML
-    private Menu pluginMenu;
-    @FXML
     private MenuItem pluginSettingsItem;
     @FXML
     private MenuItem scriptingItem;
 
     private SelectionModel<Tab> selectionModel;
-    private ResourceBundle resources;
-    private Map<String, ConnectionViewController> conntectionViewControllers;
+
+    @Getter
+    private Map<String, ConnectionViewController> connectionViewControllers;
 
     private ConnectionOnbordingViewController connectionOnboardingViewController;
 
@@ -123,7 +116,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         setupAddTab();
         createLogTab();
 
-        conntectionViewControllers = new HashMap<>();
+        connectionViewControllers = new HashMap<>();
 
         final String os = System.getProperty("os.name");
         if (os != null && os.startsWith("Mac")) {
@@ -144,16 +137,11 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         tabPane.widthProperty().addListener((a, b, c) -> calcTabWidth());
     }
 
-    public Map<String, ConnectionViewController> getConntectionViewControllers() {
-        return conntectionViewControllers;
-    }
-
     private void setupAddTab() {
         addTab.setClosable(false);
         addTab.setGraphic(new ThemedFontIcon("mdi-home"));
         LoaderResult<ConnectionOnbordingViewController> loadResult = ConnectionOnbordingViewController.load(this, this);
         addTab.setContent(loadResult.getMainRegion());
-        resources = loadResult.getResourceBundle();
         connectionOnboardingViewController = loadResult.getController();
 
         selectionModel = tabPane.getSelectionModel();
@@ -179,7 +167,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             try {
                 CheckNewVersionUtils.checkNewVersion(true);
             } catch (IOException | CorreoMqttUnableToCheckVersionException e) {
-                LOGGER.warn("Exception checking version", e); //TODO UI?
+                LOGGER.warn("Exception checking version: {}", e.getMessage());
             }
         });
         scriptingItem.setOnAction(event -> ScriptingViewController.showAsDialog());
@@ -206,26 +194,29 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     @SuppressWarnings("unused")
     public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {
-        if (conntectionViewControllers.values().stream().noneMatch(ctrl -> ctrl.getConnectionId().equals(event.getConnectionId()))) {
+        if (connectionViewControllers.values().stream().noneMatch(ctrl -> ctrl.getConnectionId().equals(event.getConnectionId()))) {
             getConnectionViewControllerLoaderResult(ConnectionTransformer.dtoToProps(ConnectionHolder.getInstance().getConfig(event.getConnectionId())));
         }
     }
 
     @Override
     public void onConnect(ConnectionPropertiesDTO config) {
-        if (ConnectionHolder.getInstance().isConnectionUnused(ConnectionTransformer.propsToDto(config))) {
+        Tab connectTab = tabPane.getTabs().stream()
+                .filter(tab -> tab.getId().equals(config.getId()))
+                .findFirst()
+                .orElse(null);
+        if (connectTab == null) {
             LoaderResult<ConnectionViewController> result = getConnectionViewControllerLoaderResult(config);
-
             result.getController().connect(config);
 
         } else {
-            AlertHelper.warn(resources.getString("mainViewControllerAlreadyUsedTitle"), resources.getString("mainViewControllerAlreadyUsedContent"));
+            tabPane.getSelectionModel().select(connectTab);
         }
 
     }
 
     private LoaderResult<ConnectionViewController> getConnectionViewControllerLoaderResult(ConnectionPropertiesDTO config) {
-        String tabId = UUID.randomUUID().toString();
+        String tabId = config.getId();
 
         PersistPublishHistoryProvider.activate(config.getId());
         PersistPublishMessageHistoryProvider.activate(config.getId());
@@ -249,7 +240,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         tab.setContent(result.getMainRegion());
         tab.setOnCloseRequest(event -> this.onTabClose(result, tabId));
 
-        conntectionViewControllers.put(tabId, result.getController());
+        connectionViewControllers.put(tabId, result.getController());
 
         tabPane.getTabs().add(tabPane.getTabs().size() - 1, tab);
         selectionModel = tabPane.getSelectionModel();
@@ -263,34 +254,34 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private void onTabClose(LoaderResult<ConnectionViewController> result, String tabId) {
         closedTabId = tabId;
         result.getController().close();
-        conntectionViewControllers.remove(closedTabId);
+        connectionViewControllers.remove(closedTabId);
     }
 
     @FXML
     public void resetUISettings() {
-        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
-            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).resetConnectionUISettings();
+        if (connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).resetConnectionUISettings();
         }
     }
 
     @FXML
     public void onClickP() {
-        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
-            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(true, false);
+        if (connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(true, false);
         }
     }
 
     @FXML
     public void onClickPS() {
-        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
-            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(true, true);
+        if (connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(true, true);
         }
     }
 
     @FXML
     public void onClickS() {
-        if (conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
-            conntectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(false, true);
+        if (connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()) != null) {
+            connectionViewControllers.get(tabPane.getSelectionModel().getSelectedItem().getId()).setLayout(false, true);
         }
     }
 
@@ -301,11 +292,11 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     @Override
     public void onCleanup() {
-        ConnectionViewController connectionViewController = conntectionViewControllers.get(this.closedTabId);
+        ConnectionViewController connectionViewController = connectionViewControllers.get(this.closedTabId);
         connectionViewController.cleanUp();
         connectionOnboardingViewController.cleanUp();
         logViewController.cleanUp();
-        conntectionViewControllers.remove(this.closedTabId);
+        connectionViewControllers.remove(this.closedTabId);
         EventBus.unregister(this);
     }
 
@@ -332,9 +323,11 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     @Override
     public void setConnectionState(String tabId, GuiConnectionState state) {
-        tabPane.getTabs().stream().filter(t -> t.getId().equals(tabId)).findFirst().ifPresent(t -> {
-            ((ThemedFontIcon) t.getGraphic()).setIconColor(state.getIconColor());
-        });
+        tabPane.getTabs()
+                .stream()
+                .filter(t -> t.getId().equals(tabId))
+                .findFirst()
+                .ifPresent(t -> ((ThemedFontIcon) t.getGraphic()).setIconColor(state.getIconColor()));
     }
 
     @Override

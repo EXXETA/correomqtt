@@ -34,7 +34,6 @@ public class CorreoPreloader extends Preloader {
 
     public CorreoPreloader() {
         EventBus.register(this);
-        // TODO Cleanup
     }
 
     @Override
@@ -49,6 +48,7 @@ public class CorreoPreloader extends Preloader {
         preloaderViewController = loader.getController();
         preloaderViewController.getPreloaderVersionLabel().setText("v" + VersionUtils.getVersion());
         scene = new Scene(root, 500, 300);
+        scene.setFill(SettingsProvider.getInstance().getActiveTheme().getBackgroundColor());
 
         if (cssPath != null) {
             scene.getStylesheets().add(cssPath);
@@ -62,7 +62,7 @@ public class CorreoPreloader extends Preloader {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.reset();
         JoranConfigurator configurator = new JoranConfigurator();
-        try(InputStream configStream = CorreoPreloader.class.getResourceAsStream("logger-config.xml")) {
+        try (InputStream configStream = CorreoPreloader.class.getResourceAsStream("logger-config.xml")) {
             configurator.setContext(loggerContext);
             configurator.doConfigure(configStream);
         } catch (JoranException | IOException e) {

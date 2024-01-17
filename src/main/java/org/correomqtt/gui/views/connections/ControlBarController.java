@@ -258,13 +258,6 @@ public class ControlBarController extends BaseConnectionController {
                 reconnectBtn.setVisible(true);
                 reconnectBtn.setManaged(true);
                 reconnectBtn.setDisable(false);
-/*                String msg;
-                Throwable e = event.getThrowable();
-                if (e instanceof CorreoMqttException correoMqttException) {
-                    msg = correoMqttException.getInfo();
-                } else {
-                    msg = e.getClass() + ":" + e.getMessage();
-                }*/
                 statusInfo.setText("Failed.");
             }
         }

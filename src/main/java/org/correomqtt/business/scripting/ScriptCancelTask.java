@@ -11,7 +11,7 @@ public class ScriptCancelTask extends SimpleTask {
     }
 
     @Override
-    protected void execute() throws Exception {
+    protected void execute() {
         ScriptExecutionTask task = ScriptingBackend.getExecutionTask(executionId);
         if (task == null) {
             throw new IllegalStateException("Task for executionId " + executionId + " does not exist.");

@@ -25,6 +25,8 @@ import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.controls.IconButton;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
+import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.views.AlertController;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.gui.views.cell.ConnectionCell;
@@ -34,7 +36,6 @@ import org.fxmisc.richtext.model.PlainTextChange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -53,8 +54,11 @@ public class SingleEditorViewController extends BaseControllerImpl {
     public AnchorPane emptyView;
     @FXML
     public IconButton scriptingSaveButton;
+    @FXML
     public IconButton scriptingRevertButton;
+    @FXML
     public IconButton scriptingRenameButton;
+    @FXML
     public IconButton scriptingDeleteButton;
     @FXML
     private CodeArea codeArea;
@@ -66,12 +70,12 @@ public class SingleEditorViewController extends BaseControllerImpl {
     private ComboBox<ConnectionPropertiesDTO> connectionList;
     private static ResourceBundle resources;
 
-    private AtomicBoolean revert = new AtomicBoolean(false);
+    private final AtomicBoolean revert = new AtomicBoolean(false);
 
     public SingleEditorViewController(SingleEditorViewDelegate delegate, ScriptFilePropertiesDTO scriptFilePropertiesDTO) {
         this.delegate = delegate;
         this.scriptFilePropertiesDTO = scriptFilePropertiesDTO;
-        EventBus.register(this); //TODO cleanup
+        EventBus.register(this);
     }
 
     public static LoaderResult<SingleEditorViewController> load(SingleEditorViewDelegate delegate, ScriptFilePropertiesDTO scriptFilePropertiesDTO) {
@@ -99,7 +103,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
     }
 
     private void onLoadScriptFailed(TaskErrorResult<ScriptLoadTask.Error> result) {
-        // TODO ioerror
+        AlertHelper.unexpectedAlert(result.getUnexpectedError());
     }
 
     private void onLoadScriptSucceeded(ScriptFileDTO scriptFileDTO, String scriptCode) {
@@ -120,11 +124,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
         long running = executions.stream()
                 .filter(e -> e.getState() == ScriptState.RUNNING)
                 .count();
-        if(running > 0){
-            disableActionsOnRunningScript(true);
-        }else{
-            disableActionsOnRunningScript(false);
-        }
+        disableActionsOnRunningScript(running > 0);
         codeArea.setDisable(false);
         codeArea.plainTextChanges()
                 .filter(ch -> !ch.isIdentity())
@@ -204,17 +204,15 @@ public class SingleEditorViewController extends BaseControllerImpl {
 
     }
 
-    public void onSaveClicked(ActionEvent actionEvent) {
-
+    public void onSaveClicked() {
         new ScriptSaveTask(ScriptingTransformer.propsToDTO(scriptFilePropertiesDTO), codeArea.getText())
                 .onSuccess(() -> onSaveSuccess(codeArea.getText()))
                 .onError(this::onSaveFailed)
                 .run();
-
     }
 
     private void onSaveFailed(TaskErrorResult<ScriptSaveTask.Error> error) {
-        //TODO
+        AlertHelper.unexpectedAlert(error.getUnexpectedError());
     }
 
     private void onSaveSuccess(String code) {
@@ -225,11 +223,11 @@ public class SingleEditorViewController extends BaseControllerImpl {
         delegate.onPlainTextChange(scriptFilePropertiesDTO);
     }
 
-    public void disableActionsOnRunningScript(boolean disable){
-       scriptingRunButton.setDisable(disable);
-       scriptingRenameButton.setDisable(disable);
-       scriptingDeleteButton.setDisable(disable);
-       scriptingSaveButton.setDisable(disable);
+    public void disableActionsOnRunningScript(boolean disable) {
+        scriptingRunButton.setDisable(disable);
+        scriptingRenameButton.setDisable(disable);
+        scriptingDeleteButton.setDisable(disable);
+        scriptingSaveButton.setDisable(disable);
     }
 
     @SuppressWarnings("unused")
@@ -257,20 +255,24 @@ public class SingleEditorViewController extends BaseControllerImpl {
         return scriptFilePropertiesDTO.getName();
     }
 
-    public void onRenameClicked(ActionEvent actionEvent) {
+    public void onRenameClicked() {
         delegate.renameScript(scriptFilePropertiesDTO);
     }
 
-    public void onDeleteClicked(ActionEvent actionEvent) {
+    public void onDeleteClicked() {
         delegate.deleteScript(scriptFilePropertiesDTO);
     }
 
-    public void onRevertClicked(ActionEvent actionEvent) {
+    public void onRevertClicked() {
         revert.set(true);
         codeArea.replaceText(scriptFilePropertiesDTO.getCode());
         scriptFilePropertiesDTO.getDirtyProperty().set(false);
         scriptingSaveButton.setDisable(true);
         scriptingRevertButton.setDisable(true);
         delegate.onPlainTextChange(scriptFilePropertiesDTO);
+    }
+
+    public void cleanUp() {
+        EventBus.unregister(this);
     }
 }

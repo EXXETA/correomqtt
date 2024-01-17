@@ -17,6 +17,9 @@ import org.correomqtt.plugin.spi.IncomingMessageHookDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 import static org.correomqtt.business.utils.LoggerUtils.getConnectionMarker;
 
 public class SubscribeTask extends SimpleTask {
@@ -33,9 +36,17 @@ public class SubscribeTask extends SimpleTask {
     }
 
     @Override
-    protected void execute() throws Exception {
+    protected void execute() {
         CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionId);
-        client.subscribe(subscriptionDTO, this::onIncomingMessage);
+        try {
+            client.subscribe(subscriptionDTO, this::onIncomingMessage);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
         EventBus.fireAsync(new SubscribeEvent(connectionId, subscriptionDTO));
     }
 

@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class EventBus {
@@ -176,9 +175,7 @@ public class EventBus {
             if (c.sync) {
                 executeMethod(c, event);
             } else {
-                FrontendBinding.pushToFrontend(() -> {
-                    executeMethod(c, event);
-                });
+                FrontendBinding.pushToFrontend(() -> executeMethod(c, event));
             }
         });
     }

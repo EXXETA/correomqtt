@@ -3,7 +3,6 @@ package org.correomqtt.business.scripting;
 import org.correomqtt.business.concurrent.NoProgressTask;
 import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.fileprovider.ScriptingProvider;
-import org.correomqtt.gui.views.scripting.SingleEditorViewController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

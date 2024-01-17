@@ -16,7 +16,7 @@ public class PluginInstallTask extends SimpleTask {
     }
 
     @Override
-    protected void execute() throws Exception {
+    protected void execute() {
         PluginManager.getInstance().getUpdateManager().installPlugin(pluginId, version);
         EventBus.fireAsync(new PluginInstallEvent(pluginId, version));
     }

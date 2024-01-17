@@ -1,7 +1,6 @@
 package org.correomqtt.gui.views.scripting;
 
 import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.encoder.Encoder;
 import javafx.fxml.FXML;
@@ -17,10 +16,8 @@ import org.correomqtt.business.scripting.ScriptExecutionCancelledEvent;
 import org.correomqtt.business.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.business.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.business.scripting.ScriptExecutionSuccessEvent;
-import org.correomqtt.business.scripting.ScriptExecutionTask;
 import org.correomqtt.business.scripting.ScriptLoadLogTask;
 import org.correomqtt.business.scripting.ScriptingBackend;
-import org.correomqtt.business.utils.LoggerUtils;
 import org.correomqtt.gui.log.LogToRichtTextFxAppender;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.LogAreaUtils;
@@ -145,7 +142,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
         return executionPropertiesDTO.getExecutionId();
     }
 
-    public void onCloseRequest() {
+    public void cleanup() {
         if (appender != null) {
             appender.stop();
         }

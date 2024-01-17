@@ -3,7 +3,6 @@ package org.correomqtt.gui.views.scripting;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -16,7 +15,6 @@ import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.eventbus.SubscribeFilter;
 import org.correomqtt.business.eventbus.SubscribeFilterNames;
-import org.correomqtt.business.fileprovider.ScriptingProvider;
 import org.correomqtt.business.scripting.BaseExecutionEvent;
 import org.correomqtt.business.scripting.ExecutionDTO;
 import org.correomqtt.business.scripting.ScriptDeleteExecutionsTask;
@@ -31,10 +29,7 @@ import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,8 +37,8 @@ import java.util.ResourceBundle;
 
 public class ExecutionViewController extends BaseControllerImpl {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionViewController.class);
-
+    private static ResourceBundle resources;
+    private final Map<String, ScriptExecutionState> executionStates = new HashMap<>();
     @FXML
     public AnchorPane executionSidebar;
     @FXML
@@ -54,13 +49,25 @@ public class ExecutionViewController extends BaseControllerImpl {
     public Label headerLabel;
     @FXML
     public Label emptyLabel;
-
+    @FXML
+    private AnchorPane executionHolder;
     @FXML
     private ListView<ExecutionPropertiesDTO> executionListView;
-
     private ObservableList<ExecutionPropertiesDTO> executionList;
     private FilteredList<ExecutionPropertiesDTO> filteredList;
     private String currentName;
+
+    public static LoaderResult<ExecutionViewController> load() {
+
+        LoaderResult<ExecutionViewController> result = load(ExecutionViewController.class, "executionView.fxml",
+                ExecutionViewController::new);
+        resources = result.getResourceBundle();
+        return result;
+    }
+
+    public ExecutionViewController() {
+        EventBus.register(this);
+    }
 
     public void renameScript(String oldName, String newName) {
         executionList.stream()
@@ -68,13 +75,14 @@ public class ExecutionViewController extends BaseControllerImpl {
                 .forEach(e -> e.getScriptFilePropertiesDTO().getNameProperty().set(newName));
     }
 
-    public void onClearExecutionsClicked(ActionEvent actionEvent) throws IOException {
+    public void onClearExecutionsClicked() {
         new ScriptDeleteExecutionsTask(currentName)
                 .onError(error -> AlertHelper.unexpectedAlert(error.getUnexpectedError()))
                 .run();
 
     }
 
+    @SuppressWarnings("unused")
     @Subscribe(ScriptExecutionsDeletedEvent.class)
     public void onExecutionsDeleted() {
         executionList.clear();
@@ -85,35 +93,9 @@ public class ExecutionViewController extends BaseControllerImpl {
         return currentName;
     }
 
-    @AllArgsConstructor
-    private static class ScriptExecutionState {
-        private SingleExecutionViewController controller;
-        private Region region;
-    }
-
-    public AnchorPane executionHolder;
-
-
-    private static ResourceBundle resources;
-
-    private final Map<String, ScriptExecutionState> executionStates = new HashMap<>();
-
-    public ExecutionViewController() {
-        EventBus.register(this);
-    }
-
-
-    public static LoaderResult<ExecutionViewController> load() {
-
-        LoaderResult<ExecutionViewController> result = load(ExecutionViewController.class, "executionView.fxml",
-                ExecutionViewController::new);
-        resources = result.getResourceBundle();
-        return result;
-    }
-
-    public void onCloseRequest() {
+    public void cleanup() {
         for (ScriptExecutionState state : executionStates.values()) {
-            state.controller.onCloseRequest();
+            state.controller.cleanup();
         }
         EventBus.unregister(this);
     }
@@ -124,22 +106,6 @@ public class ExecutionViewController extends BaseControllerImpl {
         executionListView.getSelectionModel().selectFirst();
         headerLabel.setText(MessageFormat.format(resources.getString("scripting.executions"), name));
         updateExistence();
-    }
-
-    @FXML
-    public void initialize() {
-
-        executionList = FXCollections.observableArrayList(ScriptingBackend.getExecutions()
-                .stream()
-                .map(ExecutionTransformer::dtoToProps)
-                .toList());
-        filteredList = new FilteredList<>(executionList, e -> false);
-
-        executionListView.setItems(filteredList);
-
-        executionListView.setCellFactory(this::createExcecutionCell);
-        executionListView.getSelectionModel().selectFirst();
-
     }
 
     private void updateExistence() {
@@ -163,6 +129,53 @@ public class ExecutionViewController extends BaseControllerImpl {
                 splitPane.getItems().add(executionHolder);
             }
         }
+    }
+
+    @FXML
+    public void initialize() {
+
+        executionList = FXCollections.observableArrayList(ScriptingBackend.getExecutions()
+                .stream()
+                .map(ExecutionTransformer::dtoToProps)
+                .toList());
+        filteredList = new FilteredList<>(executionList, e -> false);
+
+        executionListView.setItems(filteredList);
+
+        executionListView.setCellFactory(this::createExcecutionCell);
+        executionListView.getSelectionModel().selectFirst();
+
+    }
+
+    private ListCell<ExecutionPropertiesDTO> createExcecutionCell(ListView<ExecutionPropertiesDTO> executionListView) {
+        ExecutionCell cell = new ExecutionCell(this.executionListView);
+        cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            if (Boolean.TRUE.equals(newValue)) {
+                onSelectExecution(cell.getItem());
+            } else {
+                if (executionListView.getSelectionModel().getSelectedIndices().isEmpty()) {
+                    clearExecution();
+                }
+            }
+        });
+        return cell;
+    }
+
+    private void onSelectExecution(ExecutionPropertiesDTO selectedItem) {
+        executionHolder.getChildren().clear();
+        executionHolder.getChildren().add(getExecutionState(selectedItem).region);
+    }
+
+    private void clearExecution() {
+        executionHolder.getChildren().clear();
+    }
+
+    private ScriptExecutionState getExecutionState(ExecutionPropertiesDTO dto) {
+        return executionStates.computeIfAbsent(dto.getExecutionId(),
+                id -> {
+                    LoaderResult<SingleExecutionViewController> loaderResult = SingleExecutionViewController.load(dto);
+                    return new ScriptExecutionState(loaderResult.getController(), loaderResult.getMainRegion());
+                });
     }
 
     public boolean addExecution(ScriptFilePropertiesDTO dto, ConnectionPropertiesDTO selectedConnection, String jsCode) {
@@ -202,6 +215,17 @@ public class ExecutionViewController extends BaseControllerImpl {
         handleScriptExecutionResult(event);
     }
 
+    private void handleScriptExecutionResult(BaseExecutionEvent event) {
+        ExecutionDTO dto = event.getExecutionDTO();
+        if (dto == null)
+            return;
+        ExecutionPropertiesDTO props = executionList.stream()
+                .filter(epd -> epd.getExecutionId().equals(dto.getExecutionId()))
+                .findFirst()
+                .orElseThrow();
+        ExecutionTransformer.updatePropsByDto(props, dto);
+    }
+
     @SuppressWarnings("unused")
     public void onScriptExecutionSuccess(@Subscribe ScriptExecutionSuccessEvent event) {
         handleScriptExecutionResult(event);
@@ -217,45 +241,9 @@ public class ExecutionViewController extends BaseControllerImpl {
         handleScriptExecutionResult(event);
     }
 
-    private void handleScriptExecutionResult(BaseExecutionEvent event) {
-        ExecutionDTO dto = event.getExecutionDTO();
-        if (dto == null)
-            return;
-        ExecutionPropertiesDTO props = executionList.stream()
-                .filter(epd -> epd.getExecutionId().equals(dto.getExecutionId()))
-                .findFirst()
-                .orElseThrow();
-        ExecutionTransformer.updatePropsByDto(props, dto);
-    }
-
-    private ScriptExecutionState getExecutionState(ExecutionPropertiesDTO dto) {
-        return executionStates.computeIfAbsent(dto.getExecutionId(),
-                id -> {
-                    LoaderResult<SingleExecutionViewController> loaderResult = SingleExecutionViewController.load(dto);
-                    return new ScriptExecutionState(loaderResult.getController(), loaderResult.getMainRegion());
-                });
-    }
-
-    private ListCell<ExecutionPropertiesDTO> createExcecutionCell(ListView<ExecutionPropertiesDTO> executionListView) {
-        ExecutionCell cell = new ExecutionCell(this.executionListView);
-        cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            if (Boolean.TRUE.equals(newValue)) {
-                onSelectExecution(cell.getItem());
-            } else {
-                if (executionListView.getSelectionModel().getSelectedIndices().isEmpty()) {
-                    clearExecution();
-                }
-            }
-        });
-        return cell;
-    }
-
-    private void clearExecution() {
-        executionHolder.getChildren().clear();
-    }
-
-    private void onSelectExecution(ExecutionPropertiesDTO selectedItem) {
-        executionHolder.getChildren().clear();
-        executionHolder.getChildren().add(getExecutionState(selectedItem).region);
+    @AllArgsConstructor
+    private static class ScriptExecutionState {
+        private SingleExecutionViewController controller;
+        private Region region;
     }
 }

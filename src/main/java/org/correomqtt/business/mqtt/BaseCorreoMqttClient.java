@@ -15,6 +15,8 @@ import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.Proxy;
 import org.correomqtt.business.model.SubscriptionDTO;
+import org.correomqtt.business.ssh.SshProxy;
+import org.correomqtt.business.ssh.SshProxyDelegate;
 import org.slf4j.Logger;
 import org.slf4j.MarkerFactory;
 

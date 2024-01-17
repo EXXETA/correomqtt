@@ -33,11 +33,6 @@ public class ConnectionCellButton extends ListCell<ConnectionPropertiesDTO> {
 
     private ConnectionPropertiesDTO connectionDTO;
 
-    @FXML
-    public void initialize() {
-
-    }
-
     public ConnectionCellButton(ListView<ConnectionPropertiesDTO> listView) {
         this.listView = listView;
     }

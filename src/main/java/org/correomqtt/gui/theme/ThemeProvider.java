@@ -1,6 +1,7 @@
 package org.correomqtt.gui.theme;
 
 
+import javafx.scene.paint.Color;
 import org.correomqtt.business.model.GenericTranslatable;
 
 public interface ThemeProvider extends GenericTranslatable {
@@ -15,4 +16,5 @@ public interface ThemeProvider extends GenericTranslatable {
         return getName();
     }
 
+    Color getBackgroundColor();
 }

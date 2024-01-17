@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.business.concurrent.NoProgressTask;
 import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.encryption.EncryptorAesGcm;
-import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.fileprovider.EncryptionRecoverableException;
+import org.correomqtt.business.model.ConnectionConfigDTO;
 
 import java.util.List;
 

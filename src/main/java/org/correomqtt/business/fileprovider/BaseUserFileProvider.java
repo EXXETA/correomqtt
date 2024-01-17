@@ -11,7 +11,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +29,6 @@ abstract class BaseUserFileProvider {
 
     private static final String SCRIPT_FOLDER_NAME = "scripts";
 
-    private static final String DATA_FOLDER_NAME = "data";
     protected static final String SCRIPT_LOG_FOLDER_NAME = SCRIPT_FOLDER_NAME + File.separator + "logs";
 
     protected static final String SCRIPT_EXECUTIONS_FOLDER_NAME = SCRIPT_FOLDER_NAME + File.separator + "executions";
@@ -40,7 +38,7 @@ abstract class BaseUserFileProvider {
 
     private String targetDirectoryPathCache;
 
-    private Map<String, String> cache = new HashMap<>();
+    private final Map<String, String> cache = new HashMap<>();
 
     protected File getFile() {
         return file;

@@ -1,4 +1,4 @@
-package org.correomqtt.business.mqtt;
+package org.correomqtt.business.ssh;
 
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.LocalPortForwarder;

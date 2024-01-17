@@ -17,9 +17,6 @@ public class Launcher {
     public static void main(String[] args) {
         try {
 
-            //  java.security.AccessController.checkPermission(new PropertyPermission("org.graalvm.nativeimage.imagecode", "read"));
-            //  System.setSecurityManager(new SecurityManager());
-
             // Loading lib secret keyring requires org.objectweb.asm, but including it clashes with lombok.
             // See: https://github.com/projectlombok/lombok/issues/2973
             // Workaround is to disable the use of asm library.

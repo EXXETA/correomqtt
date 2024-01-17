@@ -14,7 +14,7 @@ public class PluginDisableTask extends SimpleTask {
     }
 
     @Override
-    protected void execute() throws Exception {
+    protected void execute() {
         PluginManager.getInstance().disablePlugin(pluginId);
         EventBus.fireAsync(new PluginDisabledEvent(pluginId));
     }

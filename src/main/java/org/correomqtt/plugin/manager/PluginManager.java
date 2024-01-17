@@ -4,10 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.business.model.HooksDTO;
-import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.fileprovider.PluginConfigProvider;
 import org.correomqtt.business.fileprovider.SettingsProvider;
+import org.correomqtt.business.model.HooksDTO;
+import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.utils.VendorConstants;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.model.PluginInfoDTO;
@@ -153,11 +153,6 @@ public class PluginManager extends JarPluginManager {
         }
 
         return new UpdateManager(pluginManager, repos);
-    }
-
-    // TODO obsolete ?
-    public static void resetInstance() {
-        instance = new PluginManager();
     }
 
     public List<OutgoingMessageHook<?>> getOutgoingMessageHooks() {

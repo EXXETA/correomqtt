@@ -1,7 +1,6 @@
 package org.correomqtt.business.connection;
 
 import org.correomqtt.business.concurrent.SimpleProgressTask;
-import org.correomqtt.business.concurrent.SimpleTask;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.eventbus.SubscribeFilter;
@@ -9,6 +8,10 @@ import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.mqtt.CorreoMqttClientFactory;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.business.utils.CorreoMqttConnection;
+
+import javax.net.ssl.SSLException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static org.correomqtt.business.eventbus.SubscribeFilterNames.CONNECTION_ID;
 
@@ -21,7 +24,7 @@ public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent>
     }
 
     @Override
-    protected void execute() throws Exception {
+    protected void execute()  {
         CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionId);
         if (client == null) {
             CorreoMqttConnection connection = ConnectionHolder.getInstance().getConnection(connectionId);
@@ -30,7 +33,17 @@ public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent>
         }
 
         if (client.getState() == ConnectionState.DISCONNECTED_GRACEFUL || client.getState() == ConnectionState.DISCONNECTED_UNGRACEFUL) {
-            client.connect();
+            try {
+                client.connect();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            } catch (TimeoutException e) {
+                throw new RuntimeException(e);
+            } catch (SSLException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

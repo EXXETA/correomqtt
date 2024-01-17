@@ -20,11 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.ResourceBundle;
-
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
 
 public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
 

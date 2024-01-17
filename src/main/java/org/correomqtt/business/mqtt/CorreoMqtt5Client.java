@@ -1,7 +1,7 @@
 package org.correomqtt.business.mqtt;
 
 import com.hivemq.client.mqtt.MqttClient;
-import com.hivemq.client.mqtt.MqttClientState;
+import com.hivemq.client.mqtt.MqttClientSslConfigBuilder;
 import com.hivemq.client.mqtt.lifecycle.MqttClientDisconnectedContext;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5BlockingClient;
@@ -59,11 +59,16 @@ class CorreoMqtt5Client extends BaseCorreoMqttClient {
                 .serverPort(getDestinationPort());
 
         if (configDTO.getSsl().equals(TlsSsl.KEYSTORE) && configDTO.getSslKeystore() != null && !configDTO.getSslKeystore().isEmpty()) {
-            clientBuilder = clientBuilder
-                    .sslConfig()
+            MqttClientSslConfigBuilder.Nested<? extends Mqtt5ClientBuilder> sslConfig = clientBuilder.sslConfig()
                     .keyManagerFactory(getKeyManagerFactory())
-                    .trustManagerFactory(getTrustManagerFactory())
-                    .applySslConfig();
+                    .trustManagerFactory(getTrustManagerFactory());
+
+            if (!configDTO.isSslHostVerification()) {
+                sslConfig = sslConfig.hostnameVerifier((s, sslSession) -> true);
+            }
+
+            clientBuilder = sslConfig.applySslConfig();
+
         }
 
         clientBuilder.addDisconnectedListener(this);

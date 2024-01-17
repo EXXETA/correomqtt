@@ -7,10 +7,10 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
-import org.correomqtt.gui.views.connections.BaseConnectionController;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.WindowHelper;
+import org.correomqtt.gui.views.connections.BaseConnectionController;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -22,10 +22,10 @@ public abstract class SimpleTask extends TaskImpl<Void, Void, Void, SimpleTaskEr
         return this;
     }
 
-    protected abstract void execute() throws Exception;
+    protected abstract void execute();
 
     @Override
-    Void executeImpl() throws Exception {
+    Void executeImpl() {
         execute();
         return null;
     }

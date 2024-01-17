@@ -20,13 +20,13 @@ import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.fileprovider.ConnectionsUpdatedEvent;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.views.cell.ConnectionCell;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.transformer.ConnectionTransformer;
+import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
+import org.correomqtt.gui.views.cell.ConnectionCell;
 import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewController;
 import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewDelegate;
-import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

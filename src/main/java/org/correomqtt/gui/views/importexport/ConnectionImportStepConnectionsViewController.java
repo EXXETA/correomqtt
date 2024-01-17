@@ -10,12 +10,12 @@ import org.controlsfx.control.IndexedCheckModel;
 import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.LoaderResult;
-import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
+import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
 
 import java.util.List;
 import java.util.ResourceBundle;

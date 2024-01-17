@@ -25,8 +25,12 @@ public class ExportMessageTask extends SimpleTask {
     }
 
     @Override
-    protected void execute() throws IOException {
-        new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, messageDTO);
+    protected void execute() {
+        try {
+            new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, messageDTO);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

@@ -24,8 +24,12 @@ public class ImportMessageTask extends SimpleResultTask<MessageDTO> {
     }
 
     @Override
-    protected MessageDTO execute() throws IOException {
-        return new ObjectMapper().readValue(file, MessageDTO.class);
+    protected MessageDTO execute() {
+        try {
+            return new ObjectMapper().readValue(file, MessageDTO.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

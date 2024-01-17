@@ -22,7 +22,7 @@ public abstract class SimpleResultTask<T> extends TaskImpl<T, Void, Void, Simple
         return this;
     }
 
-    protected abstract T execute() throws Exception;
+    protected abstract T execute();
 
     @Override
     T executeImpl() throws Exception {

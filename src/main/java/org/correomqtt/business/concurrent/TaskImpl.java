@@ -68,7 +68,7 @@ abstract class TaskImpl<T, P, E, R> {
                 .handleAsync((result, t) -> {
                     if (t != null) {
                         E expectedError = null;
-                        if (t instanceof TaskException taskException) {
+                        if (t instanceof CompletionException ce && ce.getCause() instanceof TaskException taskException) {
                             expectedError = (E) taskException.getError();
                         }
                         if (errorListener.isEmpty()) {

@@ -150,7 +150,12 @@ public class SecretStoreProvider extends BaseUserFileProvider {
         readDecryptedPasswords(getEncryptor(masterPassword));
     }
 
+    @SuppressWarnings("removal")
     public void migratePasswordEncryption(String masterPassword) throws EncryptionRecoverableException {
+        /* Explanation why removal warning is suppressed.
+         * While EncryptorAesCbc is deprecated caused by security we still need the implementation to decrypt and
+         * migrate existing passwords.
+         */
         if (passwordsDTO != null && passwordsDTO.getPasswords() != null && (passwordsDTO.getEncryptionType() == null || EncryptorAesCbc.ENCRYPTION_TRANSFORMATION.equals(passwordsDTO.getEncryptionType()))) {
             LOGGER.info("Migrating password encryption from {} to {}", EncryptorAesCbc.ENCRYPTION_TRANSFORMATION, EncryptorAesGcm.ENCRYPTION_TRANSFORMATION);
             readDecryptedPasswords(new EncryptorAesCbc(masterPassword));

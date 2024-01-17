@@ -2,6 +2,7 @@ package org.correomqtt.business.concurrent;
 
 public abstract class SimpleErrorTask<E> extends TaskImpl<Void, Void, E, TaskErrorResult<E>> {
 
+    @SuppressWarnings("unused")
     public SimpleErrorTask<E> onStarted(StartListener listener) {
         onStartedImpl(listener);
         return this;
@@ -17,15 +18,16 @@ public abstract class SimpleErrorTask<E> extends TaskImpl<Void, Void, E, TaskErr
         return this;
     }
 
+    @SuppressWarnings("unused")
     public SimpleErrorTask<E> onFinally(FinallyListener listener) {
         onFinallyImpl(listener);
         return this;
     }
 
-    protected abstract void execute() throws Exception;
+    protected abstract void execute();
 
     @Override
-    Void executeImpl() throws Exception {
+    Void executeImpl() {
         execute();
         return null;
     }
@@ -42,6 +44,7 @@ public abstract class SimpleErrorTask<E> extends TaskImpl<Void, Void, E, TaskErr
         // to be overridden by child on demand
     }
 
+    @SuppressWarnings("unused")
     protected void errorHook(TaskErrorResult<E> errorResult) {
         // to be overridden by child on demand
     }

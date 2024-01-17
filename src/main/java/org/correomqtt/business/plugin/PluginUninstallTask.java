@@ -14,7 +14,7 @@ public class PluginUninstallTask extends SimpleTask {
     }
 
     @Override
-    protected void execute() throws Exception {
+    protected void execute() {
         PluginManager.getInstance().getUpdateManager().uninstallPlugin(pluginId);
         EventBus.fireAsync(new PluginUninstallEvent(pluginId));
     }

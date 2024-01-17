@@ -2,9 +2,9 @@ package org.correomqtt.business.utils;
 
 import javafx.beans.value.ChangeListener;
 import org.correomqtt.gui.formats.Format;
-import org.correomqtt.plugin.spi.DetailViewFormatHook;
 import org.correomqtt.gui.formats.Plain;
 import org.correomqtt.plugin.manager.PluginManager;
+import org.correomqtt.plugin.spi.DetailViewFormatHook;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

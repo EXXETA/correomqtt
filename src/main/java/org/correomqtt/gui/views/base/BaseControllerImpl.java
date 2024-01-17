@@ -84,6 +84,7 @@ public abstract class BaseControllerImpl implements BaseController{
                                                                       int minHeight) {
 
         Scene scene = new Scene(result.getMainRegion());
+        scene.setFill(SettingsProvider.getInstance().getActiveTheme().getBackgroundColor());
         String cssPath = SettingsProvider.getInstance().getCssPath();
         if (cssPath != null) {
             scene.getStylesheets().add(cssPath);

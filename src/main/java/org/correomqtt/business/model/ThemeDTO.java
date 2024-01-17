@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.correomqtt.gui.theme.IconMode;
 
 @Getter
 @Setter
@@ -19,5 +18,4 @@ import org.correomqtt.gui.theme.IconMode;
 public class ThemeDTO {
 
     private String name;
-    private IconMode iconMode;
 }

@@ -2,8 +2,8 @@ package org.correomqtt.gui.window;
 
 import javafx.scene.control.Dialog;
 import javafx.stage.Stage;
-import javafx.stage.Window;
 import javafx.stage.StageStyle;
+import javafx.stage.Window;
 
 public class StageHelper {
 

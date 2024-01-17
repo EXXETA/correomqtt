@@ -8,13 +8,13 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import org.correomqtt.business.fileprovider.PluginConfigProvider;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.WindowHelper;
+import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.pf4j.PluginWrapper;
 
 import java.io.File;

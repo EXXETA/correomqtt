@@ -18,7 +18,7 @@ public class UnsubscribeTask extends SimpleTask {
     }
 
     @Override
-    protected void execute() throws Exception {
+    protected void execute() {
         CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionId);
         client.unsubscribe(subscriptionDTO);
         EventBus.fireAsync(new UnsubscribeEvent(connectionId, subscriptionDTO));
