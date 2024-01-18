@@ -38,7 +38,7 @@ public class VersionUtils {
             }
         }
 
-        return version;
+        return version.trim();
     }
 
     /**

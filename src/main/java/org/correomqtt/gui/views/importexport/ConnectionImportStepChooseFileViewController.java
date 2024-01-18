@@ -4,11 +4,12 @@ import javafx.fxml.FXML;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.correomqtt.business.concurrent.TaskErrorResult;
 import org.correomqtt.business.importexport.connections.ImportConnectionsFileTask;
 import org.correomqtt.business.model.ConnectionExportDTO;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
 
 import java.io.File;
 import java.util.ResourceBundle;
@@ -47,16 +48,20 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
                 .run();
     }
 
-    private void onImportError(ImportConnectionsFileTask.Error error) {
-        switch (error) {
-            case FILE_IS_NULL -> {
-                // ignore, file dialog was aborted
+    private void onImportError(TaskErrorResult<ImportConnectionsFileTask.Error> errorResult) {
+        if (errorResult.isExpected()) {
+            switch (errorResult.getExpectedError()) {
+                case FILE_IS_NULL -> {
+                    // ignore, file dialog was aborted
+                }
+                case FILE_CAN_NOT_BE_READ_OR_PARSED -> {
+                    AlertHelper.warn(resources.getString("connectionImportFileFailedTitle"),
+                            resources.getString("connectionImportFileFailedDescription"));
+                    delegate.onCancelClicked();
+                }
             }
-            case FILE_CAN_NOT_BE_READ_OR_PARSED -> {
-                AlertHelper.warn(resources.getString("connectionImportFileFailedTitle"),
-                        resources.getString("connectionImportFileFailedDescription"));
-                delegate.onCancelClicked();
-            }
+        } else {
+            AlertHelper.unexpectedAlert(errorResult.getUnexpectedError());
         }
     }
 

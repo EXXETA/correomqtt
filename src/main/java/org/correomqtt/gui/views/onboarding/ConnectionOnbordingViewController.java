@@ -15,17 +15,18 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.fileprovider.ConnectionsUpdatedEvent;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.views.cell.ConnectionCell;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.transformer.ConnectionTransformer;
+import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
+import org.correomqtt.gui.views.cell.ConnectionCell;
 import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewController;
 import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewDelegate;
-import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,25 +41,25 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionOnbordingViewController.class);
     @FXML
-    public AnchorPane helloViewAnchor;
+    private AnchorPane helloViewAnchor;
     @FXML
-    public ComboBox<String> helloViewComboBox;
+    private ComboBox<String> helloViewComboBox;
     @FXML
-    public Button helloViewConnectButton;
+    private Button helloViewConnectButton;
     @FXML
-    public Button editConnectionsButton;
+    private Button editConnectionsButton;
     @FXML
-    public HBox mainHBox;
+    private HBox mainHBox;
     @FXML
-    public Label noConnectionsLabel;
+    private Label noConnectionsLabel;
     @FXML
-    public VBox helloViewVBox;
+    private VBox helloViewVBox;
     @FXML
-    public ListView<ConnectionPropertiesDTO> connectionListView;
+    private ListView<ConnectionPropertiesDTO> connectionListView;
     @FXML
-    public HBox buttonBar;
+    private HBox buttonBar;
     @FXML
-    public HBox noConnectionsButtonBar;
+    private HBox noConnectionsButtonBar;
     private ConnectionOnboardingDelegate connectionsOnboardingDelegate;
     private ConnectionSettingsViewDelegate connectionsSettingsViewDelegate;
 
@@ -67,7 +68,7 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
         super();
         this.connectionsOnboardingDelegate = connectionsOnboardingDelegate;
         this.connectionsSettingsViewDelegate = connectionSettingsViewDelegate;
-        EventBus.unregister(this);
+        EventBus.register(this);
     }
 
     public static LoaderResult<ConnectionOnbordingViewController> load(ConnectionOnboardingDelegate connectionsOnboardingDelegate,
@@ -81,7 +82,7 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
 
         connectionListView.setCellFactory(this::createCell);
 
@@ -199,7 +200,7 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void addConnection(ActionEvent actionEvent) {
+    private void addConnection(ActionEvent actionEvent) {
         openSettings();
     }
 
@@ -209,7 +210,7 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void onClickConnect(ActionEvent actionEvent) {
+    private void onClickConnect(ActionEvent actionEvent) {
         LOGGER.debug("Clicked on connect button");
         connect();
     }
@@ -220,7 +221,7 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void openSettings() {
+    private void openSettings() {
         ConnectionSettingsViewController.showAsDialog(connectionsSettingsViewDelegate, connectionListView.getSelectionModel().getSelectedItem());
         LOGGER.debug("Open connection settings");
     }
@@ -231,6 +232,11 @@ public class ConnectionOnbordingViewController extends BaseControllerImpl {
         updateConnections();
     }
 
+    @SuppressWarnings("unused")
+    @Subscribe(ConnectionStateChangedEvent.class)
+    public void onConnectionStateChanged() {
+        connectionListView.refresh();
+    }
 
     public void cleanUp() {
         ConnectionPropertiesDTO config = connectionListView.getSelectionModel().getSelectedItem();

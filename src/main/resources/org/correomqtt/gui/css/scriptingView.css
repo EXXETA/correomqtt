@@ -1,0 +1,25 @@
+@import "global.css";
+@import "richtextfx.css";
+@import "log.css";
+
+.dialog {
+
+}
+
+.scriptingHolder {
+    -fx-padding: 0 0 0 0;
+}
+
+.settingsLabel {
+    -fx-padding: 0 0 0 0;
+    -fx-font-weight: bold;
+}
+
+.settingsDescription {
+    -fx-padding: 0 10 20 0;
+}
+
+.settingsLabel.disabled {
+    -fx-text-fill: #777777;
+    -fx-font-weight: bold;
+}

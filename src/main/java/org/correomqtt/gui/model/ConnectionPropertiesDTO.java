@@ -44,6 +44,7 @@ public class ConnectionPropertiesDTO {
     private final Property<TlsSsl> sslProperty;
     private final StringProperty sslKeystoreProperty;
     private final StringProperty sslKeystorePasswordProperty;
+    private final BooleanProperty sslHostVerificationProperty;
     private final Property<Proxy> proxyProperty;
     private final StringProperty sshHostProperty;
     private final IntegerProperty sshPortProperty;
@@ -77,6 +78,7 @@ public class ConnectionPropertiesDTO {
                 c.sslProperty,
                 c.sslKeystoreProperty,
                 c.sslKeystorePasswordProperty,
+                c.sslHostVerificationProperty,
                 c.proxyProperty,
                 c.sshHostProperty,
                 c.sshPortProperty,
@@ -144,6 +146,10 @@ public class ConnectionPropertiesDTO {
 
     public String getSslKeystorePassword() {
         return sslKeystorePasswordProperty.getValue();
+    }
+
+    public boolean isSslHostVerification(){
+        return sslHostVerificationProperty.getValue();
     }
 
     public Proxy getProxy() {
@@ -242,6 +248,7 @@ public class ConnectionPropertiesDTO {
         private Property<TlsSsl> sslProperty = new SimpleObjectProperty<>();
         private StringProperty sslKeystoreProperty = new SimpleStringProperty();
         private StringProperty sslKeystorePasswordProperty = new SimpleStringProperty();
+        private BooleanProperty sslHostVerificationProperty = new SimpleBooleanProperty();
         private Property<Proxy> proxyProperty = new SimpleObjectProperty<>();
         private StringProperty sshHostProperty = new SimpleStringProperty();
         private IntegerProperty sshPortProperty = new SimpleIntegerProperty();
@@ -320,6 +327,11 @@ public class ConnectionPropertiesDTO {
 
         public ConnectionPropertiesDTOBuilder sslKeystorePassword(String sslKeystorePassword) {
             this.sslKeystorePasswordProperty.set(sslKeystorePassword);
+            return this;
+        }
+
+        public ConnectionPropertiesDTOBuilder sslHostVerification(Boolean sslHostVerification) {
+            this.sslHostVerificationProperty.set(sslHostVerification);
             return this;
         }
 
@@ -436,6 +448,7 @@ public class ConnectionPropertiesDTO {
                     sslProperty,
                     sslKeystoreProperty,
                     sslKeystorePasswordProperty,
+                    sslHostVerificationProperty,
                     proxyProperty,
                     sshHostProperty,
                     sshPortProperty,

@@ -1,30 +1,31 @@
 package org.correomqtt.gui.controls;
 
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
-import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.paint.Paint;
 
 public class IconLabel extends Label {
 
     private final StringProperty iconProperty = new SimpleStringProperty();
+
+    private final IntegerProperty iconSizeProperty = new SimpleIntegerProperty(18);
     private ThemedFontIcon themedFontIcon;
 
     public IconLabel() {
         super();
         iconProperty.addListener(this::iconChange);
+        iconSizeProperty.addListener(this::iconChange);
     }
 
-    private void iconChange(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+    private void iconChange(ObservableValue<?> observable, Object oldValue, Object newValue) {
         themedFontIcon = new ThemedFontIcon();
-        themedFontIcon.setIconLiteral(newValue);
-        themedFontIcon.setIconSize(18);
+        themedFontIcon.setIconLiteral(iconProperty.get());
+        themedFontIcon.setIconSize(iconSizeProperty.get());
         this.setGraphic(themedFontIcon);
-        this.setPadding(new Insets(1,5,1,5));
-        this.setHeight(28);
-        this.setMinHeight(28);
     }
 
     public void setIcon(String icon) {
@@ -35,7 +36,15 @@ public class IconLabel extends Label {
         return this.iconProperty.get();
     }
 
-    public void setIconColor(Paint paint){
+    public void setIconColor(Paint paint) {
         this.themedFontIcon.setIconColor(paint);
+    }
+
+    public void setIconSize(Integer iconSize) {
+        this.iconSizeProperty.set(iconSize);
+    }
+
+    public Integer getIconSize() {
+        return this.iconSizeProperty.get();
     }
 }

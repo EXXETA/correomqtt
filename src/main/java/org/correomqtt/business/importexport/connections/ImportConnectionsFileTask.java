@@ -1,7 +1,8 @@
 package org.correomqtt.business.importexport.connections;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.business.concurrent.Task;
+import org.correomqtt.business.concurrent.NoProgressTask;
+import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.model.ConnectionExportDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 
-public class ImportConnectionsFileTask extends Task<ConnectionExportDTO, ImportConnectionsFileTask.Error> {
+public class ImportConnectionsFileTask extends NoProgressTask<ConnectionExportDTO, ImportConnectionsFileTask.Error> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImportConnectionsFileTask.class);
 
@@ -25,10 +26,10 @@ public class ImportConnectionsFileTask extends Task<ConnectionExportDTO, ImportC
     }
 
     @Override
-    protected ConnectionExportDTO execute() {
+    protected ConnectionExportDTO execute() throws TaskException {
 
         if (file == null) {
-            throw createExpectedException(Error.FILE_IS_NULL);
+            throw new TaskException(Error.FILE_IS_NULL);
         }
 
         LOGGER.info("Start importing connections from file {}.", file.getAbsolutePath());
@@ -36,7 +37,7 @@ public class ImportConnectionsFileTask extends Task<ConnectionExportDTO, ImportC
             return new ObjectMapper().readerFor(ConnectionExportDTO.class).readValue(file);
         } catch (IOException e) {
             LOGGER.debug("File can not be read or parsed.", e);
-            throw createExpectedException(Error.FILE_CAN_NOT_BE_READ_OR_PARSED);
+            throw new TaskException(Error.FILE_CAN_NOT_BE_READ_OR_PARSED);
         }
     }
 }

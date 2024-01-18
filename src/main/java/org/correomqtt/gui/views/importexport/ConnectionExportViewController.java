@@ -16,18 +16,19 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.CheckListView;
+import org.correomqtt.business.concurrent.TaskErrorResult;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.importexport.connections.ExportConnectionsTask;
 import org.correomqtt.business.model.ConnectionConfigDTO;
-import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.LoaderResult;
-import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
+import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.WindowHelper;
+import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +44,7 @@ public class ConnectionExportViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
     @FXML
-    public Label passwordLabel;
+    private Label passwordLabel;
 
     private static ResourceBundle resources;
 
@@ -80,7 +81,7 @@ public class ConnectionExportViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
 
         // improve list style
 
@@ -147,7 +148,7 @@ public class ConnectionExportViewController extends BaseControllerImpl {
         File file = fileChooser.showSaveDialog(stage);
 
         new ExportConnectionsTask(file,
-                 ConnectionTransformer.propsListToDtoList(checkedItems),
+                ConnectionTransformer.propsListToDtoList(checkedItems),
                 passwordCheckBox.isSelected() ? passwordField.getText() : null)
                 .onSuccess(this::onExportSucceeded)
                 .onError(this::onExportFailed)
@@ -162,30 +163,34 @@ public class ConnectionExportViewController extends BaseControllerImpl {
         this.closeDialog();
     }
 
-    private void onExportFailed(ExportConnectionsTask.Error error) {
-        switch (error) {
-            case EMPTY_COLLECTION_LIST:
-                AlertHelper.warn(resources.getString("exportConnectionsEmptyTitle"),
-                        resources.getString("exportConnectionsEmptyBody"),
-                        true);
-                break;
-            case EMPTY_PASSWORD:
-                passwordField.setTooltip(new Tooltip(resources.getString("passwordEmpty")));
-                passwordField.getStyleClass().add(ConnectionSettingsViewController.EXCLAMATION_CIRCLE_SOLID);
-                break;
-            case FILE_IS_NULL:
-                // nothing to do -> file dialog was cancelled
-                break;
-            case MISSING_FILE_EXTENSION:
-                AlertHelper.warn(resources.getString("exportConnectionsFilenameTitle"),
-                        resources.getString("exportConnectionsFilenameBody"),
-                        true);
-                break;
+    private void onExportFailed(TaskErrorResult<ExportConnectionsTask.Error> errorResult) {
+        if (errorResult.isExpected()) {
+            switch (errorResult.getExpectedError()) {
+                case EMPTY_COLLECTION_LIST:
+                    AlertHelper.warn(resources.getString("exportConnectionsEmptyTitle"),
+                            resources.getString("exportConnectionsEmptyBody"),
+                            true);
+                    break;
+                case EMPTY_PASSWORD:
+                    passwordField.setTooltip(new Tooltip(resources.getString("passwordEmpty")));
+                    passwordField.getStyleClass().add(ConnectionSettingsViewController.EXCLAMATION_CIRCLE_SOLID);
+                    break;
+                case FILE_IS_NULL:
+                    // nothing to do -> file dialog was cancelled
+                    break;
+                case MISSING_FILE_EXTENSION:
+                    AlertHelper.warn(resources.getString("exportConnectionsFilenameTitle"),
+                            resources.getString("exportConnectionsFilenameBody"),
+                            true);
+                    break;
+            }
+        } else {
+            AlertHelper.unexpectedAlert(errorResult.getUnexpectedError());
         }
     }
 
     @FXML
-    public void onCancelClicked() {
+    private void onCancelClicked() {
         closeDialog();
     }
 

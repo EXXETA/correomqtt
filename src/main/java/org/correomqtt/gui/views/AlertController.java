@@ -16,9 +16,9 @@ import org.correomqtt.business.fileprovider.UnaccessibleConfigFileEvent;
 import org.correomqtt.business.fileprovider.UnaccessiblePasswordFileEvent;
 import org.correomqtt.business.fileprovider.UserHomeNull;
 import org.correomqtt.business.fileprovider.WindowsAppDataNullEvent;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.PlatformUtils;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
 
 import java.text.MessageFormat;
 import java.util.ResourceBundle;

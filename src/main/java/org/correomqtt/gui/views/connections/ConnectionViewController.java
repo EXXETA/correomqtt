@@ -5,12 +5,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
-import org.correomqtt.business.connection.AutomaticReconnectEvent;
-import org.correomqtt.business.connection.ConnectEvent;
-import org.correomqtt.business.connection.ConnectFailedEvent;
-import org.correomqtt.business.connection.ConnectStartedEvent;
 import org.correomqtt.business.connection.ConnectTask;
-import org.correomqtt.business.connection.DisconnectEvent;
+import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.connection.DisconnectTask;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
@@ -23,11 +19,11 @@ import org.correomqtt.business.importexport.messages.ImportMessageStartedEvent;
 import org.correomqtt.business.importexport.messages.ImportMessageSuccessEvent;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ConnectionUISettings;
-import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
-import org.correomqtt.gui.model.ConnectionState;
+import org.correomqtt.gui.model.GuiConnectionState;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.LoadingViewController;
 import org.slf4j.Logger;
@@ -66,8 +62,6 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     private ControlBarController controlBarController;
 
-    private boolean isFinalClose;
-
     public ConnectionViewController(String connectionId, ConnectionViewDelegate delegate) {
         super(connectionId);
         this.delegate = delegate;
@@ -80,7 +74,7 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         SettingsProvider.getInstance().getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
@@ -234,44 +228,23 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ConnectEvent.class)
-    public void onConnect() {
-        Platform.runLater(() -> splitPane.setDisable(false));
-    }
-
-    @SuppressWarnings("unused")
-    @Subscribe(ConnectStartedEvent.class)
-    public void onConnectStarted() {
-        Platform.runLater(() -> splitPane.setDisable(true));
-    }
-
-    @SuppressWarnings("unused")
-    @Subscribe(ConnectFailedEvent.class)
-    public void onConnectionFailed() {
-        Platform.runLater(() -> splitPane.setDisable(true));
-    }
-
-    @SuppressWarnings("unused")
-    @Subscribe(DisconnectEvent.class)
-    public void onDisconnect() {
-        Platform.runLater(() -> splitPane.setDisable(true));
-        delegate.onDisconnect();
-
-        if (isFinalClose) {
-            delegate.onCleanup();
+    public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {
+        switch (event.getState()) {
+            case CONNECTED -> splitPane.setDisable(false);
+            case CONNECTING, RECONNECTING, DISCONNECTING -> splitPane.setDisable(true);
+            case DISCONNECTED_GRACEFUL, DISCONNECTED_UNGRACEFUL -> {
+                splitPane.setDisable(true);
+                delegate.onDisconnect();
+            }
         }
+
     }
 
-    @SuppressWarnings("unused")
-    @Subscribe(AutomaticReconnectEvent.class)
-    public void onConnectionReconnected() {
-        splitPane.setDisable(false);
-    }
-
-    public void disconnect(boolean isFinalClose) {
-        this.isFinalClose = isFinalClose;
+    public void disconnect() {
         saveConnectionUISettings();
-        new DisconnectTask(getConnectionId()).run();
+        new DisconnectTask(getConnectionId())
+                .onFinally(this::cleanUp)
+                .run();
     }
 
     public void cleanUp() {
@@ -353,12 +326,16 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     @Override
-    public void setConnectionState(ConnectionState state) {
+    public void setConnectionState(GuiConnectionState state) {
         delegate.setConnectionState(getTabId(), state);
     }
 
     @Override
     public void setTabDirty() {
         delegate.setTabDirty(getTabId());
+    }
+
+    public void close() {
+        this.disconnect();
     }
 }

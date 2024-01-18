@@ -1,7 +1,8 @@
 package org.correomqtt.business.importexport.connections;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.business.concurrent.Task;
+import org.correomqtt.business.concurrent.NoProgressTask;
+import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.encryption.Encryptor;
 import org.correomqtt.business.encryption.EncryptorAesGcm;
 import org.correomqtt.business.fileprovider.EncryptionRecoverableException;
@@ -13,7 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-public class ExportConnectionsTask extends Task<Integer, ExportConnectionsTask.Error> {
+public class ExportConnectionsTask extends NoProgressTask<Integer, ExportConnectionsTask.Error> {
 
     public enum Error {
         EMPTY_COLLECTION_LIST,
@@ -33,18 +34,18 @@ public class ExportConnectionsTask extends Task<Integer, ExportConnectionsTask.E
     }
 
     @Override
-    protected Integer execute() throws EncryptionRecoverableException, IOException {
+    protected Integer execute() throws EncryptionRecoverableException, IOException, TaskException {
 
         if (file == null) {
-            throw createExpectedException(Error.FILE_IS_NULL);
+            throw new TaskException(Error.FILE_IS_NULL);
         }
 
         if (connectionList == null || connectionList.isEmpty()) {
-            throw createExpectedException(Error.EMPTY_COLLECTION_LIST);
+            throw new TaskException(Error.EMPTY_COLLECTION_LIST);
         }
 
         if (file.getName().length() < 5 || !file.getName().endsWith(".cqc")) {
-            throw createExpectedException(Error.MISSING_FILE_EXTENSION);
+            throw new TaskException(Error.MISSING_FILE_EXTENSION);
         }
 
         // TODO: positive way selecting stuff to export

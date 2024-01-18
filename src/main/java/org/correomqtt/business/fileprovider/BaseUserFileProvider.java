@@ -11,6 +11,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 abstract class BaseUserFileProvider {
 
@@ -19,14 +21,24 @@ abstract class BaseUserFileProvider {
     private static final String OPERATING_SYSTEM = System.getProperty("os.name").toLowerCase();
     private static final String USER_HOME = System.getProperty("user.home");
     private static final String USER_DIR = System.getProperty("user.dir");
-
     private static final String MAC_APP_FOLDER_NAME = "CorreoMqtt";
     private static final String WIN_APP_FOLDER_NAME = MAC_APP_FOLDER_NAME;
     private static final String LIN_APP_FOLDER_NAME = ".correomqtt";
 
+    private static final String LOG_FOLDER_NAME = "logs";
+
+    private static final String SCRIPT_FOLDER_NAME = "scripts";
+
+    protected static final String SCRIPT_LOG_FOLDER_NAME = SCRIPT_FOLDER_NAME + File.separator + "logs";
+
+    protected static final String SCRIPT_EXECUTIONS_FOLDER_NAME = SCRIPT_FOLDER_NAME + File.separator + "executions";
+
+
     private File file;
 
     private String targetDirectoryPathCache;
+
+    private final Map<String, String> cache = new HashMap<>();
 
     protected File getFile() {
         return file;
@@ -50,14 +62,14 @@ abstract class BaseUserFileProvider {
 
         if (!targetFile.exists()) {
             try (InputStream inputStream = SettingsProvider.class.getResourceAsStream(filename)) {
-                if(inputStream != null) {
+                if (inputStream != null) {
                     byte[] buffer = new byte[inputStream.available()];
-                    if(inputStream.read(buffer) > 0) {
+                    if (inputStream.read(buffer) > 0) {
                         try (OutputStream outStream = new FileOutputStream(targetFile)) {
                             outStream.write(buffer);
                         }
                     }
-                }else{
+                } else {
                     LOGGER.warn("Can not read file {}", filename);
                 }
             }
@@ -134,5 +146,46 @@ abstract class BaseUserFileProvider {
         }
 
         return targetDirectoryPathCache;
+    }
+
+    public String getLogDirectory() {
+        return getFromCache(LOG_FOLDER_NAME);
+    }
+
+
+    public String getScriptLogDirectory(String filename) {
+        return getScriptLogDirectory(filename, true);
+    }
+
+    public String getScriptLogDirectory(String filename, boolean autocreate) {
+        return getFromCache(SCRIPT_LOG_FOLDER_NAME + File.separator + filename, autocreate);
+    }
+
+    public String getScriptExecutionsDirectory(String filename) {
+        return getScriptExecutionsDirectory(filename, true);
+    }
+
+    public String getScriptExecutionsDirectory(String filename, boolean autocreate) {
+        return getFromCache(SCRIPT_EXECUTIONS_FOLDER_NAME + File.separator + filename, autocreate);
+    }
+
+
+    protected String getFromCache(String dir) {
+        return getFromCache(dir, true);
+    }
+
+    protected String getFromCache(String dir, boolean autocreate) {
+        String path = getTargetDirectoryPath() + File.separator + dir;
+
+        if (!autocreate)
+            return path;
+
+        return cache.computeIfAbsent(dir, d -> {
+            if (!new File(path).exists() && !new File(path).mkdirs()) {
+                EventBus.fire(new DirectoryCanNotBeCreatedEvent(path));
+                throw new IllegalStateException("Can not create directory: " + path);
+            }
+            return path;
+        });
     }
 }

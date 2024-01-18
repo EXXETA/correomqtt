@@ -78,7 +78,7 @@ public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
 
     @SuppressWarnings("unused")
     @FXML
-    public void onFilteredChanged(ActionEvent event) {
+    private void onFilteredChanged(ActionEvent event) {
         getItem().setFiltered(filterCheckbox.isSelected());
     }
 

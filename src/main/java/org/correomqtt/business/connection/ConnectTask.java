@@ -1,13 +1,22 @@
 package org.correomqtt.business.connection;
 
-import org.correomqtt.business.concurrent.Task;
+import org.correomqtt.business.concurrent.SimpleProgressTask;
+import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.eventbus.Subscribe;
+import org.correomqtt.business.eventbus.SubscribeFilter;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.mqtt.CorreoMqttClientFactory;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.business.utils.CorreoMqttConnection;
 
-public class ConnectTask extends Task<Void, Void> {
+import javax.net.ssl.SSLException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
+import static org.correomqtt.business.eventbus.SubscribeFilterNames.CONNECTION_ID;
+
+public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent> {
 
     private final String connectionId;
 
@@ -16,23 +25,43 @@ public class ConnectTask extends Task<Void, Void> {
     }
 
     @Override
-    protected void before() {
-        EventBus.fireAsync(new ConnectStartedEvent(connectionId));
-    }
-
-    @Override
-    protected Void execute() throws Exception {
-        CorreoMqttConnection connection = ConnectionHolder.getInstance().getConnection(connectionId);
-        connection.setClient(CorreoMqttClientFactory.createClient(connection.getConfigDTO()));
+    protected void execute()  {
         CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionId);
-        client.connect();
-        EventBus.fireAsync(new ConnectEvent(connectionId));
-        return null;
+        if (client == null) {
+            CorreoMqttConnection connection = ConnectionHolder.getInstance().getConnection(connectionId);
+            connection.setClient(CorreoMqttClientFactory.createClient(connection.getConfigDTO()));
+            client = ConnectionHolder.getInstance().getClient(connectionId);
+        }
+
+        if (client.getState() == ConnectionState.DISCONNECTED_GRACEFUL || client.getState() == ConnectionState.DISCONNECTED_UNGRACEFUL) {
+            try {
+                client.connect();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new TaskException(e);
+            } catch (ExecutionException | TimeoutException | SSLException e) {
+                throw new TaskException(e);
+            }
+        }
     }
 
     @Override
-    protected void error(Throwable t) {
-        EventBus.fireAsync(new ConnectFailedEvent(connectionId, t));
+    protected void beforeHook() {
+        EventBus.register(this);
+    }
+
+    @Override
+    protected void finalHook() {
+        EventBus.unregister(this);
+    }
+
+    public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {
+        reportProgress(event);
+    }
+
+    @SubscribeFilter(CONNECTION_ID)
+    public String getConnectionId() {
+        return connectionId;
     }
 
 }

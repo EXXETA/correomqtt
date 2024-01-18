@@ -1,7 +1,6 @@
 package org.correomqtt.business.connection;
 
-import org.correomqtt.business.concurrent.Task;
-import org.correomqtt.business.eventbus.EventBus;
+import org.correomqtt.business.concurrent.NoProgressTask;
 import org.correomqtt.business.model.SubscriptionDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.mqtt.CorreoMqttClientFactory;
@@ -11,7 +10,7 @@ import org.correomqtt.business.utils.CorreoMqttConnection;
 
 import java.util.Set;
 
-public class ReconnectTask extends Task<Void, Void> {
+public class ReconnectTask extends NoProgressTask<Void, Void> {
 
     private final String connectionId;
 
@@ -29,8 +28,6 @@ public class ReconnectTask extends Task<Void, Void> {
         client.connect();
 
         existingSubscriptions.forEach(subscriptionDTO -> new SubscribeTask(connectionId,subscriptionDTO).run());
-
-        EventBus.fireAsync(new ReconnectEvent(connectionId));
 
         return null;
     }

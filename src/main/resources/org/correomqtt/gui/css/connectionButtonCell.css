@@ -1,0 +1,41 @@
+@import "global.css";
+
+.connectionButtonView {
+    -fx-background-color: transparent;
+}
+
+.grayStatus {
+    -fx-background-image: url('../icons/wifi-solid-gray.png');
+    -fx-background-size: 15px 15px;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+}
+
+.redStatus {
+    -fx-background-image: url('../icons/wifi-solid-red.png');
+    -fx-background-size: 15px 15px;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+}
+
+.yellowStatus {
+    -fx-background-image: url('../icons/wifi-solid-yellow.png');
+    -fx-background-size: 15px 15px;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+}
+
+.greenStatus {
+    -fx-background-size: 15px 15px;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+}
+
+
+.black .greenStatus {
+    -fx-background-image: url('../icons/wifi-solid-green-black.png');
+}
+
+.white .greenStatus {
+    -fx-background-image: url('../icons/wifi-solid-green-white.png');
+}

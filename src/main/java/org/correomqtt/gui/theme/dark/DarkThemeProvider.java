@@ -1,5 +1,6 @@
 package org.correomqtt.gui.theme.dark;
 
+import javafx.scene.paint.Color;
 import org.correomqtt.gui.theme.BaseThemeProvider;
 import org.correomqtt.gui.theme.IconMode;
 import org.correomqtt.gui.theme.ThemeProvider;
@@ -22,5 +23,10 @@ public class DarkThemeProvider extends BaseThemeProvider implements ThemeProvide
     @Override
     public IconMode getIconMode() {
         return IconMode.WHITE;
+    }
+
+    @Override
+    public Color getBackgroundColor() {
+        return Color.web("#313131");
     }
 }

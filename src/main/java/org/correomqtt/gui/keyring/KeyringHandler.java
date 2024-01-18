@@ -1,14 +1,14 @@
 package org.correomqtt.gui.keyring;
 
 import org.apache.maven.artifact.versioning.ComparableVersion;
+import org.correomqtt.business.fileprovider.EncryptionRecoverableException;
+import org.correomqtt.business.fileprovider.SecretStoreProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.keyring.Keyring;
 import org.correomqtt.business.keyring.KeyringException;
 import org.correomqtt.business.keyring.KeyringFactory;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.SettingsDTO;
-import org.correomqtt.business.fileprovider.EncryptionRecoverableException;
-import org.correomqtt.business.fileprovider.SecretStoreProvider;
-import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -141,7 +141,7 @@ public class KeyringHandler {
             if(keyrings.size() <= 2){
                 keyring = keyrings.get(0);
             }else{
-                keyring = AlertHelper.select("Multiple KyringsFound","Select a keyring",keyrings); //TODO
+                keyring = AlertHelper.select("Multiple KeyringsFound","Select a keyring",keyrings); //TODO
             }
         }
 

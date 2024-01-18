@@ -3,8 +3,8 @@ package org.correomqtt.gui.contextmenu;
 import javafx.event.ActionEvent;
 import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.gui.controls.IconMenuItem;
-import org.correomqtt.gui.utils.ClipboardHelper;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.gui.utils.ClipboardHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

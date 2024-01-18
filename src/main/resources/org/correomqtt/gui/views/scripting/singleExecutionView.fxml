@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.correomqtt.gui.controls.*?>
+<?import org.fxmisc.flowless.*?>
+<?import org.fxmisc.richtext.*?>
+
+<VBox fx:id="mainNode" prefHeight="277.0" prefWidth="401.0" stylesheets="@../../css/scriptingView.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.views.scripting.SingleExecutionViewController">
+
+    <HBox alignment="CENTER_RIGHT" maxHeight="44.0" minHeight="44.0" VBox.vgrow="ALWAYS">
+        <styleClass>
+            <String fx:value="toolbar" />
+            <String fx:value="bottom" />
+        </styleClass>
+        <IconButton fx:id="scriptingStopButton" disable="true" icon="mdi-cancel" mnemonicParsing="false" onAction="#onStopButtonClicked" text="%scripting.button.cancel">
+            <tooltip>
+                <Tooltip text="%scriptingViewStopButtonTooltip" />
+            </tooltip>
+            <HBox.margin>
+                <Insets right="5.0" />
+            </HBox.margin>
+        </IconButton>
+    </HBox>
+    <Pane fx:id="logHolder" VBox.vgrow="ALWAYS">
+        <VirtualizedScrollPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
+            <!-- do not remove this wrapper. VirtualizedScrollPane does not work without it -->
+            <content>
+                <CodeArea fx:id="logArea" editable="false" styleClass="log" text=""/>
+            </content>
+        </VirtualizedScrollPane>
+    </Pane>
+</VBox>

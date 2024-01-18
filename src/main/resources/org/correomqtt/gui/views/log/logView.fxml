@@ -38,6 +38,7 @@
                                VBox.vgrow="ALWAYS">
             <content>
                 <CodeArea fx:id="logTextArea"
+                          styleClass="log"
                           AnchorPane.bottomAnchor="0.0"
                           AnchorPane.leftAnchor="0.0"
                           AnchorPane.rightAnchor="0.0"

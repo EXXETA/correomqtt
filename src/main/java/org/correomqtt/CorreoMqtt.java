@@ -21,13 +21,13 @@ import org.correomqtt.business.model.GlobalUISettings;
 import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.shortcut.ShortcutConnectionIdEvent;
 import org.correomqtt.business.utils.VersionUtils;
-import org.correomqtt.gui.views.AlertController;
-import org.correomqtt.gui.views.MainViewController;
-import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.keyring.KeyringHandler;
+import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.PluginCheckUtils;
+import org.correomqtt.gui.views.AlertController;
+import org.correomqtt.gui.views.MainViewController;
 import org.correomqtt.plugin.PluginLauncher;
 import org.correomqtt.plugin.PreloadingProgressEvent;
 import org.correomqtt.plugin.manager.PluginManager;
@@ -59,7 +59,6 @@ public class CorreoMqtt extends Application {
     @Override
     public void init() throws IOException {
 
-        // TODO cleanup
         EventBus.register(this);
 
         if (LOGGER.isInfoEnabled()) {
@@ -176,6 +175,7 @@ public class CorreoMqtt extends Application {
         mainViewController = loader.getController();
         primaryStage.setTitle("CorreoMQTT v" + VersionUtils.getVersion());
         scene = new Scene(root, 900, 800);
+        scene.setFill(SettingsProvider.getInstance().getActiveTheme().getBackgroundColor());
 
         if (cssPath != null) {
             scene.getStylesheets().add(cssPath);
@@ -218,9 +218,9 @@ public class CorreoMqtt extends Application {
     }
 
     private void saveConnectionUISettings() {
-        mainViewController.tabPane.getTabs().forEach(tab -> {
-            if (mainViewController.getConntectionViewControllers().get(tab.getId()) != null) {
-                mainViewController.getConntectionViewControllers().get(tab.getId()).saveConnectionUISettings();
+        mainViewController.getTabPane().getTabs().forEach(tab -> {
+            if (mainViewController.getConnectionViewControllers().get(tab.getId()) != null) {
+                mainViewController.getConnectionViewControllers().get(tab.getId()).saveConnectionUISettings();
             }
         });
     }

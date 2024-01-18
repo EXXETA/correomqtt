@@ -16,7 +16,7 @@ public class MessageUtils {
         // private constructor
     }
 
-    public static void saveMessage(String connectionId, MessagePropertiesDTO messageDTO, Stage stage) {
+    public static void saveMessage(MessagePropertiesDTO messageDTO, Stage stage) {
         ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 
         FileChooser fileChooser = new FileChooser();
@@ -26,7 +26,7 @@ public class MessageUtils {
 
         File file = fileChooser.showSaveDialog(stage);
         if (file != null) {
-            new ExportMessageTask(connectionId, file, MessageTransformer.propsToDTO(messageDTO)).run();
+            new ExportMessageTask(file, MessageTransformer.propsToDTO(messageDTO)).run();
         }
     }
 }

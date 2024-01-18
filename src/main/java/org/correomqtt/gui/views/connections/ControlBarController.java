@@ -1,6 +1,5 @@
 package org.correomqtt.gui.views.connections;
 
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -8,32 +7,27 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
-import org.correomqtt.business.connection.AutomaticReconnectEvent;
-import org.correomqtt.business.connection.AutomaticReconnectFailedEvent;
-import org.correomqtt.business.connection.ConnectEvent;
-import org.correomqtt.business.connection.ConnectFailedEvent;
-import org.correomqtt.business.connection.ConnectStartedEvent;
 import org.correomqtt.business.connection.ConnectTask;
-import org.correomqtt.business.connection.DisconnectEvent;
-import org.correomqtt.business.connection.DisconnectFailedEvent;
-import org.correomqtt.business.connection.DisconnectStartedEvent;
+import org.correomqtt.business.connection.ConnectionState;
+import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.connection.DisconnectTask;
 import org.correomqtt.business.connection.ReconnectTask;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
-import org.correomqtt.gui.controls.IconLabel;
-import org.correomqtt.gui.views.LoaderResult;
-import org.correomqtt.plugin.spi.MainToolbarHook;
-import org.correomqtt.business.exception.CorreoMqttException;
-import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.fileprovider.SettingsProvider;
+import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.model.ConnectionState;
+import org.correomqtt.gui.controls.IconLabel;
+import org.correomqtt.gui.model.GuiConnectionState;
+import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.plugin.manager.PluginManager;
+import org.correomqtt.plugin.spi.MainToolbarHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
+
+import static org.correomqtt.business.connection.ConnectionState.CONNECTED;
 
 public class ControlBarController extends BaseConnectionController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ControlBarController.class);
@@ -43,42 +37,41 @@ public class ControlBarController extends BaseConnectionController {
     private final PluginManager pluginSystem = PluginManager.getInstance();
 
     @FXML
-    public AnchorPane mainViewHBoxAnchorPane;
+    private AnchorPane mainViewHBoxAnchorPane;
 
     @FXML
-    public HBox controllViewButtonHBox;
+    private HBox controllViewButtonHBox;
 
     @FXML
-    public Button connectBtn;
+    private Button connectBtn;
 
     @FXML
-    public Button disconnectBtn;
+    private Button disconnectBtn;
 
     @FXML
-    public Button reconnectBtn;
+    private Button reconnectBtn;
 
     @FXML
-    public ToggleButton controlViewPButton;
+    private ToggleButton controlViewPButton;
 
     @FXML
-    public ToggleButton controlViewPSButton;
+    private ToggleButton controlViewPSButton;
 
     @FXML
-    public ToggleButton controlViewSButton;
+    private ToggleButton controlViewSButton;
 
     @FXML
-    public IconLabel statusLabel;
+    private IconLabel statusLabel;
 
     @FXML
-    public Label statusInfo;
+    private Label statusInfo;
 
     @FXML
-    public Label brokerInfo;
+    private Label brokerInfo;
 
     @FXML
     private ResourceBundle resources;
 
-    boolean gracefulDisconnenct = false;
     private ConnectionConfigDTO connectionConfigDTO;
 
     public ControlBarController(String connectionId, ControlBarDelegate delegate) {
@@ -94,7 +87,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         SettingsProvider.getInstance().getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
@@ -120,7 +113,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void onClickReconnect(ActionEvent actionEvent) {
+    private void onClickReconnect(ActionEvent actionEvent) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Reconnect in control bar clicked for connection: {}", getConnectionId());
         }
@@ -128,7 +121,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void onClickConnect(ActionEvent actionEvent) {
+    private void onClickConnect(ActionEvent actionEvent) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Connect in control bar clicked for connection: {}", getConnectionId());
         }
@@ -137,17 +130,16 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void onClickDisconnect() {
+    private void onClickDisconnect() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Disconnect in control bar clicked for connection: {}", getConnectionId());
         }
 
-        gracefulDisconnenct = true;
         new DisconnectTask(getConnectionId()).run();
     }
 
     @FXML
-    public void onClickP() {
+    private void onClickP() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Show only publish clicked: {}", getConnectionId());
         }
@@ -159,7 +151,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void onClickPS() {
+    private void onClickPS() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Show publish AND subscribe clicked: {}", getConnectionId());
         }
@@ -171,7 +163,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void onClickS() {
+    private void onClickS() {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Show only subscribe clicked: {}", getConnectionId());
         }
@@ -183,7 +175,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void saveUISettings() {
+    private void saveUISettings() {
         if (controlViewPButton.isSelected()) {
             connectionConfigDTO.getConnectionUISettings().setShowPublish(true);
             connectionConfigDTO.getConnectionUISettings().setShowSubscribe(false);
@@ -199,7 +191,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
     @FXML
-    public void resetUISettings() {
+    private void resetUISettings() {
         controlViewPButton.setSelected(false);
         controlViewPSButton.setSelected(true);
         controlViewSButton.setSelected(false);
@@ -207,38 +199,6 @@ public class ControlBarController extends BaseConnectionController {
         delegate.resetConnectionUISettings();
     }
 
-    private void setGuiDisconnected() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Set gui to disconnected state: {}", getConnectionId());
-        }
-
-
-        if (gracefulDisconnenct) {
-            delegate.setConnectionState(ConnectionState.DISCONNECTED_GRACEFUL);
-            statusLabel.setIconColor(ConnectionState.DISCONNECTED_GRACEFUL.getIconColor());
-            gracefulDisconnenct = false;
-            connectBtn.setVisible(true);
-            connectBtn.setManaged(true);
-        } else {
-            reconnectBtn.setVisible(true);
-            reconnectBtn.setManaged(true);
-            connectBtn.setVisible(false);
-            connectBtn.setManaged(false);
-            delegate.setConnectionState(ConnectionState.DISCONNECTED_UNGRACEFUL);
-            statusLabel.setIconColor(ConnectionState.DISCONNECTED_UNGRACEFUL.getIconColor());
-        }
-
-        statusInfo.setVisible(true);
-        statusInfo.setManaged(true);
-        updateBrokerInfo();
-        connectBtn.setDisable(false);
-        disconnectBtn.setVisible(false);
-        disconnectBtn.setManaged(false);
-        controlViewPSButton.setDisable(true);
-        controlViewPButton.setDisable(true);
-        controlViewSButton.setDisable(true);
-
-    }
 
     private void updateBrokerInfo() {
         ConnectionConfigDTO config = ConnectionHolder.getInstance().getConfig(getConnectionId());
@@ -247,131 +207,76 @@ public class ControlBarController extends BaseConnectionController {
         }
     }
 
-    private void setGuiConnected() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Set gui to connected state: {}", getConnectionId());
-        }
 
-        statusInfo.setVisible(false);
-        statusInfo.setManaged(false);
-        updateBrokerInfo();
-        connectBtn.setVisible(false);
-        connectBtn.setManaged(false);
+    @SuppressWarnings("unused")
+    public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {
+
+        ConnectionState state = event.getState();
+
+        disconnectBtn.setVisible(false);
+        disconnectBtn.setManaged(false);
+        disconnectBtn.setDisable(true);
         reconnectBtn.setVisible(false);
         reconnectBtn.setManaged(false);
-        disconnectBtn.setVisible(true);
-        disconnectBtn.setManaged(true);
-        disconnectBtn.setDisable(false);
-        delegate.setConnectionState(ConnectionState.CONNECTED);
-        statusLabel.setIconColor(ConnectionState.CONNECTED.getIconColor());
-        controlViewPSButton.setDisable(false);
-        controlViewPButton.setDisable(false);
-        controlViewSButton.setDisable(false);
-
-    }
-
-    private void setGuiConnecting() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Set gui to connecting state: {}", getConnectionId());
-        }
-
-        statusInfo.setVisible(true);
-        statusInfo.setManaged(true);
-        updateBrokerInfo();
+        reconnectBtn.setDisable(true);
+        connectBtn.setVisible(false);
+        connectBtn.setManaged(false);
         connectBtn.setDisable(true);
-        delegate.setConnectionState(ConnectionState.CONNECTING);
-        statusLabel.setIconColor(ConnectionState.CONNECTING.getIconColor());
-        controlViewPSButton.setDisable(true);
-        controlViewPButton.setDisable(true);
-        controlViewSButton.setDisable(true);
 
-    }
-
-    private void setGuiDisconnecting() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Set gui to disconnecting state: {}", getConnectionId());
+        switch (state) {
+            case CONNECTED -> {
+                disconnectBtn.setVisible(true);
+                disconnectBtn.setManaged(true);
+                disconnectBtn.setDisable(false);
+                statusInfo.setText(resources.getString("controlBarControllerConnected"));
+            }
+            case CONNECTING -> {
+                connectBtn.setVisible(true);
+                connectBtn.setManaged(true);
+                connectBtn.setDisable(true);
+                statusInfo.setText(resources.getString("controlBarControllerConnecting"));
+            }
+            case RECONNECTING -> {
+                reconnectBtn.setVisible(true);
+                reconnectBtn.setManaged(true);
+                reconnectBtn.setDisable(true);
+                statusInfo.setText(resources.getString("controlBarControllerReconnecting") + " " + event.getRetries() + "/" + event.getMaxRetries());
+            }
+            case DISCONNECTING -> {
+                disconnectBtn.setVisible(true);
+                disconnectBtn.setManaged(true);
+                disconnectBtn.setDisable(true);
+                statusInfo.setText(resources.getString("controlBarControllerDisconnecting"));
+            }
+            case DISCONNECTED_GRACEFUL -> {
+                connectBtn.setVisible(true);
+                connectBtn.setManaged(true);
+                connectBtn.setDisable(false);
+                statusInfo.setText(resources.getString("controlBarControllerDisconnected"));
+            }
+            case DISCONNECTED_UNGRACEFUL -> {
+                reconnectBtn.setVisible(true);
+                reconnectBtn.setManaged(true);
+                reconnectBtn.setDisable(false);
+                statusInfo.setText("Failed.");
+            }
         }
 
-        statusInfo.setVisible(true);
-        statusInfo.setManaged(true);
+
         updateBrokerInfo();
-        disconnectBtn.setDisable(true);
-        delegate.setConnectionState(ConnectionState.DISCONNECTING);
-        statusLabel.setIconColor(ConnectionState.DISCONNECTING.getIconColor());
-        controlViewPSButton.setDisable(true);
-        controlViewPButton.setDisable(true);
-        controlViewSButton.setDisable(true);
+
+        GuiConnectionState guiState = GuiConnectionState.of(state);
+
+        delegate.setConnectionState(guiState);
+        statusLabel.setIconColor(guiState.getIconColor());
+
+        controlViewPSButton.setDisable(state != CONNECTED);
+        controlViewPButton.setDisable(state != CONNECTED);
+        controlViewSButton.setDisable(state != CONNECTED);
+
 
     }
 
-    @Subscribe(ConnectEvent.class)
-    public void onConnect() {
-        Platform.runLater(() -> {
-            statusInfo.setText(resources.getString("controlBarControllerConnected"));
-            setGuiConnected();
-        });
-    }
-
-    @Subscribe(ConnectStartedEvent.class)
-    public void onConnectStarted() {
-        Platform.runLater(() -> {
-            statusInfo.setText(resources.getString("controlBarControllerConnecting"));
-            setGuiConnecting();
-        });
-    }
-
-    public void onConnectionFailed(@Subscribe ConnectFailedEvent event) {
-        String msg;
-        Throwable e = event.getThrowable();
-        if (e instanceof CorreoMqttException correoMqttException) {
-            msg = correoMqttException.getInfo();
-        } else {
-            msg = e.getClass().toString() + ":" + e.getMessage();
-        }
-        Platform.runLater(() -> {
-            statusInfo.setText(msg);
-            setGuiDisconnected();
-        });
-    }
-
-    @Subscribe(DisconnectEvent.class)
-    public void onDisconnect() {
-        Platform.runLater(() -> {
-            statusInfo.setText(resources.getString("controlBarControllerDisconnected"));
-            setGuiDisconnected();
-        });
-    }
-
-    @Subscribe(DisconnectFailedEvent.class)
-    public void onDisconnectFailed() {
-        Platform.runLater(() -> {
-            statusInfo.setText(resources.getString("controlBarControllerDisconnectFailed"));
-            setGuiConnected();
-        });
-    }
-
-    @Subscribe(DisconnectStartedEvent.class)
-    public void onDisconnectStarted() {
-        Platform.runLater(() -> {
-            statusInfo.setText(resources.getString("controlBarControllerDisconnecting"));
-            setGuiDisconnecting();
-        });
-    }
-
-    @Subscribe(AutomaticReconnectEvent.class)
-    public void onConnectionReconnected() {
-        Platform.runLater(() -> {
-            statusInfo.setText(resources.getString("controlBarControllerConnected"));
-            setGuiConnected();
-        });
-    }
-
-    public void onAutomaticReconnectFailed(@Subscribe AutomaticReconnectFailedEvent event) {
-        Platform.runLater(() -> {
-            statusInfo.setText(resources.getString("controlBarControllerReconnecting") + " " + event.getTriedConnects() + "/" + event.getMaxConnects());
-            setGuiConnecting();
-        });
-    }
 
     public void cleanUp() {
         EventBus.unregister(this);

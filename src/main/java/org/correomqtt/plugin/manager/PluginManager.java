@@ -4,10 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.business.model.HooksDTO;
-import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.fileprovider.PluginConfigProvider;
 import org.correomqtt.business.fileprovider.SettingsProvider;
+import org.correomqtt.business.model.HooksDTO;
+import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.business.utils.VendorConstants;
 import org.correomqtt.business.utils.VersionUtils;
 import org.correomqtt.plugin.model.PluginInfoDTO;
@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -81,7 +82,7 @@ public class PluginManager extends JarPluginManager {
 
     public BundledPluginList.BundledPlugins getBundledPlugins() {
 
-        if(bundledPlugins != null){
+        if (bundledPlugins != null) {
             return bundledPlugins;
         }
 
@@ -99,12 +100,12 @@ public class PluginManager extends JarPluginManager {
                 LOGGER.info("Read bundled plugins '{}'", bundledPluginUrl);
                 BundledPluginList bundledPluginList = new ObjectMapper().readValue(new URL(bundledPluginUrl), BundledPluginList.class);
 
-                BundledPluginList.BundledPlugins bundledPlugins = bundledPluginList.getVersions().get(VersionUtils.getVersion().trim());
-                if (bundledPlugins == null) {
+                BundledPluginList.BundledPlugins bundledPluginsByVersion = bundledPluginList.getVersions().get(VersionUtils.getVersion().trim());
+                if (bundledPluginsByVersion == null) {
                     return BundledPluginList.BundledPlugins.builder().build();
                 }
-                this.bundledPlugins = bundledPlugins;
-                return bundledPlugins;
+                bundledPlugins = bundledPluginsByVersion;
+                return bundledPluginsByVersion;
 
             } catch (IOException e) {
                 LOGGER.warn("Unable to load bundled plugin list from {}.", bundledPluginUrl);
@@ -155,45 +156,40 @@ public class PluginManager extends JarPluginManager {
         return new UpdateManager(pluginManager, repos);
     }
 
-    // TODO obsolete ?
-    public static void resetInstance() {
-        instance = new PluginManager();
-    }
-
-    public List<OutgoingMessageHook<?>> getOutgoingMessageHooks() {
+    public List<? extends OutgoingMessageHook<?>> getOutgoingMessageHooks() {
         return PluginConfigProvider.getInstance().getOutgoingMessageHooks()
                 .stream()
                 .map(extensionDefinition -> {
                     OutgoingMessageHook<?> extension = getExtensionById(OutgoingMessageHook.class,
                             extensionDefinition.getPluginId(),
                             extensionDefinition.getId());
-                    if(extension == null){
-                        LOGGER.warn("Extension for Outgoing Message Hook with id {} from plugin {} not found.",extensionDefinition.getId(), extensionDefinition.getPluginId());
+                    if (extension == null) {
+                        LOGGER.warn("Extension for Outgoing Message Hook with id {} from plugin {} not found.", extensionDefinition.getId(), extensionDefinition.getPluginId());
                         return null;
                     }
                     enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                     return extension;
                 })
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
     }
 
-    public List<IncomingMessageHook<?>> getIncomingMessageHooks() {
+    public List<? extends IncomingMessageHook<?>> getIncomingMessageHooks() {
         return PluginConfigProvider.getInstance().getIncomingMessageHooks()
                 .stream()
                 .map(extensionDefinition -> {
                     IncomingMessageHook<?> extension = getExtensionById(IncomingMessageHook.class,
                             extensionDefinition.getPluginId(),
                             extensionDefinition.getId());
-                    if(extension == null){
-                        LOGGER.warn("Extension for Incoming Message Hook with id {} from plugin {} not found.",extensionDefinition.getId(), extensionDefinition.getPluginId());
+                    if (extension == null) {
+                        LOGGER.warn("Extension for Incoming Message Hook with id {} from plugin {} not found.", extensionDefinition.getId(), extensionDefinition.getPluginId());
                         return null;
                     }
                     enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                     return extension;
                 })
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<DetailViewManipulatorTask> getDetailViewManipulatorTasks() {
@@ -324,10 +320,14 @@ public class PluginManager extends JarPluginManager {
     }
 
     @SuppressWarnings("unchecked")
-    public <P extends BaseExtensionPoint<T>, T> P getExtensionByDefinition(TypeReference<P> type, HooksDTO.Extension extensionDefinition) {
+    public <P extends BaseExtensionPoint<T>, T> P getExtensionByDefinition(TypeReference<P> typeReference, HooksDTO.Extension extensionDefinition) {
+
+        Type type = typeReference.getType();
 
         // https://stackoverflow.com/a/28615143
-        Class<P> clazz = (Class<P>) (type.getType() instanceof ParameterizedType ? ((ParameterizedType) type.getType()).getRawType() : type.getType());
+        Class<P> clazz = (Class<P>) (type instanceof ParameterizedType parameterizedType ?
+                parameterizedType.getRawType() :
+                type);
 
         return getExtensionByDefinition(clazz, extensionDefinition);
     }

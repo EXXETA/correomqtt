@@ -40,7 +40,7 @@ public class PluginCell extends ListCell<PluginInfoPropertiesDTO> {
     private FXMLLoader loader;
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         mainNode.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
     }
 

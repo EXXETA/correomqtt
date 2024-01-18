@@ -12,7 +12,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.util.Callback;
 import org.controlsfx.control.CheckListView;
 import org.correomqtt.business.fileprovider.SettingsProvider;
-import org.correomqtt.gui.views.connections.SubscriptionViewCell;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +29,7 @@ public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesD
     @FXML
     private CheckBox checkbox;
     @FXML
-    public AnchorPane mainNode;
+    private AnchorPane mainNode;
     @FXML
     private ResourceBundle resources;
     private FXMLLoader loader;
@@ -51,7 +50,7 @@ public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesD
 
             if (loader == null) {
                 try {
-                    loader = new FXMLLoader(SubscriptionViewCell.class.getResource("exportConnectionCell.fxml"),
+                    loader = new FXMLLoader(ExportConnectionCell.class.getResource("exportConnectionCell.fxml"),
                             ResourceBundle.getBundle("org.correomqtt.i18n",
                                     SettingsProvider.getInstance().getSettings().getCurrentLocale()));
                     loader.setController(this);

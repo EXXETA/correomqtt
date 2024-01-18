@@ -2,6 +2,7 @@ package org.correomqtt.gui.icons;
 
 import org.kordamp.ikonli.AbstractIkonHandler;
 import org.kordamp.ikonli.Ikon;
+
 import java.io.InputStream;
 import java.net.URL;
 

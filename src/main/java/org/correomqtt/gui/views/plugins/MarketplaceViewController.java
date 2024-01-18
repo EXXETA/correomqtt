@@ -24,11 +24,11 @@ import org.correomqtt.business.plugin.PluginInstallTask;
 import org.correomqtt.business.plugin.PluginUninstallEvent;
 import org.correomqtt.business.plugin.PluginUninstallFailedEvent;
 import org.correomqtt.business.plugin.PluginUninstallStartedEvent;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.LoaderResult;
-import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.transformer.PluginTransformer;
+import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.plugin.manager.PluginManager;
 
 import java.text.MessageFormat;
@@ -81,7 +81,7 @@ public class MarketplaceViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         marketplacePluginList.setCellFactory(this::createCell);
         marketplacePluginList.setItems(FXCollections.observableArrayList(
                 PluginTransformer.dtoListToPropList(PluginManager.getInstance().getAllPluginsAvailableFromRepos())
@@ -90,7 +90,7 @@ public class MarketplaceViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void onInstall() {
+    private void onInstall() {
         PluginInfoPropertiesDTO selectedPlugin = marketplacePluginList.getSelectionModel().getSelectedItem();
         new PluginInstallTask(selectedPlugin.getId(), selectedPlugin.getInstallableVersion());
     }

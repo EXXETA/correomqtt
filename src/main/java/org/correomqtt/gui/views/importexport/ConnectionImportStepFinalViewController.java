@@ -2,8 +2,8 @@ package org.correomqtt.gui.views.importexport;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
 
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
@@ -13,7 +13,7 @@ public class ConnectionImportStepFinalViewController extends BaseControllerImpl 
     private static ResourceBundle resources;
     private final ConnectionImportStepDelegate delegate;
     @FXML
-    public Label description;
+    private Label description;
 
     public ConnectionImportStepFinalViewController(ConnectionImportStepDelegate delegate) {
         this.delegate = delegate;

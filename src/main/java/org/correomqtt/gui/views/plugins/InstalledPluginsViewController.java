@@ -26,11 +26,11 @@ import org.correomqtt.business.plugin.PluginInstallStartedEvent;
 import org.correomqtt.business.plugin.PluginUninstallEvent;
 import org.correomqtt.business.plugin.PluginUninstallFailedEvent;
 import org.correomqtt.business.plugin.PluginUninstallTask;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.LoaderResult;
-import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.transformer.PluginTransformer;
+import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.plugin.manager.PluginManager;
 
 import java.text.MessageFormat;
@@ -84,7 +84,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         installedPluginList.setCellFactory(this::createCell);
         installedPluginList.setItems(FXCollections.observableArrayList(
                 PluginTransformer.dtoListToPropList(PluginManager.getInstance().getInstalledPlugins())
@@ -135,7 +135,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
 
 
     @FXML
-    public void onDisableToggle() {
+    private void onDisableToggle() {
         PluginInfoPropertiesDTO selectedPlugin = installedPluginList.getSelectionModel().getSelectedItem();
         if (Boolean.TRUE.equals(selectedPlugin.getDisabled())) {
             new PluginEnableTask(selectedPlugin.getId())
@@ -148,7 +148,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
     }
 
     @FXML
-    public void onUninstall() {
+    private void onUninstall() {
         PluginInfoPropertiesDTO selectedPlugin = installedPluginList.getSelectionModel().getSelectedItem();
         if (AlertHelper.confirm(
                 resources.getString("reallyUninstallTitle"),

@@ -2,8 +2,8 @@ package org.correomqtt.gui.views.connections;
 
 import org.correomqtt.business.eventbus.SubscribeFilter;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 

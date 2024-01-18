@@ -1,5 +1,6 @@
 package org.correomqtt.gui.utils;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
@@ -10,6 +11,7 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.StageStyle;
@@ -137,6 +139,56 @@ public class AlertHelper {
         return showConfirmationDialog(title, header, content, noButton, yesButton);
     }
 
+    public static String input(String title, String header, String content, String defaultValue) {
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        AtomicReference<String> result = new AtomicReference<>();
+        PlatformUtils.runLaterIfNotInFxThread(() -> {
+            Dialog<String> dialog = new Dialog<>();
+            StageHelper.enforceFloatingWindow(dialog);
+            dialog.setWidth(450);
+            DialogPane dialogPane = dialog.getDialogPane();
+            dialog.setWidth(450);
+            dialogPane.setMinHeight(Region.USE_PREF_SIZE);
+            String cssPath = SettingsProvider.getInstance().getCssPath();
+            if (cssPath != null) {
+                dialogPane.getStylesheets().add(cssPath);
+            }
+            dialog.setTitle(title);
+            dialog.setHeaderText(header);
+            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+            TextField textField = new TextField();
+            textField.setText(defaultValue);
+            VBox vbox = new VBox();
+            vbox.setAlignment(Pos.CENTER_LEFT);
+            vbox.setSpacing(10);
+            Label label = new Label(content);
+            label.setWrapText(true);
+            label.setMaxWidth(450);
+            vbox.getChildren().addAll(label, textField);
+            dialog.getDialogPane().setContent(vbox);
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == ButtonType.OK) {
+                    return textField.getText();
+                }
+                return null;
+            });
+            Platform.runLater(textField::requestFocus);
+            dialog.showAndWait().ifPresentOrElse(result::set, () -> result.set(null));
+            countDownLatch.countDown();
+        });
+
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            LOGGER.error("Exception during text input dialog ", e);
+            Thread.currentThread().interrupt();
+        }
+        return result.get();
+
+    }
+
+
     public static String passwordInput(String title, String header, String content) {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         AtomicReference<String> result = new AtomicReference<>();
@@ -231,4 +283,8 @@ public class AlertHelper {
         return result.get();
     }
 
+    public static void unexpectedAlert(Throwable unexpectedError) {
+        LOGGER.error("Unexpected Error", unexpectedError);
+        warn("Unexpected Error", "Operation failed: " + unexpectedError.getMessage(), true);
+    }
 }

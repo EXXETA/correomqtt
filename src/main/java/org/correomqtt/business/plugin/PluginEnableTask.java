@@ -1,10 +1,11 @@
 package org.correomqtt.business.plugin;
 
-import org.correomqtt.business.concurrent.Task;
+import org.correomqtt.business.concurrent.SimpleTask;
+import org.correomqtt.business.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.plugin.manager.PluginManager;
 
-public class PluginEnableTask extends Task<Void, Void> {
+public class PluginEnableTask extends SimpleTask {
 
     private final String pluginId;
 
@@ -13,19 +14,18 @@ public class PluginEnableTask extends Task<Void, Void> {
     }
 
     @Override
-    protected Void execute() throws Exception {
+    protected void execute() {
         PluginManager.getInstance().enablePlugin(pluginId);
         EventBus.fireAsync(new PluginEnabledEvent(pluginId));
-        return null;
     }
 
     @Override
-    protected void before() {
+    protected void beforeHook() {
         EventBus.fireAsync(new PluginEnabledStartedEvent(pluginId));
     }
 
     @Override
-    protected void error(Throwable throwable) {
+    protected void errorHook(SimpleTaskErrorResult ignore) {
         EventBus.fireAsync(new PluginEnabledFailedEvent(pluginId));
     }
 }

@@ -7,12 +7,13 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.correomqtt.business.utils.VersionUtils;
-import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
+import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.WindowHelper;
+import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.base.BaseControllerImpl;
 
 import java.io.IOException;
 import java.net.URL;
@@ -27,11 +28,11 @@ public class AboutViewController extends BaseControllerImpl {
     private static final URL LICENSE_JSON = AboutViewController.class.getResource("/META-INF/resources/licenses.json");
 
     @FXML
-    public HBox libsHeadline;
+    private HBox libsHeadline;
     @FXML
-    public VBox contentHolder;
+    private VBox contentHolder;
     @FXML
-    public HBox iconsHeadline;
+    private HBox iconsHeadline;
 
     List<Hyperlink> links = new ArrayList<>();
 
@@ -60,7 +61,7 @@ public class AboutViewController extends BaseControllerImpl {
 
 
     @FXML
-    public void initialize() {
+    private void initialize() {
 
         appNameLabel.setText("CorreoMQTT v" + VersionUtils.getVersion());
 
@@ -68,7 +69,8 @@ public class AboutViewController extends BaseControllerImpl {
         try {
             licenses = new ObjectMapper().readValue(LICENSE_JSON, Licenses.class);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            AlertHelper.unexpectedAlert(e);
+            throw new IllegalStateException(e);
         }
 
         addLicenses(licenses.libs(), libsHeadline);

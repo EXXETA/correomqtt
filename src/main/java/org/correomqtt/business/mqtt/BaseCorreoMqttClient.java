@@ -6,22 +6,17 @@ import com.hivemq.client.mqtt.lifecycle.MqttClientDisconnectedContext;
 import com.hivemq.client.mqtt.lifecycle.MqttClientDisconnectedListener;
 import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
 import com.hivemq.client.util.KeyStoreUtil;
-import net.schmizz.sshj.SSHClient;
-import net.schmizz.sshj.connection.channel.direct.LocalPortForwarder;
-import net.schmizz.sshj.connection.channel.direct.Parameters;
-import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
-import org.correomqtt.business.connection.AutomaticReconnectEvent;
-import org.correomqtt.business.connection.AutomaticReconnectFailedEvent;
-import org.correomqtt.business.connection.ConnectFailedEvent;
+import lombok.Getter;
+import org.correomqtt.business.connection.ConnectionState;
+import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.exception.CorreoMqttAlreadySubscribedException;
-import org.correomqtt.business.exception.CorreoMqttNoRetriesLeftException;
-import org.correomqtt.business.exception.CorreoMqttSshFailedException;
-import org.correomqtt.business.model.Auth;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.Proxy;
 import org.correomqtt.business.model.SubscriptionDTO;
+import org.correomqtt.business.ssh.SshProxy;
+import org.correomqtt.business.ssh.SshProxyDelegate;
 import org.slf4j.Logger;
 import org.slf4j.MarkerFactory;
 
@@ -29,30 +24,28 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisconnectedListener, MqttClientConnectedListener {
+abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisconnectedListener, MqttClientConnectedListener, SshProxyDelegate {
 
     private static final int MAX_RECONNECTS = 5;
 
     private final ConnectionConfigDTO configDTO;
-    private final AtomicBoolean wasConnectedBefore = new AtomicBoolean(false);
-    private final AtomicBoolean tryToReconnect = new AtomicBoolean(false);
     private final AtomicInteger triedReconnects = new AtomicInteger(0);
     private final Set<SubscriptionDTO> subscriptions = new HashSet<>();
-    private SSHClient sshClient;
-    private LocalPortForwarder localPortforwarder;
+
+    @Getter
+    private SshProxy proxy;
+
+    @Getter
+    private ConnectionState state = ConnectionState.DISCONNECTED_GRACEFUL;
 
     protected BaseCorreoMqttClient(ConnectionConfigDTO configDTO) {
         this.configDTO = configDTO;
@@ -70,118 +63,62 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
 
     @Override
     public synchronized void connect() throws InterruptedException, ExecutionException, TimeoutException, SSLException {
-
-        if (configDTO.getProxy().equals(Proxy.SSH)) {
-            try {
-                setupSsh();
-            } catch (IOException e) {
-                disconnect(false);
-                throw new CorreoMqttSshFailedException(
-                        MessageFormat.format("{0} Error while creating ssh connection.", MarkerFactory.getMarker(configDTO.getName())),
-                        e);
-            }
-        }
-
+        changeState(ConnectionState.CONNECTING);
+        executeConditionallyOnSshProxy(SshProxy::connect);
         getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Connecting to Broker using {}", configDTO.getMqttVersion().getDescription());
         executeConnect();
-        wasConnectedBefore.set(true);
     }
 
-    private void setupSsh() throws IOException, InterruptedException {
-
-        getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Creating SSH tunnel to {}:{}.", configDTO.getSshHost(), configDTO.getPort());
-
-        sshClient = new SSHClient();
-        sshClient.addHostKeyVerifier(new PromiscuousVerifier());
-        sshClient.connect(configDTO.getSshHost(), configDTO.getSshPort());
-
-        if (configDTO.getAuth().equals(Auth.PASSWORD)) {
-            sshClient.authPassword(
-                    configDTO.getAuthUsername(),
-                    configDTO.getAuthPassword());
-        } else if (configDTO.getAuth().equals(Auth.KEYFILE)) {
-            sshClient.authPublickey(
-                    configDTO.getAuthUsername(),
-                    configDTO.getAuthKeyfile());
-        }
-
-        final Parameters parameters
-                = new Parameters("localhost", configDTO.getLocalPort(), configDTO.getUrl(), configDTO.getPort());
-        Thread thread = new Thread(() -> {
-
-            try{
-                ServerSocket serverSocket = new ServerSocket();
-                try (serverSocket) {
-                    serverSocket.setReuseAddress(true);
-                    serverSocket.bind(new InetSocketAddress(parameters.getLocalHost(), parameters.getLocalPort()));
-                    localPortforwarder = sshClient.newLocalPortForwarder(parameters, serverSocket);
-                    localPortforwarder.listen();
-                }
-            } catch (Exception e) {
-                getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "SSH socket to {}:{} failed.", configDTO.getSshHost(), configDTO.getPort());
-                throw new CorreoMqttSshFailedException(e);
-            }
-        });
-
-        thread.start();
-
-
-        int sshRetries = 0;
-        while (!sshClient.isConnected()) {
-            if (sshRetries < 5) {
-                sshRetries += 1;
-                TimeUnit.SECONDS.sleep(1);
-            } else {
-                getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "SSH tunnel to {}:{} failed.", configDTO.getSshHost(), configDTO.getPort());
-                return;
-            }
-        }
-
-        getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "SSH tunnel to {}:{} established.", configDTO.getSshHost(), configDTO.getPort());
-
-    }
-
-    protected int getDestinationPort() {
-        if (configDTO.getProxy().equals(Proxy.SSH)) {
-            return configDTO.getLocalPort();
-        } else {
-            return configDTO.getPort();
-        }
-    }
 
     abstract void executeConnect() throws SSLException, InterruptedException, ExecutionException, TimeoutException;
 
     @Override
     public void onDisconnected(MqttClientDisconnectedContext context) {
 
-        if (tryToReconnect.get()) {
-            if (context.getSource() == MqttDisconnectSource.SERVER) {
-                getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Disconnected by {}. Connection to broker lost.", context.getSource());
-                reconnect(context);
-            } else if (context.getSource() == MqttDisconnectSource.CLIENT) {
-                getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Disconnected by {}. Connection to broker not possible.", context.getSource());
-                reconnect(context);
-            } else if (context.getSource() == MqttDisconnectSource.USER) {
-                try {
-                    localPortforwarder.close();
-                    sshClient.disconnect();
-                } catch (IOException e) {
-                    getLogger().warn(MarkerFactory.getMarker(configDTO.getName()), "SSH Tunnel disconnecting unsuccessful.", e);
-                }
-                getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Disconnected by {}. Connection to broker disconnected by user.", context.getSource());
-            }
+        changeState(ConnectionState.DISCONNECTING);
+
+        if (context.getSource() == MqttDisconnectSource.USER) {
+            executeConditionallyOnSshProxy(sshProxy -> sshProxy.disconnect(context.getSource().toString()));
+            changeState(ConnectionState.DISCONNECTED_GRACEFUL);
+            getLogger().info("Disconnected by {}", context.getSource());
+            return;
         }
+
+        if (getLogger().isInfoEnabled()) {
+            getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Disconnected by {}. Connection to broker lost.", context.getSource());
+        }
+
+        if (triedReconnects.get() < MAX_RECONNECTS) {
+            triedReconnects.incrementAndGet();
+            getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Reconnecting to Broker {}/{}", triedReconnects.get(), MAX_RECONNECTS);
+            changeState(ConnectionState.RECONNECTING);
+            doReconnect(context);
+        } else {
+            getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "Maximum number of reconnects reached {}/{}.", triedReconnects.get(), MAX_RECONNECTS);
+            executeConditionallyOnSshProxy(sshProxy -> sshProxy.disconnect(context.getSource().toString()));
+            changeState(ConnectionState.DISCONNECTED_UNGRACEFUL);
+        }
+
     }
+
 
     @Override
     public void onConnected(MqttClientConnectedContext context) {
         triedReconnects.set(0);
-        tryToReconnect.set(true);
-        if (wasConnectedBefore.get()) {
-            EventBus.fireAsync(new AutomaticReconnectEvent(configDTO.getId()));
-            getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Reconnected to broker successfully");
-        }
+        getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Successfully connected to broker");
+        this.changeState(ConnectionState.CONNECTED);
     }
+
+    @Override
+    public void onProxyFailed() {
+        disconnect();
+        getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "Proxy failed");
+    }
+
+    protected int getDestinationPort() {
+        return getConditionallyOnSshProxy(SshProxy::getPort, configDTO::getPort);
+    }
+
 
     KeyManagerFactory getKeyManagerFactory() throws SSLException {
         return KeyStoreUtil.keyManagerFromKeystore(
@@ -227,50 +164,49 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
     }
 
 
-    private synchronized void reconnect(MqttClientDisconnectedContext context) {
-        getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Reconnecting connect to Broker.");
-        if (tryToReconnect.get() && triedReconnects.get() < MAX_RECONNECTS && context.getSource() != MqttDisconnectSource.USER) {
-            doReconnect(context);
-            EventBus.fireAsync(new AutomaticReconnectFailedEvent(configDTO.getId(),triedReconnects.get(), MAX_RECONNECTS));
-            triedReconnects.incrementAndGet();
-        } else {
-            getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "Maximum number of reconnects reached.");
-            EventBus.fireAsync(new ConnectFailedEvent(configDTO.getId(), new CorreoMqttNoRetriesLeftException()));
-
-        }
+    @Override
+    public synchronized void disconnect() {
+        doDisconnect();
+        executeConditionallyOnSshProxy(sshProxy -> sshProxy.disconnect(MqttDisconnectSource.USER.toString()));
+        getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Disconnected from broker.");
     }
 
     abstract void doReconnect(MqttClientDisconnectedContext context);
 
-
-    @Override
-    public synchronized void disconnect(boolean graceful) {
-
-        //TODO use graceful
-
-        tryToReconnect.set(false);
-
-        if (isConnected()) {
-            doDisconnect();
-            getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Disconnected from broker.");
-        } else {
-            getLogger().info("Disconnecting client was not possible, cause was not connected.");
-        }
-
-        if (sshClient != null && sshClient.isConnected()) {
-            getLogger().debug(MarkerFactory.getMarker(configDTO.getName()), "Disconnecting SSH tunnel for {}:{}.", configDTO.getSshHost(), configDTO.getPort());
-            try {
-                sshClient.close();
-                getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "SSH tunnel for {}:{} closed", configDTO.getSshHost(), configDTO.getPort());
-            } catch (IOException e) {
-                getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "Disconnecting SSH tunnel for {}:{} failed", configDTO.getSshHost(), configDTO.getPort());
-            }
-            sshClient = null;
-        }
-    }
-
     abstract void doDisconnect();
 
-    abstract boolean isConnected();
+    private void changeState(ConnectionState state) {
+        this.state = state;
+        if (state == ConnectionState.DISCONNECTED_UNGRACEFUL) {
+            getLogger().error(MarkerFactory.getMarker(configDTO.getName()), "Connection state changed to {}", state, new RuntimeException());
+        } else {
+            getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Connection state changed to {}", state);
+        }
+        EventBus.fireAsync(new ConnectionStateChangedEvent(getConfigDTO().getId(),
+                state,
+                triedReconnects.get(),
+                MAX_RECONNECTS));
+    }
+
+    /* SSH Proxy Helper */
+
+    private void executeConditionallyOnSshProxy(Consumer<SshProxy> sshProxyCallback) {
+        getConditionallyOnSshProxy(sshProxy -> {
+            sshProxyCallback.accept(sshProxy);
+            return null;
+        }, () -> null);
+    }
+
+    private <T> T getConditionallyOnSshProxy(Function<SshProxy, T> sshProxyCallback, Supplier<T> insteadCallback) {
+        if (!configDTO.getProxy().equals(Proxy.SSH)) {
+            return insteadCallback.get();
+        }
+
+        if (proxy == null) {
+            proxy = new SshProxy(this, configDTO);
+        }
+
+        return sshProxyCallback.apply(proxy);
+    }
 
 }

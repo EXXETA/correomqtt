@@ -22,7 +22,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.controlsfx.control.textfield.TextFields;
-import org.correomqtt.business.connection.ConnectEvent;
+import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.fileprovider.SettingsProvider;
@@ -31,9 +31,9 @@ import org.correomqtt.business.model.LabelType;
 import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.MessageType;
 import org.correomqtt.business.model.PublishStatus;
-import org.correomqtt.gui.controls.IconCheckMenuItem;
 import org.correomqtt.gui.contextmenu.MessageListContextMenu;
 import org.correomqtt.gui.contextmenu.MessageListContextMenuDelegate;
+import org.correomqtt.gui.controls.IconCheckMenuItem;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.utils.MessageUtils;
@@ -42,6 +42,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.Predicate;
+
+import static org.correomqtt.business.connection.ConnectionState.CONNECTED;
 
 public class MessageListViewController extends BaseConnectionController implements
         MessageListContextMenuDelegate,
@@ -102,7 +104,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
         TextField messageSearchTextField;
 
         messageSearchTextField = TextFields.createClearableTextField();
@@ -212,6 +214,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     }
 
 
+    @Override
     @FXML
     public void clearList() {
 
@@ -245,7 +248,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     @Override
     public void saveMessage(MessagePropertiesDTO messageDTO) {
         Stage stage = (Stage) messagesVBox.getScene().getWindow();
-        MessageUtils.saveMessage(getConnectionId(), messageDTO, stage);
+        MessageUtils.saveMessage(messageDTO, stage);
     }
 
     void setFilterPredicate(Predicate<MessagePropertiesDTO> filterPredicate) {
@@ -315,7 +318,7 @@ public class MessageListViewController extends BaseConnectionController implemen
         });
     }
 
-     @FXML
+    @FXML
     private void copyToForm() {
         delegate.setUpToForm(getSelectedMessage());
     }
@@ -394,9 +397,11 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     }
 
-    @Subscribe(ConnectEvent.class)
-    public void onConnect() {
-        setUpShortcuts();
+    @SuppressWarnings("unused")
+    public void onConnectionChangedEvent(@Subscribe ConnectionStateChangedEvent event) {
+        if (event.getState() == CONNECTED) {
+            setUpShortcuts();
+        }
     }
 
 

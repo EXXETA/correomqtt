@@ -1,8 +1,8 @@
 package org.correomqtt.business.utils;
 
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
-import org.correomqtt.business.fileprovider.SettingsProvider;
 
 import java.util.Comparator;
 import java.util.HashSet;
@@ -70,7 +70,8 @@ public class ConnectionHolder {
     }
 
     public boolean isConnectionUnused(ConnectionConfigDTO config) {
-        return getConnection(config.getId()).getClient() == null;
+        CorreoMqttConnection connection = getConnection(config.getId());
+        return connection == null || connection.getClient() == null;
     }
 
     public Map<String, CorreoMqttConnection> getConnections() {

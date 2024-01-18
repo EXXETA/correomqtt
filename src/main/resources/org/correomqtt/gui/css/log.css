@@ -1,42 +1,45 @@
 @import "global.css";
 
-
-#logTextArea.styled-text-area .caret {
+.log.styled-text-area .caret {
     -fx-stroke: #34c400;
 }
 
-#logTextArea.styled-text-area {
+.log.styled-text-area {
     -fx-background-color: #000000;
 }
 
-#logTextArea.styled-text-area .default {
+.log.styled-text-area * {
     -fx-fill: #34c400;
 }
 
-#logTextArea.styled-text-area .cyan {
+.log.styled-text-area .default {
+    -fx-fill: #34c400;
+}
+
+.log.styled-text-area .cyan {
     -fx-fill: #009485;
 }
 
-#logTextArea.styled-text-area .blue {
+.log.styled-text-area .blue {
     -fx-fill: #3993d4;
 }
 
-#logTextArea.styled-text-area .magenta {
+.log.styled-text-area .magenta {
     -fx-fill: #a370bd;
 }
 
-#logTextArea.styled-text-area .yellow {
+.log.styled-text-area .yellow {
     -fx-fill: #AA750C;
 }
 
-#logTextArea.styled-text-area .orange {
+.log.styled-text-area .orange {
     -fx-fill: #aa4e0c;
 }
 
-#logTextArea.styled-text-area .red {
+.log.styled-text-area .red {
     -fx-fill: #aa0c0c;
 }
 
-#logTextArea.styled-text-area .selection {
+.log.styled-text-area .selection {
     -fx-fill: #444444;
 }

@@ -10,34 +10,35 @@ import javafx.scene.control.ListView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
-import org.correomqtt.business.connection.DisconnectEvent;
+import org.correomqtt.business.concurrent.SimpleTaskErrorResult;
+import org.correomqtt.business.connection.ConnectionStateChangedEvent;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.fileprovider.PersistSubscribeHistoryUpdateEvent;
+import org.correomqtt.business.fileprovider.PersistSubscriptionHistoryProvider;
+import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.model.ConnectionConfigDTO;
 import org.correomqtt.business.model.ControllerType;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.MessageListViewConfig;
 import org.correomqtt.business.model.Qos;
 import org.correomqtt.business.model.SubscriptionDTO;
-import org.correomqtt.business.fileprovider.PersistSubscriptionHistoryProvider;
-import org.correomqtt.business.fileprovider.SettingsProvider;
 import org.correomqtt.business.pubsub.IncomingMessageEvent;
 import org.correomqtt.business.pubsub.SubscribeEvent;
 import org.correomqtt.business.pubsub.SubscribeTask;
 import org.correomqtt.business.pubsub.UnsubscribeEvent;
 import org.correomqtt.business.pubsub.UnsubscribeTask;
 import org.correomqtt.business.utils.ConnectionHolder;
-import org.correomqtt.gui.views.cell.QosCell;
 import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenu;
 import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenuDelegate;
-import org.correomqtt.gui.utils.AlertHelper;
-import org.correomqtt.gui.utils.CheckTopicHelper;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.transformer.SubscriptionTransformer;
+import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.utils.CheckTopicHelper;
 import org.correomqtt.gui.views.LoaderResult;
+import org.correomqtt.gui.views.cell.QosCell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +49,9 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static org.correomqtt.business.connection.ConnectionState.DISCONNECTED_GRACEFUL;
+import static org.correomqtt.business.connection.ConnectionState.DISCONNECTED_UNGRACEFUL;
+
 public class SubscriptionViewController extends BaseMessageBasedViewController implements
         SubscriptionListMessageContextMenuDelegate {
 
@@ -56,16 +60,16 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     private final SubscriptionViewDelegate delegate;
 
     @FXML
-    public AnchorPane subscribeBodyViewAnchor;
+    private AnchorPane subscribeBodyViewAnchor;
 
     @FXML
-    public ComboBox<Qos> qosComboBox;
+    private ComboBox<Qos> qosComboBox;
 
     @FXML
-    public ComboBox<String> subscribeTopicComboBox;
+    private ComboBox<String> subscribeTopicComboBox;
 
     @FXML
-    public ListView<SubscriptionPropertiesDTO> subscriptionListView;
+    private ListView<SubscriptionPropertiesDTO> subscriptionListView;
 
     @FXML
     private Button unsubscribeButton;
@@ -94,7 +98,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     @FXML
-    public void initialize() {
+    private void initialize() {
 
         initMessageListView();
 
@@ -274,7 +278,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     @FXML
-    public void onSubscriptionSelected(SubscriptionPropertiesDTO subscriptionDTO) {
+    private void onSubscriptionSelected(SubscriptionPropertiesDTO subscriptionDTO) {
         unsubscribeButton.setDisable(subscriptionDTO == null);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Subscription selected '{}': {}", subscriptionDTO == null ? "N/A" : subscriptionDTO.getTopic(), getConnectionId());
@@ -315,8 +319,8 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         });
     }
 
-    public void onSubscribedFailed(Throwable exception) {
-        String msg = "Exception in business layer: " + exception.getMessage();
+    public void onSubscribedFailed(SimpleTaskErrorResult result) {
+        String msg = "Exception in business layer: " + result.getUnexpectedError().getMessage();
         AlertHelper.warn(resources.getString("subscribeViewControllerSubscriptionFailedTitle") + ": ", msg);
     }
 
@@ -361,9 +365,10 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
 
 
     @SuppressWarnings("unused")
-    @Subscribe(DisconnectEvent.class)
-    public void onDisconnect() {
-        subscriptionListView.getItems().clear();
+    public void onConnectionChangedEvent(@Subscribe ConnectionStateChangedEvent event) {
+        if (event.getState() == DISCONNECTED_GRACEFUL || event.getState() == DISCONNECTED_UNGRACEFUL) {
+            subscriptionListView.getItems().clear();
+        }
     }
 
     @SuppressWarnings("unused")
