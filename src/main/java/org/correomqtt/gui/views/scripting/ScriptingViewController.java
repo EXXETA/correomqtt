@@ -190,10 +190,10 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
             scriptSplitPane.getItems().remove(scriptListSidebar);
             scriptSplitPane.getItems().remove(editorPane);
             mainSplitPane.getItems().remove(executionHolder);
-            addSafeToSplitPane(scriptSplitPane,emptyView);
+            addSafeToSplitPane(scriptSplitPane, emptyView);
         } else {
             scriptSplitPane.getItems().remove(emptyView);
-            addSafeToSplitPane(scriptSplitPane,scriptListSidebar);
+            addSafeToSplitPane(scriptSplitPane, scriptListSidebar);
             addSafeToSplitPane(scriptSplitPane, editorPane);
             addSafeToSplitPane(mainSplitPane, executionHolder);
         }
@@ -248,35 +248,14 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ScriptExecutionCancelledEvent.class)
-    public void onScriptExecutionCancelled() {
-        scriptListView.refresh();
-        updateStatusLabel();
-    }
-
-    @SuppressWarnings("unused")
-    @Subscribe(ScriptExecutionSuccessEvent.class)
-    public void onScriptExecutionSuccess() {
-        scriptListView.refresh();
-        updateStatusLabel();
-    }
-
-    @SuppressWarnings("unused")
-    @Subscribe(ScriptExecutionProgressEvent.class)
-    public void onScriptExecutionProgress() {
-        scriptListView.refresh();
-        updateStatusLabel();
-    }
-
-    @SuppressWarnings("unused")
-    @Subscribe(ScriptExecutionFailedEvent.class)
-    public void onScriptExecutionFailed() {
-        scriptListView.refresh();
-        updateStatusLabel();
-    }
-
-    @Subscribe(ScriptExecutionsDeletedEvent.class)
-    public void onExecutionsDeleted() {
+    @Subscribe({
+            ScriptExecutionCancelledEvent.class,
+            ScriptExecutionSuccessEvent.class,
+            ScriptExecutionProgressEvent.class,
+            ScriptExecutionFailedEvent.class,
+            ScriptExecutionsDeletedEvent.class
+    })
+    public void onScriptExecutionFinished() {
         scriptListView.refresh();
         updateStatusLabel();
     }

@@ -9,10 +9,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -45,28 +47,23 @@ public class EventBus {
         Arrays.stream(listener.getClass().getDeclaredMethods())
                 .forEach(m -> {
 
-                    EventSubscription annotationInfoFromMethod = getEventType(m);
+                    List<EventSubscription> annotationInfoFromMethod = getEventType(m);
                     EventSubscription annotationInfoFromParameter = getEventTypeFromParameter(m);
 
-                    if (annotationInfoFromMethod != null && annotationInfoFromParameter != null) {
-                        throw new IllegalArgumentException("Only one Subscribe annotation per method is allowed. Either at method level or at parameter level.");
+                    List<EventSubscription> eventSubs;
+                    if (annotationInfoFromMethod.isEmpty() && annotationInfoFromParameter == null) {
+                        return;
+                    } else if (!annotationInfoFromMethod.isEmpty()) {
+                        eventSubs = annotationInfoFromMethod;
+                    } else {
+                        eventSubs = List.of(annotationInfoFromParameter);
                     }
 
-                    Class<Event> eventType = null;
-                    boolean sync = false;
-                    if (annotationInfoFromMethod != null) {
-                        eventType = annotationInfoFromMethod.event;
-                        sync = annotationInfoFromMethod.sync;
-                    } else if (annotationInfoFromParameter != null) {
-                        eventType = annotationInfoFromParameter.event;
-                        sync = annotationInfoFromParameter.sync;
-                    }
-
-                    if (eventType != null) {
-                        LISTENER.computeIfAbsent(eventType, k -> new HashSet<>())
-                                .add(new Callback(listener, m, m.getParameters().length > 0, sync));
-                        registerEventType(eventType);
-                    }
+                    eventSubs.forEach(es -> {
+                        LISTENER.computeIfAbsent(es.event, k -> new HashSet<>())
+                                .add(new Callback(listener, m, m.getParameters().length > 0, es.sync));
+                        registerEventType(es.event);
+                    });
 
                     if (m.isAnnotationPresent(SubscribeFilter.class)) {
                         SubscribeFilter annotation = m.getAnnotation(SubscribeFilter.class);
@@ -78,36 +75,40 @@ public class EventBus {
                 });
     }
 
-    private static EventSubscription getEventType(Method m) {
+    private static List<EventSubscription> getEventType(Method m) {
 
         if (!m.isAnnotationPresent(Subscribe.class)) {
-            return null;
+            return Collections.emptyList();
         }
 
         Subscribe annotation = m.getAnnotation(Subscribe.class);
         Parameter[] params = m.getParameters();
 
-        if (params.length > 1) {
-            throw new IllegalArgumentException("Subscribe annotation allows no parameter or exactly one event parameter for methods");
-        }
+        List<Class<?>> types;
 
-        Class<?> type;
-        if (annotation.value().length == 1 && params.length == 0) {
-            type = annotation.value()[0];
+        if (annotation.value().length == 1 && params.length >= 1) {
+            throw new IllegalArgumentException("Subscribe annotation allows no parameter or exactly one event parameter for methods.");
+        } else if (annotation.value().length > 1 && params.length > 0) {
+            throw new IllegalArgumentException("If a Subscribe annotation is listening to multiple events no parameters are allowed.");
         } else if (annotation.value().length == 0 && params.length == 1) {
-            type = params[0].getType();
+            return Collections.emptyList(); // Annotation is on signature
+        } else if (annotation.value().length == 0) {
+            throw new IllegalStateException("Found annotation is not present.");
         } else {
-            throw new IllegalArgumentException("Subscribe annotations must have exactly one event definition. Either as annotation or method parameter.");
+            types = List.of(annotation.value());
         }
 
-        if (!Event.class.isAssignableFrom(type)) {
-            throw new IllegalArgumentException("Type is not compatible to Event.");
-        }
+        return types.stream()
+                .map(type -> {
+                    if (!Event.class.isAssignableFrom(type)) {
+                        throw new IllegalArgumentException("Type is not compatible to Event.");
+                    }
+                    //noinspection unchecked
+                    return new EventSubscription((Class<Event>) type, annotation.sync());
 
-        @SuppressWarnings("unchecked")
-        Class<Event> castedType = (Class<Event>) type;
+                })
+                .toList();
 
-        return new EventSubscription(castedType, annotation.sync());
     }
 
     private static void registerEventType(Class<Event> eventType) {
@@ -157,7 +158,6 @@ public class EventBus {
 
         //noinspection unchecked
         return new EventSubscription((Class<Event>) params[0].getType(), annotation.sync());
-
     }
 
     private static Set<Callback> getCallbacksToExecute(Event event) {

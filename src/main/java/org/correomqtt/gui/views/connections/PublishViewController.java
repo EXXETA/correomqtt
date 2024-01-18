@@ -234,8 +234,8 @@ public class PublishViewController extends BaseMessageBasedViewController {
 
         if (file != null) {
             new ImportMessageTask(file)
+                    .onError(error -> AlertHelper.unexpectedAlert(error.getUnexpectedError()))
                     .run();
-            //TODO Direct handler
         }
     }
 
@@ -296,7 +296,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
         messageListViewController.onNewMessage(MessageTransformer.dtoToProps(event.getMessageDTO()));
     }
 
-    private void onPublishFailed(SimpleTaskErrorResult result , MessageDTO messageDTO) {
+    private void onPublishFailed(SimpleTaskErrorResult result, MessageDTO messageDTO) {
         messageDTO.setPublishStatus(PublishStatus.FAILED);
         messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO));
 

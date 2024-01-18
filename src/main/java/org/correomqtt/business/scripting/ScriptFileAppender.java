@@ -11,13 +11,14 @@ import java.nio.charset.StandardCharsets;
 
 public class ScriptFileAppender extends FileAppender<ILoggingEvent> {
 
+    @SuppressWarnings("unused")
     public void writePlainString(String msg) {
-        safeWriteBytes(msg.getBytes(StandardCharsets.UTF_8));
+        mySafeWriteBytes(msg.getBytes(StandardCharsets.UTF_8));
     }
 
     // Copied private methods from FileAppender from here
 
-    private void safeWriteBytes(byte[] byteArray) {
+    private void mySafeWriteBytes(byte[] byteArray) {
         ResilientFileOutputStream resilientFOS = (ResilientFileOutputStream) getOutputStream();
         FileChannel fileChannel = resilientFOS.getChannel();
         if (fileChannel == null) {
@@ -40,7 +41,7 @@ public class ScriptFileAppender extends FileAppender<ILoggingEvent> {
             // Mainly to catch FileLockInterruptionExceptions (see LOGBACK-875)
             resilientFOS.postIOFailure(e);
         } finally {
-            releaseFileLock(fileLock);
+            myReleaseFileLock(fileLock);
 
             // Re-interrupt if we started in an interrupted state (see LOGBACK-875)
             if (interrupted) {
@@ -49,7 +50,7 @@ public class ScriptFileAppender extends FileAppender<ILoggingEvent> {
         }
     }
 
-    private void releaseFileLock(FileLock fileLock) {
+    private void myReleaseFileLock(FileLock fileLock) {
         if (fileLock != null && fileLock.isValid()) {
             try {
                 fileLock.release();

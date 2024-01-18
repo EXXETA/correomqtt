@@ -27,7 +27,6 @@ public class SecretStoreProvider extends BaseUserFileProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(SecretStoreProvider.class);
 
     private static final String PASSWORD_FILE_NAME = "passwords.json";
-    private static final String EX_MSG_PREPARE_CONFIG = "Exception preparing password file.";
 
     private PasswordsDTO passwordsDTO;
     private Map<String, String> decryptedPasswords;
@@ -116,6 +115,7 @@ public class SecretStoreProvider extends BaseUserFileProvider {
         return decryptedPasswords;
     }
 
+    @SuppressWarnings("removal")
     private Map<String, String> decryptPasswords(Encryptor encryptor) throws EncryptionRecoverableException {
         String encryptedPasswords = encryptor.passwordsDTOtoString(passwordsDTO);
 

@@ -9,6 +9,7 @@ import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.mqtt.CorreoMqttClient;
 import org.correomqtt.business.utils.ConnectionHolder;
 import org.correomqtt.gui.transformer.MessageTransformer;
+import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.plugin.manager.PluginManager;
 import org.correomqtt.plugin.model.MessageExtensionDTO;
 import org.correomqtt.plugin.spi.OutgoingMessageHook;
@@ -41,14 +42,13 @@ public class PublishTask extends SimpleTask {
         MessageDTO manipulatedMessageDTO = executeOnPublishMessageExtensions(connectionId, messageDTO);
         try {
             client.publish(manipulatedMessageDTO);
+            EventBus.fireAsync(new PublishEvent(connectionId, manipulatedMessageDTO));
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        } catch (TimeoutException e) {
-            throw new RuntimeException(e);
+            Thread.currentThread().interrupt();
+            AlertHelper.unexpectedAlert(e);
+        } catch (ExecutionException | TimeoutException e) {
+            AlertHelper.unexpectedAlert(e);
         }
-        EventBus.fireAsync(new PublishEvent(connectionId, manipulatedMessageDTO));
     }
 
     @Override

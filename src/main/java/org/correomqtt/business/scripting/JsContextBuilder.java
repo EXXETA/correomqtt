@@ -72,7 +72,7 @@ public class JsContextBuilder {
 
     private void bindContext() {
         Value binding = context.getBindings("js");
-        Queue queue = new Queue();
+        Queue queue = new Queue(scriptLogger);
         AsyncLatch asyncLatch = new AsyncLatch(marker);
 
         Value polyglotBindings = context.getPolyglotBindings();

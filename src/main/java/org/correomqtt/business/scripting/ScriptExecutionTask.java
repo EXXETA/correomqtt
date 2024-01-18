@@ -1,7 +1,7 @@
 package org.correomqtt.business.scripting;
 
 import lombok.Getter;
-import org.correomqtt.business.concurrent.Task;
+import org.correomqtt.business.concurrent.FullTask;
 import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.fileprovider.ScriptingProvider;
@@ -19,7 +19,7 @@ import static org.correomqtt.business.scripting.ScriptExecutionError.Type.GUEST;
 import static org.correomqtt.business.scripting.ScriptExecutionError.Type.HOST;
 import static org.slf4j.MarkerFactory.getMarker;
 
-public class ScriptExecutionTask extends Task<ExecutionDTO, ExecutionDTO, ExecutionDTO> {
+public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, ExecutionDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptExecutionTask.class);
     @Getter
@@ -41,6 +41,12 @@ public class ScriptExecutionTask extends Task<ExecutionDTO, ExecutionDTO, Execut
             dto.setLogger(scriptLogger);
             executeJs(slc, scriptLogger);
             ScriptingProvider.getInstance().saveExecution(dto);
+        }catch(InterruptedException e){
+            Thread.currentThread().interrupt();
+            LOGGER.info(marker(), "Exception during Script execution", e);
+            dto.updateExecutionTime();
+            dto.setError(new ScriptExecutionError(HOST, e.getMessage()));
+            EventBus.fire(new ScriptExecutionFailedEvent(dto));
         } catch (Exception e) {
             LOGGER.info(marker(), "Exception during Script execution", e);
             dto.updateExecutionTime();
