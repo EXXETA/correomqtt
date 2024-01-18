@@ -4,6 +4,7 @@
 [![Maven Central](https://img.shields.io/maven-metadata/v.svg?label=Maven%20Central&metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Forg%2Fcorreomqtt%2Fcorreomqtt-client%2Fmaven-metadata.xml)](https://search.maven.org/search?q=g:%22org.correomqtt%22%20AND%20a:%22correomqtt-client%22)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=correomqtt-farion&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=correomqtt-farion)
 [![CodeQL](https://github.com/EXXETA/correomqtt/workflows/CodeQL/badge.svg)](https://github.com/EXXETA/correomqtt/security/code-scanning)
+[![Javadoc](https://img.shields.io/badge/JavaDoc-Online-green)](https://exxeta.github.io/correomqtt/javadoc/)
 
 # CorreoMQTT
 
