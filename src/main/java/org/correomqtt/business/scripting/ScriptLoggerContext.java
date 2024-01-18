@@ -53,8 +53,10 @@ public class ScriptLoggerContext implements AutoCloseable {
         if (scriptAppender == null) {
             LOGGER.warn("No {} appender is configured for logback. No script output will be logged to standard log in gui, console or file.", SCRIPT_APPENDER_NAME);
         } else {
+            //noinspection java:S4792
             scriptLogger.addAppender(scriptAppender);
         }
+        //noinspection java:S4792
         scriptLogger.addAppender(fileAppender);
         scriptLogger.setAdditive(false);
     }

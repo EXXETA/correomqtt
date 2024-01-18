@@ -1,6 +1,7 @@
 package org.correomqtt.business.connection;
 
 import org.correomqtt.business.concurrent.SimpleProgressTask;
+import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.eventbus.Subscribe;
 import org.correomqtt.business.eventbus.SubscribeFilter;
@@ -36,13 +37,10 @@ public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent>
             try {
                 client.connect();
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
-            } catch (TimeoutException e) {
-                throw new RuntimeException(e);
-            } catch (SSLException e) {
-                throw new RuntimeException(e);
+                Thread.currentThread().interrupt();
+                throw new TaskException(e);
+            } catch (ExecutionException | TimeoutException | SSLException e) {
+                throw new TaskException(e);
             }
         }
     }

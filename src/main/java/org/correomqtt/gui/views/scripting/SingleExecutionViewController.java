@@ -106,6 +106,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
         appender.start();
 
         ch.qos.logback.classic.Logger scriptLogger = dto.getLogger();
+        //noinspection java:S4792
         scriptLogger.addAppender(appender);
 
     }

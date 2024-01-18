@@ -4,6 +4,7 @@ import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
 import org.correomqtt.business.concurrent.SimpleTask;
 import org.correomqtt.business.concurrent.SimpleTaskErrorResult;
+import org.correomqtt.business.concurrent.TaskException;
 import org.correomqtt.business.eventbus.EventBus;
 import org.correomqtt.business.model.MessageDTO;
 import org.correomqtt.business.model.SubscriptionDTO;
@@ -41,12 +42,12 @@ public class SubscribeTask extends SimpleTask {
         try {
             client.subscribe(subscriptionDTO, this::onIncomingMessage);
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        } catch (TimeoutException e) {
-            throw new RuntimeException(e);
+            Thread.currentThread().interrupt();
+            throw new TaskException(e);
+        } catch (ExecutionException | TimeoutException e) {
+            throw new TaskException(e);
         }
+
         EventBus.fireAsync(new SubscribeEvent(connectionId, subscriptionDTO));
     }
 
