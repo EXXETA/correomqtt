@@ -1,0 +1,17 @@
+package org.correomqtt.core.plugin.spi;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.correomqtt.core.plugin.spi.BaseExtensionPoint;
+
+public interface MessageValidatorHook<T> extends BaseExtensionPoint<T> {
+
+    @Getter
+    @RequiredArgsConstructor
+    class Validation {
+        private final boolean isValid;
+        private final String tooltip;
+    }
+
+    Validation isMessageValid(String message);
+}
