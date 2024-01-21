@@ -17,7 +17,6 @@ import javafx.scene.paint.Paint;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.CustomTextField;
-import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.model.Auth;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.CorreoMqttVersion;
@@ -27,6 +26,7 @@ import org.correomqtt.core.model.Proxy;
 import org.correomqtt.core.model.Qos;
 import org.correomqtt.core.model.TlsSsl;
 import org.correomqtt.core.plugin.PluginManager;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -35,7 +35,7 @@ import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.CheckTopicHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.cell.GenericCellFactory;
+import org.correomqtt.gui.views.cell.GenericCell;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
@@ -62,16 +62,14 @@ public class MqttSettingsViewController extends BaseControllerImpl
 
     public static final String EMPTY_ERROR_CLASS = "emptyError";
 
-    private static ResourceBundle resources;
+    private  ResourceBundle resources;
     private final PluginManager pluginManager;
     private final ConnectionHolder connectionHolder;
-    private final SettingsProvider settingsProvider;
-    private final ThemeManager themeManager;
-    private final GenericCellFactory<CorreoMqttVersion> correoMqttVersionGenericCellFactory;
-    private final GenericCellFactory<TlsSsl> tlsSslGenericCellFactory;
-    private final GenericCellFactory<Proxy> proxyGenericCellFactory;
-    private final GenericCellFactory<Auth> authGenericCellFactory;
-    private final GenericCellFactory<Lwt> lwtGenericCellFactory;
+    private final GenericCell.Factory<CorreoMqttVersion> correoMqttVersionGenericCellFactory;
+    private final GenericCell.Factory<TlsSsl> tlsSslGenericCellFactory;
+    private final GenericCell.Factory<Proxy> proxyGenericCellFactory;
+    private final GenericCell.Factory<Auth> authGenericCellFactory;
+    private final GenericCell.Factory<Lwt> lwtGenericCellFactory;
     @FXML
     private CheckBox sslHostVerificationCheckBox;
 
@@ -178,16 +176,14 @@ public class MqttSettingsViewController extends BaseControllerImpl
                                ConnectionHolder connectionHolder,
                                SettingsProvider settingsProvider,
                                ThemeManager themeManager,
-                               GenericCellFactory<CorreoMqttVersion> correoMqttVersionGenericCellFactory,
-                               GenericCellFactory<TlsSsl> tlsSslGenericCellFactory,
-                               GenericCellFactory<Proxy> proxyGenericCellFactory,
-                               GenericCellFactory<Auth> authGenericCellFactory,
-                               GenericCellFactory<Lwt> lwtGenericCellFactory) {
+                               GenericCell.Factory<CorreoMqttVersion> correoMqttVersionGenericCellFactory,
+                               GenericCell.Factory<TlsSsl> tlsSslGenericCellFactory,
+                               GenericCell.Factory<Proxy> proxyGenericCellFactory,
+                               GenericCell.Factory<Auth> authGenericCellFactory,
+                               GenericCell.Factory<Lwt> lwtGenericCellFactory) {
         super(settingsProvider, themeManager);
         this.pluginManager = pluginManager;
         this.connectionHolder = connectionHolder;
-        this.settingsProvider = settingsProvider;
-        this.themeManager = themeManager;
         this.correoMqttVersionGenericCellFactory = correoMqttVersionGenericCellFactory;
         this.tlsSslGenericCellFactory = tlsSslGenericCellFactory;
         this.proxyGenericCellFactory = proxyGenericCellFactory;

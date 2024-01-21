@@ -14,6 +14,7 @@ import org.correomqtt.core.model.PasswordsDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -31,8 +32,8 @@ public class SecretStoreProvider extends BaseUserFileProvider {
     private PasswordsDTO passwordsDTO;
     private Map<String, String> decryptedPasswords;
 
-    private static SecretStoreProvider instance = null;
 
+    @Inject
     public SecretStoreProvider() {
 
         try {
@@ -50,15 +51,6 @@ public class SecretStoreProvider extends BaseUserFileProvider {
             passwordsDTO = new PasswordsDTO();
         }
 
-    }
-
-    public static synchronized SecretStoreProvider getInstance() {
-        if (instance == null) {
-            instance = new SecretStoreProvider();
-            return instance;
-        } else {
-            return instance;
-        }
     }
 
     public void setPassword(String masterPassword, ConnectionConfigDTO connection, ConnectionPasswordType type, String password) throws EncryptionRecoverableException {

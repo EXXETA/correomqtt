@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.connections;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -12,7 +13,6 @@ import javafx.scene.control.ListView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
-import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
@@ -27,13 +27,13 @@ import org.correomqtt.core.model.Qos;
 import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.pubsub.IncomingMessageEvent;
 import org.correomqtt.core.pubsub.SubscribeEvent;
-import org.correomqtt.core.pubsub.SubscribeTaskFactory;
+import org.correomqtt.core.pubsub.SubscribeTask;
 import org.correomqtt.core.pubsub.UnsubscribeEvent;
-import org.correomqtt.core.pubsub.UnsubscribeTaskFactory;
+import org.correomqtt.core.pubsub.UnsubscribeTask;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenu;
 import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenuDelegate;
-import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenuFactory;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -42,7 +42,7 @@ import org.correomqtt.gui.transformer.SubscriptionTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.CheckTopicHelper;
 import org.correomqtt.gui.views.LoaderResult;
-import org.correomqtt.gui.views.cell.QosCellFactory;
+import org.correomqtt.gui.views.cell.QosCell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,18 +60,17 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         SubscriptionListMessageContextMenuDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionViewController.class);
-    private static ResourceBundle resources;
-    private final SubscribeTaskFactory subscribeTaskFactory;
-    private final UnsubscribeTaskFactory unsubscribeTaskFactory;
+    private final SubscribeTask.Factory subscribeTaskFactory;
+    private final UnsubscribeTask.Factory unsubscribeTaskFactory;
     private final SettingsProvider settingsProvider;
-    private final QosCellFactory qosCellFactory;
-    private final SubscriptionViewCellFactory subscriptionViewCellFactory;
-    private final TopicCellFactory topicCellFactory;
+    private final QosCell.Factory qosCellFactory;
+    private final SubscriptionViewCell.Factory subscriptionViewCellFactory;
+    private final TopicCell.Factory topicCellFactory;
     private final AlertHelper alertHelper;
-    private final SubscriptionListMessageContextMenuFactory subscriptionListMessageContextMenuFactory;
+    private final SubscriptionListMessageContextMenu.Factory subscriptionListMessageContextMenuFactory;
     private final HistoryManager historyManager;
     private final SubscriptionViewDelegate delegate;
-
+    private ResourceBundle resources;
     @FXML
     private AnchorPane subscribeBodyViewAnchor;
 
@@ -97,18 +96,24 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     private Button selectNoneButton;
     private boolean afterSubscribe;
 
+    @AssistedFactory
+    public interface Factory {
+        SubscriptionViewController create(String connectionId, SubscriptionViewDelegate delegate);
+
+    }
+
     @AssistedInject
-    public SubscriptionViewController(SubscribeTaskFactory subscribeTaskFactory,
-                                      UnsubscribeTaskFactory unsubscribeTaskFactory,
+    public SubscriptionViewController(SubscribeTask.Factory subscribeTaskFactory,
+                                      UnsubscribeTask.Factory unsubscribeTaskFactory,
                                       ConnectionHolder connectionHolder,
                                       SettingsProvider settingsProvider,
                                       ThemeManager themeManager,
-                                      MessageListViewControllerFactory messageListViewControllerFactory,
-                                      QosCellFactory qosCellFactory,
-                                      SubscriptionViewCellFactory subscriptionViewCellFactory,
-                                      TopicCellFactory topicCellFactory,
+                                      MessageListViewController.Factory messageListViewControllerFactory,
+                                      QosCell.Factory qosCellFactory,
+                                      SubscriptionViewCell.Factory subscriptionViewCellFactory,
+                                      TopicCell.Factory topicCellFactory,
                                       AlertHelper alertHelper,
-                                      SubscriptionListMessageContextMenuFactory subscriptionListMessageContextMenuFactory,
+                                      SubscriptionListMessageContextMenu.Factory subscriptionListMessageContextMenuFactory,
                                       HistoryManager historyManager,
                                       @Assisted String connectionId,
                                       @Assisted SubscriptionViewDelegate delegate) {
@@ -132,6 +137,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         resources = result.getResourceBundle();
         return result;
     }
+
 
     @FXML
     private void initialize() {
@@ -179,13 +185,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
 
     }
 
-    private void initTopicComboBox() {
-        List<String> topics = historyManager.activateSubscriptionHistory(getConnectionId()).getTopics(getConnectionId());
-        subscribeTopicComboBox.setItems(FXCollections.observableArrayList(topics));
-        subscribeTopicComboBox.setCellFactory(topicCellFactory::create);
-
-    }
-
     private ListCell<SubscriptionPropertiesDTO> createCell(ListView<SubscriptionPropertiesDTO> listView) {
         SubscriptionViewCell cell = subscriptionViewCellFactory.create(listView);
         SubscriptionListMessageContextMenu contextMenu = subscriptionListMessageContextMenuFactory.create(this);
@@ -197,6 +196,99 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
             }
         });
         return cell;
+    }
+
+    private void initTopicComboBox() {
+        List<String> topics = historyManager.activateSubscriptionHistory(getConnectionId()).getTopics(getConnectionId());
+        subscribeTopicComboBox.setItems(FXCollections.observableArrayList(topics));
+        subscribeTopicComboBox.setCellFactory(topicCellFactory::create);
+
+    }
+
+    @FXML
+    private void onSubscriptionSelected(SubscriptionPropertiesDTO subscriptionDTO) {
+        unsubscribeButton.setDisable(subscriptionDTO == null);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Subscription selected '{}': {}", subscriptionDTO == null ? "N/A" : subscriptionDTO.getTopic(), getConnectionId());
+        }
+    }
+
+    @FXML
+    private void onClickUnsubscribe() {
+
+        SubscriptionPropertiesDTO selectedSubscription = getSelectedSubscription();
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Unsubscribe from topic '{}' clicked: {}", selectedSubscription.getTopic(), getConnectionId());
+        }
+        if (selectedSubscription != null) {
+            unsubscribe(selectedSubscription);
+        }
+    }
+
+    private SubscriptionPropertiesDTO getSelectedSubscription() {
+        return subscriptionListView.getSelectionModel().getSelectedItem();
+    }
+
+    @FXML
+    private void onClickUnsubscribeAll() {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Unsubscribe from all topics clicked: {}", getConnectionId());
+        }
+        unsubscribeAll();
+    }
+
+    public void unsubscribeAll() {
+        connectionHolder
+                .getConnection(getConnectionId())
+                .getClient()
+                .getSubscriptions()
+                .forEach(s -> unsubscribeTaskFactory.create(getConnectionId(), s).run());
+
+        subscriptionListView.getItems().clear();
+
+        unsubscribeButton.setDisable(true);
+        unsubscribeAllButton.setDisable(true);
+        selectAllButton.setDisable(true);
+        selectNoneButton.setDisable(true);
+    }
+
+    @FXML
+    public void selectNone() {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Select none topic for filter clicked: {}", getConnectionId());
+        }
+        subscriptionListView.getItems().forEach(subscriptionDTO -> subscriptionDTO.setFiltered(false));
+    }
+
+    @FXML
+    public void selectAll() {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Select all topics for filter clicked: {}", getConnectionId());
+        }
+        subscriptionListView.getItems().forEach(subscriptionDTO -> subscriptionDTO.setFiltered(true));
+    }
+
+    @Override
+    public void filterOnly(SubscriptionPropertiesDTO dto) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Filter only topic '{}': {}", dto.getTopic(), getConnectionId());
+        }
+        subscriptionListView.getItems().forEach(item -> item.setFiltered(dto.equals(item)));
+    }
+
+    public void unsubscribe(SubscriptionPropertiesDTO subscriptionDTO) {
+        unsubscribeTaskFactory.create(getConnectionId(), SubscriptionTransformer.propsToDTO(subscriptionDTO)).run();
+    }
+
+    /**
+     * @param actionEvent The event given by JavaFX.
+     */
+    public void onClickSubscribe(@SuppressWarnings("unused") ActionEvent actionEvent) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Subscribe to topic clicked: {}", getConnectionId());
+        }
+        subscribe();
     }
 
     private void subscribe() {
@@ -225,83 +317,13 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         }
     }
 
-    private SubscriptionPropertiesDTO getSelectedSubscription() {
-        return subscriptionListView.getSelectionModel().getSelectedItem();
+    public void onSubscribedFailed(SimpleTaskErrorResult result) {
+        String msg = "Exception in business layer: " + result.getUnexpectedError().getMessage();
+        alertHelper.warn(resources.getString("subscribeViewControllerSubscriptionFailedTitle") + ": ", msg);
     }
 
-    @FXML
-    private void onClickUnsubscribe() {
-
-        SubscriptionPropertiesDTO selectedSubscription = getSelectedSubscription();
-
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Unsubscribe from topic '{}' clicked: {}", selectedSubscription.getTopic(), getConnectionId());
-        }
-        if (selectedSubscription != null) {
-            unsubscribe(selectedSubscription);
-        }
-    }
-
-    public void unsubscribe(SubscriptionPropertiesDTO subscriptionDTO) {
-        unsubscribeTaskFactory.create(getConnectionId(), SubscriptionTransformer.propsToDTO(subscriptionDTO)).run();
-    }
-
-    @FXML
-    public void selectAll() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Select all topics for filter clicked: {}", getConnectionId());
-        }
-        subscriptionListView.getItems().forEach(subscriptionDTO -> subscriptionDTO.setFiltered(true));
-    }
-
-    @Override
-    public void filterOnly(SubscriptionPropertiesDTO dto) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Filter only topic '{}': {}", dto.getTopic(), getConnectionId());
-        }
-        subscriptionListView.getItems().forEach(item -> item.setFiltered(dto.equals(item)));
-    }
-
-    @FXML
-    public void selectNone() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Select none topic for filter clicked: {}", getConnectionId());
-        }
-        subscriptionListView.getItems().forEach(subscriptionDTO -> subscriptionDTO.setFiltered(false));
-    }
-
-    @FXML
-    private void onClickUnsubscribeAll() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Unsubscribe from all topics clicked: {}", getConnectionId());
-        }
-        unsubscribeAll();
-    }
-
-    public void unsubscribeAll() {
-        connectionHolder
-                .getConnection(getConnectionId())
-                .getClient()
-                .getSubscriptions()
-                .forEach(s -> unsubscribeTaskFactory.create(getConnectionId(), s).run());
-
-        subscriptionListView.getItems().clear();
-
-        unsubscribeButton.setDisable(true);
-        unsubscribeAllButton.setDisable(true);
-        selectAllButton.setDisable(true);
-        selectNoneButton.setDisable(true);
-    }
-
-    /**
-     * @param actionEvent The event given by JavaFX.
-     */
-    public void onClickSubscribe(@SuppressWarnings("unused") ActionEvent actionEvent) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Subscribe to topic clicked: {}", getConnectionId());
-        }
-        subscribe();
-    }
+    // TODO: if all existing subscriptions are not filtered and a new comes in, no new messages are shown in the list
+    // only after reclick the checkbox it works
 
     public void onClickSubscribeKey(KeyEvent actionEvent) {
         if (actionEvent.getCode() == KeyCode.ENTER) {
@@ -312,17 +334,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
             subscribe();
         }
     }
-
-    @FXML
-    private void onSubscriptionSelected(SubscriptionPropertiesDTO subscriptionDTO) {
-        unsubscribeButton.setDisable(subscriptionDTO == null);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Subscription selected '{}': {}", subscriptionDTO == null ? "N/A" : subscriptionDTO.getTopic(), getConnectionId());
-        }
-    }
-
-    // TODO: if all existing subscriptions are not filtered and a new comes in, no new messages are shown in the list
-    // only after reclick the checkbox it works
 
     @SuppressWarnings("unused")
     @Subscribe
@@ -355,11 +366,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         });
     }
 
-    public void onSubscribedFailed(SimpleTaskErrorResult result) {
-        String msg = "Exception in business layer: " + result.getUnexpectedError().getMessage();
-        alertHelper.warn(resources.getString("subscribeViewControllerSubscriptionFailedTitle") + ": ", msg);
-    }
-
     private void updateFilter() {
 
         Set<String> filteredTopics = subscriptionListView.getItems()
@@ -382,24 +388,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         }
     }
 
-    @Override
-    public void setUpToForm(MessagePropertiesDTO messageDTO) {
-        delegate.setUpToForm(messageDTO);
-    }
-
-    @Override
-    public Supplier<MessageListViewConfig> produceListViewConfig() {
-        return () -> settingsProvider
-                .getConnectionConfigs()
-                .stream()
-                .filter(c -> c.getId().equals(getConnectionId()))
-                .findFirst()
-                .orElse(ConnectionConfigDTO.builder().subscribeListViewConfig(new MessageListViewConfig()).build())
-                .produceSubscribeListViewConfig();
-
-    }
-
-
     @SuppressWarnings("unused")
     public void onConnectionChangedEvent(@Subscribe ConnectionStateChangedEvent event) {
         if (event.getState() == DISCONNECTED_GRACEFUL || event.getState() == DISCONNECTED_UNGRACEFUL) {
@@ -412,7 +400,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     public void updateSubscriptions() {
         initTopicComboBox();
     }
-
 
     @SuppressWarnings("unused")
     public void onUnsubscribeSucceeded(@Subscribe UnsubscribeEvent event) {
@@ -447,6 +434,23 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     @Override
     public void setTabDirty() {
         delegate.setTabDirty();
+    }
+
+    @Override
+    public void setUpToForm(MessagePropertiesDTO messageDTO) {
+        delegate.setUpToForm(messageDTO);
+    }
+
+    @Override
+    public Supplier<MessageListViewConfig> produceListViewConfig() {
+        return () -> settingsProvider
+                .getConnectionConfigs()
+                .stream()
+                .filter(c -> c.getId().equals(getConnectionId()))
+                .findFirst()
+                .orElse(ConnectionConfigDTO.builder().subscribeListViewConfig(new MessageListViewConfig()).build())
+                .produceSubscribeListViewConfig();
+
     }
 
     public void cleanUp() {

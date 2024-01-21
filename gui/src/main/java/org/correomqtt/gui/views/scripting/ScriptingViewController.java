@@ -62,14 +62,18 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptingViewController.class);
     private static final String HELP_LINK = "https://github.com/EXXETA/correomqtt/wiki/scripting";
-    private static ResourceBundle resources;
     private final HashMap<String, ScriptEditorState> editorStates = new HashMap<>();
     private final AlertHelper alertHelper;
-    private final ScriptCellFactory scriptCellFactory;
-    private final ScriptContextMenuFactory scriptContextMenuFactory;
-    private final SingleEditorViewControllerFactory editorViewCtrlFactory;
+    private final ScriptCell.Factory scriptCellFactory;
+    private final ScriptContextMenu.Factory scriptContextMenuFactory;
+    private final SingleEditorViewController.Factory editorViewCtrlFactory;
+    private final ScriptNewTask.Factory scriptNewTaskFactory;
+    private final ScriptRenameTask.Factory scriptRenameTaskFactory;
+    private final ScriptDeleteTask.Factory scriptDeleteTaskFactory;
     private final Provider<ExecutionViewController> executionViewControllerProvider;
+    private final ScriptingProvider scriptingProvider;
     private final HostServices hostServices;
+    private ResourceBundle resources;
     @FXML
     private IconLabel statusLabel;
     @FXML
@@ -92,14 +96,24 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     private ObservableList<ScriptFilePropertiesDTO> scriptList;
     private RotateTransition rotateTransition;
 
+    @AllArgsConstructor
+    private static class ScriptEditorState {
+        private SingleEditorViewController controller;
+        private Region region;
+    }
+
     @Inject
     public ScriptingViewController(SettingsProvider settingsProvider,
                                    ThemeManager themeManager,
                                    AlertHelper alertHelper,
-                                   ScriptCellFactory scriptCellFactory,
-                                   ScriptContextMenuFactory scriptContextMenuFactory,
-                                   SingleEditorViewControllerFactory editorViewCtrlFactory,
+                                   ScriptCell.Factory scriptCellFactory,
+                                   ScriptContextMenu.Factory scriptContextMenuFactory,
+                                   SingleEditorViewController.Factory editorViewCtrlFactory,
+                                   ScriptNewTask.Factory scriptNewTaskFactory,
+                                   ScriptRenameTask.Factory scriptRenameTaskFactory,
+                                   ScriptDeleteTask.Factory scriptDeleteTaskFactopr,
                                    Provider<ExecutionViewController> executionViewControllerProvider,
+                                   ScriptingProvider scriptingProvider,
                                    @AppHostServices HostServices hostServices
     ) {
         super(settingsProvider, themeManager);
@@ -107,7 +121,11 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         this.scriptCellFactory = scriptCellFactory;
         this.scriptContextMenuFactory = scriptContextMenuFactory;
         this.editorViewCtrlFactory = editorViewCtrlFactory;
+        this.scriptNewTaskFactory = scriptNewTaskFactory;
+        this.scriptRenameTaskFactory = scriptRenameTaskFactory;
+        this.scriptDeleteTaskFactory = scriptDeleteTaskFactopr;
         this.executionViewControllerProvider = executionViewControllerProvider;
+        this.scriptingProvider = scriptingProvider;
         this.hostServices = hostServices;
         EventBus.register(this);
     }
@@ -162,7 +180,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
 
         List<ScriptFilePropertiesDTO> scriptsList = null;
         try {
-            scriptsList = ScriptingProvider.getInstance().getScripts()
+            scriptsList = scriptingProvider.getScripts()
                     .stream()
                     .map(ScriptingTransformer::dtoToProps)
                     .toList();
@@ -298,7 +316,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                 resources.getString("scripting.newscript.dialog.content"),
                 defaultValue);
 
-        new ScriptNewTask(filename)
+        scriptNewTaskFactory.create(filename)
                 .onSuccess(this::onNewScriptCreated)
                 .onError(r -> onNewScriptCreatedFailed(r, filename))
                 .run();
@@ -307,7 +325,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     private void onNewScriptCreated(Path path) {
         ScriptFileDTO newScriptDTO;
         try {
-            newScriptDTO = ScriptingProvider.getInstance().getScripts()
+            newScriptDTO = scriptingProvider.getScripts()
                     .stream()
                     .filter(sfd -> sfd.getPath().equals(path))
                     .findFirst()
@@ -362,7 +380,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                 resources.getString("scripting.renamescript.dialog.content"),
                 defaultFilename);
 
-        new ScriptRenameTask(ScriptingTransformer.propsToDTO(dto), newFilename)
+        scriptRenameTaskFactory.create(ScriptingTransformer.propsToDTO(dto), newFilename)
                 .onSuccess(newPath -> {
                     executionController.renameScript(dto.getName(), newFilename);
                     dto.getNameProperty().setValue(newFilename);
@@ -425,7 +443,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
             return;
         }
 
-        new ScriptDeleteTask(ScriptingTransformer.propsToDTO(dto))
+        scriptDeleteTaskFactory.create(ScriptingTransformer.propsToDTO(dto))
                 .onSuccess(() -> onScriptDeleted(dto))
                 .onError(r -> {
                     if (r.isExpected()) {
@@ -469,11 +487,5 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     @FXML
     private void onHelpLinkClicked() {
         hostServices.showDocument(HELP_LINK);
-    }
-
-    @AllArgsConstructor
-    private static class ScriptEditorState {
-        private SingleEditorViewController controller;
-        private Region region;
     }
 }

@@ -1,5 +1,8 @@
 package org.correomqtt.core.scripting;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleErrorTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
@@ -20,9 +23,18 @@ public class ScriptDeleteTask extends SimpleErrorTask<ScriptDeleteTask.Error> {
         IOERROR
     }
 
+    private final ScriptingProvider scriptingProvider;
     private final ScriptFileDTO dto;
 
-    public ScriptDeleteTask(ScriptFileDTO dto) {
+    @AssistedFactory
+    public interface Factory {
+        ScriptDeleteTask create(ScriptFileDTO dto);
+    }
+
+    @AssistedInject
+    public ScriptDeleteTask(ScriptingProvider scriptingProvider,
+                            @Assisted ScriptFileDTO dto) {
+        this.scriptingProvider = scriptingProvider;
         this.dto = dto;
     }
 
@@ -33,7 +45,7 @@ public class ScriptDeleteTask extends SimpleErrorTask<ScriptDeleteTask.Error> {
 
         try {
             ScriptingBackend.removeExecutionsForScript(dto.getName());
-            ScriptingProvider.getInstance().deleteScript(dto.getName());
+            scriptingProvider.deleteScript(dto.getName());
         } catch (IOException e) {
             LOGGER.error(MarkerFactory.getMarker(dto.getName()), ioErrorMsg, e);
             throw new TaskException(IOERROR);

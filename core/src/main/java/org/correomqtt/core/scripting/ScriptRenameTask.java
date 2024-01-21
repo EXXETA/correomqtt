@@ -1,5 +1,8 @@
 package org.correomqtt.core.scripting;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
@@ -30,10 +33,20 @@ public class ScriptRenameTask extends NoProgressTask<Path, ScriptRenameTask.Erro
         IOERROR
     }
 
+    private final ScriptingProvider scriptingProvider;
     private final ScriptFileDTO dto;
     private final String filename;
 
-    public ScriptRenameTask(ScriptFileDTO dto, String filename) {
+    @AssistedFactory
+    public interface Factory {
+        ScriptRenameTask create(ScriptFileDTO dto, String filenamee);
+    }
+
+    @AssistedInject
+    public ScriptRenameTask(ScriptingProvider scriptingProvider,
+                            @Assisted ScriptFileDTO dto,
+                            @Assisted String filename) {
+        this.scriptingProvider = scriptingProvider;
         this.dto = dto;
         this.filename = filename;
     }
@@ -57,7 +70,7 @@ public class ScriptRenameTask extends NoProgressTask<Path, ScriptRenameTask.Erro
 
         boolean alreadyExists;
         try {
-            alreadyExists = ScriptingProvider.getInstance().getScripts()
+            alreadyExists = scriptingProvider.getScripts()
                     .stream()
                     .anyMatch(s -> s.getName().equals(filename));
         } catch (IOException e) {
@@ -76,7 +89,7 @@ public class ScriptRenameTask extends NoProgressTask<Path, ScriptRenameTask.Erro
                     .stream()
                     .filter(e -> e.getScriptFile().getName().equals(dto.getName()))
                     .forEach(e -> e.getScriptFile().setName(filename));
-            return ScriptingProvider.getInstance().renameScript(dto.getName(), filename);
+            return scriptingProvider.renameScript(dto.getName(), filename);
         } catch (FileAlreadyExistsException e) {
             LOGGER.error(MarkerFactory.getMarker(dto.getName()), ioErrorMsg, e);
             throw new TaskException(FILE_ALREADY_EXISTS);

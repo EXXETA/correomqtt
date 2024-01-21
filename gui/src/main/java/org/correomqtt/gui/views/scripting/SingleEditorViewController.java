@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.scripting;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -48,10 +49,13 @@ public class SingleEditorViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleEditorViewController.class);
     private final ConnectionHolder connectionHolder;
-    private final ConnectionCellButtonFactory connectionCellButtonFactory;
+    private final ConnectionCellButton.Factory connectionCellButtonFactory;
     private final AlertHelper alertHelper;
+    private final ScriptLoadTask.Factory scriptLoadTaskFactory;
+    private final ScriptSaveTask.Factory scriptSaveTaskFactory;
     private final SingleEditorViewDelegate delegate;
     private final ScriptFilePropertiesDTO scriptFilePropertiesDTO;
+    private final AtomicBoolean revert = new AtomicBoolean(false);
     @FXML
     private AnchorPane scriptEditor;
     @FXML
@@ -72,22 +76,31 @@ public class SingleEditorViewController extends BaseControllerImpl {
     private Button scriptingRunButton;
     @FXML
     private ComboBox<ConnectionPropertiesDTO> connectionList;
-    private static ResourceBundle resources;
+    private ResourceBundle resources;
 
-    private final AtomicBoolean revert = new AtomicBoolean(false);
+    @AssistedFactory
+    public interface Factory {
+        SingleEditorViewController create(SingleEditorViewDelegate delegate,
+                                          ScriptFilePropertiesDTO scriptFilePropertiesDTO);
+
+    }
 
     @AssistedInject
     public SingleEditorViewController(ConnectionHolder connectionHolder,
                                       SettingsProvider settingsProvider,
                                       ThemeManager themeManager,
-                                      ConnectionCellButtonFactory connectionCellButtonFactory,
+                                      ConnectionCellButton.Factory connectionCellButtonFactory,
                                       AlertHelper alertHelper,
+                                      ScriptLoadTask.Factory scriptLoadTaskFactory,
+                                      ScriptSaveTask.Factory scriptSaveTaskFactory,
                                       @Assisted SingleEditorViewDelegate delegate,
                                       @Assisted ScriptFilePropertiesDTO scriptFilePropertiesDTO) {
         super(settingsProvider, themeManager);
         this.connectionHolder = connectionHolder;
         this.connectionCellButtonFactory = connectionCellButtonFactory;
         this.alertHelper = alertHelper;
+        this.scriptLoadTaskFactory = scriptLoadTaskFactory;
+        this.scriptSaveTaskFactory = scriptSaveTaskFactory;
         this.delegate = delegate;
         this.scriptFilePropertiesDTO = scriptFilePropertiesDTO;
         EventBus.register(this);
@@ -106,78 +119,13 @@ public class SingleEditorViewController extends BaseControllerImpl {
         updateConnections();
 
         ScriptFileDTO scriptFileDTO = ScriptingTransformer.propsToDTO(scriptFilePropertiesDTO);
-        new ScriptLoadTask(scriptFileDTO)
+        scriptLoadTaskFactory.create(scriptFileDTO)
                 .onSuccess(scriptCode -> onLoadScriptSucceeded(scriptFileDTO, scriptCode))
                 .onError(this::onLoadScriptFailed)
                 .run();
 
         connectionList.setCellFactory(connectionCellButtonFactory::create);
         connectionList.setButtonCell(connectionCellButtonFactory.create(null));
-
-    }
-
-    private void onLoadScriptFailed(TaskErrorResult<ScriptLoadTask.Error> result) {
-        alertHelper.unexpectedAlert(result.getUnexpectedError());
-    }
-
-    private void onLoadScriptSucceeded(ScriptFileDTO scriptFileDTO, String scriptCode) {
-        scriptFilePropertiesDTO.getCodeProperty().set(scriptCode);
-        codeArea.replaceText(scriptCode);
-        scriptingViewCodeAreaPane.setManaged(true);
-        scriptingViewCodeAreaPane.setVisible(true);
-        scriptingViewCodeAreaPane.getChildren().add(new VirtualizedScrollPane<>(codeArea));
-        codeArea.prefWidthProperty().bind(scriptingViewCodeAreaPane.widthProperty());
-        codeArea.prefHeightProperty().bind(scriptingViewCodeAreaPane.heightProperty());
-
-        List<ExecutionPropertiesDTO> executions = ScriptingBackend.getExecutions()
-                .stream()
-                .filter(e -> scriptFileDTO.getName().equals(e.getScriptFile().getName()))
-                .map(ExecutionTransformer::dtoToProps)
-                .toList();
-
-        long running = executions.stream()
-                .filter(e -> e.getState() == ScriptState.RUNNING)
-                .count();
-        disableActionsOnRunningScript(running > 0);
-        codeArea.setDisable(false);
-        codeArea.plainTextChanges()
-                .filter(ch -> !ch.isIdentity())
-                .successionEnds(Duration.ofMillis(500))
-                .subscribe(this::onPlainTextChanges);
-    }
-
-    private void onPlainTextChanges(PlainTextChange change) {
-        if (!scriptFilePropertiesDTO.isDirty() && !revert.get()) {
-            LOGGER.info("Set dirty on {}", scriptFilePropertiesDTO.getName());
-            scriptFilePropertiesDTO.getDirtyProperty().set(true);
-            scriptingSaveButton.setDisable(false);
-            scriptingRevertButton.setDisable(false);
-            delegate.onPlainTextChange(scriptFilePropertiesDTO);
-        }
-        if (revert.get()) {
-            revert.set(false);
-        }
-    }
-
-    public void onRunClicked() {
-        runScript(scriptFilePropertiesDTO);
-    }
-
-
-    public void runScript(ScriptFilePropertiesDTO dto) {
-
-        ConnectionPropertiesDTO selectedConnection = connectionList.getSelectionModel().getSelectedItem();
-
-        if (delegate.addExecution(dto, selectedConnection, codeArea.getText())) {
-            disableActionsOnRunningScript(true);
-        }
-
-    }
-
-
-    @Subscribe(ConnectionStateChangedEvent.class)
-    public void onConnectionChangedEvent() {
-        updateConnections();
 
     }
 
@@ -218,15 +166,81 @@ public class SingleEditorViewController extends BaseControllerImpl {
 
     }
 
+    private void onLoadScriptSucceeded(ScriptFileDTO scriptFileDTO, String scriptCode) {
+        scriptFilePropertiesDTO.getCodeProperty().set(scriptCode);
+        codeArea.replaceText(scriptCode);
+        scriptingViewCodeAreaPane.setManaged(true);
+        scriptingViewCodeAreaPane.setVisible(true);
+        scriptingViewCodeAreaPane.getChildren().add(new VirtualizedScrollPane<>(codeArea));
+        codeArea.prefWidthProperty().bind(scriptingViewCodeAreaPane.widthProperty());
+        codeArea.prefHeightProperty().bind(scriptingViewCodeAreaPane.heightProperty());
+
+        List<ExecutionPropertiesDTO> executions = ScriptingBackend.getExecutions()
+                .stream()
+                .filter(e -> scriptFileDTO.getName().equals(e.getScriptFile().getName()))
+                .map(ExecutionTransformer::dtoToProps)
+                .toList();
+
+        long running = executions.stream()
+                .filter(e -> e.getState() == ScriptState.RUNNING)
+                .count();
+        disableActionsOnRunningScript(running > 0);
+        codeArea.setDisable(false);
+        codeArea.plainTextChanges()
+                .filter(ch -> !ch.isIdentity())
+                .successionEnds(Duration.ofMillis(500))
+                .subscribe(this::onPlainTextChanges);
+    }
+
+    private void onLoadScriptFailed(TaskErrorResult<ScriptLoadTask.Error> result) {
+        alertHelper.unexpectedAlert(result.getUnexpectedError());
+    }
+
+    public void disableActionsOnRunningScript(boolean disable) {
+        scriptingRunButton.setDisable(disable);
+        scriptingRenameButton.setDisable(disable);
+        scriptingDeleteButton.setDisable(disable);
+        scriptingSaveButton.setDisable(disable);
+    }
+
+    private void onPlainTextChanges(PlainTextChange change) {
+        if (!scriptFilePropertiesDTO.isDirty() && !revert.get()) {
+            LOGGER.info("Set dirty on {}", scriptFilePropertiesDTO.getName());
+            scriptFilePropertiesDTO.getDirtyProperty().set(true);
+            scriptingSaveButton.setDisable(false);
+            scriptingRevertButton.setDisable(false);
+            delegate.onPlainTextChange(scriptFilePropertiesDTO);
+        }
+        if (revert.get()) {
+            revert.set(false);
+        }
+    }
+
+    public void onRunClicked() {
+        runScript(scriptFilePropertiesDTO);
+    }
+
+    public void runScript(ScriptFilePropertiesDTO dto) {
+
+        ConnectionPropertiesDTO selectedConnection = connectionList.getSelectionModel().getSelectedItem();
+
+        if (delegate.addExecution(dto, selectedConnection, codeArea.getText())) {
+            disableActionsOnRunningScript(true);
+        }
+
+    }
+
+    @Subscribe(ConnectionStateChangedEvent.class)
+    public void onConnectionChangedEvent() {
+        updateConnections();
+
+    }
+
     public void onSaveClicked() {
-        new ScriptSaveTask(ScriptingTransformer.propsToDTO(scriptFilePropertiesDTO), codeArea.getText())
+        scriptSaveTaskFactory.create(ScriptingTransformer.propsToDTO(scriptFilePropertiesDTO), codeArea.getText())
                 .onSuccess(() -> onSaveSuccess(codeArea.getText()))
                 .onError(this::onSaveFailed)
                 .run();
-    }
-
-    private void onSaveFailed(TaskErrorResult<ScriptSaveTask.Error> error) {
-        alertHelper.unexpectedAlert(error.getUnexpectedError());
     }
 
     private void onSaveSuccess(String code) {
@@ -237,11 +251,8 @@ public class SingleEditorViewController extends BaseControllerImpl {
         delegate.onPlainTextChange(scriptFilePropertiesDTO);
     }
 
-    public void disableActionsOnRunningScript(boolean disable) {
-        scriptingRunButton.setDisable(disable);
-        scriptingRenameButton.setDisable(disable);
-        scriptingDeleteButton.setDisable(disable);
-        scriptingSaveButton.setDisable(disable);
+    private void onSaveFailed(TaskErrorResult<ScriptSaveTask.Error> error) {
+        alertHelper.unexpectedAlert(error.getUnexpectedError());
     }
 
     @SuppressWarnings("unused")

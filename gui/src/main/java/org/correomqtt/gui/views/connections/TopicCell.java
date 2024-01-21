@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.connections;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -30,6 +31,11 @@ public class TopicCell extends ListCell<String> {
 
     private FXMLLoader loader;
 
+    @AssistedFactory
+    public interface Factory {
+        TopicCell create(ListView<String> listView);
+
+    }
     @AssistedInject
     public TopicCell(SettingsProvider settingsProvider,
                      @Assisted ListView<String> listView) {

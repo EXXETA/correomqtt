@@ -14,7 +14,6 @@ import java.util.ResourceBundle;
 abstract class BaseMessageContextMenu<D extends BaseMessageContextMenuDelegate> extends BaseObjectContextMenu<MessagePropertiesDTO, D> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseMessageContextMenu.class);
-    private final SettingsProvider settingsProvider;
 
     protected IconMenuItem putToForm;
     protected IconMenuItem showDetails;
@@ -25,8 +24,7 @@ abstract class BaseMessageContextMenu<D extends BaseMessageContextMenuDelegate> 
 
     BaseMessageContextMenu(SettingsProvider settingsProvider,
                            D dispatcher) {
-        super(dispatcher);
-        this.settingsProvider = settingsProvider;
+        super(settingsProvider, dispatcher);
     }
 
     @Override

@@ -12,6 +12,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import org.apache.maven.artifact.versioning.ComparableVersion;
+import org.correomqtt.core.CorreoCore;
 import org.correomqtt.core.applifecycle.ShutdownEvent;
 import org.correomqtt.core.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.core.eventbus.EventBus;
@@ -61,6 +62,7 @@ public class CorreoApp extends Application {
     private final AlertController alertController;
     private final PluginCheckUtils pluginCheckUtils;
     private final MainViewController mainViewController;
+    private final CorreoCore correoCore;
     private ResourceBundle resources;
     private Scene scene;
     private Stage primaryStage;
@@ -76,7 +78,8 @@ public class CorreoApp extends Application {
                      CheckNewVersionUtils checkNewVersionUtils,
                      AlertController alertController,
                      PluginCheckUtils pluginCheckUtils,
-                     MainViewController mainViewController) {
+                     MainViewController mainViewController,
+                     CorreoCore correoCore) {
         this.pluginManager = pluginManager;
         this.pluginLauncher = pluginLauncher;
         this.keyringHandler = keyringHandler;
@@ -87,6 +90,7 @@ public class CorreoApp extends Application {
         this.alertController = alertController;
         this.pluginCheckUtils = pluginCheckUtils;
         this.mainViewController = mainViewController;
+        this.correoCore = correoCore;
     }
 
     @Override
@@ -150,6 +154,7 @@ public class CorreoApp extends Application {
         settingsProvider.saveSettings();
 
         System.setProperty("correo.iconModeCssClass",themeManager.getIconModeCssClass());
+        correoCore.init();
     }
 
     private void loadPrimaryStage() throws IOException {
@@ -321,7 +326,9 @@ public class CorreoApp extends Application {
         System.exit(1);
     }
 
+    @Override
     public void stop() {
+        //TODO Do we need to do something on stop?
     }
 
     void onNotifyPreloader(Consumer<Preloader.PreloaderNotification> notifyPreloader) {

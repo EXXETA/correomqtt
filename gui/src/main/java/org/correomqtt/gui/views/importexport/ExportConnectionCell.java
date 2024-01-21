@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.importexport;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ObservableValue;
@@ -38,6 +39,10 @@ public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesD
     private FXMLLoader loader;
     private ObservableValue<Boolean> booleanProperty;
 
+    @AssistedFactory
+    public interface Factory {
+        ExportConnectionCell create( CheckListView<ConnectionPropertiesDTO> listView);
+    }
     @AssistedInject
     public ExportConnectionCell(
             SettingsProvider settingsProvider,

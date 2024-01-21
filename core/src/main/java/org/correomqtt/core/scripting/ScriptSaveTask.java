@@ -1,5 +1,8 @@
 package org.correomqtt.core.scripting;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleErrorTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
@@ -14,10 +17,20 @@ public class ScriptSaveTask extends SimpleErrorTask<ScriptSaveTask.Error> {
         IOERROR
     }
 
+    private final ScriptingProvider scriptingProvider;
     private final ScriptFileDTO scriptFileDTO;
     private final String content;
 
-    public ScriptSaveTask(ScriptFileDTO scriptFileDTO, String content) {
+    @AssistedFactory
+    public interface Factory {
+        ScriptSaveTask create(ScriptFileDTO scriptFileDTO, String contente);
+    }
+
+    @AssistedInject
+    public ScriptSaveTask(ScriptingProvider scriptingProvider,
+                          @Assisted ScriptFileDTO scriptFileDTO,
+                          @Assisted String content) {
+        this.scriptingProvider = scriptingProvider;
         this.scriptFileDTO = scriptFileDTO;
         this.content = content;
     }
@@ -25,7 +38,7 @@ public class ScriptSaveTask extends SimpleErrorTask<ScriptSaveTask.Error> {
     @Override
     protected void execute() {
         try {
-            ScriptingProvider.getInstance().saveScript(scriptFileDTO, content);
+            scriptingProvider.saveScript(scriptFileDTO, content);
         } catch (IOException e) {
             throw new TaskException(IOERROR);
         }

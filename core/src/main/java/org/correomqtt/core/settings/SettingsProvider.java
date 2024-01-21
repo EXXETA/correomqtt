@@ -39,15 +39,14 @@ public class SettingsProvider extends BaseUserFileProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(SettingsProvider.class);
 
     private static final String CONFIG_FILE_NAME = "config.json";
-
+    private final SecretStoreProvider secretStoreProvider;
+    private final Set<Runnable> connectionChangeListeners = new HashSet<>();
     private String activeThemeName;
-
     private ConfigDTO configDTO;
 
-    private final Set<Runnable> connectionChangeListeners = new HashSet<>();
-
     @Inject
-    public SettingsProvider() {
+    public SettingsProvider(SecretStoreProvider secretStoreProvider) {
+        this.secretStoreProvider = secretStoreProvider;
 
         try {
             prepareFile(CONFIG_FILE_NAME);
@@ -63,10 +62,6 @@ public class SettingsProvider extends BaseUserFileProvider {
             EventBus.fire(new InvalidConfigFileEvent(e));
         }
 
-    }
-
-    public List<ConnectionConfigDTO> getConnectionConfigs() {
-        return configDTO.getConnections();
     }
 
     public void addConnectionChangeListener(Runnable handler) {
@@ -140,11 +135,14 @@ public class SettingsProvider extends BaseUserFileProvider {
         saveConnections(connections, masterPassword);
     }
 
+    public List<ConnectionConfigDTO> getConnectionConfigs() {
+        return configDTO.getConnections();
+    }
+
     public void saveConnections(List<ConnectionConfigDTO> connections, String masterPassword) throws EncryptionRecoverableException {
         configDTO.setConnections(connections);
         saveDTO();
 
-        SecretStoreProvider secretStoreProvider = SecretStoreProvider.getInstance();
         for (ConnectionConfigDTO c : connections) {
             secretStoreProvider.setPassword(masterPassword, c, PASSWORD, c.getPassword());
             secretStoreProvider.setPassword(masterPassword, c, AUTH_PASSWORD, c.getAuthPassword());
@@ -157,8 +155,6 @@ public class SettingsProvider extends BaseUserFileProvider {
     }
 
     public void initializePasswords(String masterPassword) throws EncryptionRecoverableException {
-        SecretStoreProvider secretStoreProvider = SecretStoreProvider.getInstance();
-
         secretStoreProvider.migratePasswordEncryption(masterPassword);
 
         List<ConnectionConfigDTO> connections = this.getConnectionConfigs();

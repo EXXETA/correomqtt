@@ -3,6 +3,7 @@ package org.correomqtt.core.pubsub;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
@@ -28,19 +29,23 @@ public class PublishTask extends SimpleTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishTask.class);
 
-
     private final PluginManager pluginManager;
     private final ConnectionHolder connectionHolder;
     private final LoggerUtils loggerUtils;
     private final String connectionId;
     private final MessageDTO messageDTO;
 
+    @AssistedFactory
+    public interface Factory {
+        PublishTask create(String connectionId, MessageDTO messageDT);
+    }
+
     @AssistedInject
     PublishTask(PluginManager pluginManager,
-                       ConnectionHolder connectionHolder,
-                       LoggerUtils loggerUtils,
-                       @Assisted String connectionId,
-                       @Assisted MessageDTO messageDTO) {
+                ConnectionHolder connectionHolder,
+                LoggerUtils loggerUtils,
+                @Assisted String connectionId,
+                @Assisted MessageDTO messageDTO) {
         this.pluginManager = pluginManager;
         this.connectionHolder = connectionHolder;
         this.loggerUtils = loggerUtils;

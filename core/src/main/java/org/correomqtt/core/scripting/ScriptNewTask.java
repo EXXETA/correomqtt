@@ -1,5 +1,8 @@
 package org.correomqtt.core.scripting;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
@@ -27,9 +30,18 @@ public class ScriptNewTask extends NoProgressTask<Path, ScriptNewTask.Error> {
         IOERROR
     }
 
+    private final ScriptingProvider scriptingProvider;
     private final String filename;
 
-    public ScriptNewTask(String filename) {
+    @AssistedFactory
+    public interface Factory {
+        ScriptNewTask create(String filename);
+    }
+
+    @AssistedInject
+    public ScriptNewTask(ScriptingProvider scriptingProvider,
+                         @Assisted String filename) {
+        this.scriptingProvider = scriptingProvider;
         this.filename = filename;
     }
 
@@ -48,7 +60,7 @@ public class ScriptNewTask extends NoProgressTask<Path, ScriptNewTask.Error> {
 
         boolean alreadyExists;
         try {
-            alreadyExists = ScriptingProvider.getInstance().getScripts()
+            alreadyExists = scriptingProvider.getScripts()
                     .stream()
                     .anyMatch(s -> s.getName().equals(filename));
         } catch (IOException e) {
@@ -61,12 +73,12 @@ public class ScriptNewTask extends NoProgressTask<Path, ScriptNewTask.Error> {
         }
 
         try {
-            return ScriptingProvider.getInstance().createScript(filename, "// Start writing javascript code here.");
+            return scriptingProvider.createScript(filename, "// Start writing javascript code here.");
         } catch (FileAlreadyExistsException e) {
-            LOGGER.debug(MarkerFactory.getMarker(filename),ioErrorMsg, e);
+            LOGGER.debug(MarkerFactory.getMarker(filename), ioErrorMsg, e);
             throw new TaskException(FILE_ALREADY_EXISTS);
         } catch (IOException e) {
-            LOGGER.debug(MarkerFactory.getMarker(filename),ioErrorMsg, e);
+            LOGGER.debug(MarkerFactory.getMarker(filename), ioErrorMsg, e);
             throw new TaskException(IOERROR);
         }
     }

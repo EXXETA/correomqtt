@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.connections;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -9,11 +10,11 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import org.correomqtt.core.settings.SettingsProvider;
-import org.correomqtt.core.connection.ConnectTaskFactory;
+import org.correomqtt.core.connection.ConnectTask;
 import org.correomqtt.core.connection.ConnectionState;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.connection.DisconnectTaskFactory;
-import org.correomqtt.core.connection.ReconnectTaskFactory;
+import org.correomqtt.core.connection.DisconnectTask;
+import org.correomqtt.core.connection.ReconnectTask;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.model.ConnectionConfigDTO;
@@ -35,9 +36,9 @@ public class ControlBarController extends BaseConnectionController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ControlBarController.class);
 
     private final PluginManager pluginManager;
-    private final ConnectTaskFactory connectTaskFactory;
-    private final ReconnectTaskFactory reconnectTaskFactory;
-    private final DisconnectTaskFactory disconnectTaskFactory;
+    private final ConnectTask.Factory connectTaskFactory;
+    private final ReconnectTask.Factory reconnectTaskFactory;
+    private final DisconnectTask.Factory disconnectTaskFactory;
     private final SettingsProvider settingsProvider;
     private final ControlBarDelegate delegate;
 
@@ -79,12 +80,19 @@ public class ControlBarController extends BaseConnectionController {
 
     private ConnectionConfigDTO connectionConfigDTO;
 
+    @AssistedFactory
+
+    public interface Factory {
+        ControlBarController create(String connectionId,
+                                    ControlBarDelegate delegate);
+
+    }
     @AssistedInject
     public ControlBarController(ConnectionHolder connectionHolder,
                                 PluginManager pluginManager,
-                                ConnectTaskFactory connectTaskFactory,
-                                ReconnectTaskFactory reconnectTaskFactory,
-                                DisconnectTaskFactory disconnectTaskFactory,
+                                ConnectTask.Factory connectTaskFactory,
+                                ReconnectTask.Factory reconnectTaskFactory,
+                                DisconnectTask.Factory disconnectTaskFactory,
                                 SettingsProvider settingsProvider,
                                 ThemeManager themeManager,
                                 @Assisted String connectionId,

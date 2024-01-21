@@ -31,7 +31,7 @@ abstract class BaseIcon {
     static void loadCache(Map<String, Integer> cache, String jsonReference) throws IOException {
         cache.putAll(new ObjectMapper()
                 .readValue(CorreoIcon.class.getResource(jsonReference), Symbols.class)
-                .getSymbols()
+                .getIcons()
                 .stream()
                 .collect(Collectors.toMap(
                         IconMap::getName,

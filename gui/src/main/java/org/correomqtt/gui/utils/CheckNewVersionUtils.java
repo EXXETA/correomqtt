@@ -14,14 +14,12 @@ import java.util.ResourceBundle;
 public class CheckNewVersionUtils {
     private final ResourceBundle resources;
     private final HostServices hostServices;
-    private final SettingsProvider settingsProvider;
     private final AlertHelper alertHelper;
 
     @Inject
     CheckNewVersionUtils(SettingsProvider settingsProvider,
                          AlertHelper alertHelper,
                          @AppHostServices HostServices hostServices) {
-        this.settingsProvider = settingsProvider;
         this.alertHelper = alertHelper;
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
 

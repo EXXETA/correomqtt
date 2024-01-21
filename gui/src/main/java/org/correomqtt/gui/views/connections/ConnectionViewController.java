@@ -1,16 +1,16 @@
 package org.correomqtt.gui.views.connections;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
-import org.correomqtt.core.settings.SettingsProvider;
-import org.correomqtt.core.connection.ConnectTaskFactory;
+import org.correomqtt.core.connection.ConnectTask;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.connection.DisconnectTaskFactory;
+import org.correomqtt.core.connection.DisconnectTask;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.fileprovider.HistoryManager;
@@ -22,6 +22,7 @@ import org.correomqtt.core.importexport.messages.ImportMessageStartedEvent;
 import org.correomqtt.core.importexport.messages.ImportMessageSuccessEvent;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ConnectionUISettings;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -31,7 +32,6 @@ import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.LoadingViewController;
-import org.correomqtt.gui.views.LoadingViewControllerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,19 +44,19 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionViewController.class);
 
-    private final ConnectTaskFactory connectTaskFactory;
-    private final DisconnectTaskFactory disconnectTaskFactory;
-    private final PublishViewControllerFactory publishViewControllerFactory;
-    private final SubscriptionViewControllerFactory subscriptionViewControllerFactory;
-    private final ControlBarControllerFactory controlBarControllerFactory;
+    private final ConnectTask.Factory connectTaskFactory;
+    private final DisconnectTask.Factory disconnectTaskFactory;
+    private final PublishViewController.Factory publishViewControllerFactory;
+    private final SubscriptionViewController.Factory subscriptionViewControllerFactory;
+    private final ControlBarController.Factory controlBarControllerFactory;
     private final KeyringHandler keyringHandler;
     private final SettingsProvider settingsProvider;
-    private final LoadingViewControllerFactory loadingViewControllerFactory;
+    private final LoadingViewController.Factory loadingViewControllerFactory;
     private final AlertHelper alertHelper;
     private final HistoryManager historyManager;
     private final ConnectionViewDelegate delegate;
     @FXML
-    private Pane connectionHolder;
+    private Pane connectionPane;
 
     @FXML
     private SplitPane splitPane;
@@ -77,18 +77,24 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     private ControlBarController controlBarController;
 
+    @AssistedFactory
+    public interface Factory {
+        ConnectionViewController create(String connectionId,
+                                        ConnectionViewDelegate delegate);
+
+    }
     @AssistedInject
     public ConnectionViewController(
-            ConnectTaskFactory connectTaskFactory,
-            DisconnectTaskFactory disconnectTaskFactory,
-            PublishViewControllerFactory publishViewControllerFactory,
-            SubscriptionViewControllerFactory subscriptionViewControllerFactory,
-            ControlBarControllerFactory controlBarControllerFactory,
+            ConnectTask.Factory connectTaskFactory,
+            DisconnectTask.Factory disconnectTaskFactory,
+            PublishViewController.Factory publishViewControllerFactory,
+            SubscriptionViewController.Factory subscriptionViewControllerFactory,
+            ControlBarController.Factory controlBarControllerFactory,
             KeyringHandler keyringHandler,
             ConnectionHolder connectionHolder,
             SettingsProvider settingsProvider,
             ThemeManager themeManager,
-            LoadingViewControllerFactory loadingViewControllerFactory,
+            LoadingViewController.Factory loadingViewControllerFactory,
             AlertHelper alertHelper,
             HistoryManager historyManager,
             @Assisted String connectionId,
@@ -150,7 +156,7 @@ public class ConnectionViewController extends BaseConnectionController implement
         controlBarController = controlBarLoadResult.getController();
         resources = controlBarLoadResult.getResourceBundle();
 
-        connectionHolder.getChildren().add(0, controlBarRegion);
+        connectionPane.getChildren().add(0, controlBarRegion);
 
         setLayout(
                 connectionConfigDTO.getConnectionUISettings().isShowPublish(),
@@ -302,7 +308,7 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     public Pane getMainNode() {
-        return connectionHolder;
+        return connectionPane;
     }
 
     public void connect(ConnectionPropertiesDTO config) {

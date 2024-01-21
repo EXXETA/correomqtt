@@ -1,6 +1,7 @@
 package org.correomqtt.core.plugin.marketplace;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
@@ -12,6 +13,10 @@ public class PluginUninstallTask extends SimpleTask {
     private final PluginManager pluginManager;
     private final String pluginId;
 
+    @AssistedFactory
+    public interface Factory {
+        PluginUninstallTask create(String pluginId);
+    }
     @AssistedInject
     public PluginUninstallTask(PluginManager pluginManager, @Assisted String pluginId) {
         this.pluginManager = pluginManager;

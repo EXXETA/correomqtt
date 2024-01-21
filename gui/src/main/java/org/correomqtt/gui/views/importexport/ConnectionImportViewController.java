@@ -30,10 +30,10 @@ import java.util.function.Supplier;
 public class ConnectionImportViewController extends BaseControllerImpl implements ConnectionImportStepDelegate {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionImportViewController.class);
     private final Map<Step, StepState> stepStates = new EnumMap<>(Step.class);
-    private final ConnectionImportStepChooseFileViewControllerFactory importChooseFileCtrlFactory;
-    private final ConnectionImportStepConnectionsViewControllerFactory importConnectionsCtrlFactory;
-    private final ConnectionImportStepDecryptViewControllerFactory importDecryptCtrlFactory;
-    private final ConnectionImportStepFinalViewControllerFactory importFinalCtrlFactory;
+    private final ConnectionImportStepChooseFileViewController.Factory importChooseFileCtrlFactory;
+    private final ConnectionImportStepConnectionsViewController.Factory importConnectionsCtrlFactory;
+    private final ConnectionImportStepDecryptViewController.Factory importDecryptCtrlFactory;
+    private final ConnectionImportStepFinalViewController.Factory importFinalCtrlFactory;
     private List<ConnectionConfigDTO> originalImportedConnections;
     private List<ConnectionConfigDTO> importableConnections;
     @FXML
@@ -43,10 +43,10 @@ public class ConnectionImportViewController extends BaseControllerImpl implement
     @Inject
     protected ConnectionImportViewController(SettingsProvider settingsProvider,
                                              ThemeManager themeManager,
-                                             ConnectionImportStepChooseFileViewControllerFactory importChooseFileCtrlFactory,
-                                             ConnectionImportStepConnectionsViewControllerFactory importConnectionsCtrlFactory,
-                                             ConnectionImportStepDecryptViewControllerFactory importDecryptCtrlFactory,
-                                             ConnectionImportStepFinalViewControllerFactory importFinalCtrlFactory
+                                             ConnectionImportStepChooseFileViewController.Factory importChooseFileCtrlFactory,
+                                             ConnectionImportStepConnectionsViewController.Factory importConnectionsCtrlFactory,
+                                             ConnectionImportStepDecryptViewController.Factory importDecryptCtrlFactory,
+                                             ConnectionImportStepFinalViewController.Factory importFinalCtrlFactory
     ) {
         super(settingsProvider, themeManager);
         this.importChooseFileCtrlFactory = importChooseFileCtrlFactory;

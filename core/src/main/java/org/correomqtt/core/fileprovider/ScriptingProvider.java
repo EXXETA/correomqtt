@@ -10,6 +10,7 @@ import org.correomqtt.core.scripting.ScriptingBackend;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,25 +28,10 @@ public class ScriptingProvider extends BaseUserFileProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptingProvider.class);
 
-    private static ScriptingProvider instance = null;
-
     private static final String SCRIPT_FOLDER = "scripts";
 
-    public static synchronized ScriptingProvider getInstance() {
-        if (instance == null) {
-            instance = new ScriptingProvider();
-            return instance;
-        } else {
-            return instance;
-        }
-    }
-
-    private String getScriptFolder() {
-        return getFromCache(SCRIPT_FOLDER);
-    }
-
-    public String getScriptLogFolder(String filename) {
-        return getFromCache(SCRIPT_LOG_FOLDER_NAME + File.separator + filename);
+    @Inject
+    ScriptingProvider(){
 
     }
 
@@ -104,6 +90,10 @@ public class ScriptingProvider extends BaseUserFileProvider {
         return scripts;
     }
 
+    private String getScriptFolder() {
+        return getFromCache(SCRIPT_FOLDER);
+    }
+
     public Path createScript(String filename, String content) throws IOException {
         String absoluteFilename = getScriptFolder() + File.separator + filename;
         File file = new File(absoluteFilename);
@@ -149,7 +139,6 @@ public class ScriptingProvider extends BaseUserFileProvider {
         return newFile.toPath();
     }
 
-
     public String loadScript(ScriptFileDTO scriptFileDTO) throws IOException {
         StringBuilder codeBuilder = new StringBuilder();
         try (Stream<String> lines = Files.lines(scriptFileDTO.getPath(), StandardCharsets.UTF_8)) {
@@ -170,15 +159,16 @@ public class ScriptingProvider extends BaseUserFileProvider {
         FileUtils.deleteDirectory(new File(getScriptExecutionsDirectory(filename)));
     }
 
+    public String getScriptLogFolder(String filename) {
+        return getFromCache(SCRIPT_LOG_FOLDER_NAME + File.separator + filename);
+
+    }
+
     public void saveScript(ScriptFileDTO scriptFileDTO, String content) throws IOException {
 
         try (FileWriter fileWriter = new FileWriter(scriptFileDTO.getPath().toFile())) {
             fileWriter.write(content);
         }
-    }
-
-    public String getSingleScriptLogPath(String filename, String executionId) {
-        return getScriptLogFolder(filename) + File.separator + executionId + ".log";
     }
 
     public String loadLog(String filename, String executionId) throws IOException {
@@ -196,7 +186,11 @@ public class ScriptingProvider extends BaseUserFileProvider {
         }
     }
 
-    public void saveExecution(ExecutionDTO dto) throws IOException, InterruptedException {
+    public String getSingleScriptLogPath(String filename, String executionId) {
+        return getScriptLogFolder(filename) + File.separator + executionId + ".log";
+    }
+
+    public void saveExecution(ExecutionDTO dto) throws IOException {
         ObjectMapper om = new ObjectMapper();
         om.registerModule(new JavaTimeModule());
         om.writeValue(new File(getScriptExecutionsDirectory(dto.getScriptFile().getName()) + File.separator + dto.getExecutionId() + ".json"), dto);

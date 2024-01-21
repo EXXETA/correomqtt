@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views.connectionsettings;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
-import javax.inject.Provider;
 import javafx.beans.Observable;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -25,11 +25,11 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import lombok.AllArgsConstructor;
-import org.correomqtt.core.settings.SettingsProvider;
-import org.correomqtt.core.connection.DisconnectTaskFactory;
+import org.correomqtt.core.connection.DisconnectTask;
 import org.correomqtt.core.keyring.KeyringFactory;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -42,10 +42,10 @@ import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.gui.views.cell.ConnectionCell;
-import org.correomqtt.gui.views.cell.ConnectionCellFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Provider;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -58,15 +58,13 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
 
     public static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionSettingsViewController.class);
-    private static ResourceBundle resources;
+    private ResourceBundle resources;
     private final Map<String, ConnectionState> connectionStates = new HashMap<>();
     private final ConnectionHolder connectionHolder;
     private final KeyringHandler keyringHandler;
     private final KeyringFactory keyringFactory;
-    private final DisconnectTaskFactory disconnectTaskFactory;
-    private final SettingsProvider settingsProvider;
-    private final ThemeManager themeManager;
-    private final ConnectionCellFactory connectionCellFactory;
+    private final DisconnectTask.Factory disconnectTaskFactory;
+    private final ConnectionCell.Factory connectionCellFactory;
     private final AlertHelper alertHelper;
     private final Provider<MqttSettingsViewController> mqttSettingsViewControllerProvider;
     private final ConnectionPropertiesDTO preSelected;
@@ -98,14 +96,18 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
     private AnchorPane containerAnchorPane;
     private boolean dragging;
 
+    @AssistedFactory
+    public interface Factory {
+        ConnectionSettingsViewController create(ConnectionPropertiesDTO preSelecteded);
+    }
     @AssistedInject
     public ConnectionSettingsViewController(ConnectionHolder connectionHolder,
                                             KeyringHandler keyringHandler,
                                             KeyringFactory keyringFactory,
-                                            DisconnectTaskFactory disconnectTaskFactory,
+                                            DisconnectTask.Factory disconnectTaskFactory,
                                             SettingsProvider settingsProvider,
                                             ThemeManager themeManager,
-                                            ConnectionCellFactory connectionCellFactory,
+                                            ConnectionCell.Factory connectionCellFactory,
                                             AlertHelper alertHelper,
                                             Provider<MqttSettingsViewController> mqttSettingsViewControllerProvider,
                                             @Assisted ConnectionPropertiesDTO preSelected) {
@@ -114,8 +116,6 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
         this.keyringHandler = keyringHandler;
         this.keyringFactory = keyringFactory;
         this.disconnectTaskFactory = disconnectTaskFactory;
-        this.settingsProvider = settingsProvider;
-        this.themeManager = themeManager;
         this.connectionCellFactory = connectionCellFactory;
         this.alertHelper = alertHelper;
         this.mqttSettingsViewControllerProvider = mqttSettingsViewControllerProvider;

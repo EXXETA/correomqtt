@@ -13,14 +13,8 @@ public class ImportMessageTask extends SimpleResultTask<MessageDTO> {
 
     private final File file;
 
-    public ImportMessageTask( File file) {
+    public ImportMessageTask(File file) {
         this.file = file;
-    }
-
-
-    @Override
-    protected void beforeHook() {
-        EventBus.fireAsync(new ImportMessageStartedEvent(file));
     }
 
     @Override
@@ -28,8 +22,13 @@ public class ImportMessageTask extends SimpleResultTask<MessageDTO> {
         try {
             return new ObjectMapper().readValue(file, MessageDTO.class);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
+    }
+
+    @Override
+    protected void beforeHook() {
+        EventBus.fireAsync(new ImportMessageStartedEvent(file));
     }
 
     @Override

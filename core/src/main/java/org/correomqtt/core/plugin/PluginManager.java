@@ -48,12 +48,15 @@ public class PluginManager extends JarPluginManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginManager.class);
     public static final String DEFAULT_REPO_ID = "default";
     private final SettingsProvider settings;
+    private final PluginConfigProvider pluginConfigProvider;
     private BundledPluginList.BundledPlugins bundledPlugins;
 
     @Inject
-    PluginManager(SettingsProvider settings) {
-        super(Path.of(PluginConfigProvider.getInstance().getPluginPath()));
+    PluginManager(SettingsProvider settings,
+                  PluginConfigProvider pluginConfigProvider) {
+        super(Path.of(pluginConfigProvider.getPluginPath()));
         this.settings = settings;
+        this.pluginConfigProvider = pluginConfigProvider;
     }
 
     private String getInstalledVersion(String pluginId) {
@@ -110,8 +113,7 @@ public class PluginManager extends JarPluginManager {
     }
 
     private boolean isPluginBundled(String pluginId) {
-        BundledPluginList.BundledPlugins bundledPlugins = getBundledPlugins();
-        return bundledPlugins.getInstall().stream().anyMatch(p -> p.equals(pluginId));
+        return getBundledPlugins().getInstall().stream().anyMatch(p -> p.equals(pluginId));
     }
 
     public List<PluginInfoDTO> getAllPluginsAvailableFromRepos() {
@@ -146,7 +148,7 @@ public class PluginManager extends JarPluginManager {
     }
 
     public List<? extends OutgoingMessageHook<?>> getOutgoingMessageHooks() {
-        return PluginConfigProvider.getInstance().getOutgoingMessageHooks()
+        return pluginConfigProvider.getOutgoingMessageHooks()
                 .stream()
                 .map(extensionDefinition -> {
                     OutgoingMessageHook<?> extension = getExtensionById(OutgoingMessageHook.class,
@@ -164,7 +166,7 @@ public class PluginManager extends JarPluginManager {
     }
 
     public List<? extends IncomingMessageHook<?>> getIncomingMessageHooks() {
-        return PluginConfigProvider.getInstance().getIncomingMessageHooks()
+        return pluginConfigProvider.getIncomingMessageHooks()
                 .stream()
                 .map(extensionDefinition -> {
                     IncomingMessageHook<?> extension = getExtensionById(IncomingMessageHook.class,
@@ -183,7 +185,7 @@ public class PluginManager extends JarPluginManager {
 
 
     public List<MessageValidatorHook<?>> getMessageValidators(String topic) {
-        return PluginConfigProvider.getInstance().getMessageValidators()
+        return pluginConfigProvider.getMessageValidators()
                 .stream()
                 .filter(validatorDefinition -> validatorDefinition.getTopic().equals(topic))
                 .map(validatorDefinition -> validatorDefinition.getExtensions().stream()

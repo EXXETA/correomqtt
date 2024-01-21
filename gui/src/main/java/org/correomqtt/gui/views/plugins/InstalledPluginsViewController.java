@@ -13,11 +13,11 @@ import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.plugin.PluginManager;
-import org.correomqtt.core.plugin.marketplace.PluginDisableTaskFactory;
+import org.correomqtt.core.plugin.marketplace.PluginDisableTask;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledEvent;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledFailedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledStartedEvent;
-import org.correomqtt.core.plugin.marketplace.PluginEnableTaskFactory;
+import org.correomqtt.core.plugin.marketplace.PluginEnableTask;
 import org.correomqtt.core.plugin.marketplace.PluginEnabledEvent;
 import org.correomqtt.core.plugin.marketplace.PluginEnabledFailedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginEnabledStartedEvent;
@@ -26,7 +26,7 @@ import org.correomqtt.core.plugin.marketplace.PluginInstallFailedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginInstallStartedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginUninstallEvent;
 import org.correomqtt.core.plugin.marketplace.PluginUninstallFailedEvent;
-import org.correomqtt.core.plugin.marketplace.PluginUninstallTaskFactory;
+import org.correomqtt.core.plugin.marketplace.PluginUninstallTask;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.PluginTransformer;
@@ -42,10 +42,10 @@ import java.util.ResourceBundle;
 public class InstalledPluginsViewController extends BaseControllerImpl {
 
     private final PluginManager pluginManager;
-    private final PluginEnableTaskFactory pluginEnableTaskFactory;
-    private final PluginDisableTaskFactory pluginDisableTaskFactory;
-    private final PluginUninstallTaskFactory pluginUninstallTaskFactory;
-    private final PluginCellFactory pluginCellFactory;
+    private final PluginEnableTask.Factory pluginEnableTaskFactory;
+    private final PluginDisableTask.Factory pluginDisableTaskFactory;
+    private final PluginUninstallTask.Factory pluginUninstallTaskFactory;
+    private final PluginCell.Factory pluginCellFactory;
     private final ResourceBundle resources;
     private final AlertHelper alertHelper;
     @FXML
@@ -73,10 +73,10 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
 
     @Inject
     public InstalledPluginsViewController(PluginManager pluginManager,
-                                          PluginEnableTaskFactory pluginEnableTaskFactory,
-                                          PluginDisableTaskFactory pluginDisableTaskFactory,
-                                          PluginUninstallTaskFactory pluginUninstallTaskFactory,
-                                          PluginCellFactory pluginCellFactory,
+                                          PluginEnableTask.Factory pluginEnableTaskFactory,
+                                          PluginDisableTask.Factory pluginDisableTaskFactory,
+                                          PluginUninstallTask.Factory pluginUninstallTaskFactory,
+                                          PluginCell.Factory pluginCellFactory,
                                           SettingsProvider settingsProvider,
                                           ThemeManager themeManager,
                                           AlertHelper alertHelper) {

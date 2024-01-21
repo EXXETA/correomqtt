@@ -29,7 +29,7 @@ public class ExportMessageTask extends SimpleTask {
         try {
             new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(file, messageDTO);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 

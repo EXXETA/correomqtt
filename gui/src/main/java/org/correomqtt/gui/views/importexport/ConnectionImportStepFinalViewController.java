@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.importexport;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -14,11 +15,15 @@ import java.util.ResourceBundle;
 
 public class ConnectionImportStepFinalViewController extends BaseControllerImpl implements ConnectionImportStepController {
 
-    private static ResourceBundle resources;
     private final ConnectionImportStepDelegate delegate;
+    private  ResourceBundle resources;
     @FXML
     private Label description;
 
+    @AssistedFactory
+    public interface Factory {
+        ConnectionImportStepFinalViewController create(ConnectionImportStepDelegate delegate);
+    }
     @AssistedInject
     public ConnectionImportStepFinalViewController(
             SettingsProvider settingsProvider,
@@ -42,16 +47,16 @@ public class ConnectionImportStepFinalViewController extends BaseControllerImpl 
     }
 
     @Override
+    public void cleanUp() {
+        // nothing to cleanup
+    }
+
+    @Override
     public void initFromWizard() {
         description.setText(MessageFormat.format(
                 resources.getString("connectionImportFinalDescription"),
                 this.delegate.getImportableConnections().size()
         ));
-    }
-
-    @Override
-    public void cleanUp() {
-        // nothing to cleanup
     }
 
     public void onOkClicked() {

@@ -19,6 +19,8 @@ import java.io.IOException;
 
 public class CorreoPreloader extends Preloader {
 
+    //TODO use a nice image for splash
+
     private Scene scene;
     private Stage preloaderStage;
     @FXML
@@ -30,23 +32,13 @@ public class CorreoPreloader extends Preloader {
 
     @Override
     public void init() throws IOException {
-
-        // TODO    String cssPath = SettingsProvider.getInstance().getCssPath();
-
         FXMLLoader loader = new FXMLLoader(CorreoPreloader.class.getResource("preloaderView.fxml"));
         loader.setControllerFactory(param -> this);
         Parent root = loader.load();
 
         preloaderVersionLabel.setText("v" + VersionUtils.getVersion());
         scene = new Scene(root, 500, 300);
-
-        // TODO      scene.setFill(SettingsProvider.getInstance().getActiveTheme().getBackgroundColor());
-
-  /*   TODO   if (cssPath != null) {
-            scene.getStylesheets().add(cssPath);
-        }*/
     }
-
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -80,6 +72,4 @@ public class CorreoPreloader extends Preloader {
             preloaderStepLabel.setText(cInfo.getMsg());
         }
     }
-
-
 }

@@ -1,12 +1,25 @@
 package org.correomqtt.core.scripting;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleTask;
+import org.correomqtt.core.fileprovider.ScriptingProvider;
 
 public class ScriptCancelTask extends SimpleTask {
 
+    private final ScriptingProvider scriptingProvider;
     private final String executionId;
 
-    public ScriptCancelTask(String executionId) {
+    @AssistedFactory
+    public interface Factory {
+        ScriptCancelTask create(String executionId);
+    }
+
+    @AssistedInject
+    public ScriptCancelTask(ScriptingProvider scriptingProvider,
+                            @Assisted String executionId) {
+        this.scriptingProvider = scriptingProvider;
         this.executionId = executionId;
     }
 

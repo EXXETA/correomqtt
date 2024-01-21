@@ -8,7 +8,7 @@ import javax.inject.Inject;
 public class ClientFactory {
 
     private final Client client;
-    private Context context;
+
     @Inject
     public ClientFactory(Client client) {
         this.client = client;
@@ -32,6 +32,5 @@ public class ClientFactory {
 
     public void setContext(Context context) {
         this.client.setContext(context);
-        this.context = context;
     }
 }

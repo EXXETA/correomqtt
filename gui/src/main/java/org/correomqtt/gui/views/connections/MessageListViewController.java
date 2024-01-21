@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.connections;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -24,7 +25,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.controlsfx.control.textfield.TextFields;
-import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
@@ -33,10 +33,10 @@ import org.correomqtt.core.model.LabelType;
 import org.correomqtt.core.model.MessageListViewConfig;
 import org.correomqtt.core.model.MessageType;
 import org.correomqtt.core.model.PublishStatus;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.contextmenu.MessageListContextMenu;
 import org.correomqtt.gui.contextmenu.MessageListContextMenuDelegate;
-import org.correomqtt.gui.contextmenu.MessageListContextMenuFactory;
 import org.correomqtt.gui.controls.IconCheckMenuItem;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -57,11 +57,9 @@ public class MessageListViewController extends BaseConnectionController implemen
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageListViewController.class);
 
     private final MessageListViewDelegate delegate;
-    private final DetailViewControllerFactory detailViewControllerFactory;
-    private final SettingsProvider settingsProvider;
-    private final ThemeManager themeManager;
-    private final MessageViewCellFactory messageViewCellFactory;
-    private final MessageListContextMenuFactory messageListContextMenuFactory;
+    private final DetailViewController.Factory detailViewControllerFactory;
+    private final MessageViewCell.Factory messageViewCellFactory;
+    private final MessageListContextMenu.Factory messageListContextMenuFactory;
     private final MessageUtils messageUtils;
     @FXML
     protected SplitPane splitPane;
@@ -92,20 +90,24 @@ public class MessageListViewController extends BaseConnectionController implemen
     private FilteredList<MessagePropertiesDTO> filteredMessages;
     private DetailViewController detailViewController;
 
+    @AssistedFactory
+    public interface Factory {
+        MessageListViewController create(String connectionId,
+                                         MessageListViewDelegate delegate);
+
+    }
     @AssistedInject
     public MessageListViewController(ConnectionHolder connectionHolder,
-                                     DetailViewControllerFactory detailViewControllerFactory,
+                                     DetailViewController.Factory detailViewControllerFactory,
                                      SettingsProvider settingsProvider,
                                      ThemeManager themeManager,
-                                     MessageViewCellFactory messageViewCellFactory,
-                                     MessageListContextMenuFactory messageListContextMenuFactory,
+                                     MessageViewCell.Factory messageViewCellFactory,
+                                     MessageListContextMenu.Factory messageListContextMenuFactory,
                                      MessageUtils messageUtils,
                                      @Assisted String connectionId,
                                      @Assisted MessageListViewDelegate delegate) {
         super(settingsProvider, themeManager, connectionHolder, connectionId);
         this.detailViewControllerFactory = detailViewControllerFactory;
-        this.settingsProvider = settingsProvider;
-        this.themeManager = themeManager;
         this.messageViewCellFactory = messageViewCellFactory;
         this.messageListContextMenuFactory = messageListContextMenuFactory;
         this.messageUtils = messageUtils;

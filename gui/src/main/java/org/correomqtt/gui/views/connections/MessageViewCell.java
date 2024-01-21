@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.connections;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -85,6 +86,12 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     @FXML
     private ResourceBundle resources;
 
+    @AssistedFactory
+    public interface Factory {
+        MessageViewCell create(ListView<MessagePropertiesDTO> listView,
+                               Supplier<MessageListViewConfig> listViewConfigGetter);
+
+    }
     @AssistedInject
     public MessageViewCell(PluginManager pluginManager,
                            MessageValidator messageValidator,

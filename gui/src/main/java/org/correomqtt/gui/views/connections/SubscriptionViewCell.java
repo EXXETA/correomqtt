@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.connections;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -45,6 +46,11 @@ public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
 
     private FXMLLoader loader;
 
+    @AssistedFactory
+    public interface Factory {
+        SubscriptionViewCell create(ListView<SubscriptionPropertiesDTO> listView);
+
+    }
     @AssistedInject
     public SubscriptionViewCell(SettingsProvider settingsProvider,
                                 @Assisted ListView<SubscriptionPropertiesDTO> listView) {

@@ -24,7 +24,9 @@ public class EventBus {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventBus.class);
-
+    private static final Map<Class<Event>, Set<Callback>> LISTENER = new HashMap<>();
+    private static final Map<Object, HashMap<String, Method>> LISTENER_FILTER = new HashMap<>();
+    private static final Map<Class<Event>, HashMap<String, Method>> EVENT_FILTER = new HashMap<>();
 
     @AllArgsConstructor
     private static class Callback {
@@ -34,13 +36,12 @@ public class EventBus {
         private boolean sync;
     }
 
+    private record EventSubscription(Class<Event> event, boolean sync) {
+    }
+
     private EventBus() {
         // private constructor
     }
-
-    private static final Map<Class<Event>, Set<Callback>> LISTENER = new HashMap<>();
-    private static final Map<Object, HashMap<String, Method>> LISTENER_FILTER = new HashMap<>();
-    private static final Map<Class<Event>, HashMap<String, Method>> EVENT_FILTER = new HashMap<>();
 
     public static void register(Object listener) {
         Arrays.stream(listener.getClass().getDeclaredMethods())
@@ -90,7 +91,7 @@ public class EventBus {
         } else if (annotation.value().length > 1 && params.length > 0) {
             throw new IllegalArgumentException("If a Subscribe annotation is listening to multiple events no parameters are allowed.");
         } else if (annotation.value().length == 0 && params.length == 1) {
-            return Collections.emptyList(); // Annotation is on signature
+            types = List.of(params[0].getType());
         } else if (annotation.value().length == 0) {
             throw new IllegalStateException("Found annotation is not present.");
         } else {
@@ -108,27 +109,6 @@ public class EventBus {
                 })
                 .toList();
 
-    }
-
-    private static void registerEventType(Class<Event> eventType) {
-        if (EventBus.EVENT_FILTER.containsKey(eventType))
-            return;
-
-        Arrays.stream(eventType.getDeclaredMethods())
-                .forEach(m -> {
-                    // is filter
-                    if (m.isAnnotationPresent(SubscribeFilter.class)) {
-                        SubscribeFilter annotation = m.getAnnotation(SubscribeFilter.class);
-                        String[] name = annotation.value();
-                        Arrays.stream(name).forEach(n -> EventBus.EVENT_FILTER
-                                .computeIfAbsent(eventType, k -> new HashMap<>())
-                                .put(n, m));
-                    }
-                });
-    }
-
-    public static void unregister(Object listener) {
-        EventBus.LISTENER.values().forEach(s -> s.removeIf(c -> c.clazz == listener));
     }
 
     private static EventSubscription getEventTypeFromParameter(Method m) {
@@ -159,6 +139,33 @@ public class EventBus {
         return new EventSubscription((Class<Event>) params[0].getType(), annotation.sync());
     }
 
+    private static void registerEventType(Class<Event> eventType) {
+        if (EventBus.EVENT_FILTER.containsKey(eventType))
+            return;
+
+        Arrays.stream(eventType.getDeclaredMethods())
+                .forEach(m -> {
+                    // is filter
+                    if (m.isAnnotationPresent(SubscribeFilter.class)) {
+                        SubscribeFilter annotation = m.getAnnotation(SubscribeFilter.class);
+                        String[] name = annotation.value();
+                        Arrays.stream(name).forEach(n -> EventBus.EVENT_FILTER
+                                .computeIfAbsent(eventType, k -> new HashMap<>())
+                                .put(n, m));
+                    }
+                });
+    }
+
+    public static void unregister(Object listener) {
+        EventBus.LISTENER.values().forEach(s -> s.removeIf(c -> c.clazz == listener));
+    }
+
+    public static int fire(Event event) {
+        Set<Callback> callbacks = getCallbacksToExecute(event);
+        executeFire(event, callbacks);
+        return callbacks.size();
+    }
+
     private static Set<Callback> getCallbacksToExecute(Event event) {
         Set<Callback> callbacks = LISTENER.get(event.getClass());
         if (callbacks == null)
@@ -177,32 +184,6 @@ public class EventBus {
                 FrontendBinding.pushToFrontend(() -> executeMethod(c, event));
             }
         });
-    }
-
-    private static void executeMethod(Callback c, Event event) {
-
-        try {
-            if (c.withPayload) {
-                c.method.invoke(c.clazz, event);
-            } else {
-                c.method.invoke(c.clazz);
-            }
-        } catch (Exception e) {
-            LOGGER.error("Unexpected Exception firing event. ", e);
-            throw new EventCallbackExecutionException(e);
-        }
-    }
-
-    public static int fire(Event event) {
-        Set<Callback> callbacks = getCallbacksToExecute(event);
-        executeFire(event, callbacks);
-        return callbacks.size();
-    }
-
-    public static int fireAsync(Event event) {
-        Set<Callback> callbacks = getCallbacksToExecute(event);
-        CompletableFuture.runAsync(() -> executeFire(event, callbacks));
-        return callbacks.size();
     }
 
     private static boolean isValidEvent(Event event, Object listener) {
@@ -228,12 +209,28 @@ public class EventBus {
                 return eventMethod.invoke(event).equals(listenerMethod.invoke(listener));
             } catch (IllegalAccessException | InvocationTargetException e) {
                 LOGGER.error("Unexpected Exception firing async event. ", e);
-                throw new RuntimeException(e);
+                throw new EventCallbackExecutionException(e);
             }
         });
     }
 
+    private static void executeMethod(Callback c, Event event) {
 
-    private record EventSubscription(Class<Event> event, boolean sync) {
+        try {
+            if (c.withPayload) {
+                c.method.invoke(c.clazz, event);
+            } else {
+                c.method.invoke(c.clazz);
+            }
+        } catch (Exception e) {
+            LOGGER.error("Unexpected Exception firing event. ", e);
+            throw new EventCallbackExecutionException(e);
+        }
+    }
+
+    public static int fireAsync(Event event) {
+        Set<Callback> callbacks = getCallbacksToExecute(event);
+        CompletableFuture.runAsync(() -> executeFire(event, callbacks));
+        return callbacks.size();
     }
 }

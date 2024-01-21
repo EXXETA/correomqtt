@@ -1,5 +1,8 @@
 package org.correomqtt.core.scripting;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleErrorTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.eventbus.EventBus;
@@ -15,14 +18,22 @@ public class ScriptDeleteExecutionsTask extends SimpleErrorTask<ScriptDeleteExec
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptDeleteExecutionsTask.class);
 
+    private final ScriptingProvider scriptingProvider;
     private final String filename;
 
     public enum Error {
         IOERROR
     }
 
+    @AssistedFactory
+    public interface Factory {
+        ScriptDeleteExecutionsTask create(String filename);
+    }
 
-    public ScriptDeleteExecutionsTask(String filename) {
+    @AssistedInject
+    public ScriptDeleteExecutionsTask(ScriptingProvider scriptingProvider,
+                                      @Assisted String filename) {
+        this.scriptingProvider = scriptingProvider;
         this.filename = filename;
     }
 
@@ -30,7 +41,7 @@ public class ScriptDeleteExecutionsTask extends SimpleErrorTask<ScriptDeleteExec
     protected void execute() {
         try {
             ScriptingBackend.removeExecutionsForScript(filename);
-            ScriptingProvider.getInstance().deleteExecutions(filename);
+            scriptingProvider.deleteExecutions(filename);
             EventBus.fireAsync(new ScriptExecutionsDeletedEvent(filename));
         } catch (IOException e) {
             LOGGER.error("Exception removing executions for {}.", filename, e);

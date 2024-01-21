@@ -2,6 +2,7 @@ package org.correomqtt.core.scripting;
 
 import dagger.Lazy;
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import lombok.Getter;
 import org.correomqtt.core.concurrent.FullTask;
@@ -25,15 +26,26 @@ import static org.slf4j.MarkerFactory.getMarker;
 public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, ExecutionDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptExecutionTask.class);
+    private final ScriptLoggerContext.Factory scriptLoggerContextFactory;
+    private final ScriptingProvider scriptingProvider;
     private final Lazy<JsContextBuilder> jsContextBuilderLazy;
     @Getter
     private final ExecutionDTO dto;
     private Context context;
 
+    @AssistedFactory
+    public interface Factory {
+        ScriptExecutionTask create(ExecutionDTO executionDTO);
+    }
+
     @AssistedInject
     public ScriptExecutionTask(
+            ScriptLoggerContext.Factory scriptLoggerContextFactory,
+            ScriptingProvider scriptingProvider,
             Lazy<JsContextBuilder> jsContextBuilderLazy,
             @Assisted ExecutionDTO executionDTO) {
+        this.scriptLoggerContextFactory = scriptLoggerContextFactory;
+        this.scriptingProvider = scriptingProvider;
         this.jsContextBuilderLazy = jsContextBuilderLazy;
         this.dto = executionDTO;
     }
@@ -42,14 +54,14 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
         LOGGER.debug(marker(), "Submit script: {}", dto.getExecutionId());
 
         ScriptingBackend.putExecutionTask(this);
-        try (ScriptLoggerContext slc = new ScriptLoggerContext(dto, marker())) {
+        try (ScriptLoggerContext slc = scriptLoggerContextFactory.create(dto, marker())) {
             dto.setStartTime(LocalDateTime.now());
-            ScriptingProvider.getInstance().saveExecution(dto);
+            scriptingProvider.saveExecution(dto);
             ch.qos.logback.classic.Logger scriptLogger = slc.getScriptLogger();
             dto.setLogger(scriptLogger);
             executeJs(slc, scriptLogger);
-            ScriptingProvider.getInstance().saveExecution(dto);
-        }catch(InterruptedException e){
+            scriptingProvider.saveExecution(dto);
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOGGER.info(marker(), "Exception during Script execution", e);
             dto.updateExecutionTime();
@@ -62,6 +74,10 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
             EventBus.fire(new ScriptExecutionFailedEvent(dto));
         }
         return dto;
+    }
+
+    private Marker marker() {
+        return getMarker(dto.getScriptFile().getName());
     }
 
     private void executeJs(ScriptLoggerContext slc, ch.qos.logback.classic.Logger scriptLogger) {
@@ -104,10 +120,6 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
             dto.setError(new ScriptExecutionError(HOST, e.getMessage()));
             EventBus.fire(new ScriptExecutionFailedEvent(dto));
         }
-    }
-
-    private Marker marker() {
-        return getMarker(dto.getScriptFile().getName());
     }
 
     public void cancel() {

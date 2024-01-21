@@ -14,7 +14,6 @@ import javafx.scene.control.TabPane;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import lombok.Getter;
-import org.correomqtt.gui.model.AppHostServices;
 import org.correomqtt.core.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
@@ -23,6 +22,7 @@ import org.correomqtt.core.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.core.utils.VendorConstants;
 import org.correomqtt.gui.controls.ThemedFontIcon;
+import org.correomqtt.gui.model.AppHostServices;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.GuiConnectionState;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -30,16 +30,14 @@ import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.views.about.AboutViewController;
 import org.correomqtt.gui.views.connections.ConnectionViewController;
-import org.correomqtt.gui.views.connections.ConnectionViewControllerFactory;
 import org.correomqtt.gui.views.connections.ConnectionViewDelegate;
-import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewControllerFactory;
+import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewController;
 import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewDelegate;
 import org.correomqtt.gui.views.importexport.ConnectionExportViewController;
 import org.correomqtt.gui.views.importexport.ConnectionImportViewController;
 import org.correomqtt.gui.views.log.LogTabController;
 import org.correomqtt.gui.views.onboarding.ConnectionOnboardingDelegate;
 import org.correomqtt.gui.views.onboarding.ConnectionOnboardingViewController;
-import org.correomqtt.gui.views.onboarding.ConnectionOnboardingViewControllerFactory;
 import org.correomqtt.gui.views.plugins.PluginsViewController;
 import org.correomqtt.gui.views.scripting.ScriptingViewController;
 import org.correomqtt.gui.views.settings.SettingsViewController;
@@ -59,9 +57,9 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private static final Logger LOGGER = LoggerFactory.getLogger(MainViewController.class);
     private final ConnectionHolder connectionHolder;
     private final ThemeManager themeManager;
-    private final ConnectionViewControllerFactory connectionViewCtlrFactory;
-    private final ConnectionSettingsViewControllerFactory connectionSettingsCtrlFactory;
-    private final ConnectionOnboardingViewControllerFactory onboardingViewCtrlFactory;
+    private final ConnectionViewController.Factory connectionViewCtlrFactory;
+    private final ConnectionSettingsViewController.Factory connectionSettingsCtrlFactory;
+    private final ConnectionOnboardingViewController.Factory onboardingViewCtrlFactory;
     private final CheckNewVersionUtils checkNewVersionUtils;
     private final HostServices hostServices;
     private final javax.inject.Provider<AboutViewController> aboutViewControllerProvider;
@@ -122,9 +120,9 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     @Inject
     public MainViewController(ConnectionHolder connectionHolder,
                               ThemeManager themeManager,
-                              ConnectionViewControllerFactory connectionViewCtlrFactory,
-                              ConnectionSettingsViewControllerFactory connectionSettingsCtrlFactory,
-                              ConnectionOnboardingViewControllerFactory onboardingViewCtlrFactory,
+                              ConnectionViewController.Factory connectionViewCtlrFactory,
+                              ConnectionSettingsViewController.Factory connectionSettingsCtrlFactory,
+                              ConnectionOnboardingViewController.Factory onboardingViewCtlrFactory,
                               CheckNewVersionUtils checkNewVersionUtils,
                               @AppHostServices HostServices hostServices,
                               Provider<AboutViewController> aboutViewControllerProvider,

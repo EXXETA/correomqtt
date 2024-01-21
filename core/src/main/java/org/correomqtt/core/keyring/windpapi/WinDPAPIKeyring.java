@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.windpapi4j.InitializationFailedException;
 import com.github.windpapi4j.WinAPICallFailedException;
 import com.github.windpapi4j.WinDPAPI;
-import org.correomqtt.core.fileprovider.SecretStoreProvider;
 import org.correomqtt.core.keyring.BaseKeyring;
 import org.correomqtt.core.keyring.KeyringException;
 import org.correomqtt.core.plugin.spi.KeyringHook;
@@ -119,7 +118,7 @@ public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
     }
 
     private File getFile() {
-        String windpapiPath = SecretStoreProvider.getInstance().getTargetDirectoryPath() + File.separator + "windpapi.json";
+        String windpapiPath = System.getProperty("correo.configDirectory") + File.separator + "windpapi.json";
         return new File(windpapiPath);
     }
 

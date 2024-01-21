@@ -21,7 +21,7 @@ import org.correomqtt.core.plugin.marketplace.PluginEnabledStartedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginInstallEvent;
 import org.correomqtt.core.plugin.marketplace.PluginInstallFailedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginInstallStartedEvent;
-import org.correomqtt.core.plugin.marketplace.PluginInstallTaskFactory;
+import org.correomqtt.core.plugin.marketplace.PluginInstallTask;
 import org.correomqtt.core.plugin.marketplace.PluginUninstallEvent;
 import org.correomqtt.core.plugin.marketplace.PluginUninstallFailedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginUninstallStartedEvent;
@@ -40,7 +40,7 @@ import java.util.ResourceBundle;
 public class MarketplaceViewController extends BaseControllerImpl {
 
     private final PluginManager pluginManager;
-    private final PluginInstallTaskFactory pluginInstallTaskFactory;
+    private final PluginInstallTask.Factory pluginInstallTaskFactory;
     @FXML
     Pane marketplaceRootPane;
 
@@ -75,15 +75,15 @@ public class MarketplaceViewController extends BaseControllerImpl {
     Label pluginUpdateLabel;
 
     private final ResourceBundle resources;
-    private final PluginCellFactory pluginCellFactory;
+    private final PluginCell.Factory pluginCellFactory;
     private final AlertHelper alertHelper;
 
     @Inject
     public MarketplaceViewController(PluginManager pluginManager,
                                      SettingsProvider settingsProvider,
                                      ThemeManager themeManager,
-                                     PluginInstallTaskFactory pluginInstallTaskFactory,
-                                     PluginCellFactory pluginCellFactory,
+                                     PluginInstallTask.Factory pluginInstallTaskFactory,
+                                     PluginCell.Factory pluginCellFactory,
                                      AlertHelper alertHelper) {
         super(settingsProvider, themeManager);
         this.pluginManager = pluginManager;

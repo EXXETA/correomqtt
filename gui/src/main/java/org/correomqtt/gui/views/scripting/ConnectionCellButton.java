@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.scripting;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -39,6 +40,10 @@ public class ConnectionCellButton extends ListCell<ConnectionPropertiesDTO> {
 
     private ConnectionPropertiesDTO connectionDTO;
 
+    @AssistedFactory
+    public interface Factory {
+        ConnectionCellButton create(ListView<ConnectionPropertiesDTO> listView);
+    }
     @AssistedInject
     public ConnectionCellButton(ConnectionHolder connectionHolder,
                                 SettingsProvider settingsProvider,

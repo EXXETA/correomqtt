@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.importexport;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.scene.control.PasswordField;
@@ -19,15 +20,17 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class ConnectionImportStepDecryptViewController extends BaseControllerImpl implements ConnectionImportStepController {
-    private static ResourceBundle resources;
-
+    private static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
     private final AlertHelper alertHelper;
     private final ConnectionImportStepDelegate delegate;
+    private  ResourceBundle resources;
     @FXML
     private PasswordField passwordField;
 
-    private static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
-
+    @AssistedFactory
+    public interface Factory {
+        ConnectionImportStepDecryptViewController create(ConnectionImportStepDelegate delegate);
+    }
     @AssistedInject
     public ConnectionImportStepDecryptViewController(
             SettingsProvider settingsProvider,

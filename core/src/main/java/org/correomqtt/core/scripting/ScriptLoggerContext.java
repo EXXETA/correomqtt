@@ -5,6 +5,9 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.encoder.Encoder;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import lombok.Getter;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 import org.slf4j.LoggerFactory;
@@ -36,7 +39,15 @@ public class ScriptLoggerContext implements AutoCloseable {
     private final Appender<ILoggingEvent> scriptAppender;
     private final ScriptFileAppender fileAppender;
 
-    public ScriptLoggerContext(ExecutionDTO dto, Marker marker) {
+    @AssistedFactory
+    public interface Factory {
+        ScriptLoggerContext create(ExecutionDTO dto, Marker marker);
+    }
+
+    @AssistedInject
+    public ScriptLoggerContext(ScriptingProvider scriptingProvider,
+                               @Assisted ExecutionDTO dto,
+                               @Assisted Marker marker) {
         this.marker = marker;
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         scriptLogger = context.getLogger(dto.getScriptFile().getName() + "-" + dto.getExecutionId());
@@ -44,7 +55,7 @@ public class ScriptLoggerContext implements AutoCloseable {
         Encoder<ILoggingEvent> encoder = findPatternEncoder(SCRIPT_COLOR_PATTERN_APPENDER_NAME);
 
         fileAppender = new ScriptFileAppender();
-        fileAppender.setFile(ScriptingProvider.getInstance().getSingleScriptLogPath(dto.getScriptFile().getName(), dto.getExecutionId()));
+        fileAppender.setFile(scriptingProvider.getSingleScriptLogPath(dto.getScriptFile().getName(), dto.getExecutionId()));
         fileAppender.setEncoder(encoder);
         fileAppender.setContext(context);
         fileAppender.start();

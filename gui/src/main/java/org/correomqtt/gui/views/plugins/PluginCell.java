@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.plugins;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -41,6 +42,11 @@ public class PluginCell extends ListCell<PluginInfoPropertiesDTO> {
     ResourceBundle resources;
     private FXMLLoader loader;
 
+    @AssistedFactory
+    public interface Factory {
+        PluginCell create(ListView<PluginInfoPropertiesDTO> listView);
+
+    }
     @AssistedInject
     public PluginCell(SettingsProvider settingsProvider,
                       ThemeManager themeManager,

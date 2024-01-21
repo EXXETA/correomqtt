@@ -3,6 +3,7 @@ package org.correomqtt.core.pubsub;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
@@ -35,6 +36,11 @@ public class SubscribeTask extends SimpleTask {
     private final ConnectionHolder connectionHolder;
     private final String connectionId;
     private final SubscriptionDTO subscriptionDTO;
+
+    @AssistedFactory
+    public interface Factory {
+        SubscribeTask create(String connectionId, SubscriptionDTO subscriptionDTO);
+    }
 
     @AssistedInject
     SubscribeTask(PluginManager pluginManager,

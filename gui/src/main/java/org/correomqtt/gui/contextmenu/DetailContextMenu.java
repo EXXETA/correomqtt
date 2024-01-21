@@ -1,6 +1,7 @@
 package org.correomqtt.gui.contextmenu;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.scene.control.SeparatorMenuItem;
 import org.correomqtt.core.settings.SettingsProvider;
@@ -10,6 +11,11 @@ public class DetailContextMenu extends BaseMessageContextMenu<DetailContextMenuD
 
     private SeparatorMenuItem separator;
 
+    @AssistedFactory
+    public interface Factory {
+        DetailContextMenu create(DetailContextMenuDelegate delegate);
+
+    }
     @AssistedInject
     public DetailContextMenu(
             SettingsProvider settingsProvider,

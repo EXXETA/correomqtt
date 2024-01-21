@@ -11,12 +11,11 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import org.correomqtt.core.model.SettingsDTO;
-import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.keyring.KeyringFactory;
+import org.correomqtt.core.model.SettingsDTO;
 import org.correomqtt.core.model.ThemeDTO;
 import org.correomqtt.core.plugin.PluginManager;
-import org.correomqtt.core.utils.ConnectionHolder;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.KeyringModel;
 import org.correomqtt.gui.model.LanguageModel;
@@ -29,7 +28,7 @@ import org.correomqtt.gui.theme.light_legacy.LightLegacyThemeProvider;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.cell.GenericCellFactory;
+import org.correomqtt.gui.views.cell.GenericCell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,11 +48,15 @@ import java.util.stream.Collectors;
 
 public class SettingsViewController extends BaseControllerImpl {
 
-    private final ConnectionHolder connectionHolder;
+    private static final Logger LOGGER = LoggerFactory.getLogger(SettingsViewController.class);
     private final SettingsProvider settingsProvider;
     private final KeyringHandler keyringHandler;
     private final PluginManager pluginManager;
     private final KeyringFactory keyringFactory;
+    private final AlertHelper alertHelper;
+    private final GenericCell.Factory<ThemeProvider> themeProviderGenericCellFactory;
+    private final GenericCell.Factory<KeyringModel> keyringModelGenericCellFactory;
+    private final GenericCell.Factory<LanguageModel> languageModelGenericCellFactory;
     @FXML
     private AnchorPane settingsPane;
     @FXML
@@ -68,28 +71,20 @@ public class SettingsViewController extends BaseControllerImpl {
     private CheckBox searchUpdatesCheckbox;
     @FXML
     private Label keyringDescriptionLabel;
-
-    private static ResourceBundle resources;
-    private final AlertHelper alertHelper;
-    private final GenericCellFactory<ThemeProvider> themeProviderGenericCellFactory;
-    private final GenericCellFactory<KeyringModel> keyringModelGenericCellFactory;
-    private final GenericCellFactory<LanguageModel> languageModelGenericCellFactory;
+    private ResourceBundle resources;
     private SettingsDTO settings;
-    private static final Logger LOGGER = LoggerFactory.getLogger(SettingsViewController.class);
 
     @Inject
-    public SettingsViewController(ConnectionHolder connectionHolder,
-                                  SettingsProvider settingsProvider,
+    public SettingsViewController(SettingsProvider settingsProvider,
                                   ThemeManager themeManager,
                                   KeyringHandler keyringHandler,
                                   PluginManager pluginManager,
                                   KeyringFactory keyringFactory,
                                   AlertHelper alertHelper,
-                                  GenericCellFactory<ThemeProvider> themeProviderGenericCellFactory,
-                                  GenericCellFactory<KeyringModel> keyringModelGenericCellFactory,
-                                  GenericCellFactory<LanguageModel> languageModelGenericCellFactory) {
+                                  GenericCell.Factory<ThemeProvider> themeProviderGenericCellFactory,
+                                  GenericCell.Factory<KeyringModel> keyringModelGenericCellFactory,
+                                  GenericCell.Factory<LanguageModel> languageModelGenericCellFactory) {
         super(settingsProvider, themeManager);
-        this.connectionHolder = connectionHolder;
         this.settingsProvider = settingsProvider;
         this.keyringHandler = keyringHandler;
         this.pluginManager = pluginManager;
@@ -100,10 +95,6 @@ public class SettingsViewController extends BaseControllerImpl {
         this.themeProviderGenericCellFactory = themeProviderGenericCellFactory;
         this.keyringModelGenericCellFactory = keyringModelGenericCellFactory;
         this.languageModelGenericCellFactory = languageModelGenericCellFactory;
-    }
-
-    public LoaderResult<SettingsViewController> load() {
-        return load(SettingsViewController.class, "settingsView.fxml", () -> this);
     }
 
     public LoaderResult<SettingsViewController> showAsDialog() {
@@ -117,6 +108,21 @@ public class SettingsViewController extends BaseControllerImpl {
         return result;
     }
 
+    public LoaderResult<SettingsViewController> load() {
+        return load(SettingsViewController.class, "settingsView.fxml", () -> this);
+    }
+
+    private void keyHandling(KeyEvent event) {
+        if (KeyCode.ESCAPE == event.getCode()) {
+            closeDialog();
+        }
+    }
+
+    private void closeDialog() {
+        Stage stage = (Stage) themeComboBox.getScene().getWindow();
+        stage.close();
+    }
+
     @FXML
     private void initialize() {
         settings = settingsProvider.getSettings();
@@ -125,57 +131,6 @@ public class SettingsViewController extends BaseControllerImpl {
         // Unfortunately @FXML Handler does not work with Combobox, so the action must be bound manually.
         themeComboBox.setOnAction(actionEvent -> onThemeChanged());
         languageComboBox.setOnAction(actionEvent -> onLanguageChanged());
-    }
-
-    private void onLanguageChanged() {
-        // nothing to do
-    }
-
-    @FXML
-    private void onCancelClicked() {
-        LOGGER.debug("Cancel in settings clicked");
-        closeDialog();
-    }
-
-    @FXML
-    private void onSaveClicked() {
-        LOGGER.debug("Save in settings clicked");
-        saveSettings();
-        closeDialog();
-    }
-
-    @FXML
-    private void onWipeKeyringClicked() {
-        boolean confirmed = alertHelper.confirm(
-                resources.getString("wipeCurrentKeyringTitle"),
-                resources.getString("wipeCurrentKeyringHeader"),
-                resources.getString("wipeCurrentKeyringContent"),
-                resources.getString("commonCancelButton"),
-                resources.getString("wipeOutYesButton"));
-
-        if (confirmed) {
-            keyringHandler.retryWithMasterPassword(
-                    masterPassword -> {
-                        keyringHandler.wipe();
-                        settingsProvider.wipeSecretData(masterPassword);
-                    },
-                    resources.getString("onPasswordWipeFailedTitle"),
-                    resources.getString("onPasswordWipeFailedHeader"),
-                    resources.getString("onPasswordWipeFailedContent"),
-                    resources.getString("onPasswordWipeFailedGiveUp"),
-                    resources.getString("onPasswordWipeFailedTryAgain")
-            );
-        }
-    }
-
-    @FXML
-    private void onThemeChanged() {
-        LOGGER.debug("Theme changed in settings");
-    }
-
-    @FXML
-    private void onKeyringBackendChanged() {
-        LOGGER.debug("Keyring backend changed in settings");
     }
 
     private void setupGUI() {
@@ -282,6 +237,15 @@ public class SettingsViewController extends BaseControllerImpl {
         settingsPane.setMaxHeight(500);
     }
 
+    @FXML
+    private void onThemeChanged() {
+        LOGGER.debug("Theme changed in settings");
+    }
+
+    private void onLanguageChanged() {
+        // nothing to do
+    }
+
     private void updateKeyringDescription(KeyringModel selectedKeyring) {
         keyringDescriptionLabel.setText(resources.getString("settingsViewKeyringBackendExplanationLabel")
                 + "\n\n"
@@ -292,6 +256,19 @@ public class SettingsViewController extends BaseControllerImpl {
     private static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
         Set<Object> seen = ConcurrentHashMap.newKeySet();
         return t -> seen.add(keyExtractor.apply(t));
+    }
+
+    @FXML
+    private void onCancelClicked() {
+        LOGGER.debug("Cancel in settings clicked");
+        closeDialog();
+    }
+
+    @FXML
+    private void onSaveClicked() {
+        LOGGER.debug("Save in settings clicked");
+        saveSettings();
+        closeDialog();
     }
 
     private void saveSettings() {
@@ -312,14 +289,32 @@ public class SettingsViewController extends BaseControllerImpl {
         themeManager.saveCSS();
     }
 
-    private void closeDialog() {
-        Stage stage = (Stage) themeComboBox.getScene().getWindow();
-        stage.close();
+    @FXML
+    private void onWipeKeyringClicked() {
+        boolean confirmed = alertHelper.confirm(
+                resources.getString("wipeCurrentKeyringTitle"),
+                resources.getString("wipeCurrentKeyringHeader"),
+                resources.getString("wipeCurrentKeyringContent"),
+                resources.getString("commonCancelButton"),
+                resources.getString("wipeOutYesButton"));
+
+        if (confirmed) {
+            keyringHandler.retryWithMasterPassword(
+                    masterPassword -> {
+                        keyringHandler.wipe();
+                        settingsProvider.wipeSecretData(masterPassword);
+                    },
+                    resources.getString("onPasswordWipeFailedTitle"),
+                    resources.getString("onPasswordWipeFailedHeader"),
+                    resources.getString("onPasswordWipeFailedContent"),
+                    resources.getString("onPasswordWipeFailedGiveUp"),
+                    resources.getString("onPasswordWipeFailedTryAgain")
+            );
+        }
     }
 
-    private void keyHandling(KeyEvent event) {
-        if (KeyCode.ESCAPE == event.getCode()) {
-            closeDialog();
-        }
+    @FXML
+    private void onKeyringBackendChanged() {
+        LOGGER.debug("Keyring backend changed in settings");
     }
 }

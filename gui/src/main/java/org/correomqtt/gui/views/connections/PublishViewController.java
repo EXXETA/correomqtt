@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.connections;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -18,7 +19,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
@@ -40,7 +40,8 @@ import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.pubsub.PublishEvent;
 import org.correomqtt.core.pubsub.PublishListClearEvent;
 import org.correomqtt.core.pubsub.PublishListRemovedEvent;
-import org.correomqtt.core.pubsub.PublishTaskFactory;
+import org.correomqtt.core.pubsub.PublishTask;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.plugin.spi.MessageContextMenuHook;
@@ -52,8 +53,7 @@ import org.correomqtt.gui.utils.AutoFormatPayload;
 import org.correomqtt.gui.utils.CheckTopicHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.LoadingViewController;
-import org.correomqtt.gui.views.LoadingViewControllerFactory;
-import org.correomqtt.gui.views.cell.QosCellFactory;
+import org.correomqtt.gui.views.cell.QosCell;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
@@ -72,18 +72,17 @@ import static org.correomqtt.core.connection.ConnectionState.CONNECTED;
 public class PublishViewController extends BaseMessageBasedViewController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishViewController.class);
-    private static ResourceBundle resources;
-    private final PublishTaskFactory publishTaskFactory;
+    private final PublishTask.Factory publishTaskFactory;
     private final PluginManager pluginManager;
-    private final QosCellFactory qosCellFactory;
+    private final QosCell.Factory qosCellFactory;
     private final SettingsProvider settingsProvider;
     private final AutoFormatPayload autoFormatPayload;
-    private final TopicCellFactory topicCellFactory;
+    private final TopicCell.Factory topicCellFactory;
     private final AlertHelper alertHelper;
-    private final LoadingViewControllerFactory loadingViewControllerFactory;
+    private final LoadingViewController.Factory loadingViewControllerFactory;
     private final HistoryManager historyManager;
     private final PublishViewDelegate delegate;
-
+    private ResourceBundle resources;
     @FXML
     private AnchorPane publishViewAnchor;
 
@@ -114,18 +113,24 @@ public class PublishViewController extends BaseMessageBasedViewController {
     private LoadingViewController loadingViewController;
     private ChangeListener<String> payloadCodeAreaChangeListener;
 
+    @AssistedFactory
+    public interface Factory {
+        PublishViewController create(String connectionId, PublishViewDelegate delegat);
+
+    }
+
     @AssistedInject
-    public PublishViewController(PublishTaskFactory publishTaskFactory,
+    public PublishViewController(PublishTask.Factory publishTaskFactory,
                                  PluginManager pluginManager,
-                                 QosCellFactory qosCellFactory,
+                                 QosCell.Factory qosCellFactory,
                                  ConnectionHolder connectionHolder,
                                  SettingsProvider settingsProvider,
                                  AutoFormatPayload autoFormatPayload,
                                  ThemeManager themeManager,
-                                 MessageListViewControllerFactory messageListViewControllerFactory,
-                                 TopicCellFactory topicCellFactory,
+                                 MessageListViewController.Factory messageListViewControllerFactory,
+                                 TopicCell.Factory topicCellFactory,
                                  AlertHelper alertHelper,
-                                 LoadingViewControllerFactory loadingViewControllerFactory,
+                                 LoadingViewController.Factory loadingViewControllerFactory,
                                  HistoryManager historyManager,
                                  @Assisted String connectionId,
                                  @Assisted PublishViewDelegate delegate) {
@@ -252,6 +257,20 @@ public class PublishViewController extends BaseMessageBasedViewController {
         }
     }
 
+    private void onPublishFailed(SimpleTaskErrorResult result, MessageDTO messageDTO) {
+        messageDTO.setPublishStatus(PublishStatus.FAILED);
+        messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO));
+
+        String msg;
+        if (result.getUnexpectedError() instanceof CorreoMqttException correoMqttException) {
+            msg = correoMqttException.getInfo();
+        } else {
+            msg = "Exception in business layer: " + result.getUnexpectedError().getMessage();
+        }
+        alertHelper.warn(resources.getString("publishViewControllerPublishFailedTitle"),
+                resources.getString("publishViewControllerPublishFailedContent") + ": " + messageDTO.getTopic() + ": " + msg);
+    }
+
     @FXML
     private void onClickScan() {
         if (LOGGER.isDebugEnabled()) {
@@ -282,64 +301,10 @@ public class PublishViewController extends BaseMessageBasedViewController {
         }
     }
 
-    @Override
-    public void setUpToForm(MessagePropertiesDTO messageDTO) {
-        executeOnCopyMessageToFormExtensions(messageDTO);
-
-        // Retained-Abfrage
-        retainedCheckBox.setSelected(messageDTO.isRetained());
-
-        payloadCodeArea.replaceText(messageDTO.getPayload());
-
-        checkFormat();
-
-        topicComboBox.setValue(messageDTO.getTopic());
-
-        qosComboBox.setValue(messageDTO.getQos());
-
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Message copied to form: {}", getConnectionId());
-        }
-    }
-
-    @Override
-    public Supplier<MessageListViewConfig> produceListViewConfig() {
-        return () -> {
-            ConnectionConfigDTO config = settingsProvider
-                    .getConnectionConfigs()
-                    .stream()
-                    .filter(c -> c.getId().equals(getConnectionId()))
-                    .findFirst()
-                    .orElse(ConnectionConfigDTO.builder().publishListViewConfig(new MessageListViewConfig()).build());
-
-            return config.producePublishListViewConfig() != null ? config.producePublishListViewConfig() : new MessageListViewConfig();
-        };
-
-    }
-
-    private void executeOnCopyMessageToFormExtensions(MessagePropertiesDTO messageDTO) {
-        pluginManager.getExtensions(MessageContextMenuHook.class)
-                .forEach(p -> p.onCopyMessageToPublishForm(getConnectionId(), MessageTransformer.propsToExtensionDTO(messageDTO)));
-    }
-
     @SuppressWarnings("unused")
     public void onPublishSucceeded(@Subscribe PublishEvent event) {
         event.getMessageDTO().setPublishStatus(PublishStatus.SUCCEEDED);
         messageListViewController.onNewMessage(MessageTransformer.dtoToProps(event.getMessageDTO()));
-    }
-
-    private void onPublishFailed(SimpleTaskErrorResult result, MessageDTO messageDTO) {
-        messageDTO.setPublishStatus(PublishStatus.FAILED);
-        messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO));
-
-        String msg;
-        if (result.getUnexpectedError() instanceof CorreoMqttException correoMqttException) {
-            msg = correoMqttException.getInfo();
-        } else {
-            msg = "Exception in business layer: " + result.getUnexpectedError().getMessage();
-        }
-        alertHelper.warn(resources.getString("publishViewControllerPublishFailedTitle"),
-                resources.getString("publishViewControllerPublishFailedContent") + ": " + messageDTO.getTopic() + ": " + msg);
     }
 
     @SuppressWarnings("unused")
@@ -392,6 +357,46 @@ public class PublishViewController extends BaseMessageBasedViewController {
     @Override
     public void setTabDirty() {
         delegate.setTabDirty();
+    }
+
+    @Override
+    public void setUpToForm(MessagePropertiesDTO messageDTO) {
+        executeOnCopyMessageToFormExtensions(messageDTO);
+
+        // Retained-Abfrage
+        retainedCheckBox.setSelected(messageDTO.isRetained());
+
+        payloadCodeArea.replaceText(messageDTO.getPayload());
+
+        checkFormat();
+
+        topicComboBox.setValue(messageDTO.getTopic());
+
+        qosComboBox.setValue(messageDTO.getQos());
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Message copied to form: {}", getConnectionId());
+        }
+    }
+
+    @Override
+    public Supplier<MessageListViewConfig> produceListViewConfig() {
+        return () -> {
+            ConnectionConfigDTO config = settingsProvider
+                    .getConnectionConfigs()
+                    .stream()
+                    .filter(c -> c.getId().equals(getConnectionId()))
+                    .findFirst()
+                    .orElse(ConnectionConfigDTO.builder().publishListViewConfig(new MessageListViewConfig()).build());
+
+            return config.producePublishListViewConfig() != null ? config.producePublishListViewConfig() : new MessageListViewConfig();
+        };
+
+    }
+
+    private void executeOnCopyMessageToFormExtensions(MessagePropertiesDTO messageDTO) {
+        pluginManager.getExtensions(MessageContextMenuHook.class)
+                .forEach(p -> p.onCopyMessageToPublishForm(getConnectionId(), MessageTransformer.propsToExtensionDTO(messageDTO)));
     }
 
     public void cleanUp() {

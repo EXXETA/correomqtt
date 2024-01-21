@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.importexport;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.scene.layout.HBox;
@@ -19,12 +20,16 @@ import java.io.File;
 import java.util.ResourceBundle;
 
 public class ConnectionImportStepChooseFileViewController extends BaseControllerImpl implements ConnectionImportStepController {
-    private static ResourceBundle resources;
+    private  ResourceBundle resources;
     private final AlertHelper alertHelper;
     private final ConnectionImportStepDelegate delegate;
     @FXML
     private HBox stepHolder;
 
+    @AssistedFactory
+    public interface Factory {
+        ConnectionImportStepChooseFileViewController create(ConnectionImportStepDelegate delegate);
+    }
     @AssistedInject
     public ConnectionImportStepChooseFileViewController(
             SettingsProvider settingsProvider,

@@ -9,6 +9,8 @@ import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
+import static org.correomqtt.core.eventbus.SubscribeFilterNames.CONNECTION_ID;
+
 public abstract class BaseConnectionController extends BaseControllerImpl {
 
     protected final ConnectionHolder connectionHolder;
@@ -33,7 +35,7 @@ public abstract class BaseConnectionController extends BaseControllerImpl {
     }
 
 
-    @SubscribeFilter(value = "connectionId")
+    @SubscribeFilter(CONNECTION_ID)
     public String getConnectionId() {
         return connectionId;
     }

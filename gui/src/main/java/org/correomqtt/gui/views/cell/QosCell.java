@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.cell;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -33,6 +34,11 @@ public class QosCell extends ListCell<Qos> {
 
     private FXMLLoader loader;
 
+    @AssistedFactory
+    public interface Factory {
+        QosCell create(ListView<Qos> listView);
+
+    }
     @AssistedInject
     public QosCell(SettingsProvider settingsProvider,
                    @Assisted ListView<Qos> listView) {

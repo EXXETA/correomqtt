@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.scripting;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
@@ -47,6 +48,11 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
     private FXMLLoader loader;
     private RotateTransition rotateTransition;
 
+    @AssistedFactory
+    public interface Factory {
+        ExecutionCell create(ListView<ExecutionPropertiesDTO> listView);
+
+    }
     @AssistedInject
     public ExecutionCell(SettingsProvider settingsProvider,
                          ThemeManager themeManager,

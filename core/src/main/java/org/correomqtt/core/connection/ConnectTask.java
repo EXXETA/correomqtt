@@ -1,6 +1,7 @@
 package org.correomqtt.core.connection;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
@@ -23,6 +24,12 @@ public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent>
     private final ConnectionHolder connectionHolder;
     private final String connectionId;
 
+
+    @AssistedFactory
+    public interface Factory {
+        ConnectTask create(String connectionId);
+    }
+
     @AssistedInject
     public ConnectTask(ConnectionHolder connectionHolder, @Assisted String connectionId) {
         this.connectionHolder = connectionHolder;
@@ -30,7 +37,7 @@ public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent>
     }
 
     @Override
-    protected void execute()  {
+    protected void execute() {
         CorreoMqttClient client = connectionHolder.getClient(connectionId);
         if (client == null) {
             CorreoMqttConnection connection = connectionHolder.getConnection(connectionId);

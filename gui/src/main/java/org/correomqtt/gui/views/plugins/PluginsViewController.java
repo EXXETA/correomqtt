@@ -29,6 +29,7 @@ import java.util.ResourceBundle;
 
 public class PluginsViewController extends BaseControllerImpl {
 
+    private final PluginConfigProvider pluginConfigProvider;
     private final HostServices hostServices;
     private final Provider<InstalledPluginsViewController> installedPluginsViewControllerProvider;
     private final Provider<MarketplaceViewController> marketplaceViewControllerProvider;
@@ -68,10 +69,12 @@ public class PluginsViewController extends BaseControllerImpl {
     @Inject
     PluginsViewController(SettingsProvider settingsProvider,
                           ThemeManager themeManager,
+                          PluginConfigProvider pluginConfigProvider,
                           @AppHostServices HostServices hostServices,
                           Provider<InstalledPluginsViewController> installedPluginsViewControllerProvider,
                           Provider<MarketplaceViewController> marketplaceViewControllerProvider) {
         super(settingsProvider, themeManager);
+        this.pluginConfigProvider = pluginConfigProvider;
         this.hostServices = hostServices;
         this.installedPluginsViewControllerProvider = installedPluginsViewControllerProvider;
         this.marketplaceViewControllerProvider = marketplaceViewControllerProvider;
@@ -117,6 +120,6 @@ public class PluginsViewController extends BaseControllerImpl {
 
     @FXML
     private void onOpenPluginFolder() {
-        hostServices.showDocument(new File(PluginConfigProvider.getInstance().getPluginPath()).toURI().toString());
+        hostServices.showDocument(new File(pluginConfigProvider.getPluginPath()).toURI().toString());
     }
 }

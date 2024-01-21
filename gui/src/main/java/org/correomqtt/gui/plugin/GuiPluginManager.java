@@ -14,15 +14,18 @@ public class GuiPluginManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GuiPluginManager.class);
     private final PluginManager pluginManager;
+    private final PluginConfigProvider pluginConfigProvider;
 
     @Inject
-    public GuiPluginManager(PluginManager pluginManager){
+    public GuiPluginManager(PluginManager pluginManager,
+                            PluginConfigProvider pluginConfigProvider){
 
         this.pluginManager = pluginManager;
+        this.pluginConfigProvider = pluginConfigProvider;
     }
 
     public List<DetailViewManipulatorTask> getDetailViewManipulatorTasks() {
-        return PluginConfigProvider.getInstance().getDetailViewTasks()
+        return pluginConfigProvider.getDetailViewTasks()
                 .stream()
                 .map(detailViewTaskDefinition -> {
                     List<DetailViewManipulatorHook> hooks = detailViewTaskDefinition.getExtensions().stream()

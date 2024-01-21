@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.importexport;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -25,25 +26,29 @@ import java.util.ResourceBundle;
 import java.util.stream.Stream;
 
 public class ConnectionImportStepConnectionsViewController extends BaseControllerImpl implements ConnectionImportStepController {
-    private static ResourceBundle resources;
+    private  ResourceBundle resources;
     private final ConnectionHolder connectionHolder;
     private final SettingsProvider settingsProvider;
     private final KeyringHandler keyringHandler;
     private final AlertHelper alertHelper;
-    private final ExportConnectionCellFactory exportConnectionCellFactory;
+    private final ExportConnectionCell.Factory exportConnectionCellFactory;
     private final ConnectionImportStepDelegate delegate;
     @FXML
     private CheckListView<ConnectionPropertiesDTO> connectionsListView;
     private final ObservableList<ConnectionPropertiesDTO> connectionConfigDTOS = FXCollections.observableArrayList();
     private List<ConnectionPropertiesDTO> disabledConnections;
 
+    @AssistedFactory
+    public interface Factory {
+        ConnectionImportStepConnectionsViewController create(ConnectionImportStepDelegate delegate);
+    }
     @AssistedInject
     public ConnectionImportStepConnectionsViewController(ConnectionHolder connectionHolder,
                                                          SettingsProvider settingsProvider,
                                                          ThemeManager themeManager,
                                                          KeyringHandler keyringHandler,
                                                          AlertHelper alertHelper,
-                                                         ExportConnectionCellFactory exportConnectionCellFactory,
+                                                         ExportConnectionCell.Factory exportConnectionCellFactory,
                                                          @Assisted ConnectionImportStepDelegate delegate) {
         super(settingsProvider, themeManager);
         this.connectionHolder = connectionHolder;

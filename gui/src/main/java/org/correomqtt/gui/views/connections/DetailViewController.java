@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.connections;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -26,7 +27,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.importexport.messages.ExportMessageFailedEvent;
 import org.correomqtt.core.importexport.messages.ExportMessageStartedEvent;
@@ -35,10 +35,10 @@ import org.correomqtt.core.model.MessageType;
 import org.correomqtt.core.plugin.MessageValidator;
 import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.plugin.spi.MessageValidatorHook;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.contextmenu.DetailContextMenu;
 import org.correomqtt.gui.contextmenu.DetailContextMenuDelegate;
-import org.correomqtt.gui.contextmenu.DetailContextMenuFactory;
 import org.correomqtt.gui.controls.IconCheckMenuItem;
 import org.correomqtt.gui.formats.Format;
 import org.correomqtt.gui.menuitem.DetailViewManipulatorTaskMenuItem;
@@ -81,9 +81,7 @@ public class DetailViewController extends BaseConnectionController implements
     private final MessageValidator messageValidator;
     private final GuiPluginManager guiPluginManager;
     private final AutoFormatPayload autoFormatPayload;
-    private final SettingsProvider settingsProvider;
-    private final ThemeManager themeManager;
-    private final DetailContextMenuFactory detailContextMenuFactory;
+    private final DetailContextMenu.Factory detailContextMenuFactory;
     private final MessageUtils messageUtils;
     private final DetailViewDelegate delegate;
 
@@ -153,6 +151,14 @@ public class DetailViewController extends BaseConnectionController implements
 
     private DetailViewManipulatorTask lastManipulatorTask;
 
+    @AssistedFactory
+    public interface Factory {
+        DetailViewController create(MessagePropertiesDTO messageDTO,
+                                    String connectionId,
+                                    DetailViewDelegate delegate,
+                                    boolean isInlineView);
+
+    }
     @AssistedInject
     DetailViewController(ConnectionHolder connectionHolder,
                          PluginManager pluginManager,
@@ -161,7 +167,7 @@ public class DetailViewController extends BaseConnectionController implements
                          AutoFormatPayload autoFormatPayload,
                          SettingsProvider settingsProvider,
                          ThemeManager themeManager,
-                         DetailContextMenuFactory detailContextMenuFactory,
+                         DetailContextMenu.Factory detailContextMenuFactory,
                          MessageUtils messageUtils,
                          @Assisted MessagePropertiesDTO messageDTO,
                          @Assisted String connectionId,
@@ -172,8 +178,6 @@ public class DetailViewController extends BaseConnectionController implements
         this.messageValidator = messageValidator;
         this.guiPluginManager = guiPluginManager;
         this.autoFormatPayload = autoFormatPayload;
-        this.settingsProvider = settingsProvider;
-        this.themeManager = themeManager;
         this.detailContextMenuFactory = detailContextMenuFactory;
         this.messageUtils = messageUtils;
         this.delegate = delegate;

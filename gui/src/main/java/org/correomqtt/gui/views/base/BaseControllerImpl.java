@@ -26,7 +26,7 @@ public abstract class BaseControllerImpl implements BaseController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseControllerImpl.class);
     private final ResourceBundle resources;
-    private final SettingsProvider settingsProvider;
+    protected final SettingsProvider settingsProvider;
     protected final ThemeManager themeManager;
 
     protected BaseControllerImpl(SettingsProvider settingsProvider,

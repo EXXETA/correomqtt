@@ -46,14 +46,12 @@ public class ConnectionExportViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
     private final ConnectionHolder connectionHolder;
-    private final SettingsProvider settingsProvider;
-    private final ThemeManager themeManager;
     private final AlertHelper alertHelper;
-    private final ExportConnectionCellFactory exportConnectionCellFactory;
+    private final ExportConnectionCell.Factory exportConnectionCellFactory;
     @FXML
     private Label passwordLabel;
 
-    private static ResourceBundle resources;
+    private ResourceBundle resources;
 
     @FXML
     private CheckListView<ConnectionPropertiesDTO> connectionsListView;
@@ -71,11 +69,9 @@ public class ConnectionExportViewController extends BaseControllerImpl {
                                           SettingsProvider settingsProvider,
                                           ThemeManager themeManager,
                                           AlertHelper alertHelper,
-                                          ExportConnectionCellFactory exportConnectionCellFactory) {
+                                          ExportConnectionCell.Factory exportConnectionCellFactory) {
         super(settingsProvider, themeManager);
         this.connectionHolder = connectionHolder;
-        this.settingsProvider = settingsProvider;
-        this.themeManager = themeManager;
         this.alertHelper = alertHelper;
 
         this.exportConnectionCellFactory = exportConnectionCellFactory;

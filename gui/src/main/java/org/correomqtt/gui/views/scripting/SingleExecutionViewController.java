@@ -4,6 +4,7 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.encoder.Encoder;
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -40,9 +41,11 @@ import static org.correomqtt.core.utils.LoggerUtils.findPatternEncoder;
 public class SingleExecutionViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleExecutionViewController.class);
-    private static ResourceBundle resources;
     private final AlertHelper alertHelper;
+    private final ScriptLoadLogTask.Factory scriptLoadLogFactory;
+    private final ScriptCancelTask.Factory scriptCancelTaskFactory;
     private final ExecutionPropertiesDTO executionPropertiesDTO;
+    private ResourceBundle resources;
     @FXML
     private VBox mainNode;
     @FXML
@@ -53,13 +56,23 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     private Button scriptingStopButton;
     private LogToRichtTextFxAppender appender;
 
+    @AssistedFactory
+    public interface Factory {
+        SingleExecutionViewController create(ExecutionPropertiesDTO executionPropertiesDTO);
+
+    }
+
     @AssistedInject
     public SingleExecutionViewController(SettingsProvider settingsProvider,
                                          ThemeManager themeManager,
                                          AlertHelper alertHelper,
+                                         ScriptLoadLogTask.Factory scriptLoadLogTaskFactory,
+                                         ScriptCancelTask.Factory scriptCancelTaskFactory,
                                          @Assisted ExecutionPropertiesDTO executionPropertiesDTO) {
         super(settingsProvider, themeManager);
         this.alertHelper = alertHelper;
+        this.scriptLoadLogFactory = scriptLoadLogTaskFactory;
+        this.scriptCancelTaskFactory = scriptCancelTaskFactory;
         this.executionPropertiesDTO = executionPropertiesDTO;
         EventBus.register(this);
     }
@@ -79,7 +92,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
         ExecutionDTO dto = ScriptingBackend.getExecutionDTO(executionPropertiesDTO.getExecutionId());
 
         if (dto != null) {
-            new ScriptLoadLogTask(dto)
+            scriptLoadLogFactory.create(dto)
                     .onSuccess(log -> {
                         LogAreaUtils.appendColorful(logArea, log);
                         if (executionPropertiesDTO.getState() == ScriptState.RUNNING) {
@@ -156,7 +169,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
 
     @FXML
     private void onStopButtonClicked() {
-        new ScriptCancelTask(getExecutionId())
+        scriptCancelTaskFactory.create(getExecutionId())
                 .onError(error -> alertHelper.unexpectedAlert(error.getUnexpectedError()))
                 .run();
     }

@@ -27,6 +27,7 @@ public class KeyringHandler {
 
     private final ResourceBundle resources;
     private final SettingsProvider settingsProvider;
+    private final SecretStoreProvider secretStoreProvider;
     private final AlertHelper alertHelper;
     private final KeyringFactory keyringFactory;
     private String masterPassword;
@@ -36,17 +37,19 @@ public class KeyringHandler {
     @Inject
     KeyringHandler(KeyringFactory keyringFactory,
                    SettingsProvider settingsProvider,
+                   SecretStoreProvider secretStoreProvider,
                    AlertHelper alertHelper) {
         this.keyringFactory = keyringFactory;
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
         this.settingsProvider = settingsProvider;
+        this.secretStoreProvider = secretStoreProvider;
         this.alertHelper = alertHelper;
     }
 
     public void migrate(String newKeyringIdentifier) {
 
         retryWithMasterPassword(
-                pw -> SecretStoreProvider.getInstance().ensurePasswordsAreDecrypted(pw),
+                secretStoreProvider::ensurePasswordsAreDecrypted,
                 resources.getString("onPasswordSaveFailedTitle"),
                 resources.getString("onPasswordSaveFailedHeader"),
                 resources.getString("onPasswordSaveFailedContent"),
@@ -188,6 +191,6 @@ public class KeyringHandler {
 
     public void wipe() {
         masterPassword = null;
-        SecretStoreProvider.getInstance().wipe();
+        secretStoreProvider.wipe();
     }
 }

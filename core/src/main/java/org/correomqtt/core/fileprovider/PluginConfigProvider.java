@@ -7,6 +7,7 @@ import org.correomqtt.core.model.HooksDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,12 +23,11 @@ public class PluginConfigProvider extends BaseUserFileProvider {
     private static final String EX_MSG_PREPARE_PLUGIN_FOLDER = "Could not create plugin folder.";
     private static final String PLUGIN_FOLDER = "plugins";
 
-    private static PluginConfigProvider instance = null;
-
     private HooksDTO hooksDTO;
     private String pluginPath;
 
-    private PluginConfigProvider() {
+    @Inject
+    PluginConfigProvider() {
 
         try {
             prepareFile(HOOK_FILE_NAME);
@@ -45,15 +45,6 @@ public class PluginConfigProvider extends BaseUserFileProvider {
             EventBus.fire(new InvalidHooksFileEvent(e));
         }
 
-    }
-
-    public static synchronized PluginConfigProvider getInstance() {
-        if (instance == null) {
-            instance = new PluginConfigProvider();
-            return instance;
-        } else {
-            return instance;
-        }
     }
 
     public List<HooksDTO.Extension> getOutgoingMessageHooks() {

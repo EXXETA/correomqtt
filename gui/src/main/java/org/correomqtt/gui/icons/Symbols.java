@@ -12,5 +12,5 @@ import java.util.List;
 @Getter
 @Setter
 public class Symbols {
-    private List<IconMap> symbols;
+    private List<IconMap> icons;
 }

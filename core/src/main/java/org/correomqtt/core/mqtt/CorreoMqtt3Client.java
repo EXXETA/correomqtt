@@ -49,6 +49,7 @@ class CorreoMqtt3Client extends BaseCorreoMqttClient {
         return LOGGER;
     }
 
+    @SuppressWarnings("java:S5527") // It is a feature to disable SSL (e.g. to allow SSH tunnels)
     void executeConnect() throws SSLException, InterruptedException, ExecutionException, TimeoutException {
 
         ConnectionConfigDTO configDTO = getConfigDTO();

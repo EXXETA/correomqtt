@@ -1,8 +1,8 @@
 package org.correomqtt.core.scripting.binding;
 
 import lombok.Getter;
-import org.correomqtt.core.connection.ConnectTaskFactory;
-import org.correomqtt.core.connection.DisconnectTaskFactory;
+import org.correomqtt.core.connection.ConnectTask;
+import org.correomqtt.core.connection.DisconnectTask;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.model.MessageDTO;
@@ -10,9 +10,9 @@ import org.correomqtt.core.model.MessageType;
 import org.correomqtt.core.model.Qos;
 import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.pubsub.IncomingMessageEvent;
-import org.correomqtt.core.pubsub.PublishTaskFactory;
-import org.correomqtt.core.pubsub.SubscribeTaskFactory;
-import org.correomqtt.core.pubsub.UnsubscribeTaskFactory;
+import org.correomqtt.core.pubsub.PublishTask;
+import org.correomqtt.core.pubsub.SubscribeTask;
+import org.correomqtt.core.pubsub.UnsubscribeTask;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess.Export;
 import org.slf4j.Logger;
@@ -40,11 +40,11 @@ public class Client {
     private Logger scriptLogger;
     private Queue queue;
     private Marker marker;
-    private final ConnectTaskFactory connectTaskFactory;
-    private final DisconnectTaskFactory disconnectTaskFactory;
-    private final PublishTaskFactory publishTaskFactory;
-    private final SubscribeTaskFactory subscribeTaskFactory;
-    private final UnsubscribeTaskFactory unsubscribeTaskFactory;
+    private final ConnectTask.Factory connectTaskFactory;
+    private final DisconnectTask.Factory disconnectTaskFactory;
+    private final PublishTask.Factory publishTaskFactory;
+    private final SubscribeTask.Factory subscribeTaskFactory;
+    private final UnsubscribeTask.Factory unsubscribeTaskFactory;
     @Getter
     private Context context;
     private AsyncClient asyncClient;
@@ -53,11 +53,11 @@ public class Client {
     private final Map<String, Consumer<String>> subscriptions = new HashMap<>();
 
     @Inject
-    Client(ConnectTaskFactory connectTaskFactory,
-           DisconnectTaskFactory disconnectTaskFactory,
-           PublishTaskFactory publishTaskFactory,
-           SubscribeTaskFactory subscribeTaskFactory,
-           UnsubscribeTaskFactory unsubscribeTaskFactory) {
+    Client(ConnectTask.Factory connectTaskFactory,
+           DisconnectTask.Factory disconnectTaskFactory,
+           PublishTask.Factory publishTaskFactory,
+           SubscribeTask.Factory subscribeTaskFactory,
+           UnsubscribeTask.Factory unsubscribeTaskFactory) {
         this.connectTaskFactory = connectTaskFactory;
         this.disconnectTaskFactory = disconnectTaskFactory;
         this.publishTaskFactory = publishTaskFactory;

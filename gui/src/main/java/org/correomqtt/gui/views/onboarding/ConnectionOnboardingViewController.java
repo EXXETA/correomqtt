@@ -1,6 +1,7 @@
 package org.correomqtt.gui.views.onboarding;
 
 import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -17,11 +18,11 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.fileprovider.ConnectionsUpdatedEvent;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -29,8 +30,7 @@ import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.gui.views.cell.ConnectionCell;
-import org.correomqtt.gui.views.cell.ConnectionCellFactory;
-import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewControllerFactory;
+import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,8 +45,8 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionOnboardingViewController.class);
     private final ConnectionHolder connectionHolder;
-    private final ConnectionCellFactory connectionCellFactory;
-    private final ConnectionSettingsViewControllerFactory connectionSettingsViewControllerFactory;
+    private final ConnectionCell.Factory connectionCellFactory;
+    private final ConnectionSettingsViewController.Factory connectionSettingsViewControllerFactory;
     private final ConnectionOnboardingDelegate connectionsOnboardingDelegate;
     @FXML
     private AnchorPane helloViewAnchor;
@@ -69,13 +69,17 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
     @FXML
     private HBox noConnectionsButtonBar;
 
+    @AssistedFactory
+    public interface Factory {
+        ConnectionOnboardingViewController create(ConnectionOnboardingDelegate connectionsOnboardingDelegate);
+    }
     @AssistedInject
     public ConnectionOnboardingViewController(
             ConnectionHolder connectionHolder,
             SettingsProvider settingsProvider,
             ThemeManager themeManager,
-            ConnectionCellFactory connectionCellFactory,
-            ConnectionSettingsViewControllerFactory connectionSettingsViewControllerFactory,
+            ConnectionCell.Factory connectionCellFactory,
+            ConnectionSettingsViewController.Factory connectionSettingsViewControllerFactory,
             @Assisted ConnectionOnboardingDelegate connectionsOnboardingDelegate) {
         super(settingsProvider, themeManager);
         this.connectionHolder = connectionHolder;

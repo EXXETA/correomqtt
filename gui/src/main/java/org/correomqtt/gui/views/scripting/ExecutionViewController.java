@@ -22,7 +22,7 @@ import org.correomqtt.core.scripting.ScriptExecutionCancelledEvent;
 import org.correomqtt.core.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.core.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.core.scripting.ScriptExecutionSuccessEvent;
-import org.correomqtt.core.scripting.ScriptExecutionTaskFactory;
+import org.correomqtt.core.scripting.ScriptExecutionTask;
 import org.correomqtt.core.scripting.ScriptExecutionsDeletedEvent;
 import org.correomqtt.core.scripting.ScriptingBackend;
 import org.correomqtt.core.settings.SettingsProvider;
@@ -40,12 +40,13 @@ import java.util.ResourceBundle;
 
 public class ExecutionViewController extends BaseControllerImpl {
 
-    private static ResourceBundle resources;
+    private  ResourceBundle resources;
     private final Map<String, ScriptExecutionState> executionStates = new HashMap<>();
     private final AlertHelper alertHelper;
-    private final ExecutionCellFactory executionCellFactory;
-    private final SingleExecutionViewControllerFactory executionViewCtrlFactory;
-    private final ScriptExecutionTaskFactory scriptExecutionTaskFactory;
+    private final ExecutionCell.Factory executionCellFactory;
+    private final SingleExecutionViewController.Factory executionViewCtrlFactory;
+    private final ScriptExecutionTask.Factory scriptExecutionTaskFactory;
+    private final ScriptDeleteExecutionsTask.Factory scriptDeleteExecutionsTaskFactory;
     @FXML
     private AnchorPane executionSidebar;
     @FXML
@@ -64,18 +65,26 @@ public class ExecutionViewController extends BaseControllerImpl {
     private FilteredList<ExecutionPropertiesDTO> filteredList;
     private String currentName;
 
+    @AllArgsConstructor
+    private static class ScriptExecutionState {
+        private SingleExecutionViewController controller;
+        private Region region;
+    }
+
     @Inject
     public ExecutionViewController(SettingsProvider settingsProvider,
                                    ThemeManager themeManager,
                                    AlertHelper alertHelper,
-                                   ExecutionCellFactory executionCellFactory,
-                                   SingleExecutionViewControllerFactory executionViewCtrlFactory,
-                                   ScriptExecutionTaskFactory scriptExecutionTaskFactory) {
+                                   ExecutionCell.Factory executionCellFactory,
+                                   SingleExecutionViewController.Factory executionViewCtrlFactory,
+                                   ScriptExecutionTask.Factory scriptExecutionTaskFactory,
+                                   ScriptDeleteExecutionsTask.Factory scriptDeleteExecutionsTaskFactory) {
         super(settingsProvider, themeManager);
         this.alertHelper = alertHelper;
         this.executionCellFactory = executionCellFactory;
         this.executionViewCtrlFactory = executionViewCtrlFactory;
         this.scriptExecutionTaskFactory = scriptExecutionTaskFactory;
+        this.scriptDeleteExecutionsTaskFactory = scriptDeleteExecutionsTaskFactory;
         EventBus.register(this);
     }
 
@@ -93,7 +102,7 @@ public class ExecutionViewController extends BaseControllerImpl {
     }
 
     public void onClearExecutionsClicked() {
-        new ScriptDeleteExecutionsTask(currentName)
+        scriptDeleteExecutionsTaskFactory.create(currentName)
                 .onError(error -> alertHelper.unexpectedAlert(error.getUnexpectedError()))
                 .run();
 
@@ -256,11 +265,5 @@ public class ExecutionViewController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     public void onScriptExecutionProgress(@Subscribe ScriptExecutionProgressEvent event) {
         handleScriptExecutionResult(event);
-    }
-
-    @AllArgsConstructor
-    private static class ScriptExecutionState {
-        private SingleExecutionViewController controller;
-        private Region region;
     }
 }
