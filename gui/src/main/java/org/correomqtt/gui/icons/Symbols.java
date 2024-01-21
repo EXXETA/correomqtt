@@ -12,5 +12,6 @@ import java.util.List;
 @Getter
 @Setter
 public class Symbols {
-    private List<IconMap> icons;
+    @SuppressWarnings("java:S1700")
+    private List<IconMap> symbols;
 }

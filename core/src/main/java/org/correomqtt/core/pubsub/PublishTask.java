@@ -16,7 +16,7 @@ import org.correomqtt.core.plugin.model.MessageExtensionDTO;
 import org.correomqtt.core.plugin.spi.OutgoingMessageHook;
 import org.correomqtt.core.plugin.spi.OutgoingMessageHookDTO;
 import org.correomqtt.core.transformer.MessageExtensionTransformer;
-import org.correomqtt.core.utils.ConnectionHolder;
+import org.correomqtt.core.utils.ConnectionManager;
 import org.correomqtt.core.utils.LoggerUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,7 @@ public class PublishTask extends SimpleTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishTask.class);
 
     private final PluginManager pluginManager;
-    private final ConnectionHolder connectionHolder;
+    private final ConnectionManager connectionManager;
     private final LoggerUtils loggerUtils;
     private final String connectionId;
     private final MessageDTO messageDTO;
@@ -42,12 +42,12 @@ public class PublishTask extends SimpleTask {
 
     @AssistedInject
     PublishTask(PluginManager pluginManager,
-                ConnectionHolder connectionHolder,
+                ConnectionManager connectionManager,
                 LoggerUtils loggerUtils,
                 @Assisted String connectionId,
                 @Assisted MessageDTO messageDTO) {
         this.pluginManager = pluginManager;
-        this.connectionHolder = connectionHolder;
+        this.connectionManager = connectionManager;
         this.loggerUtils = loggerUtils;
         this.connectionId = connectionId;
         this.messageDTO = messageDTO;
@@ -56,7 +56,7 @@ public class PublishTask extends SimpleTask {
     @Override
     protected void execute() {
         LOGGER.info(loggerUtils.getConnectionMarker(connectionId), "Start publishing to topic: {}", messageDTO.getTopic());
-        CorreoMqttClient client = connectionHolder.getClient(connectionId);
+        CorreoMqttClient client = connectionManager.getClient(connectionId);
         MessageDTO manipulatedMessageDTO = executeOnPublishMessageExtensions(connectionId, messageDTO);
         try {
             client.publish(manipulatedMessageDTO);

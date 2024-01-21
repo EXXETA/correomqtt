@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views.connections;
 
-import org.correomqtt.core.settings.SettingsProvider;
+import lombok.Getter;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.eventbus.SubscribeFilter;
-import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
@@ -13,22 +13,20 @@ import static org.correomqtt.core.eventbus.SubscribeFilterNames.CONNECTION_ID;
 
 public abstract class BaseConnectionController extends BaseControllerImpl {
 
-    protected final ConnectionHolder connectionHolder;
     protected String connectionId;
+    @Getter
     private String tabId;
 
-    protected BaseConnectionController(SettingsProvider settingsProvider,
+    protected BaseConnectionController(CoreManager coreManager,
                                        ThemeManager themeManager,
-                                       ConnectionHolder connectionHolder,
                                        String connectionId) {
-        super(settingsProvider, themeManager);
-        this.connectionHolder = connectionHolder;
+        super(coreManager, themeManager);
         this.connectionId = connectionId;
     }
 
-     <C extends BaseControllerImpl> LoaderResult<C> load(final Class<C> controllerClazz,
-                                                               final String fxml,
-                                                               final String connectionId) {
+    <C extends BaseControllerImpl> LoaderResult<C> load(final Class<C> controllerClazz,
+                                                        final String fxml,
+                                                        final String connectionId) {
         return load(controllerClazz,
                 fxml,
                 () -> controllerClazz.getDeclaredConstructor(String.class).newInstance(connectionId));
@@ -45,11 +43,7 @@ public abstract class BaseConnectionController extends BaseControllerImpl {
     }
 
     Marker getConnectionMarker() {
-        return MarkerFactory.getMarker(connectionHolder.getConfig(connectionId).getName());
-    }
-
-    public String getTabId() {
-        return tabId;
+        return MarkerFactory.getMarker(coreManager.getConnectionManager().getConfig(connectionId).getName());
     }
 
     public void setTabId(String tabId) {

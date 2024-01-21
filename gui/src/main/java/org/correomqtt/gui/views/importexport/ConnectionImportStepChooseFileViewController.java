@@ -7,7 +7,7 @@ import javafx.fxml.FXML;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.importexport.connections.ImportConnectionsFileTask;
 import org.correomqtt.core.model.ConnectionExportDTO;
@@ -20,7 +20,7 @@ import java.io.File;
 import java.util.ResourceBundle;
 
 public class ConnectionImportStepChooseFileViewController extends BaseControllerImpl implements ConnectionImportStepController {
-    private  ResourceBundle resources;
+    private ResourceBundle resources;
     private final AlertHelper alertHelper;
     private final ConnectionImportStepDelegate delegate;
     @FXML
@@ -30,13 +30,13 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
     public interface Factory {
         ConnectionImportStepChooseFileViewController create(ConnectionImportStepDelegate delegate);
     }
+
     @AssistedInject
-    public ConnectionImportStepChooseFileViewController(
-            SettingsProvider settingsProvider,
-            ThemeManager themeManager,
-            AlertHelper alertHelper,
-            @Assisted ConnectionImportStepDelegate delegate) {
-        super(settingsProvider, themeManager);
+    public ConnectionImportStepChooseFileViewController(CoreManager coreManager,
+                                                        ThemeManager themeManager,
+                                                        AlertHelper alertHelper,
+                                                        @Assisted ConnectionImportStepDelegate delegate) {
+        super(coreManager, themeManager);
         this.alertHelper = alertHelper;
         this.delegate = delegate;
     }

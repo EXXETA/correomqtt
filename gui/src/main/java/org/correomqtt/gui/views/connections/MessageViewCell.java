@@ -11,7 +11,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.model.LabelType;
 import org.correomqtt.core.model.MessageListViewConfig;
 import org.correomqtt.core.model.RetainedState;
@@ -38,7 +38,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
 
     private final PluginManager pluginManager;
     private final MessageValidator messageValidator;
-    private final SettingsProvider settingsProvider;
+    private final SettingsManager settingsManager;
     private final ListView<MessagePropertiesDTO> listView;
     private final Supplier<MessageListViewConfig> listViewConfigGetter;
 
@@ -95,12 +95,12 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     @AssistedInject
     public MessageViewCell(PluginManager pluginManager,
                            MessageValidator messageValidator,
-                           SettingsProvider settingsProvider,
+                           SettingsManager settingsManager,
                            @Assisted ListView<MessagePropertiesDTO> listView,
                            @Assisted Supplier<MessageListViewConfig> listViewConfigGetter) {
         this.pluginManager = pluginManager;
         this.messageValidator = messageValidator;
-        this.settingsProvider = settingsProvider;
+        this.settingsManager = settingsManager;
         this.listView = listView;
         this.listViewConfigGetter = listViewConfigGetter;
     }
@@ -116,7 +116,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(MessageViewCell.class.getResource("messageView.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

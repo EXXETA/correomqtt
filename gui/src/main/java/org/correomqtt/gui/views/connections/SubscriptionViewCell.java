@@ -11,7 +11,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +23,7 @@ public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionViewCell.class);
 
-    private final SettingsProvider settingsProvider;
+    private final SettingsManager settingsManager;
     private final ListView<SubscriptionPropertiesDTO> listView;
 
     @SuppressWarnings("unused")
@@ -52,9 +52,9 @@ public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
 
     }
     @AssistedInject
-    public SubscriptionViewCell(SettingsProvider settingsProvider,
+    public SubscriptionViewCell(SettingsManager settingsManager,
                                 @Assisted ListView<SubscriptionPropertiesDTO> listView) {
-        this.settingsProvider = settingsProvider;
+        this.settingsManager = settingsManager;
         this.listView = listView;
     }
 
@@ -69,7 +69,7 @@ public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(SubscriptionViewCell.class.getResource("subscriptionCell.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

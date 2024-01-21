@@ -34,9 +34,9 @@ import static org.correomqtt.core.model.ConnectionPasswordType.SSL_KEYSTORE_PASS
 //TODO check invalid configs
 
 @Singleton
-public class SettingsProvider extends BaseUserFileProvider {
+public class SettingsManager extends BaseUserFileProvider {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SettingsProvider.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SettingsManager.class);
 
     private static final String CONFIG_FILE_NAME = "config.json";
     private final SecretStoreProvider secretStoreProvider;
@@ -45,7 +45,7 @@ public class SettingsProvider extends BaseUserFileProvider {
     private ConfigDTO configDTO;
 
     @Inject
-    public SettingsProvider(SecretStoreProvider secretStoreProvider) {
+    public SettingsManager(SecretStoreProvider secretStoreProvider) {
         this.secretStoreProvider = secretStoreProvider;
 
         try {

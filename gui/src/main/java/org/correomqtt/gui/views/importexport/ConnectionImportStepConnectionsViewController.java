@@ -10,10 +10,9 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.SelectionMode;
 import org.controlsfx.control.CheckListView;
 import org.controlsfx.control.IndexedCheckModel;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.model.ConnectionConfigDTO;
-import org.correomqtt.core.utils.ConnectionHolder;
-import org.correomqtt.gui.keyring.KeyringHandler;
+import org.correomqtt.gui.keyring.KeyringManager;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
@@ -26,10 +25,8 @@ import java.util.ResourceBundle;
 import java.util.stream.Stream;
 
 public class ConnectionImportStepConnectionsViewController extends BaseControllerImpl implements ConnectionImportStepController {
-    private  ResourceBundle resources;
-    private final ConnectionHolder connectionHolder;
-    private final SettingsProvider settingsProvider;
-    private final KeyringHandler keyringHandler;
+    private ResourceBundle resources;
+    private final KeyringManager keyringManager;
     private final AlertHelper alertHelper;
     private final ExportConnectionCell.Factory exportConnectionCellFactory;
     private final ConnectionImportStepDelegate delegate;
@@ -42,18 +39,16 @@ public class ConnectionImportStepConnectionsViewController extends BaseControlle
     public interface Factory {
         ConnectionImportStepConnectionsViewController create(ConnectionImportStepDelegate delegate);
     }
+
     @AssistedInject
-    public ConnectionImportStepConnectionsViewController(ConnectionHolder connectionHolder,
-                                                         SettingsProvider settingsProvider,
+    public ConnectionImportStepConnectionsViewController(CoreManager coreManager,
                                                          ThemeManager themeManager,
-                                                         KeyringHandler keyringHandler,
+                                                         KeyringManager keyringManager,
                                                          AlertHelper alertHelper,
                                                          ExportConnectionCell.Factory exportConnectionCellFactory,
                                                          @Assisted ConnectionImportStepDelegate delegate) {
-        super(settingsProvider, themeManager);
-        this.connectionHolder = connectionHolder;
-        this.settingsProvider = settingsProvider;
-        this.keyringHandler = keyringHandler;
+        super(coreManager, themeManager);
+        this.keyringManager = keyringManager;
         this.alertHelper = alertHelper;
         this.exportConnectionCellFactory = exportConnectionCellFactory;
         this.delegate = delegate;
@@ -102,7 +97,7 @@ public class ConnectionImportStepConnectionsViewController extends BaseControlle
         connectionConfigDTOS.clear();
         connectionConfigDTOS.addAll(ConnectionTransformer.dtoListToPropList(importedConnections));
         connectionsListView.setItems(connectionConfigDTOS);
-        List<ConnectionConfigDTO> existingConnections = connectionHolder.getSortedConnections();
+        List<ConnectionConfigDTO> existingConnections = coreManager.getConnectionManager().getSortedConnections();
         disabledConnections = connectionConfigDTOS.stream()
                 .filter(cp -> existingConnections.stream()
                         .anyMatch(c -> cp.getId().equals(c.getId()) || cp.getName().equals(c.getName()))
@@ -126,12 +121,12 @@ public class ConnectionImportStepConnectionsViewController extends BaseControlle
         this.delegate.setImportableConnections(importableConnections);
 
         List<ConnectionConfigDTO> connections = Stream.concat(
-                connectionHolder.getSortedConnections().stream(),
+                coreManager.getConnectionManager().getSortedConnections().stream(),
                 importableConnections.stream()
         ).toList();
 
-        keyringHandler.retryWithMasterPassword(
-                masterPassword -> settingsProvider.saveConnections(connections, masterPassword),
+        keyringManager.retryWithMasterPassword(
+                masterPassword -> coreManager.getSettingsManager().saveConnections(connections, masterPassword),
                 resources.getString("onPasswordSaveFailedTitle"),
                 resources.getString("onPasswordSaveFailedHeader"),
                 resources.getString("onPasswordSaveFailedContent"),

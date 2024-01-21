@@ -9,7 +9,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.connection.ConnectionState;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
@@ -24,7 +24,6 @@ import org.correomqtt.core.scripting.ScriptFileDTO;
 import org.correomqtt.core.scripting.ScriptLoadTask;
 import org.correomqtt.core.scripting.ScriptSaveTask;
 import org.correomqtt.core.scripting.ScriptingBackend;
-import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.controls.IconButton;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -48,7 +47,6 @@ import static org.correomqtt.core.eventbus.SubscribeFilterNames.SCRIPT_NAME;
 public class SingleEditorViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleEditorViewController.class);
-    private final ConnectionHolder connectionHolder;
     private final ConnectionCellButton.Factory connectionCellButtonFactory;
     private final AlertHelper alertHelper;
     private final ScriptLoadTask.Factory scriptLoadTaskFactory;
@@ -86,8 +84,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
     }
 
     @AssistedInject
-    public SingleEditorViewController(ConnectionHolder connectionHolder,
-                                      SettingsProvider settingsProvider,
+    public SingleEditorViewController(CoreManager coreManager,
                                       ThemeManager themeManager,
                                       ConnectionCellButton.Factory connectionCellButtonFactory,
                                       AlertHelper alertHelper,
@@ -95,8 +92,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
                                       ScriptSaveTask.Factory scriptSaveTaskFactory,
                                       @Assisted SingleEditorViewDelegate delegate,
                                       @Assisted ScriptFilePropertiesDTO scriptFilePropertiesDTO) {
-        super(settingsProvider, themeManager);
-        this.connectionHolder = connectionHolder;
+        super(coreManager, themeManager);
         this.connectionCellButtonFactory = connectionCellButtonFactory;
         this.alertHelper = alertHelper;
         this.scriptLoadTaskFactory = scriptLoadTaskFactory;
@@ -134,13 +130,13 @@ public class SingleEditorViewController extends BaseControllerImpl {
         ConnectionPropertiesDTO selectedItem = connectionList.getSelectionModel().getSelectedItem();
 
         connectionList.setItems(FXCollections.observableArrayList(
-                ConnectionTransformer.dtoListToPropList(connectionHolder.getSortedConnections())
+                ConnectionTransformer.dtoListToPropList(coreManager.getConnectionManager().getSortedConnections())
         ));
 
         if (selectedItem == null) {
             selectedItem = connectionList.getItems().stream()
                     .filter(c -> {
-                        CorreoMqttClient client = connectionHolder.getClient(c.getId());
+                        CorreoMqttClient client = coreManager.getConnectionManager().getClient(c.getId());
                         return client != null && client.getState() == ConnectionState.CONNECTED;
                     })
                     .findFirst()

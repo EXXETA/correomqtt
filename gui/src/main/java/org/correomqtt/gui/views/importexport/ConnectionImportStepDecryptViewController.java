@@ -6,7 +6,7 @@ import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.Tooltip;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.importexport.connections.ImportDecryptConnectionsTask;
 import org.correomqtt.core.model.ConnectionConfigDTO;
@@ -23,7 +23,7 @@ public class ConnectionImportStepDecryptViewController extends BaseControllerImp
     private static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
     private final AlertHelper alertHelper;
     private final ConnectionImportStepDelegate delegate;
-    private  ResourceBundle resources;
+    private ResourceBundle resources;
     @FXML
     private PasswordField passwordField;
 
@@ -31,13 +31,13 @@ public class ConnectionImportStepDecryptViewController extends BaseControllerImp
     public interface Factory {
         ConnectionImportStepDecryptViewController create(ConnectionImportStepDelegate delegate);
     }
+
     @AssistedInject
-    public ConnectionImportStepDecryptViewController(
-            SettingsProvider settingsProvider,
-            ThemeManager themeManager,
-            AlertHelper alertHelper,
-            @Assisted ConnectionImportStepDelegate delegate) {
-        super(settingsProvider, themeManager);
+    public ConnectionImportStepDecryptViewController(CoreManager coreManager,
+                                                     ThemeManager themeManager,
+                                                     AlertHelper alertHelper,
+                                                     @Assisted ConnectionImportStepDelegate delegate) {
+        super(coreManager, themeManager);
         this.alertHelper = alertHelper;
         this.delegate = delegate;
     }

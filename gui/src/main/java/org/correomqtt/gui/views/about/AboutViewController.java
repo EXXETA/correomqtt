@@ -7,9 +7,9 @@ import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import org.correomqtt.gui.model.AppHostServices;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.utils.VersionUtils;
+import org.correomqtt.gui.model.AppHostServices;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -49,12 +49,12 @@ public class AboutViewController extends BaseControllerImpl {
     private Label appNameLabel;
 
     @Inject
-    AboutViewController(SettingsProvider settingsProvider,
+    AboutViewController(CoreManager coreManager,
                         ThemeManager themeManager,
                         AlertHelper alertHelper,
                         @AppHostServices HostServices hostServices
     ) {
-        super(settingsProvider, themeManager);
+        super(coreManager, themeManager);
         this.alertHelper = alertHelper;
         this.hostServices = hostServices;
     }

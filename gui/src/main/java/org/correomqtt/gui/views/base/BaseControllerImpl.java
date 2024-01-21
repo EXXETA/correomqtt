@@ -10,7 +10,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.views.LoaderResult;
 import org.slf4j.Logger;
@@ -25,15 +25,20 @@ import java.util.ResourceBundle;
 public abstract class BaseControllerImpl implements BaseController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseControllerImpl.class);
-    private final ResourceBundle resources;
-    protected final SettingsProvider settingsProvider;
+    protected final CoreManager coreManager;
     protected final ThemeManager themeManager;
+    private final ResourceBundle resources;
 
-    protected BaseControllerImpl(SettingsProvider settingsProvider,
+    @FunctionalInterface
+    public interface ConstructorMethod<Z> {
+        Z construct() throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException;
+    }
+
+    protected BaseControllerImpl(CoreManager coreManager,
                                  ThemeManager themeManager) {
-        this.settingsProvider = settingsProvider;
+        this.coreManager = coreManager;
         this.themeManager = themeManager;
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", coreManager.getSettingsManager().getSettings().getCurrentLocale());
     }
 
     protected <C extends BaseControllerImpl> LoaderResult<C> load(Class<C> controllerClazz, String fxml) {
@@ -47,7 +52,7 @@ public abstract class BaseControllerImpl implements BaseController {
                                                                   final ConstructorMethod<C> constructorMethod) {
 
         FXMLLoader loader = new FXMLLoader(controllerClazz.getResource(fxml),
-                ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
+                ResourceBundle.getBundle("org.correomqtt.i18n", coreManager.getSettingsManager().getSettings().getCurrentLocale()));
 
         loader.setControllerFactory(param -> {
             try {
@@ -117,10 +122,5 @@ public abstract class BaseControllerImpl implements BaseController {
             stage.getScene().getWindow().addEventFilter(KeyEvent.KEY_PRESSED, keyHandler);
         }
         stage.getScene().getWindow().getProperties().putAll(windowProperties);
-    }
-
-    @FunctionalInterface
-    public interface ConstructorMethod<Z> {
-        Z construct() throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException;
     }
 }

@@ -8,11 +8,11 @@ import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
-import org.correomqtt.core.utils.ConnectionHolder;
+import org.correomqtt.core.utils.ConnectionManager;
 
 public class UnsubscribeTask extends SimpleTask {
 
-    private final ConnectionHolder connectionHolder;
+    private final ConnectionManager connectionManager;
     private final String connectionId;
     private final SubscriptionDTO subscriptionDTO;
 
@@ -22,17 +22,17 @@ public class UnsubscribeTask extends SimpleTask {
     }
 
     @AssistedInject
-    public UnsubscribeTask(ConnectionHolder connectionHolder,
+    public UnsubscribeTask(ConnectionManager connectionManager,
                            @Assisted String connectionId,
                            @Assisted SubscriptionDTO subscriptionDTO) {
-        this.connectionHolder = connectionHolder;
+        this.connectionManager = connectionManager;
         this.connectionId = connectionId;
         this.subscriptionDTO = subscriptionDTO;
     }
 
     @Override
     protected void execute() {
-        CorreoMqttClient client = connectionHolder.getClient(connectionId);
+        CorreoMqttClient client = connectionManager.getClient(connectionId);
         client.unsubscribe(subscriptionDTO);
         EventBus.fireAsync(new UnsubscribeEvent(connectionId, subscriptionDTO));
     }

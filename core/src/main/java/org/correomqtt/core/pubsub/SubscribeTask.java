@@ -17,7 +17,7 @@ import org.correomqtt.core.plugin.model.MessageExtensionDTO;
 import org.correomqtt.core.plugin.spi.IncomingMessageHook;
 import org.correomqtt.core.plugin.spi.IncomingMessageHookDTO;
 import org.correomqtt.core.transformer.MessageExtensionTransformer;
-import org.correomqtt.core.utils.ConnectionHolder;
+import org.correomqtt.core.utils.ConnectionManager;
 import org.correomqtt.core.utils.LoggerUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,7 @@ public class SubscribeTask extends SimpleTask {
 
     private final PluginManager pluginManager;
     private final LoggerUtils loggerUtils;
-    private final ConnectionHolder connectionHolder;
+    private final ConnectionManager connectionManager;
     private final String connectionId;
     private final SubscriptionDTO subscriptionDTO;
 
@@ -44,20 +44,20 @@ public class SubscribeTask extends SimpleTask {
 
     @AssistedInject
     SubscribeTask(PluginManager pluginManager,
-                         ConnectionHolder connectionHolder,
+                         ConnectionManager connectionManager,
                          LoggerUtils loggerUtils,
                          @Assisted String connectionId,
                          @Assisted SubscriptionDTO subscriptionDTO) {
         this.pluginManager = pluginManager;
         this.loggerUtils = loggerUtils;
-        this.connectionHolder = connectionHolder;
+        this.connectionManager = connectionManager;
         this.connectionId = connectionId;
         this.subscriptionDTO = subscriptionDTO;
     }
 
     @Override
     protected void execute() {
-        CorreoMqttClient client = connectionHolder.getClient(connectionId);
+        CorreoMqttClient client = connectionManager.getClient(connectionId);
         try {
             client.subscribe(subscriptionDTO, this::onIncomingMessage);
         } catch (InterruptedException e) {

@@ -15,7 +15,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.slf4j.Logger;
@@ -28,7 +28,7 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionCell.class);
     private final ListView<ExecutionPropertiesDTO> listView;
-    private final SettingsProvider settingsProvider;
+    private final SettingsManager settingsManager;
     private final ThemeManager themeManager;
 
     @FXML
@@ -54,10 +54,10 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
 
     }
     @AssistedInject
-    public ExecutionCell(SettingsProvider settingsProvider,
+    public ExecutionCell(SettingsManager settingsManager,
                          ThemeManager themeManager,
                          @Assisted ListView<ExecutionPropertiesDTO> listView) {
-        this.settingsProvider = settingsProvider;
+        this.settingsManager = settingsManager;
         this.themeManager = themeManager;
         this.listView = listView;
     }
@@ -88,7 +88,7 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(ExecutionCell.class.getResource("executionCell.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

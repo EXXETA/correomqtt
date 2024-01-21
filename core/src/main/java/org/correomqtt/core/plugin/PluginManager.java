@@ -15,7 +15,7 @@ import org.correomqtt.core.plugin.spi.IncomingMessageHook;
 import org.correomqtt.core.plugin.spi.MessageValidatorHook;
 import org.correomqtt.core.plugin.spi.OutgoingMessageHook;
 import org.correomqtt.core.plugin.transformer.PluginInfoTransformer;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.utils.VendorConstants;
 import org.correomqtt.core.utils.VersionUtils;
 import org.pf4j.JarPluginManager;
@@ -47,12 +47,12 @@ public class PluginManager extends JarPluginManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginManager.class);
     public static final String DEFAULT_REPO_ID = "default";
-    private final SettingsProvider settings;
+    private final SettingsManager settings;
     private final PluginConfigProvider pluginConfigProvider;
     private BundledPluginList.BundledPlugins bundledPlugins;
 
     @Inject
-    PluginManager(SettingsProvider settings,
+    PluginManager(SettingsManager settings,
                   PluginConfigProvider pluginConfigProvider) {
         super(Path.of(pluginConfigProvider.getPluginPath()));
         this.settings = settings;

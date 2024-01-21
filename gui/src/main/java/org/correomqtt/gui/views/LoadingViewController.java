@@ -10,8 +10,7 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
-import org.correomqtt.core.settings.SettingsProvider;
-import org.correomqtt.core.utils.ConnectionHolder;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -42,12 +41,11 @@ public class LoadingViewController extends BaseConnectionController {
 
     }
     @AssistedInject
-    LoadingViewController(SettingsProvider settingsProvider,
+    LoadingViewController(CoreManager coreManager,
                           ThemeManager themeManager,
-                          ConnectionHolder connectionHolder,
                           @Assisted("connectionId") String connectionId,
                           @Assisted("message") String message) {
-        super(settingsProvider, themeManager, connectionHolder, connectionId);
+        super(coreManager, themeManager, connectionId);
         this.message = message;
     }
 

@@ -14,12 +14,12 @@ import javafx.scene.control.TabPane;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import lombok.Getter;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.exception.CorreoMqttUnableToCheckVersionException;
-import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.core.utils.VendorConstants;
 import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.model.AppHostServices;
@@ -55,7 +55,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     public static final String DIRTY_CLASS = "dirty";
     private static final Logger LOGGER = LoggerFactory.getLogger(MainViewController.class);
-    private final ConnectionHolder connectionHolder;
+    private final CoreManager coreManager;
     private final ThemeManager themeManager;
     private final ConnectionViewController.Factory connectionViewCtlrFactory;
     private final ConnectionSettingsViewController.Factory connectionSettingsCtrlFactory;
@@ -118,7 +118,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private String closedTabId;
 
     @Inject
-    public MainViewController(ConnectionHolder connectionHolder,
+    public MainViewController(CoreManager coreManager,
                               ThemeManager themeManager,
                               ConnectionViewController.Factory connectionViewCtlrFactory,
                               ConnectionSettingsViewController.Factory connectionSettingsCtrlFactory,
@@ -132,7 +132,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                               Provider<ConnectionImportViewController> importViewCtrlProvider,
                               Provider<ScriptingViewController> scriptingCtrlProvider,
                               Provider<PluginsViewController> pluginCtrlProvider) {
-        this.connectionHolder = connectionHolder;
+        this.coreManager = coreManager;
         this.themeManager = themeManager;
         this.connectionViewCtlrFactory = connectionViewCtlrFactory;
         this.connectionSettingsCtrlFactory = connectionSettingsCtrlFactory;
@@ -236,7 +236,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     @SuppressWarnings("unused")
     public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {
         if (connectionViewControllers.values().stream().noneMatch(ctrl -> ctrl.getConnectionId().equals(event.getConnectionId()))) {
-            getConnectionViewControllerLoaderResult(ConnectionTransformer.dtoToProps(connectionHolder.getConfig(event.getConnectionId())));
+            getConnectionViewControllerLoaderResult(ConnectionTransformer.dtoToProps(coreManager.getConnectionManager().getConfig(event.getConnectionId())));
         }
     }
 

@@ -10,7 +10,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.eventbus.SubscribeFilter;
@@ -63,13 +64,13 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     }
 
     @AssistedInject
-    public SingleExecutionViewController(SettingsProvider settingsProvider,
+    public SingleExecutionViewController(CoreManager coreManager,
                                          ThemeManager themeManager,
                                          AlertHelper alertHelper,
                                          ScriptLoadLogTask.Factory scriptLoadLogTaskFactory,
                                          ScriptCancelTask.Factory scriptCancelTaskFactory,
                                          @Assisted ExecutionPropertiesDTO executionPropertiesDTO) {
-        super(settingsProvider, themeManager);
+        super(coreManager, themeManager);
         this.alertHelper = alertHelper;
         this.scriptLoadLogFactory = scriptLoadLogTaskFactory;
         this.scriptCancelTaskFactory = scriptCancelTaskFactory;

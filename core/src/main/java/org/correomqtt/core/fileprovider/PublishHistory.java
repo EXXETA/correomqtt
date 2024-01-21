@@ -7,7 +7,7 @@ import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.model.PublishHistoryListDTO;
 import org.correomqtt.core.pubsub.PublishEvent;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +27,7 @@ public class PublishHistory extends BasePersistHistoryProvider<PublishHistoryLis
     private static final Map<String, PublishHistoryListDTO> historyDTOs = new HashMap<>();
 
     @AssistedInject
-    public PublishHistory(SettingsProvider settings, @Assisted String connectionId) {
+    public PublishHistory(SettingsManager settings, @Assisted String connectionId) {
         super(settings, connectionId);
         EventBus.register(this);
     }

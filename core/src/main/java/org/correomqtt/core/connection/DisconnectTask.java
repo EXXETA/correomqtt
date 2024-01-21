@@ -5,11 +5,11 @@ import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
-import org.correomqtt.core.utils.ConnectionHolder;
+import org.correomqtt.core.utils.ConnectionManager;
 
 public class DisconnectTask extends SimpleTask {
 
-    private final ConnectionHolder connectionHolder;
+    private final ConnectionManager connectionManager;
     private final String connectionId;
 
     @AssistedFactory
@@ -18,20 +18,20 @@ public class DisconnectTask extends SimpleTask {
     }
 
     @AssistedInject
-    public DisconnectTask(ConnectionHolder connectionHolder, @Assisted String connectionId) {
-        this.connectionHolder = connectionHolder;
+    public DisconnectTask(ConnectionManager connectionManager, @Assisted String connectionId) {
+        this.connectionManager = connectionManager;
         this.connectionId = connectionId;
     }
 
     @Override
     protected void execute() {
-        CorreoMqttClient client = connectionHolder.getClient(connectionId);
+        CorreoMqttClient client = connectionManager.getClient(connectionId);
         client.disconnect();
     }
 
 
     @Override
     protected void successHook() {
-        connectionHolder.getConnection(connectionId).setClient(null); // TODO extract
+        connectionManager.getConnection(connectionId).setClient(null); // TODO extract
     }
 }

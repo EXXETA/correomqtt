@@ -18,12 +18,11 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.fileprovider.ConnectionsUpdatedEvent;
-import org.correomqtt.core.settings.SettingsProvider;
-import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
@@ -44,7 +43,6 @@ import java.util.stream.Collectors;
 public class ConnectionOnboardingViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionOnboardingViewController.class);
-    private final ConnectionHolder connectionHolder;
     private final ConnectionCell.Factory connectionCellFactory;
     private final ConnectionSettingsViewController.Factory connectionSettingsViewControllerFactory;
     private final ConnectionOnboardingDelegate connectionsOnboardingDelegate;
@@ -73,16 +71,14 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
     public interface Factory {
         ConnectionOnboardingViewController create(ConnectionOnboardingDelegate connectionsOnboardingDelegate);
     }
+
     @AssistedInject
-    public ConnectionOnboardingViewController(
-            ConnectionHolder connectionHolder,
-            SettingsProvider settingsProvider,
-            ThemeManager themeManager,
-            ConnectionCell.Factory connectionCellFactory,
-            ConnectionSettingsViewController.Factory connectionSettingsViewControllerFactory,
-            @Assisted ConnectionOnboardingDelegate connectionsOnboardingDelegate) {
-        super(settingsProvider, themeManager);
-        this.connectionHolder = connectionHolder;
+    public ConnectionOnboardingViewController(CoreManager coreManager,
+                                              ThemeManager themeManager,
+                                              ConnectionCell.Factory connectionCellFactory,
+                                              ConnectionSettingsViewController.Factory connectionSettingsViewControllerFactory,
+                                              @Assisted ConnectionOnboardingDelegate connectionsOnboardingDelegate) {
+        super(coreManager, themeManager);
         this.connectionCellFactory = connectionCellFactory;
         this.connectionSettingsViewControllerFactory = connectionSettingsViewControllerFactory;
         this.connectionsOnboardingDelegate = connectionsOnboardingDelegate;
@@ -99,7 +95,7 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
         connectionListView.setCellFactory(this::createCell);
 
         connectionListView.setItems(FXCollections.observableArrayList(
-                ConnectionTransformer.dtoListToPropList(connectionHolder.getSortedConnections())
+                ConnectionTransformer.dtoListToPropList(coreManager.getConnectionManager().getSortedConnections())
         ));
 
         updateConnections();
@@ -122,7 +118,7 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
     private void updateConnections() {
         List<ConnectionPropertiesDTO> resultList = new ArrayList<>(connectionListView.getItems());
 
-        List<ConnectionPropertiesDTO> newConnectionList = ConnectionTransformer.dtoListToPropList(connectionHolder.getSortedConnections());
+        List<ConnectionPropertiesDTO> newConnectionList = ConnectionTransformer.dtoListToPropList(coreManager.getConnectionManager().getSortedConnections());
 
         AtomicInteger sortIndex = new AtomicInteger();
         Map<String, Integer> sorted = newConnectionList.stream()

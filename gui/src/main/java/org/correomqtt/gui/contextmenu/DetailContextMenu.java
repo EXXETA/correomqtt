@@ -4,7 +4,7 @@ import dagger.assisted.Assisted;
 import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.scene.control.SeparatorMenuItem;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 
 @SuppressWarnings("java:S110")
 public class DetailContextMenu extends BaseMessageContextMenu<DetailContextMenuDelegate> {
@@ -18,9 +18,9 @@ public class DetailContextMenu extends BaseMessageContextMenu<DetailContextMenuD
     }
     @AssistedInject
     public DetailContextMenu(
-            SettingsProvider settingsProvider,
+            SettingsManager settingsManager,
             @Assisted DetailContextMenuDelegate dispatcher) {
-        super(settingsProvider, dispatcher);
+        super(settingsManager, dispatcher);
     }
 
     @Override

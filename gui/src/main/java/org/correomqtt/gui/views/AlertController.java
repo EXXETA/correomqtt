@@ -1,5 +1,6 @@
 package org.correomqtt.gui.views;
 
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.fileprovider.DirectoryCanNotBeCreatedEvent;
@@ -10,7 +11,6 @@ import org.correomqtt.core.fileprovider.PersistPublishHistoryReadFailedEvent;
 import org.correomqtt.core.fileprovider.PersistPublishHistoryWriteFailedEvent;
 import org.correomqtt.core.fileprovider.PersistSubscribeHistoryReadFailedEvent;
 import org.correomqtt.core.fileprovider.PersistSubscribeHistoryWriteFailedEvent;
-import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.fileprovider.SettingsUpdatedEvent;
 import org.correomqtt.core.fileprovider.UnaccessibleConfigFileEvent;
 import org.correomqtt.core.fileprovider.UnaccessiblePasswordFileEvent;
@@ -34,12 +34,12 @@ public class AlertController extends BaseControllerImpl {
     private final AlertHelper alertHelper;
 
     @Inject
-    AlertController(SettingsProvider settingsProvider,
+    AlertController(CoreManager coreManager,
                     ThemeManager themeManager,
                     AlertHelper alertHelper) {
-        super(settingsProvider, themeManager);
+        super(coreManager, themeManager);
         this.alertHelper = alertHelper;
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", coreManager.getSettingsManager().getSettings().getCurrentLocale());
     }
 
     public void activate() {

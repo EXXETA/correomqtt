@@ -10,7 +10,7 @@ import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.eventbus.SubscribeFilter;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.mqtt.CorreoMqttClientFactory;
-import org.correomqtt.core.utils.ConnectionHolder;
+import org.correomqtt.core.utils.ConnectionManager;
 import org.correomqtt.core.utils.CorreoMqttConnection;
 
 import javax.net.ssl.SSLException;
@@ -21,7 +21,7 @@ import static org.correomqtt.core.eventbus.SubscribeFilterNames.CONNECTION_ID;
 
 public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent> {
 
-    private final ConnectionHolder connectionHolder;
+    private final ConnectionManager connectionManager;
     private final String connectionId;
 
 
@@ -31,18 +31,18 @@ public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent>
     }
 
     @AssistedInject
-    public ConnectTask(ConnectionHolder connectionHolder, @Assisted String connectionId) {
-        this.connectionHolder = connectionHolder;
+    public ConnectTask(ConnectionManager connectionManager, @Assisted String connectionId) {
+        this.connectionManager = connectionManager;
         this.connectionId = connectionId;
     }
 
     @Override
     protected void execute() {
-        CorreoMqttClient client = connectionHolder.getClient(connectionId);
+        CorreoMqttClient client = connectionManager.getClient(connectionId);
         if (client == null) {
-            CorreoMqttConnection connection = connectionHolder.getConnection(connectionId);
+            CorreoMqttConnection connection = connectionManager.getConnection(connectionId);
             connection.setClient(CorreoMqttClientFactory.createClient(connection.getConfigDTO()));
-            client = connectionHolder.getClient(connectionId);
+            client = connectionManager.getClient(connectionId);
         }
 
         if (client.getState() == ConnectionState.DISCONNECTED_GRACEFUL || client.getState() == ConnectionState.DISCONNECTED_UNGRACEFUL) {

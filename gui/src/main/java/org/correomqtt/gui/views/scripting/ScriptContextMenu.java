@@ -5,7 +5,7 @@ import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.gui.contextmenu.BaseObjectContextMenu;
 import org.correomqtt.gui.controls.IconMenuItem;
 import org.correomqtt.gui.controls.ThemedFontIcon;
@@ -23,9 +23,9 @@ public class ScriptContextMenu extends BaseObjectContextMenu<ScriptFilePropertie
 
     }
     @AssistedInject
-    public ScriptContextMenu(SettingsProvider settingsProvider,
+    public ScriptContextMenu(SettingsManager settingsManager,
                              @Assisted ScriptContextMenuDelegate delegate) {
-        super(settingsProvider, delegate);
+        super(settingsManager, delegate);
     }
 
     @Override

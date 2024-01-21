@@ -19,12 +19,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.exception.CorreoMqttException;
-import org.correomqtt.core.fileprovider.HistoryManager;
 import org.correomqtt.core.importexport.messages.ImportMessageFailedEvent;
 import org.correomqtt.core.importexport.messages.ImportMessageStartedEvent;
 import org.correomqtt.core.importexport.messages.ImportMessageSuccessEvent;
@@ -36,13 +36,10 @@ import org.correomqtt.core.model.MessageListViewConfig;
 import org.correomqtt.core.model.MessageType;
 import org.correomqtt.core.model.PublishStatus;
 import org.correomqtt.core.model.Qos;
-import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.pubsub.PublishEvent;
 import org.correomqtt.core.pubsub.PublishListClearEvent;
 import org.correomqtt.core.pubsub.PublishListRemovedEvent;
 import org.correomqtt.core.pubsub.PublishTask;
-import org.correomqtt.core.settings.SettingsProvider;
-import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.plugin.spi.MessageContextMenuHook;
 import org.correomqtt.gui.plugin.spi.PublishMenuHook;
@@ -73,14 +70,11 @@ public class PublishViewController extends BaseMessageBasedViewController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishViewController.class);
     private final PublishTask.Factory publishTaskFactory;
-    private final PluginManager pluginManager;
     private final QosCell.Factory qosCellFactory;
-    private final SettingsProvider settingsProvider;
     private final AutoFormatPayload autoFormatPayload;
     private final TopicCell.Factory topicCellFactory;
     private final AlertHelper alertHelper;
     private final LoadingViewController.Factory loadingViewControllerFactory;
-    private final HistoryManager historyManager;
     private final PublishViewDelegate delegate;
     private ResourceBundle resources;
     @FXML
@@ -120,30 +114,24 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     @AssistedInject
-    public PublishViewController(PublishTask.Factory publishTaskFactory,
-                                 PluginManager pluginManager,
+    public PublishViewController(CoreManager coreManager,
+                                 PublishTask.Factory publishTaskFactory,
                                  QosCell.Factory qosCellFactory,
-                                 ConnectionHolder connectionHolder,
-                                 SettingsProvider settingsProvider,
                                  AutoFormatPayload autoFormatPayload,
                                  ThemeManager themeManager,
                                  MessageListViewController.Factory messageListViewControllerFactory,
                                  TopicCell.Factory topicCellFactory,
                                  AlertHelper alertHelper,
                                  LoadingViewController.Factory loadingViewControllerFactory,
-                                 HistoryManager historyManager,
                                  @Assisted String connectionId,
                                  @Assisted PublishViewDelegate delegate) {
-        super(connectionHolder, settingsProvider, themeManager, messageListViewControllerFactory, connectionId);
+        super(coreManager, themeManager, messageListViewControllerFactory, connectionId);
         this.publishTaskFactory = publishTaskFactory;
-        this.pluginManager = pluginManager;
         this.qosCellFactory = qosCellFactory;
-        this.settingsProvider = settingsProvider;
         this.autoFormatPayload = autoFormatPayload;
         this.topicCellFactory = topicCellFactory;
         this.alertHelper = alertHelper;
         this.loadingViewControllerFactory = loadingViewControllerFactory;
-        this.historyManager = historyManager;
         this.delegate = delegate;
         EventBus.register(this);
     }
@@ -162,7 +150,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
         qosComboBox.getSelectionModel().selectFirst();
         qosComboBox.setCellFactory(qosCellFactory::create);
 
-        pluginManager.getExtensions(PublishMenuHook.class).forEach(p -> {
+        coreManager.getPluginManager().getExtensions(PublishMenuHook.class).forEach(p -> {
             HBox pluginBox = new HBox();
             pluginBox.setAlignment(Pos.CENTER_RIGHT);
             pluginControlBox.getChildren().add(pluginBox);
@@ -187,7 +175,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
 
         payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
 
-        settingsProvider.getConnectionConfigs().stream()
+        coreManager.getSettingsManager().getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
                 .ifPresent(c -> {
@@ -212,7 +200,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     private void initTopicComboBox() {
-        List<String> topics = historyManager.activatePublishHistory(getConnectionId()).getTopics(getConnectionId());
+        List<String> topics = coreManager.getHistoryManager().activatePublishHistory(getConnectionId()).getTopics(getConnectionId());
         topicComboBox.setItems(FXCollections.observableArrayList(topics));
         topicComboBox.setCellFactory(topicCellFactory::create);
     }
@@ -294,7 +282,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     public void onConnectionChangedEvent(@Subscribe ConnectionStateChangedEvent event) {
         if (event.getState() == CONNECTED) {
             // reverse order, because first message in history must be last one to add
-            new LinkedList<>(historyManager.activatePublishMessageHistory(getConnectionId())
+            new LinkedList<>(coreManager.getHistoryManager().activatePublishMessageHistory(getConnectionId())
                     .getMessages(getConnectionId()))
                     .descendingIterator()
                     .forEachRemaining(messageDTO -> messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO)));
@@ -382,7 +370,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     @Override
     public Supplier<MessageListViewConfig> produceListViewConfig() {
         return () -> {
-            ConnectionConfigDTO config = settingsProvider
+            ConnectionConfigDTO config = coreManager.getSettingsManager()
                     .getConnectionConfigs()
                     .stream()
                     .filter(c -> c.getId().equals(getConnectionId()))
@@ -395,7 +383,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     private void executeOnCopyMessageToFormExtensions(MessagePropertiesDTO messageDTO) {
-        pluginManager.getExtensions(MessageContextMenuHook.class)
+        coreManager.getPluginManager().getExtensions(MessageContextMenuHook.class)
                 .forEach(p -> p.onCopyMessageToPublishForm(getConnectionId(), MessageTransformer.propsToExtensionDTO(messageDTO)));
     }
 

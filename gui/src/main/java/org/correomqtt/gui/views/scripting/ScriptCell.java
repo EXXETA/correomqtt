@@ -14,7 +14,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.scripting.ScriptingBackend;
 import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -30,7 +30,7 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptCell.class);
     private static final String DIRTY_CLASS = "dirty";
-    private final SettingsProvider settingsProvider;
+    private final SettingsManager settingsManager;
     private final ThemeManager themeManager;
     private final ListView<ScriptFilePropertiesDTO> listView;
 
@@ -55,10 +55,10 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
 
     }
     @AssistedInject
-    public ScriptCell(SettingsProvider settingsProvider,
+    public ScriptCell(SettingsManager settingsManager,
                       ThemeManager themeManager,
                       @Assisted ListView<ScriptFilePropertiesDTO> listView) {
-        this.settingsProvider = settingsProvider;
+        this.settingsManager = settingsManager;
         this.themeManager = themeManager;
         this.listView = listView;
     }
@@ -88,7 +88,7 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(ScriptCell.class.getResource("scriptCell.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

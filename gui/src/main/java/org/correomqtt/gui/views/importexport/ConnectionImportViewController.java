@@ -7,7 +7,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import lombok.AllArgsConstructor;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ConnectionExportDTO;
 import org.correomqtt.gui.model.WindowProperty;
@@ -41,14 +41,14 @@ public class ConnectionImportViewController extends BaseControllerImpl implement
     private ConnectionExportDTO originalImportedDTO;
 
     @Inject
-    protected ConnectionImportViewController(SettingsProvider settingsProvider,
+    protected ConnectionImportViewController(CoreManager coreManager,
                                              ThemeManager themeManager,
                                              ConnectionImportStepChooseFileViewController.Factory importChooseFileCtrlFactory,
                                              ConnectionImportStepConnectionsViewController.Factory importConnectionsCtrlFactory,
                                              ConnectionImportStepDecryptViewController.Factory importDecryptCtrlFactory,
                                              ConnectionImportStepFinalViewController.Factory importFinalCtrlFactory
     ) {
-        super(settingsProvider, themeManager);
+        super(coreManager, themeManager);
         this.importChooseFileCtrlFactory = importChooseFileCtrlFactory;
         this.importConnectionsCtrlFactory = importConnectionsCtrlFactory;
         this.importDecryptCtrlFactory = importDecryptCtrlFactory;

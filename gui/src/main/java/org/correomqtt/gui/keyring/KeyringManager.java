@@ -3,7 +3,7 @@ package org.correomqtt.gui.keyring;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.core.fileprovider.EncryptionRecoverableException;
 import org.correomqtt.core.fileprovider.SecretStoreProvider;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.keyring.Keyring;
 import org.correomqtt.core.keyring.KeyringException;
 import org.correomqtt.core.keyring.KeyringFactory;
@@ -21,12 +21,12 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Singleton
-public class KeyringHandler {
+public class KeyringManager {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KeyringHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeyringManager.class);
 
     private final ResourceBundle resources;
-    private final SettingsProvider settingsProvider;
+    private final SettingsManager settingsManager;
     private final SecretStoreProvider secretStoreProvider;
     private final AlertHelper alertHelper;
     private final KeyringFactory keyringFactory;
@@ -35,13 +35,13 @@ public class KeyringHandler {
     private Keyring keyring;
 
     @Inject
-    KeyringHandler(KeyringFactory keyringFactory,
-                   SettingsProvider settingsProvider,
+    KeyringManager(KeyringFactory keyringFactory,
+                   SettingsManager settingsManager,
                    SecretStoreProvider secretStoreProvider,
                    AlertHelper alertHelper) {
         this.keyringFactory = keyringFactory;
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
-        this.settingsProvider = settingsProvider;
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale());
+        this.settingsManager = settingsManager;
         this.secretStoreProvider = secretStoreProvider;
         this.alertHelper = alertHelper;
     }
@@ -70,9 +70,9 @@ public class KeyringHandler {
                 keyring.setPassword(KEYRING_LABEL, masterPassword);
             }
 
-            List<ConnectionConfigDTO> connections = settingsProvider.getConnectionConfigs();
+            List<ConnectionConfigDTO> connections = settingsManager.getConnectionConfigs();
             retryWithMasterPassword(
-                    pw -> settingsProvider.saveConnections(connections, pw),
+                    pw -> settingsManager.saveConnections(connections, pw),
                     resources.getString("onPasswordSaveFailedTitle"),
                     resources.getString("onPasswordSaveFailedHeader"),
                     resources.getString("onPasswordSaveFailedContent"),
@@ -134,7 +134,7 @@ public class KeyringHandler {
     }
 
     public void init() {
-        SettingsDTO settings = settingsProvider.getSettings();
+        SettingsDTO settings = settingsManager.getSettings();
         String oldKeyringIdentifier = settings.getKeyringIdentifier();
 
         keyring = null;

@@ -4,7 +4,7 @@ import javafx.application.Preloader;
 import org.correomqtt.CorreoPreloaderNotification;
 import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.plugin.repository.BundledPluginList;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.pf4j.update.PluginInfo;
 import org.pf4j.update.UpdateManager;
 import org.slf4j.Logger;
@@ -25,9 +25,9 @@ public class PluginLauncher {
     private Consumer<Preloader.PreloaderNotification> notifyPreloader;
 
     @Inject
-    PluginLauncher(PluginManager pluginManager, SettingsProvider settingsProvider) {
+    PluginLauncher(PluginManager pluginManager, SettingsManager settingsManager) {
         this.pluginManager = pluginManager;
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale());
     }
 
     public void start(boolean doPluginUpdates) {

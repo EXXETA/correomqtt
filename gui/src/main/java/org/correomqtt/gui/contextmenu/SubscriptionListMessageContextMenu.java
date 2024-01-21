@@ -6,7 +6,7 @@ import dagger.assisted.AssistedInject;
 import javafx.event.ActionEvent;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,14 +30,14 @@ public class SubscriptionListMessageContextMenu extends BaseObjectContextMenu<Su
 
     }
     @AssistedInject
-    public SubscriptionListMessageContextMenu(SettingsProvider settingsProvider,
+    public SubscriptionListMessageContextMenu(SettingsManager settingsManager,
                                               @Assisted SubscriptionListMessageContextMenuDelegate dispatcher) {
-        super(settingsProvider, dispatcher);
+        super(settingsManager, dispatcher);
     }
 
     @Override
     protected void initializeItems() {
-        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale());
 
         super.initializeItems();
 

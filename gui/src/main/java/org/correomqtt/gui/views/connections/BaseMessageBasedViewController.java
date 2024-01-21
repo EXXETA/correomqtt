@@ -2,8 +2,7 @@ package org.correomqtt.gui.views.connections;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.SplitPane;
-import org.correomqtt.core.settings.SettingsProvider;
-import org.correomqtt.core.utils.ConnectionHolder;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.views.LoaderResult;
 
@@ -17,12 +16,11 @@ public abstract class BaseMessageBasedViewController extends BaseConnectionContr
 
     protected MessageListViewController messageListViewController;
 
-    protected BaseMessageBasedViewController(ConnectionHolder connectionHolder,
-                                             SettingsProvider settingsProvider,
+    protected BaseMessageBasedViewController(CoreManager coreManager,
                                              ThemeManager themeManager,
                                              MessageListViewController.Factory messageListViewControllerFactory,
                                              String connectionId) {
-        super(settingsProvider, themeManager, connectionHolder, connectionId);
+        super(coreManager, themeManager, connectionId);
         this.messageListViewControllerFactory = messageListViewControllerFactory;
     }
 

@@ -5,7 +5,7 @@ import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.event.ActionEvent;
 import javafx.scene.control.SeparatorMenuItem;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.gui.controls.IconMenuItem;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.slf4j.Logger;
@@ -30,9 +30,9 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
 
     }
     @AssistedInject
-    public MessageListContextMenu(SettingsProvider settingsProvider,
+    public MessageListContextMenu(SettingsManager settingsManager,
                                   @Assisted MessageListContextMenuDelegate dispatcher) {
-        super(settingsProvider, dispatcher);
+        super(settingsManager, dispatcher);
     }
 
     @Override

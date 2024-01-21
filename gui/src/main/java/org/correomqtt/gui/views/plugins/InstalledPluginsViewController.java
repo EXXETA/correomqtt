@@ -9,10 +9,9 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import lombok.extern.slf4j.Slf4j;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
-import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.plugin.marketplace.PluginDisableTask;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledEvent;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledFailedEvent;
@@ -41,7 +40,6 @@ import java.util.ResourceBundle;
 @Slf4j
 public class InstalledPluginsViewController extends BaseControllerImpl {
 
-    private final PluginManager pluginManager;
     private final PluginEnableTask.Factory pluginEnableTaskFactory;
     private final PluginDisableTask.Factory pluginDisableTaskFactory;
     private final PluginUninstallTask.Factory pluginUninstallTaskFactory;
@@ -72,21 +70,19 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
     Button pluginUninstallBtn;
 
     @Inject
-    public InstalledPluginsViewController(PluginManager pluginManager,
+    public InstalledPluginsViewController(CoreManager coreManager,
                                           PluginEnableTask.Factory pluginEnableTaskFactory,
                                           PluginDisableTask.Factory pluginDisableTaskFactory,
                                           PluginUninstallTask.Factory pluginUninstallTaskFactory,
                                           PluginCell.Factory pluginCellFactory,
-                                          SettingsProvider settingsProvider,
                                           ThemeManager themeManager,
                                           AlertHelper alertHelper) {
-        super(settingsProvider, themeManager);
-        this.pluginManager = pluginManager;
+        super(coreManager, themeManager);
         this.pluginEnableTaskFactory = pluginEnableTaskFactory;
         this.pluginDisableTaskFactory = pluginDisableTaskFactory;
         this.pluginUninstallTaskFactory = pluginUninstallTaskFactory;
         this.pluginCellFactory = pluginCellFactory;
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", coreManager.getSettingsManager().getSettings().getCurrentLocale());
         this.alertHelper = alertHelper;
         EventBus.register(this);
     }
@@ -99,7 +95,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
     private void initialize() {
         installedPluginList.setCellFactory(this::createCell);
         installedPluginList.setItems(FXCollections.observableArrayList(
-                PluginTransformer.dtoListToPropList(pluginManager.getInstalledPlugins())
+                PluginTransformer.dtoListToPropList(coreManager.getPluginManager().getInstalledPlugins())
         ));
         setCurrentPlugin(null);
     }
@@ -146,7 +142,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
 
     private void reloadData(String pluginId) {
         installedPluginList.setItems(FXCollections.observableArrayList(
-                PluginTransformer.dtoListToPropList(pluginManager.getInstalledPlugins())
+                PluginTransformer.dtoListToPropList(coreManager.getPluginManager().getInstalledPlugins())
         ));
         Platform.runLater(() -> {
             installedPluginsRootPane.setDisable(false);

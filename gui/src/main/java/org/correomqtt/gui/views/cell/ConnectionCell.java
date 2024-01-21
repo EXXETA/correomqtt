@@ -10,13 +10,13 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import org.correomqtt.core.connection.ConnectionState;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.model.CorreoMqttVersion;
 import org.correomqtt.core.model.Lwt;
 import org.correomqtt.core.model.Proxy;
 import org.correomqtt.core.model.TlsSsl;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
-import org.correomqtt.core.utils.ConnectionHolder;
+import org.correomqtt.core.utils.ConnectionManager;
 import org.correomqtt.gui.controls.IconLabel;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.GuiConnectionState;
@@ -32,8 +32,8 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
     public static final String DIRTY_CLASS = "dirty";
     public static final String INACTIVE_CLASS = "inactive";
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionCell.class);
-    private final ConnectionHolder connectionHolder;
-    private final SettingsProvider settingsProvider;
+    private final ConnectionManager connectionManager;
+    private final SettingsManager settingsManager;
     private final ThemeManager themeManager;
     private final ListView<ConnectionPropertiesDTO> listView;
 
@@ -65,12 +65,12 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
 
     }
     @AssistedInject
-    public ConnectionCell(ConnectionHolder connectionHolder,
-                          SettingsProvider settingsProvider,
+    public ConnectionCell(ConnectionManager connectionManager,
+                          SettingsManager settingsManager,
                           ThemeManager themeManager,
                           @Assisted ListView<ConnectionPropertiesDTO> listView) {
-        this.connectionHolder = connectionHolder;
-        this.settingsProvider = settingsProvider;
+        this.connectionManager = connectionManager;
+        this.settingsManager = settingsManager;
         this.themeManager = themeManager;
         this.listView = listView;
     }
@@ -92,7 +92,7 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(ConnectionCell.class.getResource("connectionCell.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 
@@ -189,7 +189,7 @@ public class ConnectionCell extends ListCell<ConnectionPropertiesDTO> {
         lwtTag.setVisible(lwt);
         lwtTag.setManaged(lwt);
 
-        CorreoMqttClient client = connectionHolder.getClient(connectionDTO.getId());
+        CorreoMqttClient client = connectionManager.getClient(connectionDTO.getId());
 
         ConnectionState state = ConnectionState.DISCONNECTED_GRACEFUL;
         if (client != null) {

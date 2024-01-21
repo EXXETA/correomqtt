@@ -13,11 +13,11 @@ import javafx.scene.control.ListView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
-import org.correomqtt.core.fileprovider.HistoryManager;
 import org.correomqtt.core.fileprovider.PersistSubscribeHistoryUpdateEvent;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ControllerType;
@@ -26,12 +26,9 @@ import org.correomqtt.core.model.MessageListViewConfig;
 import org.correomqtt.core.model.Qos;
 import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.pubsub.IncomingMessageEvent;
+import org.correomqtt.core.pubsub.PubSubTaskFactories;
 import org.correomqtt.core.pubsub.SubscribeEvent;
-import org.correomqtt.core.pubsub.SubscribeTask;
 import org.correomqtt.core.pubsub.UnsubscribeEvent;
-import org.correomqtt.core.pubsub.UnsubscribeTask;
-import org.correomqtt.core.settings.SettingsProvider;
-import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenu;
 import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenuDelegate;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
@@ -60,16 +57,14 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         SubscriptionListMessageContextMenuDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionViewController.class);
-    private final SubscribeTask.Factory subscribeTaskFactory;
-    private final UnsubscribeTask.Factory unsubscribeTaskFactory;
-    private final SettingsProvider settingsProvider;
+
     private final QosCell.Factory qosCellFactory;
     private final SubscriptionViewCell.Factory subscriptionViewCellFactory;
     private final TopicCell.Factory topicCellFactory;
     private final AlertHelper alertHelper;
     private final SubscriptionListMessageContextMenu.Factory subscriptionListMessageContextMenuFactory;
-    private final HistoryManager historyManager;
     private final SubscriptionViewDelegate delegate;
+    private final PubSubTaskFactories pubSubTaskFactories;
     private ResourceBundle resources;
     @FXML
     private AnchorPane subscribeBodyViewAnchor;
@@ -103,10 +98,8 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     @AssistedInject
-    public SubscriptionViewController(SubscribeTask.Factory subscribeTaskFactory,
-                                      UnsubscribeTask.Factory unsubscribeTaskFactory,
-                                      ConnectionHolder connectionHolder,
-                                      SettingsProvider settingsProvider,
+    public SubscriptionViewController(CoreManager coreManager,
+                                      PubSubTaskFactories pubSubTaskFactories,
                                       ThemeManager themeManager,
                                       MessageListViewController.Factory messageListViewControllerFactory,
                                       QosCell.Factory qosCellFactory,
@@ -114,19 +107,15 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
                                       TopicCell.Factory topicCellFactory,
                                       AlertHelper alertHelper,
                                       SubscriptionListMessageContextMenu.Factory subscriptionListMessageContextMenuFactory,
-                                      HistoryManager historyManager,
                                       @Assisted String connectionId,
                                       @Assisted SubscriptionViewDelegate delegate) {
-        super(connectionHolder, settingsProvider, themeManager, messageListViewControllerFactory, connectionId);
-        this.subscribeTaskFactory = subscribeTaskFactory;
-        this.unsubscribeTaskFactory = unsubscribeTaskFactory;
-        this.settingsProvider = settingsProvider;
+        super(coreManager, themeManager, messageListViewControllerFactory, connectionId);
+        this.pubSubTaskFactories = pubSubTaskFactories;
         this.qosCellFactory = qosCellFactory;
         this.subscriptionViewCellFactory = subscriptionViewCellFactory;
         this.topicCellFactory = topicCellFactory;
         this.alertHelper = alertHelper;
         this.subscriptionListMessageContextMenuFactory = subscriptionListMessageContextMenuFactory;
-        this.historyManager = historyManager;
         this.delegate = delegate;
         EventBus.register(this);
     }
@@ -164,7 +153,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
             }
         });
 
-        settingsProvider.getConnectionConfigs().stream()
+        coreManager.getSettingsManager().getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
                 .ifPresent(c -> {
@@ -199,7 +188,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     private void initTopicComboBox() {
-        List<String> topics = historyManager.activateSubscriptionHistory(getConnectionId()).getTopics(getConnectionId());
+        List<String> topics = coreManager.getHistoryManager().activateSubscriptionHistory(getConnectionId()).getTopics(getConnectionId());
         subscribeTopicComboBox.setItems(FXCollections.observableArrayList(topics));
         subscribeTopicComboBox.setCellFactory(topicCellFactory::create);
 
@@ -239,11 +228,11 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     public void unsubscribeAll() {
-        connectionHolder
+        coreManager.getConnectionManager()
                 .getConnection(getConnectionId())
                 .getClient()
                 .getSubscriptions()
-                .forEach(s -> unsubscribeTaskFactory.create(getConnectionId(), s).run());
+                .forEach(s -> pubSubTaskFactories.getUnsubscribeFactory().create(getConnectionId(), s).run());
 
         subscriptionListView.getItems().clear();
 
@@ -278,7 +267,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     public void unsubscribe(SubscriptionPropertiesDTO subscriptionDTO) {
-        unsubscribeTaskFactory.create(getConnectionId(), SubscriptionTransformer.propsToDTO(subscriptionDTO)).run();
+        pubSubTaskFactories.getUnsubscribeFactory().create(getConnectionId(), SubscriptionTransformer.propsToDTO(subscriptionDTO)).run();
     }
 
     /**
@@ -305,7 +294,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         }
 
         Qos selectedQos = qosComboBox.getSelectionModel().getSelectedItem();
-        subscribeTaskFactory.create(getConnectionId(), SubscriptionDTO.builder()
+        pubSubTaskFactories.getSubscribeFactory().create(getConnectionId(), SubscriptionDTO.builder()
                         .topic(topic)
                         .qos(selectedQos)
                         .build())
@@ -443,7 +432,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
 
     @Override
     public Supplier<MessageListViewConfig> produceListViewConfig() {
-        return () -> settingsProvider
+        return () -> coreManager.getSettingsManager()
                 .getConnectionConfigs()
                 .stream()
                 .filter(c -> c.getId().equals(getConnectionId()))

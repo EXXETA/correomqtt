@@ -1,8 +1,8 @@
 package org.correomqtt.gui.utils;
 
 import javafx.application.HostServices;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.gui.model.AppHostServices;
-import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.core.utils.VendorConstants;
 import org.correomqtt.core.utils.VersionUtils;
@@ -17,11 +17,11 @@ public class CheckNewVersionUtils {
     private final AlertHelper alertHelper;
 
     @Inject
-    CheckNewVersionUtils(SettingsProvider settingsProvider,
+    CheckNewVersionUtils(SettingsManager settingsManager,
                          AlertHelper alertHelper,
                          @AppHostServices HostServices hostServices) {
         this.alertHelper = alertHelper;
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale());
 
         this.hostServices = hostServices;
     }

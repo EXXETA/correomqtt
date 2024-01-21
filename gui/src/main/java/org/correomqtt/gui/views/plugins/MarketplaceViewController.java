@@ -9,9 +9,8 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import lombok.extern.slf4j.Slf4j;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.eventbus.Subscribe;
-import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledEvent;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledFailedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledStartedEvent;
@@ -39,56 +38,42 @@ import java.util.ResourceBundle;
 @Slf4j
 public class MarketplaceViewController extends BaseControllerImpl {
 
-    private final PluginManager pluginManager;
     private final PluginInstallTask.Factory pluginInstallTaskFactory;
-    @FXML
-    Pane marketplaceRootPane;
-
-    @FXML
-    ListView<PluginInfoPropertiesDTO> marketplacePluginList;
-
-    @FXML
-    Label pluginName;
-
-    @FXML
-    Label pluginDescription;
-
-    @FXML
-    Label pluginProvider;
-
-    @FXML
-    Label pluginProjectUrl;
-
-    @FXML
-    Label pluginRepository;
-
-    @FXML
-    Label pluginInstalledVersion;
-
-    @FXML
-    Label pluginInstallableVersion;
-
-    @FXML
-    Button pluginInstallBtn;
-
-    @FXML
-    Label pluginUpdateLabel;
-
     private final ResourceBundle resources;
     private final PluginCell.Factory pluginCellFactory;
     private final AlertHelper alertHelper;
+    @FXML
+    Pane marketplaceRootPane;
+    @FXML
+    ListView<PluginInfoPropertiesDTO> marketplacePluginList;
+    @FXML
+    Label pluginName;
+    @FXML
+    Label pluginDescription;
+    @FXML
+    Label pluginProvider;
+    @FXML
+    Label pluginProjectUrl;
+    @FXML
+    Label pluginRepository;
+    @FXML
+    Label pluginInstalledVersion;
+    @FXML
+    Label pluginInstallableVersion;
+    @FXML
+    Button pluginInstallBtn;
+    @FXML
+    Label pluginUpdateLabel;
 
     @Inject
-    public MarketplaceViewController(PluginManager pluginManager,
-                                     SettingsProvider settingsProvider,
+    public MarketplaceViewController(CoreManager coreManager,
                                      ThemeManager themeManager,
                                      PluginInstallTask.Factory pluginInstallTaskFactory,
                                      PluginCell.Factory pluginCellFactory,
                                      AlertHelper alertHelper) {
-        super(settingsProvider, themeManager);
-        this.pluginManager = pluginManager;
+        super(coreManager, themeManager);
         this.pluginInstallTaskFactory = pluginInstallTaskFactory;
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", coreManager.getSettingsManager().getSettings().getCurrentLocale());
 
         this.pluginCellFactory = pluginCellFactory;
         this.alertHelper = alertHelper;
@@ -102,7 +87,7 @@ public class MarketplaceViewController extends BaseControllerImpl {
     private void initialize() {
         marketplacePluginList.setCellFactory(this::createCell);
         marketplacePluginList.setItems(FXCollections.observableArrayList(
-                PluginTransformer.dtoListToPropList(pluginManager.getAllPluginsAvailableFromRepos())
+                PluginTransformer.dtoListToPropList(coreManager.getPluginManager().getAllPluginsAvailableFromRepos())
         ));
         setCurrentPlugin(null);
     }
@@ -121,6 +106,29 @@ public class MarketplaceViewController extends BaseControllerImpl {
             }
         });
         return cell;
+    }
+
+    @SuppressWarnings("unused")
+    public void onPluginInstallSucceeded(@Subscribe PluginInstallEvent event) {
+        reloadData(event.pluginId());
+        Platform.runLater(() -> alertHelper.info(resources.getString("pluginChangeTitle"),
+                resources.getString("pluginChangeContent")));
+    }
+
+    private void reloadData(String pluginId) {
+        marketplacePluginList.setItems(FXCollections.observableArrayList(
+                PluginTransformer.dtoListToPropList(coreManager.getPluginManager().getAllPluginsAvailableFromRepos())
+        ));
+        Platform.runLater(() -> {
+            marketplaceRootPane.setDisable(false);
+            marketplacePluginList.refresh();
+            PluginInfoPropertiesDTO currentPlugin = marketplacePluginList.getItems().stream()
+                    .filter(p -> p.getId().equals(pluginId))
+                    .findFirst()
+                    .orElse(null);
+            setCurrentPlugin(currentPlugin);
+            marketplacePluginList.getSelectionModel().select(currentPlugin);
+        });
     }
 
     private void setCurrentPlugin(PluginInfoPropertiesDTO plugin) {
@@ -149,7 +157,6 @@ public class MarketplaceViewController extends BaseControllerImpl {
                 plugin.getInstalledVersion().compareTo(plugin.getInstallableVersion()) < 0);
     }
 
-
     private void setOrHide(Label label, String value) {
         setOrHide(label, value, null);
     }
@@ -169,39 +176,15 @@ public class MarketplaceViewController extends BaseControllerImpl {
         }
     }
 
-
     @SuppressWarnings("unused")
-    public void onPluginInstallSucceeded(@Subscribe PluginInstallEvent event) {
-        reloadData(event.pluginId());
-        Platform.runLater(() -> alertHelper.info(resources.getString("pluginChangeTitle"),
-                resources.getString("pluginChangeContent")));
-    }
-
-    private void reloadData(String pluginId) {
-        marketplacePluginList.setItems(FXCollections.observableArrayList(
-                PluginTransformer.dtoListToPropList(pluginManager.getAllPluginsAvailableFromRepos())
-        ));
-        Platform.runLater(() -> {
-            marketplaceRootPane.setDisable(false);
-            marketplacePluginList.refresh();
-            PluginInfoPropertiesDTO currentPlugin = marketplacePluginList.getItems().stream()
-                    .filter(p -> p.getId().equals(pluginId))
-                    .findFirst()
-                    .orElse(null);
-            setCurrentPlugin(currentPlugin);
-            marketplacePluginList.getSelectionModel().select(currentPlugin);
-        });
+    @Subscribe(PluginInstallFailedEvent.class)
+    public void onPluginInstallFailed() {
+        showFail();
     }
 
     private void showFail() {
         alertHelper.warn(resources.getString("pluginOperationFailedTitle"), resources.getString("pluginOperationFailedContent"), true);
         Platform.runLater(() -> marketplaceRootPane.setDisable(false));
-    }
-
-    @SuppressWarnings("unused")
-    @Subscribe(PluginInstallFailedEvent.class)
-    public void onPluginInstallFailed() {
-        showFail();
     }
 
     @SuppressWarnings("unused")

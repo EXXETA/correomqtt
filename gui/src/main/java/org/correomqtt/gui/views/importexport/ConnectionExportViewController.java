@@ -16,11 +16,10 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.CheckListView;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.TaskErrorResult;
-import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.importexport.connections.ExportConnectionsTask;
 import org.correomqtt.core.model.ConnectionConfigDTO;
-import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
@@ -45,7 +44,6 @@ import java.util.ResourceBundle;
 public class ConnectionExportViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
-    private final ConnectionHolder connectionHolder;
     private final AlertHelper alertHelper;
     private final ExportConnectionCell.Factory exportConnectionCellFactory;
     @FXML
@@ -65,13 +63,11 @@ public class ConnectionExportViewController extends BaseControllerImpl {
     private PasswordField passwordField;
 
     @Inject
-    public ConnectionExportViewController(ConnectionHolder connectionHolder,
-                                          SettingsProvider settingsProvider,
+    public ConnectionExportViewController(CoreManager coreManager,
                                           ThemeManager themeManager,
                                           AlertHelper alertHelper,
                                           ExportConnectionCell.Factory exportConnectionCellFactory) {
-        super(settingsProvider, themeManager);
-        this.connectionHolder = connectionHolder;
+        super(coreManager, themeManager);
         this.alertHelper = alertHelper;
 
         this.exportConnectionCellFactory = exportConnectionCellFactory;
@@ -147,7 +143,7 @@ public class ConnectionExportViewController extends BaseControllerImpl {
 
     private void loadConnectionListFromBackground() {
 
-        List<ConnectionConfigDTO> connectionList = connectionHolder.getSortedConnections();
+        List<ConnectionConfigDTO> connectionList = coreManager.getConnectionManager().getSortedConnections();
         connectionsListView.setItems(FXCollections.observableArrayList(ConnectionTransformer.dtoListToPropList(connectionList)));
         LOGGER.debug("Loading connection list from background");
     }

@@ -25,13 +25,12 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import lombok.AllArgsConstructor;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.connection.DisconnectTask;
 import org.correomqtt.core.keyring.KeyringFactory;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
-import org.correomqtt.core.settings.SettingsProvider;
-import org.correomqtt.core.utils.ConnectionHolder;
-import org.correomqtt.gui.keyring.KeyringHandler;
+import org.correomqtt.gui.keyring.KeyringManager;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
@@ -60,8 +59,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionSettingsViewController.class);
     private ResourceBundle resources;
     private final Map<String, ConnectionState> connectionStates = new HashMap<>();
-    private final ConnectionHolder connectionHolder;
-    private final KeyringHandler keyringHandler;
+    private final KeyringManager keyringManager;
     private final KeyringFactory keyringFactory;
     private final DisconnectTask.Factory disconnectTaskFactory;
     private final ConnectionCell.Factory connectionCellFactory;
@@ -100,20 +98,19 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
     public interface Factory {
         ConnectionSettingsViewController create(ConnectionPropertiesDTO preSelecteded);
     }
+
     @AssistedInject
-    public ConnectionSettingsViewController(ConnectionHolder connectionHolder,
-                                            KeyringHandler keyringHandler,
+    public ConnectionSettingsViewController(CoreManager coreManager,
+                                            KeyringManager keyringManager,
                                             KeyringFactory keyringFactory,
                                             DisconnectTask.Factory disconnectTaskFactory,
-                                            SettingsProvider settingsProvider,
                                             ThemeManager themeManager,
                                             ConnectionCell.Factory connectionCellFactory,
                                             AlertHelper alertHelper,
                                             Provider<MqttSettingsViewController> mqttSettingsViewControllerProvider,
                                             @Assisted ConnectionPropertiesDTO preSelected) {
-        super(settingsProvider, themeManager);
-        this.connectionHolder = connectionHolder;
-        this.keyringHandler = keyringHandler;
+        super(coreManager, themeManager);
+        this.keyringManager = keyringManager;
         this.keyringFactory = keyringFactory;
         this.disconnectTaskFactory = disconnectTaskFactory;
         this.connectionCellFactory = connectionCellFactory;
@@ -234,7 +231,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
         editConnectionContainer.getChildren().add(0, connectionState.region);
         onDirtyChanged(null);
 
-        String keyringName = resources.getString(keyringFactory.createKeyringByIdentifier(settingsProvider
+        String keyringName = resources.getString(keyringFactory.createKeyringByIdentifier(coreManager.getSettingsManager()
                 .getSettings()
                 .getKeyringIdentifier()).getName());
 
@@ -271,7 +268,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
 
     private void loadConnectionListFromBackground() {
         ObservableList<ConnectionPropertiesDTO> list = FXCollections.observableArrayList(ConnectionPropertiesDTO.extractor());
-        connectionHolder.getSortedConnections()
+        coreManager.getConnectionManager().getSortedConnections()
                 .forEach(c -> list.add(ConnectionTransformer.dtoToProps(c)));
         connectionsListView.setItems(list);
         LOGGER.debug("Loading connection list from background");
@@ -402,14 +399,14 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
                     if (p == config) {
                         return ConnectionTransformer.propsToDto(p);
                     } else {
-                        return connectionHolder.getConfig(p.getId());
+                        return coreManager.getConnectionManager().getConfig(p.getId());
                     }
                 })
                 .toList();
 
 
-        keyringHandler.retryWithMasterPassword(
-                masterPassword -> settingsProvider.saveConnections(connectionsToSave, masterPassword),
+        keyringManager.retryWithMasterPassword(
+                masterPassword -> coreManager.getSettingsManager().saveConnections(connectionsToSave, masterPassword),
                 resources.getString("onPasswordSaveFailedTitle"),
                 resources.getString("onPasswordSaveFailedHeader"),
                 resources.getString("onPasswordSaveFailedContent"),
@@ -472,7 +469,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
 
             LOGGER.info("Disconnect connection selected");
 
-            CorreoMqttClient client = connectionHolder.getConnection(config.getId()).getClient();
+            CorreoMqttClient client = coreManager.getConnectionManager().getConnection(config.getId()).getClient();
             if (client != null) {
                 LOGGER.info("Connection is still connected");
 

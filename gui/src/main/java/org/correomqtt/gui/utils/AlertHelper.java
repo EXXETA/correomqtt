@@ -16,7 +16,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.window.StageHelper;
 import org.slf4j.Logger;
@@ -34,13 +34,13 @@ import static javafx.scene.control.Alert.AlertType.WARNING;
 public class AlertHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertHelper.class);
-    private final SettingsProvider settingsProvider;
+    private final SettingsManager settingsManager;
     private final ThemeManager themeManager;
 
     @Inject
-    AlertHelper(SettingsProvider settingsProvider,
+    AlertHelper(SettingsManager settingsManager,
                 ThemeManager themeManager) {
-        this.settingsProvider = settingsProvider;
+        this.settingsManager = settingsManager;
         this.themeManager = themeManager;
     }
 

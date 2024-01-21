@@ -21,16 +21,16 @@ public class LoggerUtils {
     public static final String SCRIPT_COLOR_PATTERN_APPENDER_NAME = "SCRIPT_DUMMY_COLOR_PATTERN";
 
     public static final String SCRIPT_PATTERN_APPENDER_NAME = "SCRIPT_DUMMY_PATTERN";
-    private final ConnectionHolder connectionHolder;
+    private final ConnectionManager connectionManager;
 
     @Inject
-    public LoggerUtils(ConnectionHolder connectionHolder){
+    public LoggerUtils(ConnectionManager connectionManager){
         // private constructor
-        this.connectionHolder = connectionHolder;
+        this.connectionManager = connectionManager;
     }
 
     public Marker getConnectionMarker(String connectionId) {
-        ConnectionConfigDTO connectionConfig = connectionHolder.getConfig(connectionId);
+        ConnectionConfigDTO connectionConfig = connectionManager.getConfig(connectionId);
         if (connectionConfig == null) {
             return MarkerFactory.getMarker("Unknown");
         }

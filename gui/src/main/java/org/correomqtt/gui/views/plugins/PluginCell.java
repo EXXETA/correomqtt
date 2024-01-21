@@ -9,7 +9,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ import java.util.ResourceBundle;
 public class PluginCell extends ListCell<PluginInfoPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginCell.class);
-    private final SettingsProvider settingsProvider;
+    private final SettingsManager settingsManager;
     private final ThemeManager themeManager;
     private final ListView<PluginInfoPropertiesDTO> listView;
     @FXML
@@ -48,10 +48,10 @@ public class PluginCell extends ListCell<PluginInfoPropertiesDTO> {
 
     }
     @AssistedInject
-    public PluginCell(SettingsProvider settingsProvider,
+    public PluginCell(SettingsManager settingsManager,
                       ThemeManager themeManager,
                       @Assisted ListView<PluginInfoPropertiesDTO> listView) {
-        this.settingsProvider = settingsProvider;
+        this.settingsManager = settingsManager;
         this.themeManager = themeManager;
         this.listView = listView;
     }
@@ -73,7 +73,7 @@ public class PluginCell extends ListCell<PluginInfoPropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(PluginCell.class.getResource("pluginCell.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

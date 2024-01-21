@@ -14,7 +14,7 @@ import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.AnchorPane;
 import javafx.util.Callback;
 import org.controlsfx.control.CheckListView;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +23,7 @@ import java.util.ResourceBundle;
 
 public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesDTO> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ExportConnectionCell.class);
-    private final SettingsProvider settingsProvider;
+    private final SettingsManager settingsManager;
     private final CheckListView<ConnectionPropertiesDTO> listView;
 
     @FXML
@@ -45,10 +45,10 @@ public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesD
     }
     @AssistedInject
     public ExportConnectionCell(
-            SettingsProvider settingsProvider,
+            SettingsManager settingsManager,
             @Assisted CheckListView<ConnectionPropertiesDTO> listView) {
         super(listView::getItemBooleanProperty);
-        this.settingsProvider = settingsProvider;
+        this.settingsManager = settingsManager;
         this.listView = listView;
     }
 
@@ -64,7 +64,7 @@ public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesD
                 try {
                     loader = new FXMLLoader(ExportConnectionCell.class.getResource("exportConnectionCell.fxml"),
                             ResourceBundle.getBundle("org.correomqtt.i18n",
-                                    settingsProvider.getSettings().getCurrentLocale()));
+                                    settingsManager.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

@@ -2,7 +2,7 @@ package org.correomqtt.core.utils;
 
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -14,14 +14,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Singleton
-public class ConnectionHolder {
+public class ConnectionManager {
 
     private final Map<String /* connectionId*/, CorreoMqttConnection> connectionMap = new ConcurrentHashMap<>();
 
-    private final SettingsProvider settings;
+    private final SettingsManager settings;
 
     @Inject
-    public ConnectionHolder(SettingsProvider settings) {
+    public ConnectionManager(SettingsManager settings) {
         this.settings = settings;
         refresh();
         settings.addConnectionChangeListener(this::refresh);

@@ -8,7 +8,7 @@ import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.model.SubscriptionHistoryListDTO;
 import org.correomqtt.core.pubsub.SubscribeEvent;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,7 @@ public class SubscriptionHistory extends BasePersistHistoryProvider<Subscription
     private static Map<String, SubscriptionHistoryListDTO> historyDTOs = new HashMap<>();
 
     @AssistedInject
-    SubscriptionHistory(SettingsProvider settings, @Assisted String connectionId) {
+    SubscriptionHistory(SettingsManager settings, @Assisted String connectionId) {
         super(settings, connectionId);
         EventBus.register(this);
     }

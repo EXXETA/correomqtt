@@ -8,9 +8,9 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import org.correomqtt.gui.model.AppHostServices;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.fileprovider.PluginConfigProvider;
+import org.correomqtt.gui.model.AppHostServices;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
@@ -67,13 +67,13 @@ public class PluginsViewController extends BaseControllerImpl {
     private Tab installedPluginsTab;
 
     @Inject
-    PluginsViewController(SettingsProvider settingsProvider,
+    PluginsViewController(CoreManager coreManager,
                           ThemeManager themeManager,
                           PluginConfigProvider pluginConfigProvider,
                           @AppHostServices HostServices hostServices,
                           Provider<InstalledPluginsViewController> installedPluginsViewControllerProvider,
                           Provider<MarketplaceViewController> marketplaceViewControllerProvider) {
-        super(settingsProvider, themeManager);
+        super(coreManager, themeManager);
         this.pluginConfigProvider = pluginConfigProvider;
         this.hostServices = hostServices;
         this.installedPluginsViewControllerProvider = installedPluginsViewControllerProvider;

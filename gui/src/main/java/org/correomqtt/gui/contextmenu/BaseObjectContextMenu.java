@@ -1,17 +1,17 @@
 package org.correomqtt.gui.contextmenu;
 
 import javafx.scene.control.ContextMenu;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 
 public abstract class BaseObjectContextMenu<O, D extends BaseObjectContextMenuDelegate> extends ContextMenu {
 
-    protected final SettingsProvider settingsProvider;
+    protected final SettingsManager settingsManager;
     protected final D delegate;
     protected O dto;
 
-    protected BaseObjectContextMenu(SettingsProvider settingsProvider, D delegate) {
+    protected BaseObjectContextMenu(SettingsManager settingsManager, D delegate) {
         super();
-        this.settingsProvider = settingsProvider;
+        this.settingsManager = settingsManager;
         this.delegate = delegate;
         initializeItems();
         setVisibilityForObjectItems(false);

@@ -25,6 +25,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.controlsfx.control.textfield.TextFields;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
@@ -33,8 +34,6 @@ import org.correomqtt.core.model.LabelType;
 import org.correomqtt.core.model.MessageListViewConfig;
 import org.correomqtt.core.model.MessageType;
 import org.correomqtt.core.model.PublishStatus;
-import org.correomqtt.core.settings.SettingsProvider;
-import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.contextmenu.MessageListContextMenu;
 import org.correomqtt.gui.contextmenu.MessageListContextMenuDelegate;
 import org.correomqtt.gui.controls.IconCheckMenuItem;
@@ -96,17 +95,17 @@ public class MessageListViewController extends BaseConnectionController implemen
                                          MessageListViewDelegate delegate);
 
     }
+
     @AssistedInject
-    public MessageListViewController(ConnectionHolder connectionHolder,
+    public MessageListViewController(CoreManager coreManager,
                                      DetailViewController.Factory detailViewControllerFactory,
-                                     SettingsProvider settingsProvider,
                                      ThemeManager themeManager,
                                      MessageViewCell.Factory messageViewCellFactory,
                                      MessageListContextMenu.Factory messageListContextMenuFactory,
                                      MessageUtils messageUtils,
                                      @Assisted String connectionId,
                                      @Assisted MessageListViewDelegate delegate) {
-        super(settingsProvider, themeManager, connectionHolder, connectionId);
+        super(coreManager, themeManager, connectionId);
         this.detailViewControllerFactory = detailViewControllerFactory;
         this.messageViewCellFactory = messageViewCellFactory;
         this.messageListContextMenuFactory = messageListContextMenuFactory;
@@ -232,7 +231,7 @@ public class MessageListViewController extends BaseConnectionController implemen
             detailViewController = result.getController();
             splitPane.getItems().add(result.getMainRegion());
 
-            settingsProvider.getConnectionConfigs().stream()
+            coreManager.getSettingsManager().getConnectionConfigs().stream()
                     .filter(c -> c.getId().equals(getConnectionId()))
                     .findFirst()
                     .ifPresent(c -> {
@@ -390,7 +389,7 @@ public class MessageListViewController extends BaseConnectionController implemen
 
     private void setLabelVisibility(LabelType label, boolean visibility) {
         delegate.produceListViewConfig().get().setVisibility(label, visibility);
-        settingsProvider.saveSettings();
+        coreManager.getSettingsManager().saveSettings();
         listView.refresh();
 
     }

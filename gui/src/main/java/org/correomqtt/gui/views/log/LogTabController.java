@@ -4,7 +4,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.layout.AnchorPane;
 import lombok.Getter;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.log.LogEvent;
@@ -28,9 +28,9 @@ public class LogTabController extends BaseControllerImpl {
     private Button trashButton;
 
     @Inject
-    public LogTabController(SettingsProvider settingsProvider,
+    public LogTabController(CoreManager coreManager,
                             ThemeManager themeManager) {
-        super(settingsProvider, themeManager);
+        super(coreManager, themeManager);
         EventBus.register(this);
     }
 

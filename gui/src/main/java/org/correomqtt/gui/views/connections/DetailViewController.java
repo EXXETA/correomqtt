@@ -27,16 +27,14 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.importexport.messages.ExportMessageFailedEvent;
 import org.correomqtt.core.importexport.messages.ExportMessageStartedEvent;
 import org.correomqtt.core.importexport.messages.ExportMessageSuccessEvent;
 import org.correomqtt.core.model.MessageType;
 import org.correomqtt.core.plugin.MessageValidator;
-import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.plugin.spi.MessageValidatorHook;
-import org.correomqtt.core.settings.SettingsProvider;
-import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.contextmenu.DetailContextMenu;
 import org.correomqtt.gui.contextmenu.DetailContextMenuDelegate;
 import org.correomqtt.gui.controls.IconCheckMenuItem;
@@ -77,7 +75,6 @@ public class DetailViewController extends BaseConnectionController implements
 
     private static ResourceBundle resources;
     private final BooleanProperty inlineViewProperty;
-    private final PluginManager pluginManager;
     private final MessageValidator messageValidator;
     private final GuiPluginManager guiPluginManager;
     private final AutoFormatPayload autoFormatPayload;
@@ -159,13 +156,12 @@ public class DetailViewController extends BaseConnectionController implements
                                     boolean isInlineView);
 
     }
+
     @AssistedInject
-    DetailViewController(ConnectionHolder connectionHolder,
-                         PluginManager pluginManager,
+    DetailViewController(CoreManager coreManager,
                          MessageValidator messageValidator,
                          GuiPluginManager guiPluginManager,
                          AutoFormatPayload autoFormatPayload,
-                         SettingsProvider settingsProvider,
                          ThemeManager themeManager,
                          DetailContextMenu.Factory detailContextMenuFactory,
                          MessageUtils messageUtils,
@@ -173,8 +169,7 @@ public class DetailViewController extends BaseConnectionController implements
                          @Assisted String connectionId,
                          @Assisted DetailViewDelegate delegate,
                          @Assisted boolean isInlineView) {
-        super(settingsProvider, themeManager, connectionHolder, connectionId);
-        this.pluginManager = pluginManager;
+        super(coreManager, themeManager, connectionId);
         this.messageValidator = messageValidator;
         this.guiPluginManager = guiPluginManager;
         this.autoFormatPayload = autoFormatPayload;
@@ -248,8 +243,8 @@ public class DetailViewController extends BaseConnectionController implements
             LOGGER.debug("Clicked on changeIgnoreCase: {}", getConnectionId());
         }
 
-        settingsProvider.getSettings().setUseIgnoreCase(ignoreCaseMenuItem.isSelected());
-        settingsProvider.saveSettings();
+        coreManager.getSettingsManager().getSettings().setUseIgnoreCase(ignoreCaseMenuItem.isSelected());
+        coreManager.getSettingsManager().saveSettings();
         this.searchMenuButton.getItems().remove(ignoreCaseMenuItem);
         this.searchMenuButton.getItems().add(0, ignoreCaseMenuItem);
         currentSearchString = null;
@@ -266,8 +261,8 @@ public class DetailViewController extends BaseConnectionController implements
         if (!currentSearchString.isEmpty()) {
             String codeAreaText = codeArea.getText();
 
-            boolean ignoreCase = settingsProvider.getSettings().isUseIgnoreCase();
-            boolean regex = settingsProvider.getSettings().isUseRegexForSearch();
+            boolean ignoreCase = coreManager.getSettingsManager().getSettings().isUseIgnoreCase();
+            boolean regex = coreManager.getSettingsManager().getSettings().isUseRegexForSearch();
 
             String finalSearchString;
             if (regex) {
@@ -331,8 +326,8 @@ public class DetailViewController extends BaseConnectionController implements
             LOGGER.debug("Clicked on changeRegex: {}", getConnectionId());
         }
 
-        settingsProvider.getSettings().setUseRegexForSearch(regexMenuItem.isSelected());
-        settingsProvider.saveSettings();
+        coreManager.getSettingsManager().getSettings().setUseRegexForSearch(regexMenuItem.isSelected());
+        coreManager.getSettingsManager().saveSettings();
         this.searchMenuButton.getItems().remove(regexMenuItem);
         this.searchMenuButton.getItems().add(1, regexMenuItem);
         currentSearchString = null;
@@ -389,8 +384,8 @@ public class DetailViewController extends BaseConnectionController implements
 
         detailViewQos.setText(messageDTO.getQos().toString());
 
-        ignoreCaseMenuItem.setSelected(settingsProvider.getSettings().isUseIgnoreCase());
-        regexMenuItem.setSelected(settingsProvider.getSettings().isUseRegexForSearch());
+        ignoreCaseMenuItem.setSelected(coreManager.getSettingsManager().getSettings().isUseIgnoreCase());
+        regexMenuItem.setSelected(coreManager.getSettingsManager().getSettings().isUseRegexForSearch());
 
         detailViewSaveButton.setOnMouseClicked(this::saveMessage);
 
@@ -418,7 +413,7 @@ public class DetailViewController extends BaseConnectionController implements
 
     private void executeOnOpenDetailViewExtensions() {
         detailViewNodeBox.getChildren().clear();
-        pluginManager.getExtensions(DetailViewHook.class).forEach(p -> {
+        coreManager.getPluginManager().getExtensions(DetailViewHook.class).forEach(p -> {
             HBox pluginBox = new HBox();
             pluginBox.setAlignment(Pos.CENTER_RIGHT);
             HBox.setHgrow(pluginBox, Priority.ALWAYS);

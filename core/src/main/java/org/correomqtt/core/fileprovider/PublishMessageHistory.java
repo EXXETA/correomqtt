@@ -10,7 +10,7 @@ import org.correomqtt.core.model.PublishMessageHistoryListDTO;
 import org.correomqtt.core.pubsub.PublishEvent;
 import org.correomqtt.core.pubsub.PublishListClearEvent;
 import org.correomqtt.core.pubsub.PublishListRemovedEvent;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,7 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
     private static final Map<String, PublishMessageHistoryListDTO> historyDTOs = new HashMap<>();
 
     @AssistedInject
-    PublishMessageHistory(SettingsProvider settings, @Assisted String connectionId) {
+    PublishMessageHistory(SettingsManager settings, @Assisted String connectionId) {
         super(settings, connectionId);
         EventBus.register(this);
     }

@@ -1,19 +1,19 @@
 package org.correomqtt.core;
 
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 
 import javax.inject.Inject;
 
 public class CorreoCore {
 
-    private final SettingsProvider settingsProvider;
+    private final SettingsManager settingsManager;
 
     @Inject
-    public CorreoCore(SettingsProvider settingsProvider) {
-        this.settingsProvider = settingsProvider;
+    public CorreoCore(SettingsManager settingsManager) {
+        this.settingsManager = settingsManager;
     }
 
     public void init() {
-        System.setProperty("correo.configDirectory",settingsProvider.getTargetDirectoryPath());
+        System.setProperty("correo.configDirectory", settingsManager.getTargetDirectoryPath());
     }
 }

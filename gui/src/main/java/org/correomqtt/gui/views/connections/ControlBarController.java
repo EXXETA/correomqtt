@@ -9,17 +9,13 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
-import org.correomqtt.core.settings.SettingsProvider;
-import org.correomqtt.core.connection.ConnectTask;
+import org.correomqtt.core.CoreManager;
+import org.correomqtt.core.connection.ConnectionLifecycleTaskFactories;
 import org.correomqtt.core.connection.ConnectionState;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.connection.DisconnectTask;
-import org.correomqtt.core.connection.ReconnectTask;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.model.ConnectionConfigDTO;
-import org.correomqtt.core.plugin.PluginManager;
-import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.controls.IconLabel;
 import org.correomqtt.gui.model.GuiConnectionState;
 import org.correomqtt.gui.plugin.spi.MainToolbarHook;
@@ -35,11 +31,7 @@ import static org.correomqtt.core.connection.ConnectionState.CONNECTED;
 public class ControlBarController extends BaseConnectionController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ControlBarController.class);
 
-    private final PluginManager pluginManager;
-    private final ConnectTask.Factory connectTaskFactory;
-    private final ReconnectTask.Factory reconnectTaskFactory;
-    private final DisconnectTask.Factory disconnectTaskFactory;
-    private final SettingsProvider settingsProvider;
+    private final ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories;
     private final ControlBarDelegate delegate;
 
     @FXML
@@ -87,22 +79,15 @@ public class ControlBarController extends BaseConnectionController {
                                     ControlBarDelegate delegate);
 
     }
+
     @AssistedInject
-    public ControlBarController(ConnectionHolder connectionHolder,
-                                PluginManager pluginManager,
-                                ConnectTask.Factory connectTaskFactory,
-                                ReconnectTask.Factory reconnectTaskFactory,
-                                DisconnectTask.Factory disconnectTaskFactory,
-                                SettingsProvider settingsProvider,
+    public ControlBarController(CoreManager coreManager,
+                                ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
                                 ThemeManager themeManager,
                                 @Assisted String connectionId,
                                 @Assisted ControlBarDelegate delegate) {
-        super(settingsProvider, themeManager, connectionHolder, connectionId);
-        this.pluginManager = pluginManager;
-        this.connectTaskFactory = connectTaskFactory;
-        this.reconnectTaskFactory = reconnectTaskFactory;
-        this.disconnectTaskFactory = disconnectTaskFactory;
-        this.settingsProvider = settingsProvider;
+        super(coreManager, themeManager, connectionId);
+        this.connectionLifecycleTaskFactories = connectionLifecycleTaskFactories;
         this.delegate = delegate;
         EventBus.register(this);
     }
@@ -115,7 +100,7 @@ public class ControlBarController extends BaseConnectionController {
 
     @FXML
     private void initialize() {
-        settingsProvider.getConnectionConfigs().stream()
+        coreManager.getSettingsManager().getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
                 .ifPresent(c -> {
@@ -136,7 +121,7 @@ public class ControlBarController extends BaseConnectionController {
 
         int indexToInsert = controllViewButtonHBox.getChildrenUnmodifiable().indexOf(controlViewSButton) + 1;
 
-        pluginManager.getExtensions(MainToolbarHook.class).forEach(p -> p.onInstantiateMainToolbar(getConnectionId(), controllViewButtonHBox, indexToInsert));
+        coreManager.getPluginManager().getExtensions(MainToolbarHook.class).forEach(p -> p.onInstantiateMainToolbar(getConnectionId(), controllViewButtonHBox, indexToInsert));
     }
 
     @FXML
@@ -144,7 +129,7 @@ public class ControlBarController extends BaseConnectionController {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Reconnect in control bar clicked for connection: {}", getConnectionId());
         }
-        reconnectTaskFactory.create(getConnectionId()).run();
+        connectionLifecycleTaskFactories.getReconnectFactory().create(getConnectionId()).run();
     }
 
     @FXML
@@ -152,7 +137,7 @@ public class ControlBarController extends BaseConnectionController {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Connect in control bar clicked for connection: {}", getConnectionId());
         }
-        connectTaskFactory.create(getConnectionId()).run();
+        connectionLifecycleTaskFactories.getConnectFactory().create(getConnectionId()).run();
     }
 
     @FXML
@@ -160,7 +145,7 @@ public class ControlBarController extends BaseConnectionController {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Disconnect in control bar clicked for connection: {}", getConnectionId());
         }
-        disconnectTaskFactory.create(getConnectionId()).run();
+        connectionLifecycleTaskFactories.getDisconnectFactory().create(getConnectionId()).run();
     }
 
     @FXML
@@ -226,7 +211,7 @@ public class ControlBarController extends BaseConnectionController {
 
 
     private void updateBrokerInfo() {
-        ConnectionConfigDTO config = connectionHolder.getConfig(getConnectionId());
+        ConnectionConfigDTO config = coreManager.getConnectionManager().getConfig(getConnectionId());
         if (config != null) {
             brokerInfo.setText(config.getHostAndPort());
         }

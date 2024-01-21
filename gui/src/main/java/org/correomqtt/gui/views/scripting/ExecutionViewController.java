@@ -11,6 +11,7 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 import lombok.AllArgsConstructor;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.eventbus.SubscribeFilter;
@@ -25,7 +26,6 @@ import org.correomqtt.core.scripting.ScriptExecutionSuccessEvent;
 import org.correomqtt.core.scripting.ScriptExecutionTask;
 import org.correomqtt.core.scripting.ScriptExecutionsDeletedEvent;
 import org.correomqtt.core.scripting.ScriptingBackend;
-import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
@@ -72,14 +72,14 @@ public class ExecutionViewController extends BaseControllerImpl {
     }
 
     @Inject
-    public ExecutionViewController(SettingsProvider settingsProvider,
+    public ExecutionViewController(CoreManager coreManager,
                                    ThemeManager themeManager,
                                    AlertHelper alertHelper,
                                    ExecutionCell.Factory executionCellFactory,
                                    SingleExecutionViewController.Factory executionViewCtrlFactory,
                                    ScriptExecutionTask.Factory scriptExecutionTaskFactory,
                                    ScriptDeleteExecutionsTask.Factory scriptDeleteExecutionsTaskFactory) {
-        super(settingsProvider, themeManager);
+        super(coreManager, themeManager);
         this.alertHelper = alertHelper;
         this.executionCellFactory = executionCellFactory;
         this.executionViewCtrlFactory = executionViewCtrlFactory;

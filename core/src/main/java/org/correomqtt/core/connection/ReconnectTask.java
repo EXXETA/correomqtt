@@ -8,7 +8,7 @@ import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.mqtt.CorreoMqttClientFactory;
 import org.correomqtt.core.pubsub.SubscribeTask;
-import org.correomqtt.core.utils.ConnectionHolder;
+import org.correomqtt.core.utils.ConnectionManager;
 import org.correomqtt.core.utils.CorreoMqttConnection;
 
 import java.util.Set;
@@ -16,7 +16,7 @@ import java.util.Set;
 public class ReconnectTask extends NoProgressTask<Void, Void> {
 
     private final SubscribeTask.Factory subscribeTaskFactory;
-    private final ConnectionHolder connectionHolder;
+    private final ConnectionManager connectionManager;
     private final String connectionId;
 
     @AssistedFactory
@@ -25,19 +25,19 @@ public class ReconnectTask extends NoProgressTask<Void, Void> {
     }
 
     @AssistedInject
-    public ReconnectTask(SubscribeTask.Factory subscribeTaskFactory, ConnectionHolder connectionHolder, @Assisted String connectionId) {
+    public ReconnectTask(SubscribeTask.Factory subscribeTaskFactory, ConnectionManager connectionManager, @Assisted String connectionId) {
         this.subscribeTaskFactory = subscribeTaskFactory;
-        this.connectionHolder = connectionHolder;
+        this.connectionManager = connectionManager;
         this.connectionId = connectionId;
     }
 
     @Override
     protected Void execute() throws Exception {
-        CorreoMqttConnection connection = connectionHolder.getConnection(connectionId);
+        CorreoMqttConnection connection = connectionManager.getConnection(connectionId);
         Set<SubscriptionDTO> existingSubscriptions = connection.getClient().getSubscriptions();
 
         connection.setClient(CorreoMqttClientFactory.createClient(connection.getConfigDTO()));
-        CorreoMqttClient client = connectionHolder.getClient(connectionId);
+        CorreoMqttClient client = connectionManager.getClient(connectionId);
         client.connect();
 
         existingSubscriptions.forEach(subscriptionDTO -> subscribeTaskFactory.create(connectionId, subscriptionDTO).run());

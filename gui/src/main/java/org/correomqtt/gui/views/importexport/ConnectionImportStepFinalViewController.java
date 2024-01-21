@@ -5,7 +5,7 @@ import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
@@ -25,11 +25,10 @@ public class ConnectionImportStepFinalViewController extends BaseControllerImpl 
         ConnectionImportStepFinalViewController create(ConnectionImportStepDelegate delegate);
     }
     @AssistedInject
-    public ConnectionImportStepFinalViewController(
-            SettingsProvider settingsProvider,
-            ThemeManager themeManager,
-            @Assisted ConnectionImportStepDelegate delegate) {
-        super(settingsProvider, themeManager);
+    public ConnectionImportStepFinalViewController(CoreManager coreManager,
+                                                   ThemeManager themeManager,
+                                                   @Assisted ConnectionImportStepDelegate delegate) {
+        super(coreManager, themeManager);
         this.delegate = delegate;
     }
 

@@ -1,7 +1,7 @@
 package org.correomqtt.gui.utils;
 
 import org.correomqtt.core.fileprovider.PluginConfigProvider;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 
 import javax.inject.Inject;
 import java.util.ResourceBundle;
@@ -12,11 +12,11 @@ public class PluginCheckUtils {
     private ResourceBundle resources;
 
     @Inject
-    PluginCheckUtils(SettingsProvider settingsProvider,
+    PluginCheckUtils(SettingsManager settingsManager,
                      AlertHelper alertHelper,
                      PluginConfigProvider pluginConfigProvider) {
         this.alertHelper = alertHelper;
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale());
         this.pluginConfigProvider = pluginConfigProvider;
     }
 

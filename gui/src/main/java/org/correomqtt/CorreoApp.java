@@ -21,10 +21,10 @@ import org.correomqtt.core.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.core.model.GlobalUISettings;
 import org.correomqtt.core.model.SettingsDTO;
 import org.correomqtt.core.plugin.PluginManager;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.shortcut.ShortcutConnectionIdEvent;
 import org.correomqtt.core.utils.VersionUtils;
-import org.correomqtt.gui.keyring.KeyringHandler;
+import org.correomqtt.gui.keyring.KeyringManager;
 import org.correomqtt.gui.plugin.PluginLauncher;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
@@ -54,8 +54,8 @@ public class CorreoApp extends Application {
     private static final Logger LOGGER = LoggerFactory.getLogger(CorreoApp.class);
     private final PluginLauncher pluginLauncher;
     private final PluginManager pluginManager;
-    private final KeyringHandler keyringHandler;
-    private final SettingsProvider settingsProvider;
+    private final KeyringManager keyringManager;
+    private final SettingsManager settingsManager;
     private final ThemeManager themeManager;
     private final AlertHelper alertHelper;
     private final CheckNewVersionUtils checkNewVersionUtils;
@@ -71,8 +71,8 @@ public class CorreoApp extends Application {
     @Inject
     public CorreoApp(PluginManager pluginManager,
                      PluginLauncher pluginLauncher,
-                     KeyringHandler keyringHandler,
-                     SettingsProvider settingsProvider,
+                     KeyringManager keyringManager,
+                     SettingsManager settingsManager,
                      ThemeManager themeManager,
                      AlertHelper alertHelper,
                      CheckNewVersionUtils checkNewVersionUtils,
@@ -82,8 +82,8 @@ public class CorreoApp extends Application {
                      CorreoCore correoCore) {
         this.pluginManager = pluginManager;
         this.pluginLauncher = pluginLauncher;
-        this.keyringHandler = keyringHandler;
-        this.settingsProvider = settingsProvider;
+        this.keyringManager = keyringManager;
+        this.settingsManager = settingsManager;
         this.themeManager = themeManager;
         this.alertHelper = alertHelper;
         this.checkNewVersionUtils = checkNewVersionUtils;
@@ -118,7 +118,7 @@ public class CorreoApp extends Application {
             LOGGER.info("CorreoMQTT version is {}", VersionUtils.getVersion());
         }
 
-        final SettingsDTO settings = settingsProvider.getSettings();
+        final SettingsDTO settings = settingsManager.getSettings();
 
         handleVersionMismatch(settings);
         setLocale(settings);
@@ -140,9 +140,9 @@ public class CorreoApp extends Application {
         }
 
         notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("preloaderKeyring")));
-        keyringHandler.init();
-        keyringHandler.retryWithMasterPassword(
-                settingsProvider::initializePasswords,
+        keyringManager.init();
+        keyringManager.retryWithMasterPassword(
+                settingsManager::initializePasswords,
                 resources.getString("onPasswordReadFailedTitle"),
                 resources.getString("onPasswordReadFailedHeader"),
                 resources.getString("onPasswordReadFailedContent"),
@@ -151,7 +151,7 @@ public class CorreoApp extends Application {
         );
 
         notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("preloaderReady")));
-        settingsProvider.saveSettings();
+        settingsManager.saveSettings();
 
         System.setProperty("correo.iconModeCssClass",themeManager.getIconModeCssClass());
         correoCore.init();
@@ -161,7 +161,7 @@ public class CorreoApp extends Application {
         String cssPath = themeManager.getCssPath();
 
         FXMLLoader loader = new FXMLLoader(MainViewController.class.getResource("mainView.fxml"),
-                ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
+                ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale()));
         loader.setControllerFactory(param -> mainViewController);
         Parent root = loader.load();
 
@@ -177,7 +177,7 @@ public class CorreoApp extends Application {
         primaryStage.setMinHeight(400);
         primaryStage.setMinWidth(850);
 
-        final SettingsDTO settings = settingsProvider.getSettings();
+        final SettingsDTO settings = settingsManager.getSettings();
 
         if (settings.getGlobalUISettings() == null) {
             primaryStage.show();
@@ -218,7 +218,7 @@ public class CorreoApp extends Application {
         }
         settings.setCurrentLocale(settings.getSavedLocale());
         LOGGER.info("Locale is: {}", settings.getSavedLocale());
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale());
     }
 
     private void initUpdatesOnFirstStart(SettingsDTO settings) {
@@ -245,7 +245,7 @@ public class CorreoApp extends Application {
     }
 
     private void saveGlobalUISettings() {
-        final SettingsDTO settings = settingsProvider.getSettings();
+        final SettingsDTO settings = settingsManager.getSettings();
 
         settings.setGlobalUISettings(new GlobalUISettings(
                 primaryStage.getX(),
@@ -254,7 +254,7 @@ public class CorreoApp extends Application {
                 primaryStage.getHeight()
         ));
 
-        settingsProvider.saveSettings();
+        settingsManager.saveSettings();
     }
 
     @Subscribe(ShutdownRequestEvent.class)

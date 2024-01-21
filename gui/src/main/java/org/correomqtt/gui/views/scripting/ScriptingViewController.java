@@ -18,8 +18,7 @@ import javafx.scene.transform.Rotate;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import lombok.AllArgsConstructor;
-import org.correomqtt.gui.model.AppHostServices;
-import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
@@ -35,6 +34,7 @@ import org.correomqtt.core.scripting.ScriptNewTask;
 import org.correomqtt.core.scripting.ScriptRenameTask;
 import org.correomqtt.core.scripting.ScriptingBackend;
 import org.correomqtt.gui.controls.IconLabel;
+import org.correomqtt.gui.model.AppHostServices;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
@@ -103,7 +103,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     }
 
     @Inject
-    public ScriptingViewController(SettingsProvider settingsProvider,
+    public ScriptingViewController(CoreManager coreManager,
                                    ThemeManager themeManager,
                                    AlertHelper alertHelper,
                                    ScriptCell.Factory scriptCellFactory,
@@ -116,7 +116,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                                    ScriptingProvider scriptingProvider,
                                    @AppHostServices HostServices hostServices
     ) {
-        super(settingsProvider, themeManager);
+        super(coreManager, themeManager);
         this.alertHelper = alertHelper;
         this.scriptCellFactory = scriptCellFactory;
         this.scriptContextMenuFactory = scriptContextMenuFactory;
