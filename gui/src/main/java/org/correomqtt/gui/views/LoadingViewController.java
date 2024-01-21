@@ -1,5 +1,7 @@
 package org.correomqtt.gui.views;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -7,8 +9,11 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.gui.views.connections.BaseConnectionController;
 
@@ -29,12 +34,17 @@ public class LoadingViewController extends BaseConnectionController {
     @FXML
     private Pane mainPane;
 
-    private LoadingViewController(String connectionId, String message) {
-        super(connectionId);
+    @AssistedInject
+    LoadingViewController(SettingsProvider settingsProvider,
+                          ThemeManager themeManager,
+                          ConnectionHolder connectionHolder,
+                          @Assisted("connectionId") String connectionId,
+                          @Assisted("message") String message) {
+        super(settingsProvider, themeManager, connectionHolder, connectionId);
         this.message = message;
     }
 
-    public static LoadingViewController showAsDialog(final String connectionId, final String message) {
+    public LoadingViewController showAsDialog() {
 
         Map<Object, Object> properties = new HashMap<>();
         properties.put(WindowProperty.WINDOW_TYPE, WindowType.LOADING);
@@ -45,7 +55,7 @@ public class LoadingViewController extends BaseConnectionController {
         }
 
         LoaderResult<LoadingViewController> result = load(LoadingViewController.class, "loadingView.fxml",
-                () -> new LoadingViewController(connectionId, message));
+                () -> this);
         ResourceBundle resources = result.getResourceBundle();
 
         showAsDialog(result,

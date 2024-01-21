@@ -1,5 +1,7 @@
 package org.correomqtt.gui.views.connections;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -8,7 +10,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,7 @@ public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionViewCell.class);
 
+    private final SettingsProvider settingsProvider;
     private final ListView<SubscriptionPropertiesDTO> listView;
 
     @SuppressWarnings("unused")
@@ -42,7 +45,10 @@ public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
 
     private FXMLLoader loader;
 
-    public SubscriptionViewCell(ListView<SubscriptionPropertiesDTO> listView) {
+    @AssistedInject
+    public SubscriptionViewCell(SettingsProvider settingsProvider,
+                                @Assisted ListView<SubscriptionPropertiesDTO> listView) {
+        this.settingsProvider = settingsProvider;
         this.listView = listView;
     }
 
@@ -57,7 +63,7 @@ public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(SubscriptionViewCell.class.getResource("subscriptionCell.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

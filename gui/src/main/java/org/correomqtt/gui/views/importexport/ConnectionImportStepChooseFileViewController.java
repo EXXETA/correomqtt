@@ -1,12 +1,16 @@
 package org.correomqtt.gui.views.importexport;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.importexport.connections.ImportConnectionsFileTask;
 import org.correomqtt.core.model.ConnectionExportDTO;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
@@ -16,18 +20,25 @@ import java.util.ResourceBundle;
 
 public class ConnectionImportStepChooseFileViewController extends BaseControllerImpl implements ConnectionImportStepController {
     private static ResourceBundle resources;
+    private final AlertHelper alertHelper;
     private final ConnectionImportStepDelegate delegate;
     @FXML
     private HBox stepHolder;
 
-
-    public ConnectionImportStepChooseFileViewController(ConnectionImportStepDelegate delegate) {
+    @AssistedInject
+    public ConnectionImportStepChooseFileViewController(
+            SettingsProvider settingsProvider,
+            ThemeManager themeManager,
+            AlertHelper alertHelper,
+            @Assisted ConnectionImportStepDelegate delegate) {
+        super(settingsProvider, themeManager);
+        this.alertHelper = alertHelper;
         this.delegate = delegate;
     }
 
-    public static LoaderResult<ConnectionImportStepChooseFileViewController> load(ConnectionImportStepDelegate delegate) {
+    public LoaderResult<ConnectionImportStepChooseFileViewController> load() {
         LoaderResult<ConnectionImportStepChooseFileViewController> result = load(ConnectionImportStepChooseFileViewController.class, "connectionImportStepChooseFile.fxml",
-                () -> new ConnectionImportStepChooseFileViewController(delegate));
+                () -> this);
         resources = result.getResourceBundle();
         return result;
     }
@@ -48,23 +59,6 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
                 .run();
     }
 
-    private void onImportError(TaskErrorResult<ImportConnectionsFileTask.Error> errorResult) {
-        if (errorResult.isExpected()) {
-            switch (errorResult.getExpectedError()) {
-                case FILE_IS_NULL -> {
-                    // ignore, file dialog was aborted
-                }
-                case FILE_CAN_NOT_BE_READ_OR_PARSED -> {
-                    AlertHelper.warn(resources.getString("connectionImportFileFailedTitle"),
-                            resources.getString("connectionImportFileFailedDescription"));
-                    delegate.onCancelClicked();
-                }
-            }
-        } else {
-            AlertHelper.unexpectedAlert(errorResult.getUnexpectedError());
-        }
-    }
-
     public void onImportSucceeded(ConnectionExportDTO connectionExportDTO) {
         if (connectionExportDTO != null) {
             this.delegate.setOriginalImportedDTO(connectionExportDTO);
@@ -79,8 +73,25 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
         }
     }
 
+    private void onImportError(TaskErrorResult<ImportConnectionsFileTask.Error> errorResult) {
+        if (errorResult.isExpected()) {
+            switch (errorResult.getExpectedError()) {
+                case FILE_IS_NULL -> {
+                    // ignore, file dialog was aborted
+                }
+                case FILE_CAN_NOT_BE_READ_OR_PARSED -> {
+                    alertHelper.warn(resources.getString("connectionImportFileFailedTitle"),
+                            resources.getString("connectionImportFileFailedDescription"));
+                    delegate.onCancelClicked();
+                }
+            }
+        } else {
+            alertHelper.unexpectedAlert(errorResult.getUnexpectedError());
+        }
+    }
+
     public void onImportFailed() {
-        AlertHelper.warn(resources.getString("connectionImportFileFailedTitle"),
+        alertHelper.warn(resources.getString("connectionImportFileFailedTitle"),
                 resources.getString("connectionImportFileFailedDescription"));
         delegate.onCancelClicked();
     }

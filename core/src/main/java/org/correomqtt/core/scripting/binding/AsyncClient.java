@@ -18,18 +18,18 @@ public class AsyncClient {
 
     AsyncClient(Client client) {
         this.client = client;
-        Context context = Context.getCurrent();
+        Context context = client.getContext();
         this.asyncLatch = context.getPolyglotBindings().getMember(CORREO_ASYNC_LATCH).as(AsyncLatch.class);
     }
 
     @Export
     public BlockingClient toBlocking() {
-        return new ClientFactory().getBlockingClient();
+        return client.toBlocking();
     }
 
     @Export
     public PromiseClient toPromised() {
-        return new ClientFactory().getPromiseClient();
+        return client.toPromise();
     }
 
     @Export

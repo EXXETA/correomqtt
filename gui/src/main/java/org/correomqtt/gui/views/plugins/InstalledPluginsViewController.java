@@ -9,14 +9,15 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import lombok.extern.slf4j.Slf4j;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
-import org.correomqtt.business.settings.SettingsProvider;
-import org.correomqtt.core.plugin.marketplace.PluginDisableTask;
+import org.correomqtt.core.plugin.PluginManager;
+import org.correomqtt.core.plugin.marketplace.PluginDisableTaskFactory;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledEvent;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledFailedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledStartedEvent;
-import org.correomqtt.core.plugin.marketplace.PluginEnableTask;
+import org.correomqtt.core.plugin.marketplace.PluginEnableTaskFactory;
 import org.correomqtt.core.plugin.marketplace.PluginEnabledEvent;
 import org.correomqtt.core.plugin.marketplace.PluginEnabledFailedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginEnabledStartedEvent;
@@ -25,82 +26,138 @@ import org.correomqtt.core.plugin.marketplace.PluginInstallFailedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginInstallStartedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginUninstallEvent;
 import org.correomqtt.core.plugin.marketplace.PluginUninstallFailedEvent;
-import org.correomqtt.core.plugin.marketplace.PluginUninstallTask;
+import org.correomqtt.core.plugin.marketplace.PluginUninstallTaskFactory;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.PluginTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.core.plugin.PluginManager;
 
+import javax.inject.Inject;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 @Slf4j
 public class InstalledPluginsViewController extends BaseControllerImpl {
 
+    private final PluginManager pluginManager;
+    private final PluginEnableTaskFactory pluginEnableTaskFactory;
+    private final PluginDisableTaskFactory pluginDisableTaskFactory;
+    private final PluginUninstallTaskFactory pluginUninstallTaskFactory;
+    private final PluginCellFactory pluginCellFactory;
+    private final ResourceBundle resources;
+    private final AlertHelper alertHelper;
     @FXML
     Pane installedPluginsRootPane;
-
     @FXML
     ListView<PluginInfoPropertiesDTO> installedPluginList;
-
     @FXML
     Label pluginName;
-
     @FXML
     Label pluginDescription;
-
     @FXML
     Label pluginProvider;
-
     @FXML
     Label pluginLicense;
-
     @FXML
     Label pluginInstalledVersion;
-
     @FXML
     Label pluginPath;
-
     @FXML
     Button pluginDisableToggleBtn;
-
     @FXML
     Label pluginBundledLabel;
-
     @FXML
     Button pluginUninstallBtn;
 
-    private final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
-
-    public InstalledPluginsViewController() {
-        super();
+    @Inject
+    public InstalledPluginsViewController(PluginManager pluginManager,
+                                          PluginEnableTaskFactory pluginEnableTaskFactory,
+                                          PluginDisableTaskFactory pluginDisableTaskFactory,
+                                          PluginUninstallTaskFactory pluginUninstallTaskFactory,
+                                          PluginCellFactory pluginCellFactory,
+                                          SettingsProvider settingsProvider,
+                                          ThemeManager themeManager,
+                                          AlertHelper alertHelper) {
+        super(settingsProvider, themeManager);
+        this.pluginManager = pluginManager;
+        this.pluginEnableTaskFactory = pluginEnableTaskFactory;
+        this.pluginDisableTaskFactory = pluginDisableTaskFactory;
+        this.pluginUninstallTaskFactory = pluginUninstallTaskFactory;
+        this.pluginCellFactory = pluginCellFactory;
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+        this.alertHelper = alertHelper;
         EventBus.register(this);
     }
 
-    public static LoaderResult<InstalledPluginsViewController> load() {
-        return load(InstalledPluginsViewController.class, "installedPluginsView.fxml", InstalledPluginsViewController::new);
+    public LoaderResult<InstalledPluginsViewController> load() {
+        return load(InstalledPluginsViewController.class, "installedPluginsView.fxml", () -> this);
     }
 
     @FXML
     private void initialize() {
         installedPluginList.setCellFactory(this::createCell);
         installedPluginList.setItems(FXCollections.observableArrayList(
-                PluginTransformer.dtoListToPropList(PluginManager.getInstance().getInstalledPlugins())
+                PluginTransformer.dtoListToPropList(pluginManager.getInstalledPlugins())
         ));
         setCurrentPlugin(null);
     }
 
 
     private ListCell<PluginInfoPropertiesDTO> createCell(ListView<PluginInfoPropertiesDTO> pluginInfoDTOListView) {
-        PluginCell cell = new PluginCell(pluginInfoDTOListView);
+        PluginCell cell = pluginCellFactory.create(pluginInfoDTOListView);
         cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
             if (Boolean.TRUE.equals(newValue)) {
                 setCurrentPlugin(cell.getItem());
             }
         });
         return cell;
+    }
+
+    @FXML
+    private void onDisableToggle() {
+        PluginInfoPropertiesDTO selectedPlugin = installedPluginList.getSelectionModel().getSelectedItem();
+        if (Boolean.TRUE.equals(selectedPlugin.getDisabled())) {
+            pluginEnableTaskFactory.create(selectedPlugin.getId()).run();
+        } else {
+            pluginDisableTaskFactory.create(selectedPlugin.getId()).run();
+        }
+        Platform.runLater(() -> installedPluginList.refresh());
+    }
+
+    @FXML
+    private void onUninstall() {
+        PluginInfoPropertiesDTO selectedPlugin = installedPluginList.getSelectionModel().getSelectedItem();
+        if (alertHelper.confirm(
+                resources.getString("reallyUninstallTitle"),
+                MessageFormat.format(resources.getString("reallyUninstallHeader"), selectedPlugin.getName(), selectedPlugin.getInstalledVersion()),
+                MessageFormat.format(resources.getString("reallyUninstallContent"), selectedPlugin.getName(), selectedPlugin.getInstalledVersion()),
+                resources.getString("commonCancelButton"),
+                resources.getString("reallyUninstallYesButton"))) {
+            pluginUninstallTaskFactory.create(selectedPlugin.getId()).run();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public void onPluginInstallSucceeded(@Subscribe PluginInstallEvent event) {
+        reloadData(event.pluginId());
+    }
+
+    private void reloadData(String pluginId) {
+        installedPluginList.setItems(FXCollections.observableArrayList(
+                PluginTransformer.dtoListToPropList(pluginManager.getInstalledPlugins())
+        ));
+        Platform.runLater(() -> {
+            installedPluginsRootPane.setDisable(false);
+            installedPluginList.refresh();
+            PluginInfoPropertiesDTO currentPlugin = installedPluginList.getItems().stream()
+                    .filter(p -> p.getId().equals(pluginId))
+                    .findFirst()
+                    .orElse(null);
+            setCurrentPlugin(currentPlugin);
+            installedPluginList.getSelectionModel().select(currentPlugin);
+        });
     }
 
     private void setCurrentPlugin(PluginInfoPropertiesDTO plugin) {
@@ -133,34 +190,6 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
 
     }
 
-
-    @FXML
-    private void onDisableToggle() {
-        PluginInfoPropertiesDTO selectedPlugin = installedPluginList.getSelectionModel().getSelectedItem();
-        if (Boolean.TRUE.equals(selectedPlugin.getDisabled())) {
-            new PluginEnableTask(selectedPlugin.getId())
-                    .run();
-        } else {
-            new PluginDisableTask(selectedPlugin.getId())
-                    .run();
-        }
-        Platform.runLater(() -> installedPluginList.refresh());
-    }
-
-    @FXML
-    private void onUninstall() {
-        PluginInfoPropertiesDTO selectedPlugin = installedPluginList.getSelectionModel().getSelectedItem();
-        if (AlertHelper.confirm(
-                resources.getString("reallyUninstallTitle"),
-                MessageFormat.format(resources.getString("reallyUninstallHeader"), selectedPlugin.getName(), selectedPlugin.getInstalledVersion()),
-                MessageFormat.format(resources.getString("reallyUninstallContent"), selectedPlugin.getName(), selectedPlugin.getInstalledVersion()),
-                resources.getString("commonCancelButton"),
-                resources.getString("reallyUninstallYesButton"))) {
-            new PluginUninstallTask(selectedPlugin.getId()).run();
-        }
-    }
-
-
     private void setOrHide(Label label, String value) {
         setOrHide(label, value, null);
     }
@@ -181,32 +210,6 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    public void onPluginInstallSucceeded(@Subscribe PluginInstallEvent event) {
-        reloadData(event.pluginId());
-    }
-
-    private void reloadData(String pluginId) {
-        installedPluginList.setItems(FXCollections.observableArrayList(
-                PluginTransformer.dtoListToPropList(PluginManager.getInstance().getInstalledPlugins())
-        ));
-        Platform.runLater(() -> {
-            installedPluginsRootPane.setDisable(false);
-            installedPluginList.refresh();
-            PluginInfoPropertiesDTO currentPlugin = installedPluginList.getItems().stream()
-                    .filter(p -> p.getId().equals(pluginId))
-                    .findFirst()
-                    .orElse(null);
-            setCurrentPlugin(currentPlugin);
-            installedPluginList.getSelectionModel().select(currentPlugin);
-        });
-    }
-
-    private void showFail() {
-        AlertHelper.warn(resources.getString("pluginOperationFailedTitle"), resources.getString("pluginOperationFailedContent"), true);
-        Platform.runLater(() -> installedPluginsRootPane.setDisable(false));
-    }
-
-    @SuppressWarnings("unused")
     @Subscribe(PluginInstallFailedEvent.class)
     public void onPluginInstallFailed() {
         Platform.runLater(() -> installedPluginsRootPane.setDisable(false));
@@ -220,7 +223,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
 
     public void onPluginUninstallSucceeded(@Subscribe PluginUninstallEvent event) {
         reloadData(event.pluginId());
-        Platform.runLater(() -> AlertHelper.info(resources.getString("pluginChangeTitle"),
+        Platform.runLater(() -> alertHelper.info(resources.getString("pluginChangeTitle"),
                 resources.getString("pluginChangeContent")));
     }
 
@@ -228,6 +231,11 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
     @Subscribe(PluginUninstallFailedEvent.class)
     public void onPluginUninstallFailed() {
         showFail();
+    }
+
+    private void showFail() {
+        alertHelper.warn(resources.getString("pluginOperationFailedTitle"), resources.getString("pluginOperationFailedContent"), true);
+        Platform.runLater(() -> installedPluginsRootPane.setDisable(false));
     }
 
     @SuppressWarnings("unused")
@@ -256,7 +264,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     public void onPluginEnableSucceeded(@Subscribe PluginEnabledEvent event) {
         reloadData(event.pluginId());
-        Platform.runLater(() -> AlertHelper.info(resources.getString("pluginChangeTitle"),
+        Platform.runLater(() -> alertHelper.info(resources.getString("pluginChangeTitle"),
                 resources.getString("pluginChangeContent")));
     }
 

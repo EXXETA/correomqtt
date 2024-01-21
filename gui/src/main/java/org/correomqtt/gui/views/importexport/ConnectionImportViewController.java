@@ -7,16 +7,19 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import lombok.AllArgsConstructor;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ConnectionExportDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -26,32 +29,33 @@ import java.util.function.Supplier;
 
 public class ConnectionImportViewController extends BaseControllerImpl implements ConnectionImportStepDelegate {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionImportViewController.class);
-    private List<ConnectionConfigDTO> originalImportedConnections;
-
-    private List<ConnectionConfigDTO> importableConnections;
-    @AllArgsConstructor
-    private static class StepState {
-        private ConnectionImportStepController controller;
-        private Region region;
-    }
-
-    private enum Step {CHOOSE_FILE, DECRYPT, CONNECTIONS, FINAL}
-
     private final Map<Step, StepState> stepStates = new EnumMap<>(Step.class);
-
+    private final ConnectionImportStepChooseFileViewControllerFactory importChooseFileCtrlFactory;
+    private final ConnectionImportStepConnectionsViewControllerFactory importConnectionsCtrlFactory;
+    private final ConnectionImportStepDecryptViewControllerFactory importDecryptCtrlFactory;
+    private final ConnectionImportStepFinalViewControllerFactory importFinalCtrlFactory;
+    private List<ConnectionConfigDTO> originalImportedConnections;
+    private List<ConnectionConfigDTO> importableConnections;
     @FXML
     private VBox contentHolder;
-
-
     private ConnectionExportDTO originalImportedDTO;
 
-    public static LoaderResult<ConnectionImportViewController> load() {
-        return load(ConnectionImportViewController.class, "connectionImportView.fxml",
-                ConnectionImportViewController::new);
+    @Inject
+    protected ConnectionImportViewController(SettingsProvider settingsProvider,
+                                             ThemeManager themeManager,
+                                             ConnectionImportStepChooseFileViewControllerFactory importChooseFileCtrlFactory,
+                                             ConnectionImportStepConnectionsViewControllerFactory importConnectionsCtrlFactory,
+                                             ConnectionImportStepDecryptViewControllerFactory importDecryptCtrlFactory,
+                                             ConnectionImportStepFinalViewControllerFactory importFinalCtrlFactory
+    ) {
+        super(settingsProvider, themeManager);
+        this.importChooseFileCtrlFactory = importChooseFileCtrlFactory;
+        this.importConnectionsCtrlFactory = importConnectionsCtrlFactory;
+        this.importDecryptCtrlFactory = importDecryptCtrlFactory;
+        this.importFinalCtrlFactory = importFinalCtrlFactory;
     }
 
-
-    public static void showAsDialog() {
+    public void showAsDialog() {
         ResourceBundle resources;
 
         LOGGER.info("Open ConnectionImportView Dialog");
@@ -68,45 +72,9 @@ public class ConnectionImportViewController extends BaseControllerImpl implement
                 event -> result.getController().keyHandling(event));
     }
 
-
-    @FXML
-    private void initialize() {
-        goStepChooseFile();
-    }
-
-    @Override
-    public void setOriginalImportedDTO(ConnectionExportDTO originalImportedDTO) {
-        this.originalImportedDTO = originalImportedDTO;
-    }
-
-    @Override
-    public void goStepDecrypt() {
-        activateStep(Step.DECRYPT,() -> ConnectionImportStepDecryptViewController.load(this));
-    }
-
-    @Override
-    public void goStepConnections() {
-        activateStep(Step.CONNECTIONS,() -> ConnectionImportStepConnectionsViewController.load(this));
-    }
-
-    @Override
-    public void goStepChooseFile() {
-        activateStep(Step.CHOOSE_FILE,() -> ConnectionImportStepChooseFileViewController.load(this));
-    }
-
-    @Override
-    public void goStepFinal() {
-        activateStep(Step.FINAL,() -> ConnectionImportStepFinalViewController.load(this));
-    }
-
-    private <Z extends ConnectionImportStepController> void activateStep(Step step, Supplier<LoaderResult<Z>> resultGenerator) {
-        StepState stepState = stepStates.computeIfAbsent(step, k -> {
-            LoaderResult<Z> result = resultGenerator.get();
-            return new StepState(result.getController(), result.getMainRegion());
-        });
-        stepStates.forEach((k, s) -> contentHolder.getChildren().remove(s.region));
-        stepState.controller.initFromWizard();
-        contentHolder.getChildren().add(1, stepState.region);
+    public LoaderResult<ConnectionImportViewController> load() {
+        return load(ConnectionImportViewController.class, "connectionImportView.fxml",
+                () -> this);
     }
 
     private void keyHandling(KeyEvent event) {
@@ -119,6 +87,58 @@ public class ConnectionImportViewController extends BaseControllerImpl implement
         cleanUp();
         Stage stage = (Stage) contentHolder.getScene().getWindow();
         stage.close();
+    }
+
+    private void cleanUp() {
+        stepStates.forEach((k, s) -> s.controller.cleanUp());
+    }
+
+    @FXML
+    private void initialize() {
+        goStepChooseFile();
+    }
+
+    @Override
+    public void setOriginalImportedDTO(ConnectionExportDTO originalImportedDTO) {
+        this.originalImportedDTO = originalImportedDTO;
+    }
+
+    private <Z extends ConnectionImportStepController> void activateStep(Step step, Supplier<LoaderResult<Z>> resultGenerator) {
+        StepState stepState = stepStates.computeIfAbsent(step, k -> {
+            LoaderResult<Z> result = resultGenerator.get();
+            return new StepState(result.getController(), result.getMainRegion());
+        });
+        stepStates.forEach((k, s) -> contentHolder.getChildren().remove(s.region));
+        stepState.controller.initFromWizard();
+        contentHolder.getChildren().add(1, stepState.region);
+    }
+
+    @Override
+    public void goStepDecrypt() {
+        activateStep(Step.DECRYPT, () -> importDecryptCtrlFactory.create(this).load());
+    }
+
+    private enum Step {CHOOSE_FILE, DECRYPT, CONNECTIONS, FINAL}
+
+    @Override
+    public void goStepConnections() {
+        activateStep(Step.CONNECTIONS, () -> importConnectionsCtrlFactory.create(this).load());
+    }
+
+    @AllArgsConstructor
+    private static class StepState {
+        private ConnectionImportStepController controller;
+        private Region region;
+    }
+
+    @Override
+    public void goStepChooseFile() {
+        activateStep(Step.CHOOSE_FILE, () -> importChooseFileCtrlFactory.create(this).load());
+    }
+
+    @Override
+    public void goStepFinal() {
+        activateStep(Step.FINAL, () -> importFinalCtrlFactory.create(this).load());
     }
 
 
@@ -151,7 +171,5 @@ public class ConnectionImportViewController extends BaseControllerImpl implement
         return importableConnections;
     }
 
-    private void cleanUp() {
-        stepStates.forEach((k,s) -> s.controller.cleanUp());
-    }
+
 }

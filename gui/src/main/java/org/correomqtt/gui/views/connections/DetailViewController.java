@@ -1,5 +1,7 @@
 package org.correomqtt.gui.views.connections;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -24,16 +26,19 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.eventbus.Subscribe;
-import org.correomqtt.business.settings.SettingsProvider;
 import org.correomqtt.core.importexport.messages.ExportMessageFailedEvent;
 import org.correomqtt.core.importexport.messages.ExportMessageStartedEvent;
 import org.correomqtt.core.importexport.messages.ExportMessageSuccessEvent;
 import org.correomqtt.core.model.MessageType;
-import org.correomqtt.gui.transformer.MessageTransformer;
-import org.correomqtt.gui.utils.AutoFormatPayload;
+import org.correomqtt.core.plugin.MessageValidator;
+import org.correomqtt.core.plugin.PluginManager;
+import org.correomqtt.core.plugin.spi.MessageValidatorHook;
+import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.contextmenu.DetailContextMenu;
 import org.correomqtt.gui.contextmenu.DetailContextMenuDelegate;
+import org.correomqtt.gui.contextmenu.DetailContextMenuFactory;
 import org.correomqtt.gui.controls.IconCheckMenuItem;
 import org.correomqtt.gui.formats.Format;
 import org.correomqtt.gui.menuitem.DetailViewManipulatorTaskMenuItem;
@@ -41,16 +46,16 @@ import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.Search;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
+import org.correomqtt.gui.plugin.DetailViewManipulatorTask;
 import org.correomqtt.gui.plugin.GuiPluginManager;
+import org.correomqtt.gui.plugin.spi.DetailViewHook;
+import org.correomqtt.gui.plugin.spi.DetailViewManipulatorHook;
+import org.correomqtt.gui.theme.ThemeManager;
+import org.correomqtt.gui.transformer.MessageTransformer;
+import org.correomqtt.gui.utils.AutoFormatPayload;
 import org.correomqtt.gui.utils.MessageUtils;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.gui.views.LoaderResult;
-import org.correomqtt.gui.plugin.DetailViewManipulatorTask;
-import org.correomqtt.core.plugin.MessageValidator;
-import org.correomqtt.core.plugin.PluginManager;
-import org.correomqtt.gui.plugin.spi.DetailViewHook;
-import org.correomqtt.gui.plugin.spi.DetailViewManipulatorHook;
-import org.correomqtt.core.plugin.spi.MessageValidatorHook;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
@@ -66,13 +71,20 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 public class DetailViewController extends BaseConnectionController implements
-        DetailContextMenuDelegate
-{
+        DetailContextMenuDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DetailViewController.class);
 
     private static ResourceBundle resources;
     private final BooleanProperty inlineViewProperty;
+    private final PluginManager pluginManager;
+    private final MessageValidator messageValidator;
+    private final GuiPluginManager guiPluginManager;
+    private final AutoFormatPayload autoFormatPayload;
+    private final SettingsProvider settingsProvider;
+    private final ThemeManager themeManager;
+    private final DetailContextMenuFactory detailContextMenuFactory;
+    private final MessageUtils messageUtils;
     private final DetailViewDelegate delegate;
 
     @FXML
@@ -141,62 +153,37 @@ public class DetailViewController extends BaseConnectionController implements
 
     private DetailViewManipulatorTask lastManipulatorTask;
 
-    private DetailViewController(String connectionId, DetailViewDelegate delegate, boolean isInlineView) {
-        super(connectionId);
+    @AssistedInject
+    DetailViewController(ConnectionHolder connectionHolder,
+                         PluginManager pluginManager,
+                         MessageValidator messageValidator,
+                         GuiPluginManager guiPluginManager,
+                         AutoFormatPayload autoFormatPayload,
+                         SettingsProvider settingsProvider,
+                         ThemeManager themeManager,
+                         DetailContextMenuFactory detailContextMenuFactory,
+                         MessageUtils messageUtils,
+                         @Assisted MessagePropertiesDTO messageDTO,
+                         @Assisted String connectionId,
+                         @Assisted DetailViewDelegate delegate,
+                         @Assisted boolean isInlineView) {
+        super(settingsProvider, themeManager, connectionHolder, connectionId);
+        this.pluginManager = pluginManager;
+        this.messageValidator = messageValidator;
+        this.guiPluginManager = guiPluginManager;
+        this.autoFormatPayload = autoFormatPayload;
+        this.settingsProvider = settingsProvider;
+        this.themeManager = themeManager;
+        this.detailContextMenuFactory = detailContextMenuFactory;
+        this.messageUtils = messageUtils;
         this.delegate = delegate;
         inlineViewProperty = new SimpleBooleanProperty(isInlineView);
-    }
-
-    private static LoaderResult<DetailViewController> load(final String connectionId, DetailViewDelegate delegate, final boolean isInlineView) {
-        return load(DetailViewController.class,
-                "detailView.fxml",
-                () -> new DetailViewController(connectionId, delegate, isInlineView));
-    }
-
-    public static LoaderResult<DetailViewController> load(MessagePropertiesDTO messageDTO, String connectionId, DetailViewDelegate delegate, boolean isInlineView) {
-        LoaderResult<DetailViewController> result = load(connectionId, delegate, isInlineView);
-        result.getController().setMessage(messageDTO);
-        resources = result.getResourceBundle();
-
-        if (!isInlineView) {
-            result.getController().disableInlineView();
-        }
-
-        return result;
-    }
-
-    static void showAsDialog(MessagePropertiesDTO messageDTO, String connectionId, DetailViewDelegate delegate) {
-
-        Map<Object, Object> properties = new HashMap<>();
-        properties.put(WindowProperty.WINDOW_TYPE, WindowType.DETAIL);
-        properties.put(WindowProperty.CONNECTION_ID, connectionId);
-        properties.put(WindowProperty.MESSAGE_ID, messageDTO.getMessageId());
-
-        if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
-            return;
-        }
-
-        LoaderResult<DetailViewController> result = load(messageDTO, connectionId, delegate, false);
-
-        String title;
-        if (messageDTO.getMessageType() == MessageType.INCOMING) {
-            title = resources.getString("detailViewControllerIncomingTitle");
-        } else if (messageDTO.getMessageType() == MessageType.OUTGOING) {
-            title = resources.getString("detailViewControllerOutgoingTitle");
-        } else {
-            title = resources.getString("detailViewControllerTitle");
-        }
-
-        showAsDialog(result, title, properties, true, false, null, null);
-    }
-
-    private void disableInlineView() {
-        inlineViewProperty.setValue(false);
+        this.messageDTO = messageDTO;
     }
 
     @FXML
     private void initialize() {
-        detailViewVBox.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
+        detailViewVBox.getStyleClass().add(themeManager.getIconModeCssClass());
         searchTextField.textProperty().addListener((observable, oldValue, newValue) -> performSearch(newValue));
         searchTextField.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
             if (KeyCode.ESCAPE == event.getCode()) {
@@ -216,7 +203,7 @@ public class DetailViewController extends BaseConnectionController implements
         detailViewScrollPane.prefWidthProperty().bind(detailViewVBox.widthProperty());
         detailViewScrollPane.prefHeightProperty().bind(detailViewVBox.heightProperty());
 
-        DetailContextMenu contextMenu = new DetailContextMenu(this);
+        DetailContextMenu contextMenu = detailContextMenuFactory.create(this);
 
         metaHolder.setOnContextMenuRequested(event -> {
             if (messageDTO != null) {
@@ -226,7 +213,7 @@ public class DetailViewController extends BaseConnectionController implements
         });
 
         detailViewFormatToggleButton.setOnMouseClicked(mouseEvent -> {
-            AutoFormatPayload.autoFormatPayload(messageDTO.getPayload(), detailViewFormatToggleButton.isSelected(), getConnectionId(), codeArea);
+            autoFormatPayload.autoFormatPayload(messageDTO.getPayload(), detailViewFormatToggleButton.isSelected(), getConnectionId(), codeArea);
             showSearchResult();
         });
 
@@ -238,7 +225,7 @@ public class DetailViewController extends BaseConnectionController implements
         lastManipulatorTask = null;
         manipulateSelectionButton.setText("Manipulate");
 
-        List<DetailViewManipulatorTask> tasks = GuiPluginManager.getDetailViewManipulatorTasks();
+        List<DetailViewManipulatorTask> tasks = guiPluginManager.getDetailViewManipulatorTasks();
         tasks.forEach(p -> {
             DetailViewManipulatorTaskMenuItem menuItem = new DetailViewManipulatorTaskMenuItem(p);
             menuItem.setOnAction(this::onManipulateMessageSelected);
@@ -257,13 +244,81 @@ public class DetailViewController extends BaseConnectionController implements
             LOGGER.debug("Clicked on changeIgnoreCase: {}", getConnectionId());
         }
 
-        SettingsProvider.getInstance().getSettings().setUseIgnoreCase(ignoreCaseMenuItem.isSelected());
-        SettingsProvider.getInstance().saveSettings(false);
+        settingsProvider.getSettings().setUseIgnoreCase(ignoreCaseMenuItem.isSelected());
+        settingsProvider.saveSettings();
         this.searchMenuButton.getItems().remove(ignoreCaseMenuItem);
         this.searchMenuButton.getItems().add(0, ignoreCaseMenuItem);
         currentSearchString = null;
         currentSearchResult = 0;
         showSearchResult();
+    }
+
+    private void showSearchResult() {
+
+        currentSearchString = searchTextField.textProperty().get();
+
+        results = new ArrayList<>();
+
+        if (!currentSearchString.isEmpty()) {
+            String codeAreaText = codeArea.getText();
+
+            boolean ignoreCase = settingsProvider.getSettings().isUseIgnoreCase();
+            boolean regex = settingsProvider.getSettings().isUseRegexForSearch();
+
+            String finalSearchString;
+            if (regex) {
+                finalSearchString = currentSearchString;
+            } else {
+                finalSearchString = Pattern.quote(currentSearchString);
+            }
+
+            try {
+                Pattern searchPattern = Pattern.compile(finalSearchString, ignoreCase ? Pattern.CASE_INSENSITIVE : 0x00);
+                Matcher matcher = searchPattern.matcher(codeAreaText);
+
+                while (matcher.find()) {
+                    results.add(results.size(), new Search(matcher.start(), matcher.end()));
+                }
+            } catch (PatternSyntaxException e) {
+                LOGGER.debug("Invalid pattern: {}", e.getMessage());
+            }
+        }
+
+        if (!results.isEmpty()) {
+            currentSearchResult = 0;
+            selectPreviousResult.setDisable(false);
+            selectNextResult.setDisable(false);
+        } else {
+            resultsLabel.setText(null);
+            selectPreviousResult.setDisable(true);
+            selectNextResult.setDisable(true);
+            codeArea.deselect();
+        }
+
+        updateSearchResult();
+    }
+
+    private void updateSearchResult() {
+        if (results == null || results.isEmpty()) {
+            resultsLabel.setText(resources.getString("detailViewControllerNoResults"));
+            return;
+        }
+
+        codeArea.selectRange(results.get(currentSearchResult).getStartIndex(), results.get(currentSearchResult).getEndIndex());
+        resultsLabel.setText(currentSearchResult + 1 + " " + resources.getString("detailViewControllerOf") + " "
+                + results.size() + " " + resources.getString("detailViewControllerMatches"));
+
+        /* How to display the current search always in sight.
+         * 1. Scroll to left.
+         * 2. Move cursor to end of selection.
+         * 3. Adjust view port to cursor.
+         */
+        codeArea.scrollXToPixel(0);
+        codeArea.displaceCaret(results.get(currentSearchResult).getEndIndex());
+        codeArea.requestFollowCaret();
+
+        // after changes e.g. ignore case one want to continue the search e.g. hit enter
+        searchTextField.requestFocus();
     }
 
     @FXML
@@ -272,8 +327,8 @@ public class DetailViewController extends BaseConnectionController implements
             LOGGER.debug("Clicked on changeRegex: {}", getConnectionId());
         }
 
-        SettingsProvider.getInstance().getSettings().setUseRegexForSearch(regexMenuItem.isSelected());
-        SettingsProvider.getInstance().saveSettings(false);
+        settingsProvider.getSettings().setUseRegexForSearch(regexMenuItem.isSelected());
+        settingsProvider.saveSettings();
         this.searchMenuButton.getItems().remove(regexMenuItem);
         this.searchMenuButton.getItems().add(1, regexMenuItem);
         currentSearchString = null;
@@ -288,6 +343,20 @@ public class DetailViewController extends BaseConnectionController implements
         } else {
             showMessage();
         }
+    }
+
+    private void showNoMessage() {
+
+        detailViewSaveButton.setDisable(true);
+        detailViewFormatToggleButton.setDisable(true);
+        detailViewSearchButton.setDisable(true);
+
+        closeSearch();
+
+        emptyLabel.setVisible(true);
+        emptyLabel.setManaged(true);
+        messageGroup.setVisible(false);
+        messageGroup.setManaged(false);
     }
 
     private void showMessage() {
@@ -316,8 +385,8 @@ public class DetailViewController extends BaseConnectionController implements
 
         detailViewQos.setText(messageDTO.getQos().toString());
 
-        ignoreCaseMenuItem.setSelected(SettingsProvider.getInstance().getSettings().isUseIgnoreCase());
-        regexMenuItem.setSelected(SettingsProvider.getInstance().getSettings().isUseRegexForSearch());
+        ignoreCaseMenuItem.setSelected(settingsProvider.getSettings().isUseIgnoreCase());
+        regexMenuItem.setSelected(settingsProvider.getSettings().isUseRegexForSearch());
 
         detailViewSaveButton.setOnMouseClicked(this::saveMessage);
 
@@ -328,9 +397,24 @@ public class DetailViewController extends BaseConnectionController implements
         }
     }
 
+    @FXML
+    private void closeSearch() {
+        ObservableList<Node> barChildren = detailViewToolBar.getChildren();
+        barChildren.remove(detailViewSearchHBox);
+        if (!barChildren.contains(detailViewSearchButton)) {
+            barChildren.add(detailViewSearchButton);
+        }
+        resultsLabel.setText("");
+        searchTextField.setText("");
+        codeArea.deselect();
+
+        //in order to make shortcuts work again, the main pane must be focused
+        detailViewVBox.requestFocus();
+    }
+
     private void executeOnOpenDetailViewExtensions() {
         detailViewNodeBox.getChildren().clear();
-        PluginManager.getInstance().getExtensions(DetailViewHook.class).forEach(p -> {
+        pluginManager.getExtensions(DetailViewHook.class).forEach(p -> {
             HBox pluginBox = new HBox();
             pluginBox.setAlignment(Pos.CENTER_RIGHT);
             HBox.setHgrow(pluginBox, Priority.ALWAYS);
@@ -345,11 +429,63 @@ public class DetailViewController extends BaseConnectionController implements
         detailViewInvalid.setVisible(false);
         detailViewInvalid.setManaged(false);
 
-        MessageValidatorHook.Validation validation = MessageValidator.validateMessage(topic, payload);
+        MessageValidatorHook.Validation validation = messageValidator.validateMessage(topic, payload);
         if (validation != null) {
             updateValidatorLabel(detailViewValid, validation.isValid(), validation.getTooltip());
             updateValidatorLabel(detailViewInvalid, !validation.isValid(), validation.getTooltip());
         }
+    }
+
+    private void saveMessage(MouseEvent event) {
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Clicked on save message: {}", getConnectionId());
+        }
+
+        Stage stage = (Stage) detailViewVBox.getScene().getWindow();
+        messageUtils.saveMessage(messageDTO, stage);
+    }
+
+    private void clearPayload() {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Clearing payload: {}", getConnectionId());
+        }
+
+        detailViewSearchButton.setDisable(true);
+        closeSearch();
+        noPayloadLabel.setManaged(true);
+        noPayloadLabel.setVisible(true);
+        detailViewScrollPane.setManaged(false);
+        detailViewScrollPane.setVisible(false);
+        detailViewFormatToggleButton.setSelected(false);
+        detailViewFormatToggleButton.setDisable(true);
+        detailViewSearchButton.setDisable(true);
+        noPayloadLabel.prefWidthProperty().bind(detailViewVBox.widthProperty());
+        noPayloadLabel.prefHeightProperty().bind(detailViewVBox.heightProperty());
+    }
+
+    private void updatePayload(String payload) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Updating payload: {}", getConnectionId());
+        }
+
+        detailViewSearchButton.setDisable(false);
+        closeSearch();
+
+        noPayloadLabel.setManaged(false);
+        noPayloadLabel.setVisible(false);
+        detailViewScrollPane.setManaged(true);
+        detailViewScrollPane.setVisible(true);
+        detailViewScrollPane.getChildren().add(new VirtualizedScrollPane<>(codeArea));
+
+        codeArea.prefWidthProperty().bind(detailViewScrollPane.widthProperty());
+        codeArea.prefHeightProperty().bind(detailViewScrollPane.heightProperty());
+
+        codeArea.setEditable(false);
+
+        Format format = autoFormatPayload.autoFormatPayload(payload, true, getConnectionId(), codeArea);
+        detailViewFormatToggleButton.setSelected(format.isFormatable());
+        detailViewFormatToggleButton.setDisable(!format.isFormatable());
     }
 
     private void updateValidatorLabel(Label label, boolean isVisible, String tooltip) {
@@ -386,7 +522,7 @@ public class DetailViewController extends BaseConnectionController implements
 
         if (messageDTO != null) {
             validateMessage(messageDTO.getTopic(), codeArea.getText());
-            AutoFormatPayload.autoFormatPayload(codeArea.getText(), true, getConnectionId(), codeArea);
+            autoFormatPayload.autoFormatPayload(codeArea.getText(), true, getConnectionId(), codeArea);
         }
     }
 
@@ -396,117 +532,6 @@ public class DetailViewController extends BaseConnectionController implements
             return new IndexRange(0, codeArea.getLength());
         }
         return selection;
-    }
-
-    private void showNoMessage() {
-
-        detailViewSaveButton.setDisable(true);
-        detailViewFormatToggleButton.setDisable(true);
-        detailViewSearchButton.setDisable(true);
-
-        closeSearch();
-
-        emptyLabel.setVisible(true);
-        emptyLabel.setManaged(true);
-        messageGroup.setVisible(false);
-        messageGroup.setManaged(false);
-    }
-
-    private void updatePayload(String payload) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Updating payload: {}", getConnectionId());
-        }
-
-        detailViewSearchButton.setDisable(false);
-        closeSearch();
-
-        noPayloadLabel.setManaged(false);
-        noPayloadLabel.setVisible(false);
-        detailViewScrollPane.setManaged(true);
-        detailViewScrollPane.setVisible(true);
-        detailViewScrollPane.getChildren().add(new VirtualizedScrollPane<>(codeArea));
-
-        codeArea.prefWidthProperty().bind(detailViewScrollPane.widthProperty());
-        codeArea.prefHeightProperty().bind(detailViewScrollPane.heightProperty());
-
-        codeArea.setEditable(false);
-
-        Format format = AutoFormatPayload.autoFormatPayload(payload, true, getConnectionId(), codeArea);
-        detailViewFormatToggleButton.setSelected(format.isFormatable());
-        detailViewFormatToggleButton.setDisable(!format.isFormatable());
-    }
-
-    private void clearPayload() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Clearing payload: {}", getConnectionId());
-        }
-
-        detailViewSearchButton.setDisable(true);
-        closeSearch();
-        noPayloadLabel.setManaged(true);
-        noPayloadLabel.setVisible(true);
-        detailViewScrollPane.setManaged(false);
-        detailViewScrollPane.setVisible(false);
-        detailViewFormatToggleButton.setSelected(false);
-        detailViewFormatToggleButton.setDisable(true);
-        detailViewSearchButton.setDisable(true);
-        noPayloadLabel.prefWidthProperty().bind(detailViewVBox.widthProperty());
-        noPayloadLabel.prefHeightProperty().bind(detailViewVBox.heightProperty());
-    }
-
-    private void saveMessage(MouseEvent event) {
-
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Clicked on save message: {}", getConnectionId());
-        }
-
-        Stage stage = (Stage) detailViewVBox.getScene().getWindow();
-        MessageUtils.saveMessage(messageDTO, stage);
-    }
-
-    private void showSearchResult() {
-
-        currentSearchString = searchTextField.textProperty().get();
-
-        results = new ArrayList<>();
-
-        if (!currentSearchString.isEmpty()) {
-            String codeAreaText = codeArea.getText();
-
-            boolean ignoreCase = SettingsProvider.getInstance().getSettings().isUseIgnoreCase();
-            boolean regex = SettingsProvider.getInstance().getSettings().isUseRegexForSearch();
-
-            String finalSearchString;
-            if (regex) {
-                finalSearchString = currentSearchString;
-            } else {
-                finalSearchString = Pattern.quote(currentSearchString);
-            }
-
-            try {
-                Pattern searchPattern = Pattern.compile(finalSearchString, ignoreCase ? Pattern.CASE_INSENSITIVE : 0x00);
-                Matcher matcher = searchPattern.matcher(codeAreaText);
-
-                while (matcher.find()) {
-                    results.add(results.size(), new Search(matcher.start(), matcher.end()));
-                }
-            } catch (PatternSyntaxException e) {
-                LOGGER.debug("Invalid pattern: {}", e.getMessage());
-            }
-        }
-
-        if (!results.isEmpty()) {
-            currentSearchResult = 0;
-            selectPreviousResult.setDisable(false);
-            selectNextResult.setDisable(false);
-        } else {
-            resultsLabel.setText(null);
-            selectPreviousResult.setDisable(true);
-            selectNextResult.setDisable(true);
-            codeArea.deselect();
-        }
-
-        updateSearchResult();
     }
 
     private void performSearch(String newValue) {
@@ -519,29 +544,6 @@ public class DetailViewController extends BaseConnectionController implements
             return;
         }
         showSearchResult();
-    }
-
-    private void updateSearchResult() {
-        if (results == null || results.isEmpty()) {
-            resultsLabel.setText(resources.getString("detailViewControllerNoResults"));
-            return;
-        }
-
-        codeArea.selectRange(results.get(currentSearchResult).getStartIndex(), results.get(currentSearchResult).getEndIndex());
-        resultsLabel.setText(currentSearchResult + 1 + " " + resources.getString("detailViewControllerOf") + " "
-                + results.size() + " " + resources.getString("detailViewControllerMatches"));
-
-        /* How to display the current search always in sight.
-         * 1. Scroll to left.
-         * 2. Move cursor to end of selection.
-         * 3. Adjust view port to cursor.
-         */
-        codeArea.scrollXToPixel(0);
-        codeArea.displaceCaret(results.get(currentSearchResult).getEndIndex());
-        codeArea.requestFollowCaret();
-
-        // after changes e.g. ignore case one want to continue the search e.g. hit enter
-        searchTextField.requestFocus();
     }
 
     @FXML
@@ -603,28 +605,42 @@ public class DetailViewController extends BaseConnectionController implements
         }
     }
 
-    @FXML
-    private void closeSearch() {
-        ObservableList<Node> barChildren = detailViewToolBar.getChildren();
-        barChildren.remove(detailViewSearchHBox);
-        if (!barChildren.contains(detailViewSearchButton)) {
-            barChildren.add(detailViewSearchButton);
-        }
-        resultsLabel.setText("");
-        searchTextField.setText("");
-        codeArea.deselect();
-
-        //in order to make shortcuts work again, the main pane must be focused
-        detailViewVBox.requestFocus();
-    }
-
     Node getMainNode() {
         return detailViewVBox;
     }
 
     @Override
     public void showDetailsInSeparateWindow(MessagePropertiesDTO messageDTO) {
-        showAsDialog(messageDTO, getConnectionId(), delegate);
+        showAsDialog();
+    }
+
+    void showAsDialog() {
+
+        Map<Object, Object> properties = new HashMap<>();
+        properties.put(WindowProperty.WINDOW_TYPE, WindowType.DETAIL);
+        properties.put(WindowProperty.CONNECTION_ID, connectionId);
+        properties.put(WindowProperty.MESSAGE_ID, messageDTO.getMessageId());
+
+        if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
+            return;
+        }
+
+        LoaderResult<DetailViewController> result = load();
+
+        String title;
+        if (messageDTO.getMessageType() == MessageType.INCOMING) {
+            title = resources.getString("detailViewControllerIncomingTitle");
+        } else if (messageDTO.getMessageType() == MessageType.OUTGOING) {
+            title = resources.getString("detailViewControllerOutgoingTitle");
+        } else {
+            title = resources.getString("detailViewControllerTitle");
+        }
+
+        showAsDialog(result, title, properties, true, false, null, null);
+    }
+
+    LoaderResult<DetailViewController> load() {
+        return load(DetailViewController.class, "detailView.fxml", () -> this);
     }
 
     @Override

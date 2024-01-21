@@ -17,7 +17,7 @@ import javafx.scene.paint.Paint;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.CustomTextField;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.model.Auth;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.CorreoMqttVersion;
@@ -26,20 +26,22 @@ import org.correomqtt.core.model.Lwt;
 import org.correomqtt.core.model.Proxy;
 import org.correomqtt.core.model.Qos;
 import org.correomqtt.core.model.TlsSsl;
+import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.plugin.spi.LwtSettingsHook;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.CheckTopicHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.cell.GenericCell;
-import org.correomqtt.core.plugin.PluginManager;
-import org.correomqtt.gui.plugin.spi.LwtSettingsHook;
+import org.correomqtt.gui.views.cell.GenericCellFactory;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.util.ResourceBundle;
 import java.util.UUID;
@@ -61,6 +63,15 @@ public class MqttSettingsViewController extends BaseControllerImpl
     public static final String EMPTY_ERROR_CLASS = "emptyError";
 
     private static ResourceBundle resources;
+    private final PluginManager pluginManager;
+    private final ConnectionHolder connectionHolder;
+    private final SettingsProvider settingsProvider;
+    private final ThemeManager themeManager;
+    private final GenericCellFactory<CorreoMqttVersion> correoMqttVersionGenericCellFactory;
+    private final GenericCellFactory<TlsSsl> tlsSslGenericCellFactory;
+    private final GenericCellFactory<Proxy> proxyGenericCellFactory;
+    private final GenericCellFactory<Auth> authGenericCellFactory;
+    private final GenericCellFactory<Lwt> lwtGenericCellFactory;
     @FXML
     private CheckBox sslHostVerificationCheckBox;
 
@@ -162,9 +173,31 @@ public class MqttSettingsViewController extends BaseControllerImpl
     @FXML
     private Pane lwtPayloadPane;
 
-    public static LoaderResult<MqttSettingsViewController> load() {
+    @Inject
+    MqttSettingsViewController(PluginManager pluginManager,
+                               ConnectionHolder connectionHolder,
+                               SettingsProvider settingsProvider,
+                               ThemeManager themeManager,
+                               GenericCellFactory<CorreoMqttVersion> correoMqttVersionGenericCellFactory,
+                               GenericCellFactory<TlsSsl> tlsSslGenericCellFactory,
+                               GenericCellFactory<Proxy> proxyGenericCellFactory,
+                               GenericCellFactory<Auth> authGenericCellFactory,
+                               GenericCellFactory<Lwt> lwtGenericCellFactory) {
+        super(settingsProvider, themeManager);
+        this.pluginManager = pluginManager;
+        this.connectionHolder = connectionHolder;
+        this.settingsProvider = settingsProvider;
+        this.themeManager = themeManager;
+        this.correoMqttVersionGenericCellFactory = correoMqttVersionGenericCellFactory;
+        this.tlsSslGenericCellFactory = tlsSslGenericCellFactory;
+        this.proxyGenericCellFactory = proxyGenericCellFactory;
+        this.authGenericCellFactory = authGenericCellFactory;
+        this.lwtGenericCellFactory = lwtGenericCellFactory;
+    }
+
+    public LoaderResult<MqttSettingsViewController> load() {
         LoaderResult<MqttSettingsViewController> result = load(MqttSettingsViewController.class, "mqttSettingsView.fxml",
-                MqttSettingsViewController::new);
+                () -> this);
         resources = result.getResourceBundle();
         return result;
     }
@@ -173,26 +206,26 @@ public class MqttSettingsViewController extends BaseControllerImpl
     @FXML
     private void initialize() {
 
-        containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
+        containerAnchorPane.getStyleClass().add(themeManager.getIconModeCssClass());
 
         mqttVersionComboBox.setItems(FXCollections.observableArrayList(CorreoMqttVersion.values()));
-        mqttVersionComboBox.setCellFactory(GenericCell::new);
+        mqttVersionComboBox.setCellFactory(correoMqttVersionGenericCellFactory::create);
         mqttVersionComboBox.setConverter(getStringConverter());
 
         tlsComboBox.setItems(FXCollections.observableArrayList(TlsSsl.values()));
-        tlsComboBox.setCellFactory(GenericCell::new);
+        tlsComboBox.setCellFactory(tlsSslGenericCellFactory::create);
         tlsComboBox.setConverter(getStringConverter());
 
         proxyComboBox.setItems(FXCollections.observableArrayList(Proxy.values()));
-        proxyComboBox.setCellFactory(GenericCell::new);
+        proxyComboBox.setCellFactory(proxyGenericCellFactory::create);
         proxyComboBox.setConverter(getStringConverter());
 
         authComboBox.setItems(FXCollections.observableArrayList(Auth.values()));
-        authComboBox.setCellFactory(GenericCell::new);
+        authComboBox.setCellFactory(authGenericCellFactory::create);
         authComboBox.setConverter(getStringConverter());
 
         lwtComboBox.setItems(FXCollections.observableArrayList(Lwt.values()));
-        lwtComboBox.setCellFactory(GenericCell::new);
+        lwtComboBox.setCellFactory(lwtGenericCellFactory::create);
         lwtComboBox.setConverter(getStringConverter());
 
         lwtQoSComboBox.setItems(FXCollections.observableArrayList(Qos.values()));
@@ -201,8 +234,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
         lwtPayloadCodeArea.prefWidthProperty().bind(lwtPayloadPane.widthProperty());
         lwtPayloadCodeArea.prefHeightProperty().bind(lwtPayloadPane.heightProperty());
 
-        PluginManager.getInstance()
-                .getExtensions(LwtSettingsHook.class)
+        pluginManager.getExtensions(LwtSettingsHook.class)
                 .forEach(p -> p.onAddItemsToLwtSettingsBox(this, lwtPluginControlBox));
 
         nameTextField.lengthProperty().addListener((observable, oldValue, newValue) ->
@@ -232,7 +264,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
         }));
         sslKeystoreTextField.textProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
         sslKeystorePasswordTextField.textProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
-        sslHostVerificationCheckBox.selectedProperty().addListener((observable,oldValue, newValue) -> setDirty(true));
+        sslHostVerificationCheckBox.selectedProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
         proxyComboBox.getSelectionModel().selectedItemProperty().addListener(((observable, oldValue, newValue) -> {
             setDirty(true);
             if (newValue.equals(Proxy.OFF)) {
@@ -455,7 +487,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
         }
 
         //check name collision
-        for (ConnectionConfigDTO configDTO : ConnectionHolder.getInstance().getSortedConnections()) {
+        for (ConnectionConfigDTO configDTO : connectionHolder.getSortedConnections()) {
             if (configDTO.getId().equals(config.getId())) { // I do not want to check myself.
                 continue;
             }

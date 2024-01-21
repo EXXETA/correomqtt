@@ -4,6 +4,7 @@ import dagger.assisted.AssistedFactory;
 
 @AssistedFactory
 public interface ConnectionViewControllerFactory {
-    ConnectionViewController create(String connectionId, ConnectionViewDelegate delegat);
+    ConnectionViewController create(String connectionId,
+                                    ConnectionViewDelegate delegate);
 
 }

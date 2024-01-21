@@ -12,7 +12,7 @@
 <?import org.correomqtt.gui.controls.IconButton?>
 <AnchorPane fx:id="helloViewAnchor" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" styleClass="onBoardingHolder"
             AnchorPane.topAnchor="0.0" stylesheets="@../../css/helloView.css" xmlns="http://javafx.com/javafx/8.0.191"
-            xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.views.onboarding.ConnectionOnbordingViewController">
+            xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.views.onboarding.ConnectionOnboardingViewController">
     <VBox alignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
           AnchorPane.topAnchor="0.0">
         <Pane VBox.vgrow="ALWAYS"/>

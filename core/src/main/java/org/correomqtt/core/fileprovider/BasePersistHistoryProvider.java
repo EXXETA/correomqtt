@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dagger.assisted.Assisted;
 import dagger.assisted.AssistedInject;
 import lombok.Getter;
-import org.correomqtt.core.settings.CoreSettings;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,11 +23,11 @@ abstract class BasePersistHistoryProvider<D> extends BaseUserFileProvider {
 
     abstract void setDTO(String id, D readValue);
 
-    private final CoreSettings settings;
+    private final SettingsProvider settings;
     private final String connectionId;
 
 
-    BasePersistHistoryProvider(CoreSettings settings, String id) {
+    BasePersistHistoryProvider(SettingsProvider settings, String id) {
         this.settings = settings;
         connectionId = id;
 

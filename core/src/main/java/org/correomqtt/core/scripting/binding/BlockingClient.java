@@ -18,12 +18,12 @@ public class BlockingClient {
 
     @Export
     public PromiseClient toPromised() {
-        return new ClientFactory().getPromiseClient();
+        return client.toPromise();
     }
 
     @Export
     public AsyncClient toAsync() {
-        return new ClientFactory().getAsyncClient();
+        return client.toAsync();
     }
 
     @Export

@@ -8,6 +8,7 @@ import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 
+import javax.inject.Inject;
 import java.io.PipedOutputStream;
 import java.util.function.Consumer;
 
@@ -18,11 +19,17 @@ public class JsContextBuilder {
     public static final String CORREO_SCRIPT_LOGGER = "logger";
     public static final String CORREO_SCRIPT_MARKER = "marker";
     public static final String CORREO_ASYNC_LATCH = "latch";
+    private final ClientFactory clientFactory;
     private Context context;
     private PipedOutputStream out;
     private ExecutionDTO dto;
     private Logger scriptLogger;
     private Marker marker;
+
+    @Inject
+    JsContextBuilder(ClientFactory clientFactory){
+        this.clientFactory = clientFactory;
+    }
 
     JsContextBuilder out(PipedOutputStream out) {
         this.out = out;
@@ -82,8 +89,10 @@ public class JsContextBuilder {
         polyglotBindings.putMember(CORREO_SCRIPT_QUEUE, queue);
         polyglotBindings.putMember(CORREO_ASYNC_LATCH, asyncLatch);
 
+        clientFactory.setContext(context);
+
         binding.putMember("sleep", (Consumer<Integer>) this::sleepCmd);
-        binding.putMember("ClientFactory", (Runnable) ClientFactory::new);
+        binding.putMember("clientFactory", clientFactory);
         binding.putMember(CORREO_SCRIPT_LOGGER, scriptLogger);
         binding.putMember(CORREO_SCRIPT_MARKER, marker);
         binding.putMember(CORREO_SCRIPT_QUEUE, queue);

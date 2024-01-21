@@ -64,4 +64,17 @@ public class MessageTransformer {
                 .customFields(new HashMap<>(messagePropertiesDTO.getExtraProperties()))
                 .build();
     }
+
+    public static MessageDTO propsToDTO(MessagePropertiesDTO messageDTO) {
+        return MessageDTO.builder()
+                .topic(messageDTO.getTopic())
+                .payload(messageDTO.getPayload())
+                .isRetained(messageDTO.isRetained())
+                .qos(messageDTO.getQos())
+                .dateTime(messageDTO.getDateTime())
+                .messageId(messageDTO.getMessageId())
+                .messageType(messageDTO.getMessageType())
+                .publishStatus(messageDTO.getPublishStatus())
+                .build();
+    }
 }

@@ -15,7 +15,7 @@ import org.correomqtt.core.plugin.spi.IncomingMessageHook;
 import org.correomqtt.core.plugin.spi.MessageValidatorHook;
 import org.correomqtt.core.plugin.spi.OutgoingMessageHook;
 import org.correomqtt.core.plugin.transformer.PluginInfoTransformer;
-import org.correomqtt.core.settings.CoreSettings;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.utils.VendorConstants;
 import org.correomqtt.core.utils.VersionUtils;
 import org.pf4j.JarPluginManager;
@@ -47,11 +47,11 @@ public class PluginManager extends JarPluginManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginManager.class);
     public static final String DEFAULT_REPO_ID = "default";
-    private final CoreSettings settings;
+    private final SettingsProvider settings;
     private BundledPluginList.BundledPlugins bundledPlugins;
 
     @Inject
-    PluginManager(CoreSettings settings) {
+    PluginManager(SettingsProvider settings) {
         super(Path.of(PluginConfigProvider.getInstance().getPluginPath()));
         this.settings = settings;
     }
@@ -79,9 +79,9 @@ public class PluginManager extends JarPluginManager {
             return bundledPlugins;
         }
 
-        if (settings.isInstallBundledPlugins()) {
+        if (settings.getSettings().isInstallBundledPlugins()) {
 
-            String bundledPluginUrl = settings.getBundledPluginsUrl();
+            String bundledPluginUrl = settings.getSettings().getBundledPluginsUrl();
 
             if (bundledPluginUrl == null) {
                 bundledPluginUrl = VendorConstants.getBundledPluginsUrl();
@@ -124,8 +124,8 @@ public class PluginManager extends JarPluginManager {
     public UpdateManager getUpdateManager() {
         List<UpdateRepository> repos = new ArrayList<>();
 
-        if (settings.isSearchUpdates()) {
-            if (settings.isUseDefaultRepo()) {
+        if (settings.getSettings().isSearchUpdates()) {
+            if (settings.getSettings().isUseDefaultRepo()) {
                 String defaultRepo = VendorConstants.getDefaultRepoUrl();
                 try {
                     repos.add(new CorreoUpdateRepository(DEFAULT_REPO_ID, defaultRepo));
@@ -133,7 +133,7 @@ public class PluginManager extends JarPluginManager {
                     LOGGER.error("Invalid url for repo {} with url {}", DEFAULT_REPO_ID, defaultRepo);
                 }
             }
-            settings.getPluginRepositories().forEach((id, url) -> {
+            settings.getSettings().getPluginRepositories().forEach((id, url) -> {
                 try {
                     repos.add(new CorreoUpdateRepository(id, url));
                 } catch (MalformedURLException e) {

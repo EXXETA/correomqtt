@@ -1,7 +1,7 @@
 package org.correomqtt.gui.contextmenu;
 
 import javafx.event.ActionEvent;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.gui.controls.IconMenuItem;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.utils.ClipboardHelper;
@@ -14,6 +14,7 @@ import java.util.ResourceBundle;
 abstract class BaseMessageContextMenu<D extends BaseMessageContextMenuDelegate> extends BaseObjectContextMenu<MessagePropertiesDTO, D> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseMessageContextMenu.class);
+    private final SettingsProvider settingsProvider;
 
     protected IconMenuItem putToForm;
     protected IconMenuItem showDetails;
@@ -22,14 +23,16 @@ abstract class BaseMessageContextMenu<D extends BaseMessageContextMenuDelegate> 
     protected IconMenuItem copyPayloadToClipboard;
     private ResourceBundle resources;
 
-    BaseMessageContextMenu(D dispatcher) {
+    BaseMessageContextMenu(SettingsProvider settingsProvider,
+                           D dispatcher) {
         super(dispatcher);
+        this.settingsProvider = settingsProvider;
     }
 
     @Override
     protected void initializeItems() {
 
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
         super.initializeItems();
 
         putToForm = new IconMenuItem(resources.getString("baseMessageContextMenuPutToFormMenuItem"));

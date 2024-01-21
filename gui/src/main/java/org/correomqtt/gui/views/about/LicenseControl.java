@@ -1,14 +1,17 @@
 package org.correomqtt.gui.views.about;
 
+import javafx.application.HostServices;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
-import org.correomqtt.gui.utils.HostServicesHolder;
 
 public class LicenseControl extends HBox {
 
-    public LicenseControl(License license) {
+    private final HostServices hostServices;
+
+    public LicenseControl(License license, HostServices hostServices) {
         super();
+        this.hostServices = hostServices;
         Hyperlink repoLink = new Hyperlink();
         repoLink.setText(license.name());
         activateLink(repoLink, license.repoLink());
@@ -22,10 +25,7 @@ public class LicenseControl extends HBox {
     }
 
     private void activateLink(Hyperlink control, String link) {
-        control.setOnAction(t -> HostServicesHolder.getInstance()
-                .getHostServices()
-                .showDocument(link)
-        );
+        control.setOnAction(t -> hostServices.showDocument(link));
     }
 }
 

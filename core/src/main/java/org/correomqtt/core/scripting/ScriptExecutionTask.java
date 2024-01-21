@@ -1,5 +1,8 @@
 package org.correomqtt.core.scripting;
 
+import dagger.Lazy;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import lombok.Getter;
 import org.correomqtt.core.concurrent.FullTask;
 import org.correomqtt.core.concurrent.TaskException;
@@ -22,11 +25,16 @@ import static org.slf4j.MarkerFactory.getMarker;
 public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, ExecutionDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptExecutionTask.class);
+    private final Lazy<JsContextBuilder> jsContextBuilderLazy;
     @Getter
     private final ExecutionDTO dto;
     private Context context;
 
-    public ScriptExecutionTask(ExecutionDTO executionDTO) {
+    @AssistedInject
+    public ScriptExecutionTask(
+            Lazy<JsContextBuilder> jsContextBuilderLazy,
+            @Assisted ExecutionDTO executionDTO) {
+        this.jsContextBuilderLazy = jsContextBuilderLazy;
         this.dto = executionDTO;
     }
 
@@ -58,7 +66,7 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
 
     private void executeJs(ScriptLoggerContext slc, ch.qos.logback.classic.Logger scriptLogger) {
         try (PipedOutputStream out = new PipedOutputStream();
-             Context c = new JsContextBuilder()
+             Context c = jsContextBuilderLazy.get()
                      .dto(dto)
                      .out(out)
                      .marker(marker())

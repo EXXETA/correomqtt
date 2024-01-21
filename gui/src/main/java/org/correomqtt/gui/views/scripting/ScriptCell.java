@@ -1,5 +1,7 @@
 package org.correomqtt.gui.views.scripting;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
@@ -11,9 +13,10 @@ import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.scripting.ScriptingBackend;
 import org.correomqtt.gui.controls.ThemedFontIcon;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +29,8 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptCell.class);
     private static final String DIRTY_CLASS = "dirty";
+    private final SettingsProvider settingsProvider;
+    private final ThemeManager themeManager;
     private final ListView<ScriptFilePropertiesDTO> listView;
 
     @FXML
@@ -43,9 +48,18 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
     private FXMLLoader loader;
     private RotateTransition rotateTransition;
 
+    @AssistedInject
+    public ScriptCell(SettingsProvider settingsProvider,
+                      ThemeManager themeManager,
+                      @Assisted ListView<ScriptFilePropertiesDTO> listView) {
+        this.settingsProvider = settingsProvider;
+        this.themeManager = themeManager;
+        this.listView = listView;
+    }
+
     @FXML
     private void initialize() {
-        mainNode.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
+        mainNode.getStyleClass().add(themeManager.getIconModeCssClass());
 
         rotateTransition = new RotateTransition();
         rotateTransition.setAxis(Rotate.Z_AXIS);
@@ -54,10 +68,6 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
         rotateTransition.setDuration(Duration.millis(1000));
         rotateTransition.setNode(themedIcon);
         rotateTransition.setInterpolator(Interpolator.LINEAR);
-    }
-
-    public ScriptCell(ListView<ScriptFilePropertiesDTO> listView) {
-        this.listView = listView;
     }
 
     @Override
@@ -72,7 +82,7 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(ScriptCell.class.getResource("scriptCell.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 
@@ -93,11 +103,11 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
 
     private void setScript(ScriptFilePropertiesDTO scriptingDTO) {
 
-        nameLabel.setText(scriptingDTO.getName() + (scriptingDTO.isDirty()?" *":""));
+        nameLabel.setText(scriptingDTO.getName() + (scriptingDTO.isDirty() ? " *" : ""));
 
-        if(scriptingDTO.isDirty()){
+        if (scriptingDTO.isDirty()) {
             mainNode.getStyleClass().add(DIRTY_CLASS);
-        }else{
+        } else {
             mainNode.getStyleClass().remove(DIRTY_CLASS);
         }
 

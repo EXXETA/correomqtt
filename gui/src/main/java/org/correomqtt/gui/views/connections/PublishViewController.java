@@ -18,14 +18,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.exception.CorreoMqttException;
-import org.correomqtt.core.fileprovider.PersistPublishHistoryProvider;
-import org.correomqtt.core.fileprovider.PersistPublishMessageHistoryProvider;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.fileprovider.HistoryManager;
 import org.correomqtt.core.importexport.messages.ImportMessageFailedEvent;
 import org.correomqtt.core.importexport.messages.ImportMessageStartedEvent;
 import org.correomqtt.core.importexport.messages.ImportMessageSuccessEvent;
@@ -37,21 +36,24 @@ import org.correomqtt.core.model.MessageListViewConfig;
 import org.correomqtt.core.model.MessageType;
 import org.correomqtt.core.model.PublishStatus;
 import org.correomqtt.core.model.Qos;
+import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.pubsub.PublishEvent;
 import org.correomqtt.core.pubsub.PublishListClearEvent;
 import org.correomqtt.core.pubsub.PublishListRemovedEvent;
 import org.correomqtt.core.pubsub.PublishTaskFactory;
-import org.correomqtt.gui.utils.AutoFormatPayload;
+import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.gui.plugin.spi.MessageContextMenuHook;
+import org.correomqtt.gui.plugin.spi.PublishMenuHook;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.utils.AutoFormatPayload;
 import org.correomqtt.gui.utils.CheckTopicHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.LoadingViewController;
-import org.correomqtt.gui.views.cell.QosCell;
-import org.correomqtt.core.plugin.PluginManager;
-import org.correomqtt.gui.plugin.spi.MessageContextMenuHook;
-import org.correomqtt.gui.plugin.spi.PublishMenuHook;
+import org.correomqtt.gui.views.LoadingViewControllerFactory;
+import org.correomqtt.gui.views.cell.QosCellFactory;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
@@ -73,6 +75,13 @@ public class PublishViewController extends BaseMessageBasedViewController {
     private static ResourceBundle resources;
     private final PublishTaskFactory publishTaskFactory;
     private final PluginManager pluginManager;
+    private final QosCellFactory qosCellFactory;
+    private final SettingsProvider settingsProvider;
+    private final AutoFormatPayload autoFormatPayload;
+    private final TopicCellFactory topicCellFactory;
+    private final AlertHelper alertHelper;
+    private final LoadingViewControllerFactory loadingViewControllerFactory;
+    private final HistoryManager historyManager;
     private final PublishViewDelegate delegate;
 
     @FXML
@@ -108,11 +117,28 @@ public class PublishViewController extends BaseMessageBasedViewController {
     @AssistedInject
     public PublishViewController(PublishTaskFactory publishTaskFactory,
                                  PluginManager pluginManager,
+                                 QosCellFactory qosCellFactory,
+                                 ConnectionHolder connectionHolder,
+                                 SettingsProvider settingsProvider,
+                                 AutoFormatPayload autoFormatPayload,
+                                 ThemeManager themeManager,
+                                 MessageListViewControllerFactory messageListViewControllerFactory,
+                                 TopicCellFactory topicCellFactory,
+                                 AlertHelper alertHelper,
+                                 LoadingViewControllerFactory loadingViewControllerFactory,
+                                 HistoryManager historyManager,
                                  @Assisted String connectionId,
                                  @Assisted PublishViewDelegate delegate) {
-        super(connectionId);
+        super(connectionHolder, settingsProvider, themeManager, messageListViewControllerFactory, connectionId);
         this.publishTaskFactory = publishTaskFactory;
         this.pluginManager = pluginManager;
+        this.qosCellFactory = qosCellFactory;
+        this.settingsProvider = settingsProvider;
+        this.autoFormatPayload = autoFormatPayload;
+        this.topicCellFactory = topicCellFactory;
+        this.alertHelper = alertHelper;
+        this.loadingViewControllerFactory = loadingViewControllerFactory;
+        this.historyManager = historyManager;
         this.delegate = delegate;
         EventBus.register(this);
     }
@@ -129,7 +155,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
 
         qosComboBox.setItems(FXCollections.observableArrayList(Qos.values()));
         qosComboBox.getSelectionModel().selectFirst();
-        qosComboBox.setCellFactory(QosCell::new);
+        qosComboBox.setCellFactory(qosCellFactory::create);
 
         pluginManager.getExtensions(PublishMenuHook.class).forEach(p -> {
             HBox pluginBox = new HBox();
@@ -147,7 +173,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
         payloadCodeAreaChangeListener = (observableValue, s, t1) -> checkFormat();
 
         publishViewFormatToggleButton.setSelected(true);
-        publishViewFormatToggleButton.setOnMouseClicked(mouseEvent -> AutoFormatPayload.autoFormatPayload(
+        publishViewFormatToggleButton.setOnMouseClicked(mouseEvent -> autoFormatPayload.autoFormatPayload(
                 payloadCodeArea.getText(),
                 publishViewFormatToggleButton.isSelected(),
                 getConnectionId(),
@@ -156,7 +182,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
 
         payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
 
-        SettingsProvider.getInstance().getConnectionConfigs().stream()
+        settingsProvider.getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
                 .ifPresent(c -> {
@@ -177,13 +203,13 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     private void checkFormat() {
-        AutoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, payloadCodeAreaChangeListener);
+        autoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, payloadCodeAreaChangeListener);
     }
 
     private void initTopicComboBox() {
-        List<String> topics = PersistPublishHistoryProvider.getInstance(getConnectionId()).getTopics(getConnectionId());
+        List<String> topics = historyManager.activatePublishHistory(getConnectionId()).getTopics(getConnectionId());
         topicComboBox.setItems(FXCollections.observableArrayList(topics));
-        topicComboBox.setCellFactory(TopicCell::new);
+        topicComboBox.setCellFactory(topicCellFactory::create);
     }
 
     @FXML
@@ -240,7 +266,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
 
         if (file != null) {
             new ImportMessageTask(file)
-                    .onError(error -> AlertHelper.unexpectedAlert(error.getUnexpectedError()))
+                    .onError(error -> alertHelper.unexpectedAlert(error.getUnexpectedError()))
                     .run();
         }
     }
@@ -249,7 +275,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     public void onConnectionChangedEvent(@Subscribe ConnectionStateChangedEvent event) {
         if (event.getState() == CONNECTED) {
             // reverse order, because first message in history must be last one to add
-            new LinkedList<>(PersistPublishMessageHistoryProvider.getInstance(getConnectionId())
+            new LinkedList<>(historyManager.activatePublishMessageHistory(getConnectionId())
                     .getMessages(getConnectionId()))
                     .descendingIterator()
                     .forEachRemaining(messageDTO -> messageListViewController.onNewMessage(MessageTransformer.dtoToProps(messageDTO)));
@@ -279,7 +305,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     @Override
     public Supplier<MessageListViewConfig> produceListViewConfig() {
         return () -> {
-            ConnectionConfigDTO config = SettingsProvider.getInstance()
+            ConnectionConfigDTO config = settingsProvider
                     .getConnectionConfigs()
                     .stream()
                     .filter(c -> c.getId().equals(getConnectionId()))
@@ -312,15 +338,16 @@ public class PublishViewController extends BaseMessageBasedViewController {
         } else {
             msg = "Exception in business layer: " + result.getUnexpectedError().getMessage();
         }
-        AlertHelper.warn(resources.getString("publishViewControllerPublishFailedTitle"),
+        alertHelper.warn(resources.getString("publishViewControllerPublishFailedTitle"),
                 resources.getString("publishViewControllerPublishFailedContent") + ": " + messageDTO.getTopic() + ": " + msg);
     }
 
     @SuppressWarnings("unused")
     public void onImportStarted(@Subscribe ImportMessageStartedEvent event) {
         Platform.runLater(() -> {
-            loadingViewController = LoadingViewController.showAsDialog(getConnectionId(),
-                    resources.getString("publishViewControllerOpenFileTitle") + ": " + event.file().getAbsolutePath());
+            loadingViewController = loadingViewControllerFactory.create(getConnectionId(),
+                            resources.getString("publishViewControllerOpenFileTitle") + ": " + event.file().getAbsolutePath())
+                    .showAsDialog();
             loadingViewController.setProgress(1);
         });
     }
@@ -347,7 +374,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
                 loadingViewController.close();
                 loadingViewController = null;
             }
-            AlertHelper.warn(resources.getString("publishViewControllerImportFileFailedTitle"),
+            alertHelper.warn(resources.getString("publishViewControllerImportFileFailedTitle"),
                     resources.getString("publishViewControllerImportFileFailedContent"));
         });
     }

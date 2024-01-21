@@ -1,5 +1,7 @@
 package org.correomqtt.gui.views.scripting;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
@@ -12,8 +14,9 @@ import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.gui.controls.ThemedFontIcon;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +27,8 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionCell.class);
     private final ListView<ExecutionPropertiesDTO> listView;
+    private final SettingsProvider settingsProvider;
+    private final ThemeManager themeManager;
 
     @FXML
     private Pane mainNode;
@@ -42,9 +47,18 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
     private FXMLLoader loader;
     private RotateTransition rotateTransition;
 
+    @AssistedInject
+    public ExecutionCell(SettingsProvider settingsProvider,
+                         ThemeManager themeManager,
+                         @Assisted ListView<ExecutionPropertiesDTO> listView) {
+        this.settingsProvider = settingsProvider;
+        this.themeManager = themeManager;
+        this.listView = listView;
+    }
+
     @FXML
     private void initialize() {
-        mainNode.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
+        mainNode.getStyleClass().add(themeManager.getIconModeCssClass());
 
         rotateTransition = new RotateTransition();
         rotateTransition.setAxis(Rotate.Z_AXIS);
@@ -54,10 +68,6 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
         rotateTransition.setNode(themedIcon);
         rotateTransition.setInterpolator(Interpolator.LINEAR);
 
-    }
-
-    public ExecutionCell(ListView<ExecutionPropertiesDTO> listView) {
-        this.listView = listView;
     }
 
     @Override
@@ -72,7 +82,7 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(ExecutionCell.class.getResource("executionCell.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 
@@ -89,6 +99,16 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
             setText(null);
             setGraphic(mainNode);
         }
+    }
+
+    private void setScript(ExecutionPropertiesDTO scriptingDTO) {
+
+        nameLabel.textProperty().bind(scriptingDTO.getScriptFilePropertiesDTO().getNameProperty());
+        updateState(null, null, null);
+        scriptingDTO.getCancelledProperty().addListener(this::updateState);
+        scriptingDTO.getStartTimeProperty().addListener(this::updateState);
+        scriptingDTO.getExecutionTimeProperty().addListener(this::updateState);
+        scriptingDTO.getErrorProperty().addListener(this::updateState);
     }
 
     private void updateState(ObservableValue<?> observable, Object oldValue, Object newValue) {
@@ -121,15 +141,5 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss.SSS"); //TODO utility
             descriptionLabel.textProperty().set(dtf.format(dto.getStartTimeProperty().get()));
         }
-    }
-
-    private void setScript(ExecutionPropertiesDTO scriptingDTO) {
-
-        nameLabel.textProperty().bind(scriptingDTO.getScriptFilePropertiesDTO().getNameProperty());
-        updateState(null, null, null);
-        scriptingDTO.getCancelledProperty().addListener(this::updateState);
-        scriptingDTO.getStartTimeProperty().addListener(this::updateState);
-        scriptingDTO.getExecutionTimeProperty().addListener(this::updateState);
-        scriptingDTO.getErrorProperty().addListener(this::updateState);
     }
 }

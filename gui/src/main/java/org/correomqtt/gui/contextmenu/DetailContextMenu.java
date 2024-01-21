@@ -1,14 +1,20 @@
 package org.correomqtt.gui.contextmenu;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.scene.control.SeparatorMenuItem;
+import org.correomqtt.core.settings.SettingsProvider;
 
 @SuppressWarnings("java:S110")
 public class DetailContextMenu extends BaseMessageContextMenu<DetailContextMenuDelegate> {
 
     private SeparatorMenuItem separator;
 
-    public DetailContextMenu(DetailContextMenuDelegate dispatcher) {
-        super(dispatcher);
+    @AssistedInject
+    public DetailContextMenu(
+            SettingsProvider settingsProvider,
+            @Assisted DetailContextMenuDelegate dispatcher) {
+        super(settingsProvider, dispatcher);
     }
 
     @Override
@@ -18,11 +24,11 @@ public class DetailContextMenu extends BaseMessageContextMenu<DetailContextMenuD
         separator = new SeparatorMenuItem();
 
         this.getItems().addAll(putToForm,
-                               showDetails,
-                               separator,
-                               copyTopicToClipboard,
-                               copyTimeToClipboard,
-                               copyPayloadToClipboard);
+                showDetails,
+                separator,
+                copyTopicToClipboard,
+                copyTimeToClipboard,
+                copyPayloadToClipboard);
 
         delegate.isInlineView().addListener((observable, oldValue, newValue) -> updateInlineView());
         updateInlineView();

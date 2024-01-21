@@ -7,12 +7,13 @@ import javafx.fxml.FXML;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.connection.ConnectTaskFactory;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.connection.DisconnectTaskFactory;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
+import org.correomqtt.core.fileprovider.HistoryManager;
 import org.correomqtt.core.importexport.messages.ExportMessageFailedEvent;
 import org.correomqtt.core.importexport.messages.ExportMessageStartedEvent;
 import org.correomqtt.core.importexport.messages.ExportMessageSuccessEvent;
@@ -21,13 +22,16 @@ import org.correomqtt.core.importexport.messages.ImportMessageStartedEvent;
 import org.correomqtt.core.importexport.messages.ImportMessageSuccessEvent;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ConnectionUISettings;
+import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.GuiConnectionState;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.LoadingViewController;
+import org.correomqtt.gui.views.LoadingViewControllerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,8 +47,14 @@ public class ConnectionViewController extends BaseConnectionController implement
     private final ConnectTaskFactory connectTaskFactory;
     private final DisconnectTaskFactory disconnectTaskFactory;
     private final PublishViewControllerFactory publishViewControllerFactory;
+    private final SubscriptionViewControllerFactory subscriptionViewControllerFactory;
+    private final ControlBarControllerFactory controlBarControllerFactory;
+    private final KeyringHandler keyringHandler;
+    private final SettingsProvider settingsProvider;
+    private final LoadingViewControllerFactory loadingViewControllerFactory;
+    private final AlertHelper alertHelper;
+    private final HistoryManager historyManager;
     private final ConnectionViewDelegate delegate;
-
     @FXML
     private Pane connectionHolder;
 
@@ -72,14 +82,33 @@ public class ConnectionViewController extends BaseConnectionController implement
             ConnectTaskFactory connectTaskFactory,
             DisconnectTaskFactory disconnectTaskFactory,
             PublishViewControllerFactory publishViewControllerFactory,
+            SubscriptionViewControllerFactory subscriptionViewControllerFactory,
+            ControlBarControllerFactory controlBarControllerFactory,
+            KeyringHandler keyringHandler,
+            ConnectionHolder connectionHolder,
+            SettingsProvider settingsProvider,
+            ThemeManager themeManager,
+            LoadingViewControllerFactory loadingViewControllerFactory,
+            AlertHelper alertHelper,
+            HistoryManager historyManager,
             @Assisted String connectionId,
             @Assisted ConnectionViewDelegate delegate) {
-        super(connectionId);
+        super(settingsProvider, themeManager, connectionHolder, connectionId);
         this.connectTaskFactory = connectTaskFactory;
         this.disconnectTaskFactory = disconnectTaskFactory;
         this.publishViewControllerFactory = publishViewControllerFactory;
+        this.subscriptionViewControllerFactory = subscriptionViewControllerFactory;
+        this.controlBarControllerFactory = controlBarControllerFactory;
+        this.keyringHandler = keyringHandler;
+        this.settingsProvider = settingsProvider;
+        this.loadingViewControllerFactory = loadingViewControllerFactory;
+        this.alertHelper = alertHelper;
+        this.historyManager = historyManager;
         this.delegate = delegate;
         EventBus.register(this);
+        historyManager.activatePublishHistory(connectionId);
+        historyManager.activatePublishMessageHistory(connectionId);
+        historyManager.activateSubscriptionHistory(connectionId);
     }
 
     public LoaderResult<ConnectionViewController> load() {
@@ -88,7 +117,7 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     @FXML
     private void initialize() {
-        SettingsProvider.getInstance().getConnectionConfigs().stream()
+        settingsProvider.getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
                 .findFirst()
                 .ifPresent(c -> {
@@ -109,8 +138,8 @@ public class ConnectionViewController extends BaseConnectionController implement
                 });
 
         LoaderResult<PublishViewController> publishLoadResult = publishViewControllerFactory.create(getConnectionId(), this).load();
-        LoaderResult<SubscriptionViewController> subscriptionLoadResult = SubscriptionViewController.load(getConnectionId(), this);
-        LoaderResult<ControlBarController> controlBarLoadResult = ControlBarController.load(getConnectionId(), this);
+        LoaderResult<SubscriptionViewController> subscriptionLoadResult = subscriptionViewControllerFactory.create(getConnectionId(), this).load();
+        LoaderResult<ControlBarController> controlBarLoadResult = controlBarControllerFactory.create(getConnectionId(), this).load();
 
         publishRegion = publishLoadResult.getMainRegion();
         subscribeRegion = subscriptionLoadResult.getMainRegion();
@@ -157,9 +186,9 @@ public class ConnectionViewController extends BaseConnectionController implement
         connectionConfigDTO.getConnectionUISettings().setSubscribeDetailDividerPosition(subscribeController.getDetailDividerPosition());
         connectionConfigDTO.getConnectionUISettings().setSubscribeDetailActive(subscribeController.isDetailActive());
 
-        KeyringHandler.getInstance().retryWithMasterPassword(
-                masterPassword -> SettingsProvider.getInstance()
-                        .saveConnections(SettingsProvider.getInstance().getConnectionConfigs(), masterPassword),
+        keyringHandler.retryWithMasterPassword(
+                masterPassword -> settingsProvider
+                        .saveConnections(settingsProvider.getConnectionConfigs(), masterPassword),
                 resources.getString("onPasswordSaveFailedTitle"),
                 resources.getString("onPasswordSaveFailedHeader"),
                 resources.getString("onPasswordSaveFailedContent"),
@@ -265,6 +294,10 @@ public class ConnectionViewController extends BaseConnectionController implement
         subscribeController.cleanUp();
         controlBarController.cleanUp();
 
+        historyManager.tearDownPublishHistory(connectionId);
+        historyManager.tearDownPublishMessageHistory(connectionId);
+        historyManager.tearDownSubscriptionHistory(connectionId);
+
         EventBus.unregister(this);
     }
 
@@ -282,11 +315,10 @@ public class ConnectionViewController extends BaseConnectionController implement
     public void onExportStarted(@Subscribe ExportMessageStartedEvent event) {
         Platform.runLater(() -> {
             splitPane.setDisable(true);
-            loadingViewController =
-                    LoadingViewController.showAsDialog(getConnectionId(),
-                            resources.getString("connectionViewControllerExportTitle") +
-                                    " " +
-                                    event.file().getAbsolutePath());
+            loadingViewController = loadingViewControllerFactory.create(getConnectionId(),
+                    resources.getString("connectionViewControllerExportTitle") +
+                            " " +
+                            event.file().getAbsolutePath()).showAsDialog();
         });
     }
 
@@ -299,7 +331,7 @@ public class ConnectionViewController extends BaseConnectionController implement
     @SuppressWarnings("unused")
     public void onExportFailed(@Subscribe ExportMessageFailedEvent event) {
         disableLoading();
-        AlertHelper.warn(resources.getString("connectionViewControllerExportFailedTitle"),
+        alertHelper.warn(resources.getString("connectionViewControllerExportFailedTitle"),
                 resources.getString("connectionViewControllerExportFailedContent")
                         + event.throwable().getLocalizedMessage());
     }

@@ -10,7 +10,8 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.views.LoaderResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,28 +22,38 @@ import java.text.MessageFormat;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-public abstract class BaseControllerImpl implements BaseController{
+public abstract class BaseControllerImpl implements BaseController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseControllerImpl.class);
-    private static final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+    private final ResourceBundle resources;
+    private final SettingsProvider settingsProvider;
+    protected final ThemeManager themeManager;
 
-    protected static <C extends BaseControllerImpl> LoaderResult<C> load(Class<C> controllerClazz, String fxml) {
-        return load(controllerClazz,
-                    fxml,
-                    () -> controllerClazz.getDeclaredConstructor().newInstance());
+    protected BaseControllerImpl(SettingsProvider settingsProvider,
+                                 ThemeManager themeManager) {
+        this.settingsProvider = settingsProvider;
+        this.themeManager = themeManager;
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
     }
 
-    protected static <C extends BaseControllerImpl> LoaderResult<C> load(final Class<C> controllerClazz,
-                                                                         final String fxml,
-                                                                         final ConstructorMethod<C> constructorMethod) {
+    protected <C extends BaseControllerImpl> LoaderResult<C> load(Class<C> controllerClazz, String fxml) {
+        return load(controllerClazz,
+                fxml,
+                () -> controllerClazz.getDeclaredConstructor().newInstance()); //TODO
+    }
+
+    protected <C extends BaseControllerImpl> LoaderResult<C> load(final Class<C> controllerClazz,
+                                                                  final String fxml,
+                                                                  final ConstructorMethod<C> constructorMethod) {
 
         FXMLLoader loader = new FXMLLoader(controllerClazz.getResource(fxml),
-                ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()));
+                ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
 
         loader.setControllerFactory(param -> {
             try {
                 return constructorMethod.construct();
-            } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
+            } catch (InstantiationException | InvocationTargetException | NoSuchMethodException |
+                     IllegalAccessException e) {
                 throw new IllegalStateException(MessageFormat.format("Exception loading {0} from {1}: ", controllerClazz.getSimpleName(), fxml), e);
             }
         });
@@ -62,30 +73,30 @@ public abstract class BaseControllerImpl implements BaseController{
                 .build();
     }
 
-    protected static <Z extends BaseControllerImpl> void showAsDialog(LoaderResult<Z> result,
-                                                                      String title,
-                                                                      Map<Object, Object> windowProperties,
-                                                                      boolean resizable,
-                                                                      boolean alwaysOnTop,
-                                                                      final EventHandler<WindowEvent> closeHandler,
-                                                                      final EventHandler<KeyEvent> keyHandler) {
-        showAsDialog(result, title, windowProperties,resizable, alwaysOnTop, closeHandler, keyHandler, 300, 400);
+    protected <Z extends BaseControllerImpl> void showAsDialog(LoaderResult<Z> result,
+                                                               String title,
+                                                               Map<Object, Object> windowProperties,
+                                                               boolean resizable,
+                                                               boolean alwaysOnTop,
+                                                               final EventHandler<WindowEvent> closeHandler,
+                                                               final EventHandler<KeyEvent> keyHandler) {
+        showAsDialog(result, title, windowProperties, resizable, alwaysOnTop, closeHandler, keyHandler, 300, 400);
 
     }
 
-    protected static <Z extends BaseControllerImpl> void showAsDialog(LoaderResult<Z> result,
-                                                                      String title,
-                                                                      Map<Object, Object> windowProperties,
-                                                                      boolean resizable,
-                                                                      boolean alwaysOnTop,
-                                                                      final EventHandler<WindowEvent> closeHandler,
-                                                                      final EventHandler<KeyEvent> keyHandler,
-                                                                      int minWidth,
-                                                                      int minHeight) {
+    protected <Z extends BaseControllerImpl> void showAsDialog(LoaderResult<Z> result,
+                                                               String title,
+                                                               Map<Object, Object> windowProperties,
+                                                               boolean resizable,
+                                                               boolean alwaysOnTop,
+                                                               final EventHandler<WindowEvent> closeHandler,
+                                                               final EventHandler<KeyEvent> keyHandler,
+                                                               int minWidth,
+                                                               int minHeight) {
 
         Scene scene = new Scene(result.getMainRegion());
-        scene.setFill(SettingsProvider.getInstance().getActiveTheme().getBackgroundColor());
-        String cssPath = SettingsProvider.getInstance().getCssPath();
+        scene.setFill(themeManager.getActiveTheme().getBackgroundColor());
+        String cssPath = themeManager.getCssPath();
         if (cssPath != null) {
             scene.getStylesheets().add(cssPath);
         }

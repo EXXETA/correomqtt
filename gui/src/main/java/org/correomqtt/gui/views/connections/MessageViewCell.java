@@ -1,5 +1,7 @@
 package org.correomqtt.gui.views.connections;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -8,16 +10,16 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.model.LabelType;
 import org.correomqtt.core.model.MessageListViewConfig;
 import org.correomqtt.core.model.RetainedState;
-import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.core.plugin.MessageValidator;
 import org.correomqtt.core.plugin.PluginManager;
-import org.correomqtt.core.plugin.model.MessageExtensionDTO;
-import org.correomqtt.gui.plugin.spi.MessageListHook;
 import org.correomqtt.core.plugin.spi.MessageValidatorHook;
+import org.correomqtt.gui.model.MessagePropertiesDTO;
+import org.correomqtt.gui.plugin.spi.MessageListHook;
+import org.correomqtt.gui.transformer.MessageTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +35,9 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageViewCell.class);
     private static final int MAX_PAYLOAD_LENGTH = 1000;
 
+    private final PluginManager pluginManager;
+    private final MessageValidator messageValidator;
+    private final SettingsProvider settingsProvider;
     private final ListView<MessagePropertiesDTO> listView;
     private final Supplier<MessageListViewConfig> listViewConfigGetter;
 
@@ -80,7 +85,15 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     @FXML
     private ResourceBundle resources;
 
-    public MessageViewCell(ListView<MessagePropertiesDTO> listView, Supplier<MessageListViewConfig> listViewConfigGetter) {
+    @AssistedInject
+    public MessageViewCell(PluginManager pluginManager,
+                           MessageValidator messageValidator,
+                           SettingsProvider settingsProvider,
+                           @Assisted ListView<MessagePropertiesDTO> listView,
+                           @Assisted Supplier<MessageListViewConfig> listViewConfigGetter) {
+        this.pluginManager = pluginManager;
+        this.messageValidator = messageValidator;
+        this.settingsProvider = settingsProvider;
         this.listView = listView;
         this.listViewConfigGetter = listViewConfigGetter;
     }
@@ -96,7 +109,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(MessageViewCell.class.getResource("messageView.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 
@@ -147,29 +160,29 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
             subscriptionLabel.setText(messageDTO.getSubscription().getTopic());
         }
 
-        if(listViewConfigGetter.get().isVisible(LabelType.RETAINED)){
+        if (listViewConfigGetter.get().isVisible(LabelType.RETAINED)) {
             retainedLabel.setText(messageDTO.isRetained() ? RetainedState.RETAINED.name() : RetainedState.NOT_RETAINED.name());
             retainedLabel.setVisible(true);
             retainedLabel.setManaged(true);
-        }else{
+        } else {
             retainedLabel.setVisible(false);
             retainedLabel.setManaged(false);
         }
 
-        if(listViewConfigGetter.get().isVisible(LabelType.QOS)){
+        if (listViewConfigGetter.get().isVisible(LabelType.QOS)) {
             qosLabel.setText(messageDTO.getQos().toString());
             qosLabel.setVisible(true);
             qosLabel.setManaged(true);
-        }else{
+        } else {
             qosLabel.setVisible(false);
             qosLabel.setManaged(false);
         }
 
-        if(listViewConfigGetter.get().isVisible(LabelType.TIMESTAMP)){
+        if (listViewConfigGetter.get().isVisible(LabelType.TIMESTAMP)) {
             timestampLabel.setText(messageDTO.getDateTime().format(FORMATTER));
             timestampLabel.setVisible(true);
             timestampLabel.setManaged(true);
-        }else{
+        } else {
             timestampLabel.setVisible(false);
             timestampLabel.setManaged(false);
         }
@@ -183,8 +196,8 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
 
     private void executeOnCreateMessageEntryExtensions(MessagePropertiesDTO messageDTO) {
         labelBox.getChildren().clear();
-        PluginManager.getInstance().getExtensions(MessageListHook.class)
-                     .forEach(p -> p.onCreateEntry(new MessageExtensionDTO(messageDTO), labelBox));
+        pluginManager.getExtensions(MessageListHook.class)
+                .forEach(p -> p.onCreateEntry(MessageTransformer.propsToExtensionDTO(messageDTO), labelBox));
     }
 
     private void validateMessage(MessagePropertiesDTO messageDTO) {
@@ -193,7 +206,7 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
         invalidLabel.setVisible(false);
         invalidLabel.setManaged(false);
 
-        MessageValidatorHook.Validation validation = MessageValidator.validateMessage(messageDTO.getTopic(), messageDTO.getPayload());
+        MessageValidatorHook.Validation validation = messageValidator.validateMessage(messageDTO.getTopic(), messageDTO.getPayload());
         if (validation != null) {
             updateValidatorLabel(validLabel, validation.isValid(), validation.getTooltip());
             updateValidatorLabel(invalidLabel, !validation.isValid(), validation.getTooltip());

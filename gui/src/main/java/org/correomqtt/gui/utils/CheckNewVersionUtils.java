@@ -1,25 +1,38 @@
 package org.correomqtt.gui.utils;
 
+import javafx.application.HostServices;
+import org.correomqtt.gui.model.AppHostServices;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.exception.CorreoMqttUnableToCheckVersionException;
-import org.correomqtt.business.settings.SettingsProvider;
 import org.correomqtt.core.utils.VendorConstants;
 import org.correomqtt.core.utils.VersionUtils;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.ResourceBundle;
 
 public class CheckNewVersionUtils {
-    private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+    private final ResourceBundle resources;
+    private final HostServices hostServices;
+    private final SettingsProvider settingsProvider;
+    private final AlertHelper alertHelper;
 
-    private CheckNewVersionUtils() {
-        // nothing to do
+    @Inject
+    CheckNewVersionUtils(SettingsProvider settingsProvider,
+                         AlertHelper alertHelper,
+                         @AppHostServices HostServices hostServices) {
+        this.settingsProvider = settingsProvider;
+        this.alertHelper = alertHelper;
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+
+        this.hostServices = hostServices;
     }
 
-    public static void checkNewVersion(boolean showHintIfUpToDate) throws IOException, CorreoMqttUnableToCheckVersionException {
+    public void checkNewVersion(boolean showHintIfUpToDate) throws IOException, CorreoMqttUnableToCheckVersionException {
 
         String newVersion = VersionUtils.isNewerVersionAvailable();
         if (newVersion != null) {
-            boolean confirmed = AlertHelper.confirm(
+            boolean confirmed = alertHelper.confirm(
                     resources.getString("correoMqttNewVersionTitle"),
                     newVersion + " " + resources.getString("correoMqttNewVersionHeader"),
                     resources.getString("correoMqttNewVersionContent"),
@@ -28,10 +41,11 @@ public class CheckNewVersionUtils {
             );
 
             if (confirmed) {
-                HostServicesHolder.getInstance().getHostServices().showDocument(VendorConstants.GITHUB_LATEST());
+                hostServices.showDocument(VendorConstants.GITHUB_LATEST());
+
             }
         } else if (showHintIfUpToDate) {
-            AlertHelper.info(
+            alertHelper.info(
                     resources.getString("versionUpToDateTitle"),
                     resources.getString("versionUpToDateContent")
             );

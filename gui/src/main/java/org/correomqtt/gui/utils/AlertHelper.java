@@ -16,11 +16,13 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.window.StageHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,18 +34,23 @@ import static javafx.scene.control.Alert.AlertType.WARNING;
 public class AlertHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertHelper.class);
+    private final SettingsProvider settingsProvider;
+    private final ThemeManager themeManager;
 
-    private AlertHelper() {
-        // Nothing to do here
+    @Inject
+    AlertHelper(SettingsProvider settingsProvider,
+                ThemeManager themeManager) {
+        this.settingsProvider = settingsProvider;
+        this.themeManager = themeManager;
     }
 
-    private static void showDialog(AlertType type, String title, String content, boolean block, ButtonType buttonType) {
+    public void showDialog(AlertType type, String title, String content, boolean block, ButtonType buttonType) {
         final CountDownLatch countDownLatch = block ? new CountDownLatch(1) : null;
         PlatformUtils.runLaterIfNotInFxThread(() -> {
             Alert alert = new Alert(type);
             StageHelper.enforceFloatingWindow(alert);
             DialogPane dialogPane = alert.getDialogPane();
-            String cssPath = SettingsProvider.getInstance().getCssPath();
+            String cssPath = themeManager.getCssPath();
             if (cssPath != null) {
                 dialogPane.getStylesheets().add(cssPath);
             }
@@ -71,7 +78,7 @@ public class AlertHelper {
         }
     }
 
-    private static boolean showConfirmationDialog(String title, String header, String content, String noButton, String yesButton) {
+    public boolean showConfirmationDialog(String title, String header, String content, String noButton, String yesButton) {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         AtomicBoolean result = new AtomicBoolean();
         PlatformUtils.runLaterIfNotInFxThread(() -> {
@@ -79,7 +86,7 @@ public class AlertHelper {
             StageHelper.enforceFloatingWindow(alert);
             DialogPane dialogPane = alert.getDialogPane();
             dialogPane.setMaxWidth(450);
-            String cssPath = SettingsProvider.getInstance().getCssPath();
+            String cssPath = themeManager.getCssPath();
             if (cssPath != null) {
                 dialogPane.getStylesheets().add(cssPath);
             }
@@ -111,35 +118,35 @@ public class AlertHelper {
 
     }
 
-    public static void info(String title, String content) {
+    public void info(String title, String content) {
         info(title, content, false);
     }
 
-    public static void info(String title, String content, boolean block) {
+    public void info(String title, String content, boolean block) {
         showDialog(INFORMATION, title, content, block, null);
     }
 
-    public static void info(String title, String content, boolean block, ButtonType buttonType) {
+    public void info(String title, String content, boolean block, ButtonType buttonType) {
         showDialog(INFORMATION, title, content, block, buttonType);
     }
 
-    public static void warn(String title, String content) {
+    public void warn(String title, String content) {
         warn(title, content, false);
     }
 
-    public static void warn(String title, String content, boolean block) {
+    public void warn(String title, String content, boolean block) {
         showDialog(WARNING, title, content, block, null);
     }
 
-    public static void warn(String title, String content, boolean block, ButtonType buttonType) {
+    public void warn(String title, String content, boolean block, ButtonType buttonType) {
         showDialog(WARNING, title, content, block, buttonType);
     }
 
-    public static boolean confirm(String title, String header, String content, String noButton, String yesButton) {
+    public boolean confirm(String title, String header, String content, String noButton, String yesButton) {
         return showConfirmationDialog(title, header, content, noButton, yesButton);
     }
 
-    public static String input(String title, String header, String content, String defaultValue) {
+    public String input(String title, String header, String content, String defaultValue) {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         AtomicReference<String> result = new AtomicReference<>();
         PlatformUtils.runLaterIfNotInFxThread(() -> {
@@ -149,7 +156,7 @@ public class AlertHelper {
             DialogPane dialogPane = dialog.getDialogPane();
             dialog.setWidth(450);
             dialogPane.setMinHeight(Region.USE_PREF_SIZE);
-            String cssPath = SettingsProvider.getInstance().getCssPath();
+            String cssPath = themeManager.getCssPath();
             if (cssPath != null) {
                 dialogPane.getStylesheets().add(cssPath);
             }
@@ -189,7 +196,7 @@ public class AlertHelper {
     }
 
 
-    public static String passwordInput(String title, String header, String content) {
+    public String passwordInput(String title, String header, String content) {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         AtomicReference<String> result = new AtomicReference<>();
         PlatformUtils.runLaterIfNotInFxThread(() -> {
@@ -199,7 +206,7 @@ public class AlertHelper {
             DialogPane dialogPane = dialog.getDialogPane();
             dialog.setWidth(450);
             dialogPane.setMinHeight(Region.USE_PREF_SIZE);
-            String cssPath = SettingsProvider.getInstance().getCssPath();
+            String cssPath = themeManager.getCssPath();
             if (cssPath != null) {
                 dialogPane.getStylesheets().add(cssPath);
             }
@@ -236,7 +243,7 @@ public class AlertHelper {
 
     }
 
-    public static <T> T select(String title, String content, List<T> choices) {
+    public <T> T select(String title, String content, List<T> choices) {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         AtomicReference<T> result = new AtomicReference<>();
         PlatformUtils.runLaterIfNotInFxThread(() -> {
@@ -246,7 +253,7 @@ public class AlertHelper {
             DialogPane dialogPane = dialog.getDialogPane();
             dialog.setWidth(450);
             dialogPane.setMinHeight(Region.USE_PREF_SIZE);
-            String cssPath = SettingsProvider.getInstance().getCssPath();
+            String cssPath = themeManager.getCssPath();
             if (cssPath != null) {
                 dialogPane.getStylesheets().add(cssPath);
             }
@@ -283,7 +290,7 @@ public class AlertHelper {
         return result.get();
     }
 
-    public static void unexpectedAlert(Throwable unexpectedError) {
+    public void unexpectedAlert(Throwable unexpectedError) {
         LOGGER.error("Unexpected Error", unexpectedError);
         warn("Unexpected Error", "Operation failed: " + unexpectedError.getMessage(), true);
     }

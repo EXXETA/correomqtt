@@ -1,8 +1,10 @@
 package org.correomqtt.gui.views.scripting;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.gui.contextmenu.BaseObjectContextMenu;
 import org.correomqtt.gui.controls.IconMenuItem;
 import org.correomqtt.gui.controls.ThemedFontIcon;
@@ -11,18 +13,22 @@ import java.util.ResourceBundle;
 
 public class ScriptContextMenu extends BaseObjectContextMenu<ScriptFilePropertiesDTO, ScriptContextMenuDelegate> {
 
+    private final SettingsProvider settingsProvider;
     private MenuItem renameItem;
     private MenuItem deleteItem;
     private MenuItem runItem;
     private SeparatorMenuItem separator1;
 
-    public ScriptContextMenu(ScriptContextMenuDelegate delegate) {
+    @AssistedInject
+    public ScriptContextMenu(SettingsProvider settingsProvider,
+                             @Assisted ScriptContextMenuDelegate delegate) {
         super(delegate);
+        this.settingsProvider = settingsProvider;
+        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
     }
 
     @Override
     protected void initializeItems() {
-        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
 //TODO translateion
         super.initializeItems();
 
@@ -44,7 +50,7 @@ public class ScriptContextMenu extends BaseObjectContextMenu<ScriptFilePropertie
                 separator1,
                 renameItem,
                 deleteItem
-                );
+        );
     }
 
     @Override

@@ -3,6 +3,7 @@ package org.correomqtt.gui.views.scripting;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
+import javafx.application.HostServices;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -17,11 +18,12 @@ import javafx.scene.transform.Rotate;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import lombok.AllArgsConstructor;
+import org.correomqtt.gui.model.AppHostServices;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
-import org.correomqtt.business.settings.SettingsProvider;
 import org.correomqtt.core.scripting.ScriptDeleteTask;
 import org.correomqtt.core.scripting.ScriptExecutionCancelledEvent;
 import org.correomqtt.core.scripting.ScriptExecutionFailedEvent;
@@ -36,14 +38,16 @@ import org.correomqtt.gui.controls.IconLabel;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
-import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
@@ -52,7 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-import static org.correomqtt.gui.utils.JavaFxUtils.*;
+import static org.correomqtt.gui.utils.JavaFxUtils.addSafeToSplitPane;
 
 public class ScriptingViewController extends BaseControllerImpl implements ScriptContextMenuDelegate, SingleEditorViewDelegate {
 
@@ -60,6 +64,12 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     private static final String HELP_LINK = "https://github.com/EXXETA/correomqtt/wiki/scripting";
     private static ResourceBundle resources;
     private final HashMap<String, ScriptEditorState> editorStates = new HashMap<>();
+    private final AlertHelper alertHelper;
+    private final ScriptCellFactory scriptCellFactory;
+    private final ScriptContextMenuFactory scriptContextMenuFactory;
+    private final SingleEditorViewControllerFactory editorViewCtrlFactory;
+    private final Provider<ExecutionViewController> executionViewControllerProvider;
+    private final HostServices hostServices;
     @FXML
     private IconLabel statusLabel;
     @FXML
@@ -82,11 +92,27 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     private ObservableList<ScriptFilePropertiesDTO> scriptList;
     private RotateTransition rotateTransition;
 
-    public ScriptingViewController() {
+    @Inject
+    public ScriptingViewController(SettingsProvider settingsProvider,
+                                   ThemeManager themeManager,
+                                   AlertHelper alertHelper,
+                                   ScriptCellFactory scriptCellFactory,
+                                   ScriptContextMenuFactory scriptContextMenuFactory,
+                                   SingleEditorViewControllerFactory editorViewCtrlFactory,
+                                   Provider<ExecutionViewController> executionViewControllerProvider,
+                                   @AppHostServices HostServices hostServices
+    ) {
+        super(settingsProvider, themeManager);
+        this.alertHelper = alertHelper;
+        this.scriptCellFactory = scriptCellFactory;
+        this.scriptContextMenuFactory = scriptContextMenuFactory;
+        this.editorViewCtrlFactory = editorViewCtrlFactory;
+        this.executionViewControllerProvider = executionViewControllerProvider;
+        this.hostServices = hostServices;
         EventBus.register(this);
     }
 
-    public static void showAsDialog() {
+    public void showAsDialog() {
         Map<Object, Object> properties = new HashMap<>();
         properties.put(WindowProperty.WINDOW_TYPE, WindowType.PLUGIN_SETTINGS);
 
@@ -95,7 +121,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
             return;
         }
 
-        LoaderResult<ScriptingViewController> result = load(ScriptingViewController.class, "scriptingView.fxml");
+        LoaderResult<ScriptingViewController> result = load(ScriptingViewController.class, "scriptingView.fxml", () -> this);
         resources = result.getResourceBundle();
         showAsDialog(result, resources.getString("scriptingViewControllerTitle"), properties, false, false,
                 event -> result.getController().onCloseRequest(event),
@@ -105,7 +131,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     private void onCloseRequest(WindowEvent event) {
         if (scriptListView.getItems().stream()
                 .anyMatch(ScriptFilePropertiesDTO::isDirty) &&
-                !AlertHelper.confirm(
+                !alertHelper.confirm(
                         resources.getString("scriptingUnsavedCheckTitle"),
                         null,
                         resources.getString("scriptingUnsavedCheckDescription"),
@@ -131,7 +157,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         rotateTransition.setNode(statusLabel.getGraphic());
         rotateTransition.setInterpolator(Interpolator.LINEAR);
 
-        scriptingRootPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
+        scriptingRootPane.getStyleClass().add(themeManager.getIconModeCssClass());
         scriptListView.setCellFactory(this::createScriptCell);
 
         List<ScriptFilePropertiesDTO> scriptsList = null;
@@ -150,7 +176,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         scriptListView.setItems(scriptList);
         onScriptListChanged(null);
 
-        LoaderResult<ExecutionViewController> result = ExecutionViewController.load();
+        LoaderResult<ExecutionViewController> result = executionViewControllerProvider.get().load();
         executionController = result.getController();
         executionHolder.getChildren().add(result.getMainRegion());
 
@@ -159,12 +185,12 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     }
 
     private ListCell<ScriptFilePropertiesDTO> createScriptCell(ListView<ScriptFilePropertiesDTO> scriptListView) {
-        ScriptCell cell = new ScriptCell(scriptListView);
+        ScriptCell cell = scriptCellFactory.create(scriptListView);
         cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
             ScriptFilePropertiesDTO selectedItem = scriptListView.getSelectionModel().getSelectedItem();
             onSelectScript(selectedItem);
         });
-        ScriptContextMenu contextMenu = new ScriptContextMenu(this);
+        ScriptContextMenu contextMenu = scriptContextMenuFactory.create(this);
         cell.setContextMenu(contextMenu);
         cell.itemProperty().addListener((observable, oldValue, newValue) -> contextMenu.setObject(newValue));
         return cell;
@@ -236,7 +262,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
 
         ScriptingViewController.ScriptEditorState editorState = editorStates.computeIfAbsent(selectedItem.getName(),
                 id -> {
-                    LoaderResult<SingleEditorViewController> loaderResult = SingleEditorViewController.load(this, selectedItem);
+                    LoaderResult<SingleEditorViewController> loaderResult = editorViewCtrlFactory.create(this, selectedItem).load();
                     return new ScriptingViewController.ScriptEditorState(loaderResult.getController(), loaderResult.getMainRegion());
                 });
 
@@ -267,7 +293,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
 
         String dialogTitle = resources.getString("scripting.newscript.dialog.title");
 
-        String filename = AlertHelper.input(dialogTitle,
+        String filename = alertHelper.input(dialogTitle,
                 resources.getString("scripting.newscript.dialog.header"),
                 resources.getString("scripting.newscript.dialog.content"),
                 defaultValue);
@@ -307,13 +333,13 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                     // ignore -> file chooser was cancelled
                 }
                 case FILENAME_EMPTY_OR_WRONG_EXTENSION -> {
-                    AlertHelper.warn(dialogTitle,
+                    alertHelper.warn(dialogTitle,
                             resources.getString("scripting.newscript.dialog.extension.content"),
                             true);
                     showNewScriptDialog(".js");
                 }
                 case FILE_ALREADY_EXISTS -> {
-                    AlertHelper.warn(dialogTitle,
+                    alertHelper.warn(dialogTitle,
                             resources.getString("scripting.newscript.dialog.alreadyexists.content"),
                             true);
 
@@ -324,14 +350,14 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                 }
             }
         } else {
-            AlertHelper.unexpectedAlert(result.getUnexpectedError());
+            alertHelper.unexpectedAlert(result.getUnexpectedError());
         }
     }
 
     private void renameScript(ScriptFilePropertiesDTO dto, String defaultFilename) {
         String dialogTitle = resources.getString("scripting.renamescript.dialog.title");
 
-        String newFilename = AlertHelper.input(dialogTitle,
+        String newFilename = alertHelper.input(dialogTitle,
                 resources.getString("scripting.renamescript.dialog.header"),
                 resources.getString("scripting.renamescript.dialog.content"),
                 defaultFilename);
@@ -351,19 +377,19 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                                 // ignore -> file chooser was cancelled
                             }
                             case FILENAME_EMPTY_OR_WRONG_EXTENSION -> {
-                                AlertHelper.warn(dialogTitle,
+                                alertHelper.warn(dialogTitle,
                                         resources.getString("scripting.renamescript.dialog.extension.content"),
                                         true);
                                 renameScript(dto, newFilename);
                             }
                             case FILE_ALREADY_EXISTS -> {
-                                AlertHelper.warn(dialogTitle,
+                                alertHelper.warn(dialogTitle,
                                         resources.getString("scripting.renamescript.dialog.alreadyexists.content"),
                                         true);
                                 renameScript(dto, newFilename);
                             }
                             case FILENAME_NOT_CHANGED -> {
-                                AlertHelper.warn(dialogTitle,
+                                alertHelper.warn(dialogTitle,
                                         resources.getString("scripting.renamescript.dialog.alreadyexists.content"), //TODO translation
                                         true);
                                 renameScript(dto, newFilename);
@@ -373,7 +399,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                             }
                         }
                     } else {
-                        AlertHelper.unexpectedAlert(r.getUnexpectedError());
+                        alertHelper.unexpectedAlert(r.getUnexpectedError());
                     }
                 })
                 .run();
@@ -391,7 +417,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
 
         String dialogTitle = resources.getString("scripting.deletescript.dialog.title");
 
-        if (!AlertHelper.confirm(dialogTitle,
+        if (!alertHelper.confirm(dialogTitle,
                 resources.getString("scripting.deletescript.dialog.header"),
                 MessageFormat.format(resources.getString("scripting.deletescript.dialog.content"), dto.getName()),
                 resources.getString("commonNoButton"),
@@ -404,12 +430,12 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                 .onError(r -> {
                     if (r.isExpected()) {
                         if (r.getExpectedError() == ScriptDeleteTask.Error.IOERROR) {
-                            AlertHelper.warn(dialogTitle,
+                            alertHelper.warn(dialogTitle,
                                     resources.getString("scripting.deletescript.dialog.ioerror.content"), //TODO translation
                                     true);
                         }
                     } else {
-                        AlertHelper.unexpectedAlert(r.getUnexpectedError());
+                        alertHelper.unexpectedAlert(r.getUnexpectedError());
                     }
                 })
                 .run();
@@ -442,9 +468,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
 
     @FXML
     private void onHelpLinkClicked() {
-        HostServicesHolder.getInstance()
-                .getHostServices()
-                .showDocument(HELP_LINK);
+        hostServices.showDocument(HELP_LINK);
     }
 
     @AllArgsConstructor

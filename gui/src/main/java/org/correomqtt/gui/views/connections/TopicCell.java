@@ -1,12 +1,14 @@
 package org.correomqtt.gui.views.connections;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +18,7 @@ import java.util.ResourceBundle;
 public class TopicCell extends ListCell<String> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TopicCell.class);
+    private final SettingsProvider settingsProvider;
     private final ListView<String> listView;
 
     @FXML
@@ -27,7 +30,10 @@ public class TopicCell extends ListCell<String> {
 
     private FXMLLoader loader;
 
-    public TopicCell(ListView<String> listView) {
+    @AssistedInject
+    public TopicCell(SettingsProvider settingsProvider,
+                     @Assisted ListView<String> listView) {
+        this.settingsProvider = settingsProvider;
         this.listView = listView;
     }
 
@@ -43,7 +49,7 @@ public class TopicCell extends ListCell<String> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(TopicCell.class.getResource("topicCell.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 

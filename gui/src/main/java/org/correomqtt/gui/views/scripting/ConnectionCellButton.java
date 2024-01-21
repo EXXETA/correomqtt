@@ -1,17 +1,20 @@
 package org.correomqtt.gui.views.scripting;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import org.correomqtt.core.connection.ConnectionState;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.controls.IconLabel;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.GuiConnectionState;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +23,9 @@ import java.util.ResourceBundle;
 public class ConnectionCellButton extends ListCell<ConnectionPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionCellButton.class);
+    private final ConnectionHolder connectionHolder;
+    private final SettingsProvider settingsProvider;
+    private final ThemeManager themeManager;
     private final ListView<ConnectionPropertiesDTO> listView;
 
     @FXML
@@ -33,7 +39,14 @@ public class ConnectionCellButton extends ListCell<ConnectionPropertiesDTO> {
 
     private ConnectionPropertiesDTO connectionDTO;
 
-    public ConnectionCellButton(ListView<ConnectionPropertiesDTO> listView) {
+    @AssistedInject
+    public ConnectionCellButton(ConnectionHolder connectionHolder,
+                                SettingsProvider settingsProvider,
+                                ThemeManager themeManager,
+                                @Assisted ListView<ConnectionPropertiesDTO> listView) {
+        this.connectionHolder = connectionHolder;
+        this.settingsProvider = settingsProvider;
+        this.themeManager = themeManager;
         this.listView = listView;
     }
 
@@ -50,7 +63,7 @@ public class ConnectionCellButton extends ListCell<ConnectionPropertiesDTO> {
             if (loader == null) {
                 try {
                     loader = new FXMLLoader(ConnectionCellButton.class.getResource("connectionButtonView.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale()));
+                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 
@@ -62,7 +75,7 @@ public class ConnectionCellButton extends ListCell<ConnectionPropertiesDTO> {
                 }
 
             }
-            mainNode.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
+            mainNode.getStyleClass().add(themeManager.getIconModeCssClass());
             if (listView != null) {
                 mainNode.prefWidthProperty().bind(listView.widthProperty().subtract(20));
             }
@@ -87,7 +100,7 @@ public class ConnectionCellButton extends ListCell<ConnectionPropertiesDTO> {
         }
 
 
-        CorreoMqttClient client = ConnectionHolder.getInstance().getClient(connectionDTO.getId());
+        CorreoMqttClient client = connectionHolder.getClient(connectionDTO.getId());
 
         ConnectionState state = ConnectionState.DISCONNECTED_GRACEFUL;
         if (client != null) {

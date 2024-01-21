@@ -17,13 +17,14 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.CheckListView;
 import org.correomqtt.core.concurrent.TaskErrorResult;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.importexport.connections.ExportConnectionsTask;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.WindowHelper;
@@ -33,6 +34,7 @@ import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewControl
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -43,6 +45,11 @@ import java.util.ResourceBundle;
 public class ConnectionExportViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
+    private final ConnectionHolder connectionHolder;
+    private final SettingsProvider settingsProvider;
+    private final ThemeManager themeManager;
+    private final AlertHelper alertHelper;
+    private final ExportConnectionCellFactory exportConnectionCellFactory;
     @FXML
     private Label passwordLabel;
 
@@ -59,12 +66,26 @@ public class ConnectionExportViewController extends BaseControllerImpl {
     @FXML
     private PasswordField passwordField;
 
-    public static LoaderResult<ConnectionExportViewController> load() {
-        return load(ConnectionExportViewController.class, "connectionExportView.fxml",
-                ConnectionExportViewController::new);
+    @Inject
+    public ConnectionExportViewController(ConnectionHolder connectionHolder,
+                                          SettingsProvider settingsProvider,
+                                          ThemeManager themeManager,
+                                          AlertHelper alertHelper,
+                                          ExportConnectionCellFactory exportConnectionCellFactory) {
+        super(settingsProvider, themeManager);
+        this.connectionHolder = connectionHolder;
+        this.settingsProvider = settingsProvider;
+        this.themeManager = themeManager;
+        this.alertHelper = alertHelper;
+
+        this.exportConnectionCellFactory = exportConnectionCellFactory;
     }
 
-    public static void showAsDialog() {
+    public LoaderResult<ConnectionExportViewController> load() {
+        return load(ConnectionExportViewController.class, "connectionExportView.fxml", () -> this);
+    }
+
+    public void showAsDialog() {
 
         LOGGER.info("OPEN DIALOG");
         Map<Object, Object> properties = new HashMap<>();
@@ -104,14 +125,14 @@ public class ConnectionExportViewController extends BaseControllerImpl {
                 passwordLabel.setDisable(true);
             }
         });
-        containerAnchorPane.getStyleClass().add(SettingsProvider.getInstance().getIconModeCssClass());
+        containerAnchorPane.getStyleClass().add(themeManager.getIconModeCssClass());
         connectionsListView.setCellFactory(this::createCell);
         loadConnectionListFromBackground();
         checkAll();
     }
 
     private ListCell<ConnectionPropertiesDTO> createCell(ListView<ConnectionPropertiesDTO> connectionConfigDTOListView) {
-        ExportConnectionCell cell = new ExportConnectionCell(connectionsListView);
+        ExportConnectionCell cell = exportConnectionCellFactory.create(connectionsListView);
         cell.selectedProperty().addListener((observable, oldValue, newValue) ->
                 connectionsListView.getSelectionModel().clearSelection());
         return cell;
@@ -130,7 +151,7 @@ public class ConnectionExportViewController extends BaseControllerImpl {
 
     private void loadConnectionListFromBackground() {
 
-        List<ConnectionConfigDTO> connectionList = ConnectionHolder.getInstance().getSortedConnections();
+        List<ConnectionConfigDTO> connectionList = connectionHolder.getSortedConnections();
         connectionsListView.setItems(FXCollections.observableArrayList(ConnectionTransformer.dtoListToPropList(connectionList)));
         LOGGER.debug("Loading connection list from background");
     }
@@ -156,7 +177,7 @@ public class ConnectionExportViewController extends BaseControllerImpl {
     }
 
     private void onExportSucceeded(Integer exportedSize) {
-        AlertHelper.info(resources.getString("exportConnectionsSuccessTitle"),
+        alertHelper.info(resources.getString("exportConnectionsSuccessTitle"),
                 MessageFormat.format(resources.getString("exportConnectionsSuccessBody"),
                         exportedSize),
                 true);
@@ -167,7 +188,7 @@ public class ConnectionExportViewController extends BaseControllerImpl {
         if (errorResult.isExpected()) {
             switch (errorResult.getExpectedError()) {
                 case EMPTY_COLLECTION_LIST:
-                    AlertHelper.warn(resources.getString("exportConnectionsEmptyTitle"),
+                    alertHelper.warn(resources.getString("exportConnectionsEmptyTitle"),
                             resources.getString("exportConnectionsEmptyBody"),
                             true);
                     break;
@@ -179,13 +200,13 @@ public class ConnectionExportViewController extends BaseControllerImpl {
                     // nothing to do -> file dialog was cancelled
                     break;
                 case MISSING_FILE_EXTENSION:
-                    AlertHelper.warn(resources.getString("exportConnectionsFilenameTitle"),
+                    alertHelper.warn(resources.getString("exportConnectionsFilenameTitle"),
                             resources.getString("exportConnectionsFilenameBody"),
                             true);
                     break;
             }
         } else {
-            AlertHelper.unexpectedAlert(errorResult.getUnexpectedError());
+            alertHelper.unexpectedAlert(errorResult.getUnexpectedError());
         }
     }
 

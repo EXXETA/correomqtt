@@ -1,5 +1,6 @@
 package org.correomqtt.core.scripting.binding;
 
+import lombok.Getter;
 import org.correomqtt.core.connection.ConnectTaskFactory;
 import org.correomqtt.core.connection.DisconnectTaskFactory;
 import org.correomqtt.core.eventbus.EventBus;
@@ -35,15 +36,17 @@ import static org.correomqtt.core.scripting.JsContextBuilder.CORREO_SCRIPT_QUEUE
 
 public class Client {
 
-    private final String connectionId;
-    private final Logger scriptLogger;
-    private final Queue queue;
-    private final Marker marker;
+    private String connectionId;
+    private Logger scriptLogger;
+    private Queue queue;
+    private Marker marker;
     private final ConnectTaskFactory connectTaskFactory;
     private final DisconnectTaskFactory disconnectTaskFactory;
     private final PublishTaskFactory publishTaskFactory;
     private final SubscribeTaskFactory subscribeTaskFactory;
     private final UnsubscribeTaskFactory unsubscribeTaskFactory;
+    @Getter
+    private Context context;
     private AsyncClient asyncClient;
     private PromiseClient promiseClient;
     private BlockingClient blockingClient;
@@ -60,8 +63,10 @@ public class Client {
         this.publishTaskFactory = publishTaskFactory;
         this.subscribeTaskFactory = subscribeTaskFactory;
         this.unsubscribeTaskFactory = unsubscribeTaskFactory;
+    }
 
-        Context context = Context.getCurrent();
+    public void setContext(Context context) {
+        this.context = context;
         connectionId = context.getPolyglotBindings().getMember(CORREO_CONNECTION_ID).as(String.class);
         marker = context.getPolyglotBindings().getMember(CORREO_SCRIPT_MARKER).as(Marker.class);
         scriptLogger = context.getPolyglotBindings().getMember(CORREO_SCRIPT_LOGGER).as(Logger.class);

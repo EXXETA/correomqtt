@@ -9,22 +9,26 @@ import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Objects;
 
 public class AutoFormatPayload {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AutoFormatPayload.class);
+    private final PluginManager pluginManager;
 
-    private AutoFormatPayload() {
+    @Inject
+    public AutoFormatPayload(PluginManager pluginManager) {
         // private Constructor
+        this.pluginManager = pluginManager;
     }
 
-    public static Format autoFormatPayload(final String payload, boolean doFormatting, String connectionId, CodeArea codeArea) {
+    public Format autoFormatPayload(final String payload, boolean doFormatting, String connectionId, CodeArea codeArea) {
         return autoFormatPayload(payload, doFormatting, connectionId, codeArea, null);
     }
 
-    public static Format autoFormatPayload(final String payload, boolean doFormatting, String connectionId, CodeArea codeArea, ChangeListener<String> listener) {
+    public Format autoFormatPayload(final String payload, boolean doFormatting, String connectionId, CodeArea codeArea, ChangeListener<String> listener) {
 
         if (!doFormatting) {
             return null;
@@ -36,7 +40,7 @@ public class AutoFormatPayload {
 
         Format foundFormat;
         // Find the first format that is valid.
-        ArrayList<Format> availableFormats = new ArrayList<>(PluginManager.getInstance().getExtensions(DetailViewFormatHook.class));
+        ArrayList<Format> availableFormats = new ArrayList<>(pluginManager.getExtensions(DetailViewFormatHook.class));
         availableFormats.add(new Plain());
         foundFormat = availableFormats.stream()
                 .filter(Objects::nonNull)

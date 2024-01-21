@@ -47,7 +47,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
     public boolean isSupported() {
         try {
             return SystemUtils.IS_OS_LINUX && isEnabled();
-        }catch(KeyringException e){
+        } catch (KeyringException e) {
             LOGGER.debug("KWallet5 is not supported", e);
             return false;
         }
@@ -79,7 +79,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
     private boolean isOpen(Integer kwalletHandler) {
         try {
             // method bool org.kde.KWallet.isOpen(QString wallet)
-            return runQDBusCommand("isOpen", String.valueOf(kwalletHandler)).equals("true");
+            return runQDBusCommand(false, "isOpen", String.valueOf(kwalletHandler)).equals("true");
         } catch (IOException e) {
             throw new KeyringException("Cannot check KWallet", e);
         }
@@ -88,7 +88,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
     private int openWallet() {
         try {
             // method int org.kde.KWallet.open(QString wallet, qlonglong wId, QString appid)
-            String result = runQDBusCommand("open", WALLET_NAME, "0", APP_NAME);
+            String result = runQDBusCommand(false, "open", WALLET_NAME, "0", APP_NAME);
             return Integer.parseInt(result);
         } catch (IOException e) {
             throw new KeyringException("Cannot open KWallet", e);
@@ -98,7 +98,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
     private void writePassword(int handler, String key, String password) {
         try {
             // method int org.kde.KWallet.writePassword(int handle, QString folder, QString key, QString value, QString appid)
-            String result = runQDBusCommand("writePassword", String.valueOf(handler), APP_NAME, key, password, APP_NAME);
+            String result = runQDBusCommand(false, "writePassword", String.valueOf(handler), APP_NAME, key, password, APP_NAME);
             if (Integer.parseInt(result) < 0) {
                 throw new KeyringException("Cannot store password in KWallet.");
             }
@@ -111,7 +111,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
     private void removeEntry(int handler, String key) {
         try {
             // method int org.kde.KWallet.removeEntry(int handle, QString folder, QString key, QString appid)
-            runQDBusCommand("removeEntry", String.valueOf(handler), APP_NAME, key, APP_NAME);
+            runQDBusCommand(false, "removeEntry", String.valueOf(handler), APP_NAME, key, APP_NAME);
         } catch (IOException e) {
             throw new KeyringException("Cannot remove password from KWallet", e);
         }
@@ -120,7 +120,7 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
     private String readPassword(int handler, String key) {
         try {
             // method QString org.kde.KWallet.readPassword( int handle, QString folder, QString key, QString appid)
-            return runQDBusCommand("readPassword", String.valueOf(handler), APP_NAME, key, APP_NAME);
+            return runQDBusCommand(false, "readPassword", String.valueOf(handler), APP_NAME, key, APP_NAME);
         } catch (IOException e) {
             throw new KeyringException("Cannot get password from KWallet", e);
         }
@@ -129,23 +129,23 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
     private boolean isEnabled() {
 
         try {
-            return runQDBusCommand("isEnabled").equals("true");
+            return runQDBusCommand(true, "isEnabled").equals("true");
         } catch (IOException e) {
             LOGGER.warn("QDBus Command failed.", e);
             return false;
         }
     }
 
-    private String runQDBusCommand(String... parameter) throws IOException {
+    private String runQDBusCommand(boolean logDebugOnly, String... parameter) throws IOException {
         try {
-            return runShellCommand(QDBUS_BASE_CMD + " " + String.join(" ", parameter));
+            return runShellCommand(logDebugOnly, QDBUS_BASE_CMD + " " + String.join(" ", parameter));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
         }
     }
 
-    private String runShellCommand(String cmd) throws IOException, InterruptedException {
+    private String runShellCommand(boolean logDebugOnly, String cmd) throws IOException, InterruptedException {
         StringBuilder result = new StringBuilder();
         String s;
         Process p;
@@ -157,7 +157,11 @@ public class KWallet5Keyring extends BaseKeyring implements KeyringHook {
             result.append(s);
         p.waitFor();
         if (p.exitValue() != 0) {
-            LOGGER.error("Command failed with exit code {}", p.exitValue());
+            if (logDebugOnly) {
+                LOGGER.debug("Command failed with exit code {}", p.exitValue());
+            } else {
+                LOGGER.error("Command failed with exit code {}", p.exitValue());
+            }
             throw new KeyringException("Command failed with exit code " + p.exitValue());
         }
         p.destroy();

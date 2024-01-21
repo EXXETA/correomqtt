@@ -22,14 +22,17 @@ import org.correomqtt.core.scripting.ScriptExecutionCancelledEvent;
 import org.correomqtt.core.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.core.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.core.scripting.ScriptExecutionSuccessEvent;
-import org.correomqtt.core.scripting.ScriptExecutionTask;
+import org.correomqtt.core.scripting.ScriptExecutionTaskFactory;
 import org.correomqtt.core.scripting.ScriptExecutionsDeletedEvent;
 import org.correomqtt.core.scripting.ScriptingBackend;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 
+import javax.inject.Inject;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +42,10 @@ public class ExecutionViewController extends BaseControllerImpl {
 
     private static ResourceBundle resources;
     private final Map<String, ScriptExecutionState> executionStates = new HashMap<>();
+    private final AlertHelper alertHelper;
+    private final ExecutionCellFactory executionCellFactory;
+    private final SingleExecutionViewControllerFactory executionViewCtrlFactory;
+    private final ScriptExecutionTaskFactory scriptExecutionTaskFactory;
     @FXML
     private AnchorPane executionSidebar;
     @FXML
@@ -57,16 +64,26 @@ public class ExecutionViewController extends BaseControllerImpl {
     private FilteredList<ExecutionPropertiesDTO> filteredList;
     private String currentName;
 
-    public static LoaderResult<ExecutionViewController> load() {
-
-        LoaderResult<ExecutionViewController> result = load(ExecutionViewController.class, "executionView.fxml",
-                ExecutionViewController::new);
-        resources = result.getResourceBundle();
-        return result;
+    @Inject
+    public ExecutionViewController(SettingsProvider settingsProvider,
+                                   ThemeManager themeManager,
+                                   AlertHelper alertHelper,
+                                   ExecutionCellFactory executionCellFactory,
+                                   SingleExecutionViewControllerFactory executionViewCtrlFactory,
+                                   ScriptExecutionTaskFactory scriptExecutionTaskFactory) {
+        super(settingsProvider, themeManager);
+        this.alertHelper = alertHelper;
+        this.executionCellFactory = executionCellFactory;
+        this.executionViewCtrlFactory = executionViewCtrlFactory;
+        this.scriptExecutionTaskFactory = scriptExecutionTaskFactory;
+        EventBus.register(this);
     }
 
-    public ExecutionViewController() {
-        EventBus.register(this);
+    public LoaderResult<ExecutionViewController> load() {
+        LoaderResult<ExecutionViewController> result = load(ExecutionViewController.class, "executionView.fxml",
+                () -> this);
+        resources = result.getResourceBundle();
+        return result;
     }
 
     public void renameScript(String oldName, String newName) {
@@ -77,7 +94,7 @@ public class ExecutionViewController extends BaseControllerImpl {
 
     public void onClearExecutionsClicked() {
         new ScriptDeleteExecutionsTask(currentName)
-                .onError(error -> AlertHelper.unexpectedAlert(error.getUnexpectedError()))
+                .onError(error -> alertHelper.unexpectedAlert(error.getUnexpectedError()))
                 .run();
 
     }
@@ -148,7 +165,7 @@ public class ExecutionViewController extends BaseControllerImpl {
     }
 
     private ListCell<ExecutionPropertiesDTO> createExcecutionCell(ListView<ExecutionPropertiesDTO> executionListView) {
-        ExecutionCell cell = new ExecutionCell(this.executionListView);
+        ExecutionCell cell = executionCellFactory.create(executionListView);
         cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
             if (Boolean.TRUE.equals(newValue)) {
                 onSelectExecution(cell.getItem());
@@ -173,7 +190,7 @@ public class ExecutionViewController extends BaseControllerImpl {
     private ScriptExecutionState getExecutionState(ExecutionPropertiesDTO dto) {
         return executionStates.computeIfAbsent(dto.getExecutionId(),
                 id -> {
-                    LoaderResult<SingleExecutionViewController> loaderResult = SingleExecutionViewController.load(dto);
+                    LoaderResult<SingleExecutionViewController> loaderResult = executionViewCtrlFactory.create(dto).load();
                     return new ScriptExecutionState(loaderResult.getController(), loaderResult.getMainRegion());
                 });
     }
@@ -181,13 +198,13 @@ public class ExecutionViewController extends BaseControllerImpl {
     public boolean addExecution(ScriptFilePropertiesDTO dto, ConnectionPropertiesDTO selectedConnection, String jsCode) {
 
         if (selectedConnection == null) {
-            AlertHelper.warn(resources.getString("scriptStartWithoutConnectionNotPossibleTitle"),
+            alertHelper.warn(resources.getString("scriptStartWithoutConnectionNotPossibleTitle"),
                     resources.getString("scriptStartWithoutConnectionNotPossibleContent"));
             return false;
         }
 
         if (dto == null) {
-            AlertHelper.warn(resources.getString("scriptStartWithoutConnectionNotPossibleTitle"), // TODO custom error here
+            alertHelper.warn(resources.getString("scriptStartWithoutConnectionNotPossibleTitle"), // TODO custom error here
                     resources.getString("scriptStartWithoutConnectionNotPossibleContent"));
             return false;
         }
@@ -204,8 +221,8 @@ public class ExecutionViewController extends BaseControllerImpl {
         updateExistence();
 
         // Events used here to keep state in background even if window is closed in the meantime.
-        new ScriptExecutionTask(executionDTO)
-                .onError(error -> AlertHelper.unexpectedAlert(error.getUnexpectedError()))
+        scriptExecutionTaskFactory.create(executionDTO)
+                .onError(error -> alertHelper.unexpectedAlert(error.getUnexpectedError()))
                 .run();
         return true;
     }

@@ -2,22 +2,26 @@ package org.correomqtt.gui.utils;
 
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.importexport.messages.ExportMessageTask;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.util.ResourceBundle;
 
 public class MessageUtils {
 
-    private MessageUtils() {
-        // private constructor
+    private final SettingsProvider settingsProvider;
+
+    @Inject
+    MessageUtils(SettingsProvider settingsProvider) {
+        this.settingsProvider = settingsProvider;
     }
 
-    public static void saveMessage(MessagePropertiesDTO messageDTO, Stage stage) {
-        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+    public void saveMessage(MessagePropertiesDTO messageDTO, Stage stage) {
+        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
 
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(resources.getString("messageUtilsTitle"));

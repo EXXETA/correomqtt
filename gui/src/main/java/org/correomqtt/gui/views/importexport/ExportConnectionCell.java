@@ -1,5 +1,7 @@
 package org.correomqtt.gui.views.importexport;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.css.PseudoClass;
@@ -11,7 +13,7 @@ import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.AnchorPane;
 import javafx.util.Callback;
 import org.controlsfx.control.CheckListView;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,7 @@ import java.util.ResourceBundle;
 
 public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesDTO> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ExportConnectionCell.class);
+    private final SettingsProvider settingsProvider;
     private final CheckListView<ConnectionPropertiesDTO> listView;
 
     @FXML
@@ -35,8 +38,12 @@ public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesD
     private FXMLLoader loader;
     private ObservableValue<Boolean> booleanProperty;
 
-    public ExportConnectionCell(CheckListView<ConnectionPropertiesDTO> listView) {
+    @AssistedInject
+    public ExportConnectionCell(
+            SettingsProvider settingsProvider,
+            @Assisted CheckListView<ConnectionPropertiesDTO> listView) {
         super(listView::getItemBooleanProperty);
+        this.settingsProvider = settingsProvider;
         this.listView = listView;
     }
 
@@ -52,7 +59,7 @@ public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesD
                 try {
                     loader = new FXMLLoader(ExportConnectionCell.class.getResource("exportConnectionCell.fxml"),
                             ResourceBundle.getBundle("org.correomqtt.i18n",
-                                    SettingsProvider.getInstance().getSettings().getCurrentLocale()));
+                                    settingsProvider.getSettings().getCurrentLocale()));
                     loader.setController(this);
                     loader.load();
 
@@ -92,8 +99,8 @@ public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesD
     }
 
     private void setHoverPseudoClass(boolean hover) {
-        if(checkbox != null) {
-            checkbox.pseudoClassStateChanged(PseudoClass.getPseudoClass("hover"),  hover);
+        if (checkbox != null) {
+            checkbox.pseudoClassStateChanged(PseudoClass.getPseudoClass("hover"), hover);
         }
     }
 

@@ -10,16 +10,18 @@ import org.correomqtt.core.fileprovider.PersistPublishHistoryReadFailedEvent;
 import org.correomqtt.core.fileprovider.PersistPublishHistoryWriteFailedEvent;
 import org.correomqtt.core.fileprovider.PersistSubscribeHistoryReadFailedEvent;
 import org.correomqtt.core.fileprovider.PersistSubscribeHistoryWriteFailedEvent;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.fileprovider.SettingsUpdatedEvent;
 import org.correomqtt.core.fileprovider.UnaccessibleConfigFileEvent;
 import org.correomqtt.core.fileprovider.UnaccessiblePasswordFileEvent;
 import org.correomqtt.core.fileprovider.UserHomeNull;
 import org.correomqtt.core.fileprovider.WindowsAppDataNullEvent;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.PlatformUtils;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 
+import javax.inject.Inject;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
@@ -28,32 +30,29 @@ public class AlertController extends BaseControllerImpl {
     public static final String ALERT_CONTROLLER_WARN_TITLE = "alertControllerWarnTitle";
     public static final String ALERT_EXCEPTION_TITLE = "Exception";
 
-    private final ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
-    private static AlertController instance;
+    private final ResourceBundle resources;
+    private final AlertHelper alertHelper;
 
-    private AlertController() {
+    @Inject
+    AlertController(SettingsProvider settingsProvider,
+                    ThemeManager themeManager,
+                    AlertHelper alertHelper) {
+        super(settingsProvider, themeManager);
+        this.alertHelper = alertHelper;
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+    }
+
+    public void activate() {
         EventBus.register(this);
     }
 
-    public static void activate() {
-        if (instance == null) {
-            instance = new AlertController();
-        }
-    }
-
-    public static void deactivate() {
-        if(instance != null){
-            instance.cleanup();
-        }
-    }
-
-    private void cleanup() {
+    public void deactivate() {
         EventBus.unregister(this);
     }
 
     @SuppressWarnings("unused")
     public void onConfigDirectoryEmpty(@Subscribe DirectoryCanNotBeCreatedEvent event) {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 MessageFormat.format(resources.getString("alertControllerOnConfigDirectoryEmptyContent"), event.path())
         ));
     }
@@ -61,7 +60,7 @@ public class AlertController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     @Subscribe(UnaccessibleConfigFileEvent.class)
     public void onConfigDirectoryNotAccessible() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 resources.getString("alertControllerOnConfigDirectoryNotAccessibleContent")
         ));
     }
@@ -69,7 +68,7 @@ public class AlertController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     @Subscribe(UnaccessiblePasswordFileEvent.class)
     public void onPasswordDirectoryNotAccessible() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 resources.getString("alertControllerOnPasswordDirectoryNotAccessibleContent")
         ));
     }
@@ -77,7 +76,7 @@ public class AlertController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     @Subscribe(UnaccessiblePasswordFileEvent.class)
     public void onHooksDirectoryNotAccessible() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 resources.getString("alertControllerOnPasswordDirectoryNotAccessibleContent")
         ));
     }
@@ -85,7 +84,7 @@ public class AlertController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     @Subscribe(WindowsAppDataNullEvent.class)
     public void onAppDataNull() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 resources.getString("alertControllerOnAppDataNullContent")
         ));
     }
@@ -93,7 +92,7 @@ public class AlertController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     @Subscribe(UserHomeNull.class)
     public void onUserHomeNull() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
                 resources.getString("alertControllerOnUserHomeNullContent")
         ));
     }
@@ -102,7 +101,7 @@ public class AlertController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     @Subscribe(InvalidConfigFileEvent.class)
     public void onInvalidConfigJsonFormat() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerOnInvalidJsonFormatTitle"),
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(resources.getString("alertControllerOnInvalidJsonFormatTitle"),
                 resources.getString("alertControllerOnInvalidJsonFormatContent")
         ));
     }
@@ -111,7 +110,7 @@ public class AlertController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     @Subscribe(InvalidPasswordFileEvent.class)
     public void onInvalidPasswordJsonFormat() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(
                 resources.getString("onPasswordFileUnreadableFailedTitle"),
                 resources.getString("onPasswordFileUnreadableFailedContent"),
                 true
@@ -123,7 +122,7 @@ public class AlertController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     @Subscribe(InvalidHooksFileEvent.class)
     public void onInvalidHooksJsonFormat() {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(resources.getString("alertControllerOnInvalidJsonFormatTitle"),
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(resources.getString("alertControllerOnInvalidJsonFormatTitle"),
                 resources.getString("alertControllerOnInvalidJsonFormatContent")
         ));
     }
@@ -131,7 +130,7 @@ public class AlertController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     public void onSettingsUpdated(@Subscribe SettingsUpdatedEvent event) {
         if (event.restartRequired()) {
-            PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.info(resources.getString("alertControllerOnSettingsUpdatedTitle"),
+            PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.info(resources.getString("alertControllerOnSettingsUpdatedTitle"),
                     resources.getString("alertControllerOnSettingsUpdatedContent")
             ));
         }
@@ -139,7 +138,7 @@ public class AlertController extends BaseControllerImpl {
 
     @SuppressWarnings("unused")
     public void errorReadingSubscriptionHistory(@Subscribe PersistSubscribeHistoryReadFailedEvent event) {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(ALERT_EXCEPTION_TITLE,
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(ALERT_EXCEPTION_TITLE,
                 resources.getString("alertControllerErrorReadingSubscriptionHistoryContent") + event.throwable().getLocalizedMessage()
         ));
     }
@@ -147,7 +146,7 @@ public class AlertController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     @Subscribe
     public void errorReadingPublishHistory(PersistPublishHistoryReadFailedEvent event) {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(ALERT_EXCEPTION_TITLE,
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(ALERT_EXCEPTION_TITLE,
                 resources.getString("alertControllerErrorReadingPublishHistoryContent") +
                         event.getException().getLocalizedMessage()
         ));
@@ -156,7 +155,7 @@ public class AlertController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     @Subscribe
     public void errorWritingPublishHistory(PersistPublishHistoryWriteFailedEvent event) {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(ALERT_EXCEPTION_TITLE,
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(ALERT_EXCEPTION_TITLE,
                 resources.getString("alertControllerErrorWritingPublishHistoryContent") +
                         event.getException().getLocalizedMessage()
         ));
@@ -164,7 +163,7 @@ public class AlertController extends BaseControllerImpl {
 
     @SuppressWarnings("unused")
     public void errorWritingSubscriptionHistory(@Subscribe PersistSubscribeHistoryWriteFailedEvent event) {
-        PlatformUtils.runLaterIfNotInFxThread(() -> AlertHelper.warn(ALERT_EXCEPTION_TITLE,
+        PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(ALERT_EXCEPTION_TITLE,
                 resources.getString("alertControllerErrorWritingSubscriptionHistoryContent") + event.throwable().getLocalizedMessage()
         ));
     }

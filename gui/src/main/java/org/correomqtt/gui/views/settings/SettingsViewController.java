@@ -11,26 +11,29 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.model.SettingsDTO;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.keyring.KeyringFactory;
-import org.correomqtt.business.model.SettingsDTO;
 import org.correomqtt.core.model.ThemeDTO;
+import org.correomqtt.core.plugin.PluginManager;
+import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.keyring.KeyringHandler;
 import org.correomqtt.gui.model.KeyringModel;
 import org.correomqtt.gui.model.LanguageModel;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
+import org.correomqtt.gui.plugin.spi.ThemeProviderHook;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.theme.ThemeProvider;
 import org.correomqtt.gui.theme.light_legacy.LightLegacyThemeProvider;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.cell.GenericCell;
-import org.correomqtt.core.plugin.PluginManager;
-import org.correomqtt.gui.plugin.spi.ThemeProviderHook;
+import org.correomqtt.gui.views.cell.GenericCellFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,6 +49,11 @@ import java.util.stream.Collectors;
 
 public class SettingsViewController extends BaseControllerImpl {
 
+    private final ConnectionHolder connectionHolder;
+    private final SettingsProvider settingsProvider;
+    private final KeyringHandler keyringHandler;
+    private final PluginManager pluginManager;
+    private final KeyringFactory keyringFactory;
     @FXML
     private AnchorPane settingsPane;
     @FXML
@@ -61,16 +69,44 @@ public class SettingsViewController extends BaseControllerImpl {
     @FXML
     private Label keyringDescriptionLabel;
 
-    private static ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
-
+    private static ResourceBundle resources;
+    private final AlertHelper alertHelper;
+    private final GenericCellFactory<ThemeProvider> themeProviderGenericCellFactory;
+    private final GenericCellFactory<KeyringModel> keyringModelGenericCellFactory;
+    private final GenericCellFactory<LanguageModel> languageModelGenericCellFactory;
     private SettingsDTO settings;
     private static final Logger LOGGER = LoggerFactory.getLogger(SettingsViewController.class);
 
-    public static LoaderResult<SettingsViewController> load() {
-        return load(SettingsViewController.class, "settingsView.fxml");
+    @Inject
+    public SettingsViewController(ConnectionHolder connectionHolder,
+                                  SettingsProvider settingsProvider,
+                                  ThemeManager themeManager,
+                                  KeyringHandler keyringHandler,
+                                  PluginManager pluginManager,
+                                  KeyringFactory keyringFactory,
+                                  AlertHelper alertHelper,
+                                  GenericCellFactory<ThemeProvider> themeProviderGenericCellFactory,
+                                  GenericCellFactory<KeyringModel> keyringModelGenericCellFactory,
+                                  GenericCellFactory<LanguageModel> languageModelGenericCellFactory) {
+        super(settingsProvider, themeManager);
+        this.connectionHolder = connectionHolder;
+        this.settingsProvider = settingsProvider;
+        this.keyringHandler = keyringHandler;
+        this.pluginManager = pluginManager;
+        this.keyringFactory = keyringFactory;
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+        this.alertHelper = alertHelper;
+
+        this.themeProviderGenericCellFactory = themeProviderGenericCellFactory;
+        this.keyringModelGenericCellFactory = keyringModelGenericCellFactory;
+        this.languageModelGenericCellFactory = languageModelGenericCellFactory;
     }
 
-    public static LoaderResult<SettingsViewController> showAsDialog() {
+    public LoaderResult<SettingsViewController> load() {
+        return load(SettingsViewController.class, "settingsView.fxml", () -> this);
+    }
+
+    public LoaderResult<SettingsViewController> showAsDialog() {
         LoaderResult<SettingsViewController> result = load();
         resources = result.getResourceBundle();
 
@@ -83,7 +119,7 @@ public class SettingsViewController extends BaseControllerImpl {
 
     @FXML
     private void initialize() {
-        settings = SettingsProvider.getInstance().getSettings();
+        settings = settingsProvider.getSettings();
         setupGUI();
 
         // Unfortunately @FXML Handler does not work with Combobox, so the action must be bound manually.
@@ -110,7 +146,7 @@ public class SettingsViewController extends BaseControllerImpl {
 
     @FXML
     private void onWipeKeyringClicked() {
-        boolean confirmed = AlertHelper.confirm(
+        boolean confirmed = alertHelper.confirm(
                 resources.getString("wipeCurrentKeyringTitle"),
                 resources.getString("wipeCurrentKeyringHeader"),
                 resources.getString("wipeCurrentKeyringContent"),
@@ -118,8 +154,11 @@ public class SettingsViewController extends BaseControllerImpl {
                 resources.getString("wipeOutYesButton"));
 
         if (confirmed) {
-            KeyringHandler.getInstance().retryWithMasterPassword(
-                    masterPassword -> SettingsProvider.getInstance().wipeSecretData(masterPassword),
+            keyringHandler.retryWithMasterPassword(
+                    masterPassword -> {
+                        keyringHandler.wipe();
+                        settingsProvider.wipeSecretData(masterPassword);
+                    },
                     resources.getString("onPasswordWipeFailedTitle"),
                     resources.getString("onPasswordWipeFailedHeader"),
                     resources.getString("onPasswordWipeFailedContent"),
@@ -142,14 +181,14 @@ public class SettingsViewController extends BaseControllerImpl {
     private void setupGUI() {
         searchUpdatesCheckbox.setSelected(settings.isSearchUpdates());
 
-        ArrayList<ThemeProvider> themes = new ArrayList<>(PluginManager.getInstance().getExtensions(ThemeProviderHook.class));
+        ArrayList<ThemeProvider> themes = new ArrayList<>(pluginManager.getExtensions(ThemeProviderHook.class));
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(themes.stream().map(ThemeProvider::getName).collect(Collectors.joining(",")));
         }
 
         themeComboBox.setOnAction(null);
         themeComboBox.setItems(FXCollections.observableArrayList(themes));
-        themeComboBox.setCellFactory(GenericCell::new);
+        themeComboBox.setCellFactory(themeProviderGenericCellFactory::create);
         themeComboBox.setConverter(new StringConverter<>() {
             @Override
             public String toString(ThemeProvider object) {
@@ -168,21 +207,21 @@ public class SettingsViewController extends BaseControllerImpl {
         themeComboBox.getSelectionModel().select(themes.
                 stream()
                 .filter(t -> {
-                    if (SettingsProvider.getInstance().getThemeSettings().getNextTheme() != null) {
-                        return t.getName().equals(SettingsProvider.getInstance().getThemeSettings().getNextTheme().getName());
+                    if (settingsProvider.getThemeSettings().getNextTheme() != null) {
+                        return t.getName().equals(settingsProvider.getThemeSettings().getNextTheme().getName());
                     }
-                    return t.getName().equals(SettingsProvider.getInstance().getThemeSettings().getActiveTheme().getName());
+                    return t.getName().equals(settingsProvider.getThemeSettings().getActiveTheme().getName());
                 })
                 .findFirst()
                 .orElse(new LightLegacyThemeProvider()));
 
-        List<KeyringModel> keyringModels = KeyringFactory.getSupportedKeyrings()
+        List<KeyringModel> keyringModels = keyringFactory.getSupportedKeyrings()
                 .stream()
                 .map(KeyringModel::new)
                 .toList();
         keyringBackendComboBox.setOnAction(event -> updateKeyringDescription(keyringBackendComboBox.getSelectionModel().getSelectedItem()));
         keyringBackendComboBox.setItems(FXCollections.observableArrayList(keyringModels));
-        keyringBackendComboBox.setCellFactory(GenericCell::new);
+        keyringBackendComboBox.setCellFactory(keyringModelGenericCellFactory::create);
         keyringBackendComboBox.setConverter(new StringConverter<>() {
             @Override
             public String toString(KeyringModel object) {
@@ -200,7 +239,7 @@ public class SettingsViewController extends BaseControllerImpl {
 
         KeyringModel selectedKeyring = keyringModels.
                 stream()
-                .filter(t -> t.getKeyring().getIdentifier().equals(SettingsProvider.getInstance().getSettings().getKeyringIdentifier()))
+                .filter(t -> t.getKeyring().getIdentifier().equals(settingsProvider.getSettings().getKeyringIdentifier()))
                 .findFirst()
                 .orElse(null);
 
@@ -210,7 +249,7 @@ public class SettingsViewController extends BaseControllerImpl {
             updateKeyringDescription(selectedKeyring);
         }
 
-        languageComboBox.setCellFactory(GenericCell::new);
+        languageComboBox.setCellFactory(languageModelGenericCellFactory::create);
         languageComboBox.setConverter(new StringConverter<>() {
             @Override
             public String toString(LanguageModel language) {
@@ -262,14 +301,15 @@ public class SettingsViewController extends BaseControllerImpl {
         String oldKeyringIdentifier = settings.getKeyringIdentifier();
         if (!newKeyringIdentifier.equals(oldKeyringIdentifier)) {
             settings.setKeyringIdentifier(newKeyringIdentifier);
-            KeyringHandler.getInstance().migrate(newKeyringIdentifier);
+            keyringHandler.migrate(newKeyringIdentifier);
         }
         settings.setSearchUpdates(searchUpdatesCheckbox.isSelected());
         ThemeProvider selectedTheme = themeComboBox.getSelectionModel().getSelectedItem();
         settings.setSavedLocale(languageComboBox.getSelectionModel().getSelectedItem().getLocale());
-        SettingsProvider.getInstance().getThemeSettings().setNextTheme(
+        settingsProvider.getThemeSettings().setNextTheme(
                 new ThemeDTO(selectedTheme.getName()));
-        SettingsProvider.getInstance().saveSettings(true);
+        settingsProvider.saveSettings();
+        themeManager.saveCSS();
     }
 
     private void closeDialog() {

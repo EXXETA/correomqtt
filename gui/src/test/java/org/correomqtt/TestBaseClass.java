@@ -8,7 +8,7 @@ abstract class TestBaseClass extends ApplicationTest {
 
     @BeforeEach
     public void setUpClass() throws Exception {
-        ApplicationTest.launch(JavaFXApplication.class);
+        ApplicationTest.launch(FxApplication.class);
     }
 
     @Override

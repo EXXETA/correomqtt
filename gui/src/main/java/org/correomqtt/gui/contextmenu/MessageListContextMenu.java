@@ -1,7 +1,10 @@
 package org.correomqtt.gui.contextmenu;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.event.ActionEvent;
 import javafx.scene.control.SeparatorMenuItem;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.gui.controls.IconMenuItem;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.slf4j.Logger;
@@ -20,8 +23,10 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
     private SeparatorMenuItem separator2;
     private SeparatorMenuItem separator3;
 
-    public MessageListContextMenu(MessageListContextMenuDelegate dispatcher) {
-        super(dispatcher);
+    @AssistedInject
+    public MessageListContextMenu(SettingsProvider settingsProvider,
+                                  @Assisted MessageListContextMenuDelegate dispatcher) {
+        super(settingsProvider, dispatcher);
     }
 
     @Override
@@ -49,16 +54,16 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
         separator3 = new SeparatorMenuItem();
 
         this.getItems().addAll(putToForm,
-                               showDetails,
-                               removeMessage,
-                               saveMessage,
-                               separator1,
-                               copyTopicToClipboard,
-                               copyTimeToClipboard,
-                               copyPayloadToClipboard,
-                               separator2,
-                               timeInfo,
-                               separator3,
+                showDetails,
+                removeMessage,
+                saveMessage,
+                separator1,
+                copyTopicToClipboard,
+                copyTimeToClipboard,
+                copyPayloadToClipboard,
+                separator2,
+                timeInfo,
+                separator3,
                 clearList);
 
         updateDateTime();
@@ -74,9 +79,9 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
 
 
     @Override
-    public void setObject(MessagePropertiesDTO messageDTO){
+    public void setObject(MessagePropertiesDTO messageDTO) {
         super.setObject(messageDTO);
-        if(messageDTO != null) {
+        if (messageDTO != null) {
             messageDTO.getDateTimeProperty().addListener((observable, oldValue, newValue) -> updateDateTime());
         }
         updateDateTime();

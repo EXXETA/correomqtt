@@ -1,9 +1,11 @@
 package org.correomqtt.gui.contextmenu;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.event.ActionEvent;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +16,7 @@ import java.util.ResourceBundle;
 public class SubscriptionListMessageContextMenu extends BaseObjectContextMenu<SubscriptionPropertiesDTO, SubscriptionListMessageContextMenuDelegate> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionListMessageContextMenu.class);
+    private final SettingsProvider settingsProvider;
 
     private MenuItem unsubscribe;
     private MenuItem filter;
@@ -21,13 +24,16 @@ public class SubscriptionListMessageContextMenu extends BaseObjectContextMenu<Su
 
     private SeparatorMenuItem separator1;
 
-    public SubscriptionListMessageContextMenu(SubscriptionListMessageContextMenuDelegate dispatcher) {
+    @AssistedInject
+    public SubscriptionListMessageContextMenu(SettingsProvider settingsProvider,
+                                              @Assisted SubscriptionListMessageContextMenuDelegate dispatcher) {
         super(dispatcher);
+        this.settingsProvider = settingsProvider;
     }
 
     @Override
     protected void initializeItems() {
-        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
 
         super.initializeItems();
 
@@ -53,9 +59,9 @@ public class SubscriptionListMessageContextMenu extends BaseObjectContextMenu<Su
         SeparatorMenuItem separator2 = new SeparatorMenuItem();
 
         this.getItems().addAll(unsubscribe,
-                               filter,
-                               filterOnly,
-                               separator1,
+                filter,
+                filterOnly,
+                separator1,
                 selectAll,
                 selectNone,
                 separator2,

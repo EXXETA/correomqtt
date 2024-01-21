@@ -1,27 +1,37 @@
 package org.correomqtt.core.scripting.binding;
 
-import dagger.Component;
+import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess.Export;
+
+import javax.inject.Inject;
 
 public class ClientFactory {
 
+    private final Client client;
+    private Context context;
+    @Inject
+    public ClientFactory(Client client) {
+        this.client = client;
+    }
 
     @Export
     public BlockingClient getBlockingClient() {
-//        return new Client(null).toBlocking(); //TODO use factory
-        return null;
+        return client.toBlocking();
     }
 
 
     @Export
     public AsyncClient getAsyncClient() {
-        // return new Client(null).toAsync();  //TODO use factory
-        return null;
+        return client.toAsync();
     }
 
     @Export
     public PromiseClient getPromiseClient() {
-//        return new Client(null).toPromise(); //TODO use factory
-        return null;
+        return client.toPromise();
+    }
+
+    public void setContext(Context context) {
+        this.client.setContext(context);
+        this.context = context;
     }
 }

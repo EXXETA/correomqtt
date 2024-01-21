@@ -6,14 +6,22 @@ import org.correomqtt.gui.plugin.spi.DetailViewManipulatorHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.util.List;
 import java.util.Objects;
 
 public class GuiPluginManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GuiPluginManager.class);
+    private final PluginManager pluginManager;
 
-    public static List<DetailViewManipulatorTask> getDetailViewManipulatorTasks() {
+    @Inject
+    public GuiPluginManager(PluginManager pluginManager){
+
+        this.pluginManager = pluginManager;
+    }
+
+    public List<DetailViewManipulatorTask> getDetailViewManipulatorTasks() {
         return PluginConfigProvider.getInstance().getDetailViewTasks()
                 .stream()
                 .map(detailViewTaskDefinition -> {
@@ -21,12 +29,12 @@ public class GuiPluginManager {
                             .map(extensionDefinition -> {
                                 String pluginId = extensionDefinition.getPluginId();
                                 String extensionId = extensionDefinition.getId();
-                                DetailViewManipulatorHook extension = PluginManager.getInstance().getExtensionById(DetailViewManipulatorHook.class, pluginId, extensionId);
+                                DetailViewManipulatorHook extension = pluginManager.getExtensionById(DetailViewManipulatorHook.class, pluginId, extensionId);
                                 if (extension == null) {
                                     LOGGER.warn("Plugin extension {}:{} in detailViewTasks is configured, but does not exist.", pluginId, extensionId);
                                     return null;
                                 }
-                                PluginManager.getInstance().enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
+                                pluginManager.enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
                                 return extension;
                             })
                             .filter(Objects::nonNull)

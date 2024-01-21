@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.correomqtt</groupId>
-    <artifactId>correomqtt-parent</artifactId>
+    <artifactId>correomqtt</artifactId>
     <version>0.15.0</version>
 
     <name>CorreoMQTT</name>
@@ -32,13 +32,6 @@
         <connection>scm:git:https://github.com/EXXETA/correomqtt.git</connection>
         <url>https://github.com/EXXETA/correomqtt</url>
     </scm>
-    <dependencies>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <version>22-ea+16</version>
-        </dependency>
-    </dependencies>
 
     <packaging>pom</packaging>
 

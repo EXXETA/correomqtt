@@ -1,20 +1,24 @@
 package org.correomqtt.gui.views.about;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import javafx.application.HostServices;
 import javafx.fxml.FXML;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.correomqtt.gui.model.AppHostServices;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.utils.VersionUtils;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
-import org.correomqtt.gui.utils.HostServicesHolder;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -26,6 +30,8 @@ import java.util.ResourceBundle;
 public class AboutViewController extends BaseControllerImpl {
 
     private static final URL LICENSE_JSON = AboutViewController.class.getResource("/META-INF/resources/licenses.json");
+    private final AlertHelper alertHelper;
+    private final HostServices hostServices;
 
     @FXML
     private HBox libsHeadline;
@@ -42,11 +48,22 @@ public class AboutViewController extends BaseControllerImpl {
     @FXML
     private Label appNameLabel;
 
-    public static LoaderResult<AboutViewController> load() {
-        return load(AboutViewController.class, "aboutView.fxml");
+    @Inject
+    AboutViewController(SettingsProvider settingsProvider,
+                        ThemeManager themeManager,
+                        AlertHelper alertHelper,
+                        @AppHostServices HostServices hostServices
+    ) {
+        super(settingsProvider, themeManager);
+        this.alertHelper = alertHelper;
+        this.hostServices = hostServices;
     }
 
-    public static void showAsDialog() {
+    public LoaderResult<AboutViewController> load() {
+        return load(AboutViewController.class, "aboutView.fxml", () -> this);
+    }
+
+    public void showAsDialog() {
 
         Map<Object, Object> properties = new HashMap<>();
         properties.put(WindowProperty.WINDOW_TYPE, WindowType.ABOUT);
@@ -69,7 +86,7 @@ public class AboutViewController extends BaseControllerImpl {
         try {
             licenses = new ObjectMapper().readValue(LICENSE_JSON, Licenses.class);
         } catch (IOException e) {
-            AlertHelper.unexpectedAlert(e);
+            alertHelper.unexpectedAlert(e);
             throw new IllegalStateException(e);
         }
 
@@ -78,9 +95,7 @@ public class AboutViewController extends BaseControllerImpl {
 
         exxetaLink.getProperties().put("link", "https://www.exxeta.com");
 
-        exxetaLink.setOnAction(t -> HostServicesHolder.getInstance()
-                .getHostServices()
-                .showDocument(exxetaLink.getProperties().get("link").toString())
+        exxetaLink.setOnAction(t -> hostServices.showDocument(exxetaLink.getProperties().get("link").toString())
         );
 
     }
@@ -89,7 +104,7 @@ public class AboutViewController extends BaseControllerImpl {
         int index = contentHolder.getChildren().indexOf(headline);
         for (License license : licenseList) {
             index++;
-            LicenseControl licenseControl = new LicenseControl(license);
+            LicenseControl licenseControl = new LicenseControl(license, hostServices);
             contentHolder.getChildren().add(index, licenseControl);
         }
     }

@@ -3,12 +3,12 @@ package org.correomqtt.gui.keyring;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.core.fileprovider.EncryptionRecoverableException;
 import org.correomqtt.core.fileprovider.SecretStoreProvider;
-import org.correomqtt.business.settings.SettingsProvider;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.keyring.Keyring;
 import org.correomqtt.core.keyring.KeyringException;
 import org.correomqtt.core.keyring.KeyringFactory;
 import org.correomqtt.core.model.ConnectionConfigDTO;
-import org.correomqtt.business.model.SettingsDTO;
+import org.correomqtt.core.model.SettingsDTO;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +18,7 @@ import javax.inject.Singleton;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Singleton
 public class KeyringHandler {
@@ -25,15 +26,21 @@ public class KeyringHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyringHandler.class);
 
     private final ResourceBundle resources;
+    private final SettingsProvider settingsProvider;
+    private final AlertHelper alertHelper;
     private final KeyringFactory keyringFactory;
     private String masterPassword;
     private static final String KEYRING_LABEL = "CorreoMQTT_MasterPassword";
     private Keyring keyring;
 
     @Inject
-    KeyringHandler(KeyringFactory keyringFactory) {
+    KeyringHandler(KeyringFactory keyringFactory,
+                   SettingsProvider settingsProvider,
+                   AlertHelper alertHelper) {
         this.keyringFactory = keyringFactory;
-        resources = ResourceBundle.getBundle("org.correomqtt.i18n", SettingsProvider.getInstance().getSettings().getCurrentLocale());
+        resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsProvider.getSettings().getCurrentLocale());
+        this.settingsProvider = settingsProvider;
+        this.alertHelper = alertHelper;
     }
 
     public void migrate(String newKeyringIdentifier) {
@@ -49,7 +56,7 @@ public class KeyringHandler {
 
         keyring = keyringFactory.createKeyringByIdentifier(newKeyringIdentifier);
         if (keyring == null) {
-            AlertHelper.warn(
+            alertHelper.warn(
                     resources.getString("couldNotCreateNewKeyringBackendTitle"),
                     resources.getString("couldNotCreateNewKeyringBackendContent")
             );
@@ -60,9 +67,9 @@ public class KeyringHandler {
                 keyring.setPassword(KEYRING_LABEL, masterPassword);
             }
 
-            List<ConnectionConfigDTO> connections = SettingsProvider.getInstance().getConnectionConfigs();
+            List<ConnectionConfigDTO> connections = settingsProvider.getConnectionConfigs();
             retryWithMasterPassword(
-                    pw -> SettingsProvider.getInstance().saveConnections(connections, pw),
+                    pw -> settingsProvider.saveConnections(connections, pw),
                     resources.getString("onPasswordSaveFailedTitle"),
                     resources.getString("onPasswordSaveFailedHeader"),
                     resources.getString("onPasswordSaveFailedContent"),
@@ -81,7 +88,7 @@ public class KeyringHandler {
 
         if (keyring != null) {
             if (keyring.requiresUserinput()) {
-                masterPassword = AlertHelper.passwordInput(
+                masterPassword = alertHelper.passwordInput(
                         resources.getString("onPasswordRequiredTitle"),
                         resources.getString("onPasswordRequiredHeader"),
                         resources.getString("onPasswordRequiredContent")
@@ -106,7 +113,7 @@ public class KeyringHandler {
             boolean retry = false;
             if (failed) {
                 this.masterPassword = null;
-                retry = AlertHelper.confirm(title, header, content, noButton, yesButton);
+                retry = alertHelper.confirm(title, header, content, noButton, yesButton);
             }
             if (!failed || retry) {
                 failed = false;
@@ -124,20 +131,29 @@ public class KeyringHandler {
     }
 
     public void init() {
-        SettingsDTO settings = SettingsProvider.getInstance().getSettings();
+        SettingsDTO settings = settingsProvider.getSettings();
         String oldKeyringIdentifier = settings.getKeyringIdentifier();
+
         keyring = null;
 
         if (oldKeyringIdentifier != null) {
             keyring = keyringFactory.createKeyringByIdentifier(oldKeyringIdentifier);
+            if (keyring == null) {
+                LOGGER.info("Configured keyring {} not found.", oldKeyringIdentifier);
+            } else {
+                LOGGER.info("Configured keyring {} found.", oldKeyringIdentifier);
+            }
         }
 
         if (keyring == null) {
             List<Keyring> keyrings = keyringFactory.create(); // Not null, will produce UserInputKeyring for sure
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Detected keyrings: {}", keyrings.stream().map(Keyring::getName).collect(Collectors.joining(", ")));
+            }
             if (keyrings.size() <= 2) {
                 keyring = keyrings.get(0);
             } else {
-                keyring = AlertHelper.select("Multiple KeyringsFound", "Select a keyring", keyrings); //TODO
+                keyring = alertHelper.select("Multiple KeyringsFound", "Select a keyring", keyrings); //TODO
             }
         }
 
@@ -151,13 +167,13 @@ public class KeyringHandler {
         ComparableVersion keyringSupportVersion = new ComparableVersion("0.13.0");
 
         if (oldKeyringIdentifier == null && keyringSupportVersion.compareTo(createdVersion) < 0) {
-            AlertHelper.info(
+            alertHelper.info(
                     resources.getString("newKeyringTitle"),
                     resources.getString("newKeyringContent") + newKeyringIdentifier,
                     true
             );
         } else if (!newKeyringIdentifier.equals(oldKeyringIdentifier)) {
-            AlertHelper.warn(
+            alertHelper.warn(
                     resources.getString("changedKeyringTitle"),
                     resources.getString("changedKeyringContent") + oldKeyringIdentifier + " -> " + newKeyringIdentifier,
                     true

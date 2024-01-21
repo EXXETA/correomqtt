@@ -1,12 +1,16 @@
 package org.correomqtt.gui.views.importexport;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.Tooltip;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.importexport.connections.ImportDecryptConnectionsTask;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ConnectionExportDTO;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
@@ -17,21 +21,29 @@ import java.util.ResourceBundle;
 public class ConnectionImportStepDecryptViewController extends BaseControllerImpl implements ConnectionImportStepController {
     private static ResourceBundle resources;
 
+    private final AlertHelper alertHelper;
     private final ConnectionImportStepDelegate delegate;
     @FXML
     private PasswordField passwordField;
 
     private static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
 
-    public ConnectionImportStepDecryptViewController(ConnectionImportStepDelegate delegate) {
+    @AssistedInject
+    public ConnectionImportStepDecryptViewController(
+            SettingsProvider settingsProvider,
+            ThemeManager themeManager,
+            AlertHelper alertHelper,
+            @Assisted ConnectionImportStepDelegate delegate) {
+        super(settingsProvider, themeManager);
+        this.alertHelper = alertHelper;
         this.delegate = delegate;
     }
 
-    public static LoaderResult<ConnectionImportStepDecryptViewController> load(ConnectionImportStepDelegate delegate) {
+    public LoaderResult<ConnectionImportStepDecryptViewController> load() {
         LoaderResult<ConnectionImportStepDecryptViewController> result = load(
                 ConnectionImportStepDecryptViewController.class,
                 "connectionImportStepDecrypt.fxml",
-                () -> new ConnectionImportStepDecryptViewController(delegate));
+                () -> this);
         resources = result.getResourceBundle();
         return result;
     }
@@ -55,7 +67,7 @@ public class ConnectionImportStepDecryptViewController extends BaseControllerImp
     }
 
     public void onDecryptFailed(TaskErrorResult<ImportDecryptConnectionsTask.Error> result) {
-        AlertHelper.warn(resources.getString("connectionImportDecryptFailedTitle"),
+        alertHelper.warn(resources.getString("connectionImportDecryptFailedTitle"),
                 resources.getString("connectionImportDecryptFailedDescription"));
         delegate.onCancelClicked();
     }

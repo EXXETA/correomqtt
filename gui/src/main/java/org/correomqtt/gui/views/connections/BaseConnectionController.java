@@ -1,7 +1,9 @@
 package org.correomqtt.gui.views.connections;
 
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.eventbus.SubscribeFilter;
 import org.correomqtt.core.utils.ConnectionHolder;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.slf4j.Marker;
@@ -9,24 +11,29 @@ import org.slf4j.MarkerFactory;
 
 public abstract class BaseConnectionController extends BaseControllerImpl {
 
-    private String connectionId;
+    protected final ConnectionHolder connectionHolder;
+    protected String connectionId;
     private String tabId;
 
-    protected BaseConnectionController(String connectionId) {
-        super();
+    protected BaseConnectionController(SettingsProvider settingsProvider,
+                                       ThemeManager themeManager,
+                                       ConnectionHolder connectionHolder,
+                                       String connectionId) {
+        super(settingsProvider, themeManager);
+        this.connectionHolder = connectionHolder;
         this.connectionId = connectionId;
     }
 
-    static <C extends BaseControllerImpl> LoaderResult<C> load(final Class<C> controllerClazz,
+     <C extends BaseControllerImpl> LoaderResult<C> load(final Class<C> controllerClazz,
                                                                final String fxml,
                                                                final String connectionId) {
         return load(controllerClazz,
-                    fxml,
-                    () -> controllerClazz.getDeclaredConstructor(String.class).newInstance(connectionId));
+                fxml,
+                () -> controllerClazz.getDeclaredConstructor(String.class).newInstance(connectionId));
     }
 
 
-    @SubscribeFilter(value ="connectionId")
+    @SubscribeFilter(value = "connectionId")
     public String getConnectionId() {
         return connectionId;
     }
@@ -36,7 +43,7 @@ public abstract class BaseConnectionController extends BaseControllerImpl {
     }
 
     Marker getConnectionMarker() {
-        return MarkerFactory.getMarker(ConnectionHolder.getInstance().getConfig(connectionId).getName());
+        return MarkerFactory.getMarker(connectionHolder.getConfig(connectionId).getName());
     }
 
     public String getTabId() {

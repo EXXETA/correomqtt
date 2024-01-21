@@ -1,11 +1,14 @@
 package org.correomqtt.gui.views.scripting;
 
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
+import org.correomqtt.core.settings.SettingsProvider;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.connection.ConnectionState;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
@@ -23,11 +26,11 @@ import org.correomqtt.core.scripting.ScriptingBackend;
 import org.correomqtt.core.utils.ConnectionHolder;
 import org.correomqtt.gui.controls.IconButton;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.cell.ConnectionCell;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.model.PlainTextChange;
@@ -44,6 +47,9 @@ import static org.correomqtt.core.eventbus.SubscribeFilterNames.SCRIPT_NAME;
 public class SingleEditorViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleEditorViewController.class);
+    private final ConnectionHolder connectionHolder;
+    private final ConnectionCellButtonFactory connectionCellButtonFactory;
+    private final AlertHelper alertHelper;
     private final SingleEditorViewDelegate delegate;
     private final ScriptFilePropertiesDTO scriptFilePropertiesDTO;
     @FXML
@@ -70,16 +76,26 @@ public class SingleEditorViewController extends BaseControllerImpl {
 
     private final AtomicBoolean revert = new AtomicBoolean(false);
 
-    public SingleEditorViewController(SingleEditorViewDelegate delegate, ScriptFilePropertiesDTO scriptFilePropertiesDTO) {
+    @AssistedInject
+    public SingleEditorViewController(ConnectionHolder connectionHolder,
+                                      SettingsProvider settingsProvider,
+                                      ThemeManager themeManager,
+                                      ConnectionCellButtonFactory connectionCellButtonFactory,
+                                      AlertHelper alertHelper,
+                                      @Assisted SingleEditorViewDelegate delegate,
+                                      @Assisted ScriptFilePropertiesDTO scriptFilePropertiesDTO) {
+        super(settingsProvider, themeManager);
+        this.connectionHolder = connectionHolder;
+        this.connectionCellButtonFactory = connectionCellButtonFactory;
+        this.alertHelper = alertHelper;
         this.delegate = delegate;
         this.scriptFilePropertiesDTO = scriptFilePropertiesDTO;
         EventBus.register(this);
     }
 
-    public static LoaderResult<SingleEditorViewController> load(SingleEditorViewDelegate delegate, ScriptFilePropertiesDTO scriptFilePropertiesDTO) {
+    public LoaderResult<SingleEditorViewController> load() {
 
-        LoaderResult<SingleEditorViewController> result = load(SingleEditorViewController.class, "singleEditorView.fxml",
-                () -> new SingleEditorViewController(delegate, scriptFilePropertiesDTO));
+        LoaderResult<SingleEditorViewController> result = load(SingleEditorViewController.class, "singleEditorView.fxml", () -> this);
         resources = result.getResourceBundle();
         return result;
     }
@@ -95,13 +111,13 @@ public class SingleEditorViewController extends BaseControllerImpl {
                 .onError(this::onLoadScriptFailed)
                 .run();
 
-        connectionList.setCellFactory(ConnectionCell::new);
-        connectionList.setButtonCell(new ConnectionCellButton(null));
+        connectionList.setCellFactory(connectionCellButtonFactory::create);
+        connectionList.setButtonCell(connectionCellButtonFactory.create(null));
 
     }
 
     private void onLoadScriptFailed(TaskErrorResult<ScriptLoadTask.Error> result) {
-        AlertHelper.unexpectedAlert(result.getUnexpectedError());
+        alertHelper.unexpectedAlert(result.getUnexpectedError());
     }
 
     private void onLoadScriptSucceeded(ScriptFileDTO scriptFileDTO, String scriptCode) {
@@ -170,13 +186,13 @@ public class SingleEditorViewController extends BaseControllerImpl {
         ConnectionPropertiesDTO selectedItem = connectionList.getSelectionModel().getSelectedItem();
 
         connectionList.setItems(FXCollections.observableArrayList(
-                ConnectionTransformer.dtoListToPropList(ConnectionHolder.getInstance().getSortedConnections())
+                ConnectionTransformer.dtoListToPropList(connectionHolder.getSortedConnections())
         ));
 
         if (selectedItem == null) {
             selectedItem = connectionList.getItems().stream()
                     .filter(c -> {
-                        CorreoMqttClient client = ConnectionHolder.getInstance().getClient(c.getId());
+                        CorreoMqttClient client = connectionHolder.getClient(c.getId());
                         return client != null && client.getState() == ConnectionState.CONNECTED;
                     })
                     .findFirst()
@@ -210,7 +226,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
     }
 
     private void onSaveFailed(TaskErrorResult<ScriptSaveTask.Error> error) {
-        AlertHelper.unexpectedAlert(error.getUnexpectedError());
+        alertHelper.unexpectedAlert(error.getUnexpectedError());
     }
 
     private void onSaveSuccess(String code) {
