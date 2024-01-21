@@ -23,6 +23,7 @@ import org.correomqtt.core.scripting.ScriptExecutionSuccessEvent;
 import org.correomqtt.core.scripting.ScriptFileDTO;
 import org.correomqtt.core.scripting.ScriptLoadTask;
 import org.correomqtt.core.scripting.ScriptSaveTask;
+import org.correomqtt.core.scripting.ScriptTaskFactories;
 import org.correomqtt.core.scripting.ScriptingBackend;
 import org.correomqtt.gui.controls.IconButton;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -49,8 +50,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleEditorViewController.class);
     private final ConnectionCellButton.Factory connectionCellButtonFactory;
     private final AlertHelper alertHelper;
-    private final ScriptLoadTask.Factory scriptLoadTaskFactory;
-    private final ScriptSaveTask.Factory scriptSaveTaskFactory;
+    private final ScriptTaskFactories scriptTaskFactories;
     private final SingleEditorViewDelegate delegate;
     private final ScriptFilePropertiesDTO scriptFilePropertiesDTO;
     private final AtomicBoolean revert = new AtomicBoolean(false);
@@ -88,15 +88,13 @@ public class SingleEditorViewController extends BaseControllerImpl {
                                       ThemeManager themeManager,
                                       ConnectionCellButton.Factory connectionCellButtonFactory,
                                       AlertHelper alertHelper,
-                                      ScriptLoadTask.Factory scriptLoadTaskFactory,
-                                      ScriptSaveTask.Factory scriptSaveTaskFactory,
+                                      ScriptTaskFactories scriptTaskFactories,
                                       @Assisted SingleEditorViewDelegate delegate,
                                       @Assisted ScriptFilePropertiesDTO scriptFilePropertiesDTO) {
         super(coreManager, themeManager);
         this.connectionCellButtonFactory = connectionCellButtonFactory;
         this.alertHelper = alertHelper;
-        this.scriptLoadTaskFactory = scriptLoadTaskFactory;
-        this.scriptSaveTaskFactory = scriptSaveTaskFactory;
+        this.scriptTaskFactories = scriptTaskFactories;
         this.delegate = delegate;
         this.scriptFilePropertiesDTO = scriptFilePropertiesDTO;
         EventBus.register(this);
@@ -115,7 +113,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
         updateConnections();
 
         ScriptFileDTO scriptFileDTO = ScriptingTransformer.propsToDTO(scriptFilePropertiesDTO);
-        scriptLoadTaskFactory.create(scriptFileDTO)
+        scriptTaskFactories.getLoadFactory().create(scriptFileDTO)
                 .onSuccess(scriptCode -> onLoadScriptSucceeded(scriptFileDTO, scriptCode))
                 .onError(this::onLoadScriptFailed)
                 .run();
@@ -233,7 +231,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
     }
 
     public void onSaveClicked() {
-        scriptSaveTaskFactory.create(ScriptingTransformer.propsToDTO(scriptFilePropertiesDTO), codeArea.getText())
+        scriptTaskFactories.getSaveFactory().create(ScriptingTransformer.propsToDTO(scriptFilePropertiesDTO), codeArea.getText())
                 .onSuccess(() -> onSaveSuccess(codeArea.getText()))
                 .onError(this::onSaveFailed)
                 .run();
@@ -269,7 +267,6 @@ public class SingleEditorViewController extends BaseControllerImpl {
     public void onScriptExecutionFailed() {
         disableActionsOnRunningScript(false);
     }
-
 
     @SubscribeFilter(SCRIPT_NAME)
     public String getFileName() {

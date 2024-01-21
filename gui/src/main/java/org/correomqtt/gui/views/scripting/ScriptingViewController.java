@@ -31,7 +31,7 @@ import org.correomqtt.core.scripting.ScriptExecutionSuccessEvent;
 import org.correomqtt.core.scripting.ScriptExecutionsDeletedEvent;
 import org.correomqtt.core.scripting.ScriptFileDTO;
 import org.correomqtt.core.scripting.ScriptNewTask;
-import org.correomqtt.core.scripting.ScriptRenameTask;
+import org.correomqtt.core.scripting.ScriptTaskFactories;
 import org.correomqtt.core.scripting.ScriptingBackend;
 import org.correomqtt.gui.controls.IconLabel;
 import org.correomqtt.gui.model.AppHostServices;
@@ -67,9 +67,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     private final ScriptCell.Factory scriptCellFactory;
     private final ScriptContextMenu.Factory scriptContextMenuFactory;
     private final SingleEditorViewController.Factory editorViewCtrlFactory;
-    private final ScriptNewTask.Factory scriptNewTaskFactory;
-    private final ScriptRenameTask.Factory scriptRenameTaskFactory;
-    private final ScriptDeleteTask.Factory scriptDeleteTaskFactory;
+    private final ScriptTaskFactories scriptTaskFactories;
     private final Provider<ExecutionViewController> executionViewControllerProvider;
     private final ScriptingProvider scriptingProvider;
     private final HostServices hostServices;
@@ -109,9 +107,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                                    ScriptCell.Factory scriptCellFactory,
                                    ScriptContextMenu.Factory scriptContextMenuFactory,
                                    SingleEditorViewController.Factory editorViewCtrlFactory,
-                                   ScriptNewTask.Factory scriptNewTaskFactory,
-                                   ScriptRenameTask.Factory scriptRenameTaskFactory,
-                                   ScriptDeleteTask.Factory scriptDeleteTaskFactopr,
+                                   ScriptTaskFactories scriptTaskFactories,
                                    Provider<ExecutionViewController> executionViewControllerProvider,
                                    ScriptingProvider scriptingProvider,
                                    @AppHostServices HostServices hostServices
@@ -121,9 +117,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         this.scriptCellFactory = scriptCellFactory;
         this.scriptContextMenuFactory = scriptContextMenuFactory;
         this.editorViewCtrlFactory = editorViewCtrlFactory;
-        this.scriptNewTaskFactory = scriptNewTaskFactory;
-        this.scriptRenameTaskFactory = scriptRenameTaskFactory;
-        this.scriptDeleteTaskFactory = scriptDeleteTaskFactopr;
+        this.scriptTaskFactories = scriptTaskFactories;
         this.executionViewControllerProvider = executionViewControllerProvider;
         this.scriptingProvider = scriptingProvider;
         this.hostServices = hostServices;
@@ -316,7 +310,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                 resources.getString("scripting.newscript.dialog.content"),
                 defaultValue);
 
-        scriptNewTaskFactory.create(filename)
+        scriptTaskFactories.getNewFactory().create(filename)
                 .onSuccess(this::onNewScriptCreated)
                 .onError(r -> onNewScriptCreatedFailed(r, filename))
                 .run();
@@ -380,7 +374,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                 resources.getString("scripting.renamescript.dialog.content"),
                 defaultFilename);
 
-        scriptRenameTaskFactory.create(ScriptingTransformer.propsToDTO(dto), newFilename)
+        scriptTaskFactories.getRenameFactory().create(ScriptingTransformer.propsToDTO(dto), newFilename)
                 .onSuccess(newPath -> {
                     executionController.renameScript(dto.getName(), newFilename);
                     dto.getNameProperty().setValue(newFilename);
@@ -443,7 +437,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
             return;
         }
 
-        scriptDeleteTaskFactory.create(ScriptingTransformer.propsToDTO(dto))
+        scriptTaskFactories.getDeleteFactory().create(ScriptingTransformer.propsToDTO(dto))
                 .onSuccess(() -> onScriptDeleted(dto))
                 .onError(r -> {
                     if (r.isExpected()) {

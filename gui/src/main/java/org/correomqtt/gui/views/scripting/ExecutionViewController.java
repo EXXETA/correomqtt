@@ -18,12 +18,11 @@ import org.correomqtt.core.eventbus.SubscribeFilter;
 import org.correomqtt.core.eventbus.SubscribeFilterNames;
 import org.correomqtt.core.scripting.BaseExecutionEvent;
 import org.correomqtt.core.scripting.ExecutionDTO;
-import org.correomqtt.core.scripting.ScriptDeleteExecutionsTask;
+import org.correomqtt.core.scripting.ScriptExecuteTaskFactories;
 import org.correomqtt.core.scripting.ScriptExecutionCancelledEvent;
 import org.correomqtt.core.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.core.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.core.scripting.ScriptExecutionSuccessEvent;
-import org.correomqtt.core.scripting.ScriptExecutionTask;
 import org.correomqtt.core.scripting.ScriptExecutionsDeletedEvent;
 import org.correomqtt.core.scripting.ScriptingBackend;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -40,13 +39,12 @@ import java.util.ResourceBundle;
 
 public class ExecutionViewController extends BaseControllerImpl {
 
-    private  ResourceBundle resources;
+    private ResourceBundle resources;
     private final Map<String, ScriptExecutionState> executionStates = new HashMap<>();
     private final AlertHelper alertHelper;
     private final ExecutionCell.Factory executionCellFactory;
     private final SingleExecutionViewController.Factory executionViewCtrlFactory;
-    private final ScriptExecutionTask.Factory scriptExecutionTaskFactory;
-    private final ScriptDeleteExecutionsTask.Factory scriptDeleteExecutionsTaskFactory;
+    private final ScriptExecuteTaskFactories scriptExecuteTaskFactories;
     @FXML
     private AnchorPane executionSidebar;
     @FXML
@@ -77,14 +75,13 @@ public class ExecutionViewController extends BaseControllerImpl {
                                    AlertHelper alertHelper,
                                    ExecutionCell.Factory executionCellFactory,
                                    SingleExecutionViewController.Factory executionViewCtrlFactory,
-                                   ScriptExecutionTask.Factory scriptExecutionTaskFactory,
-                                   ScriptDeleteExecutionsTask.Factory scriptDeleteExecutionsTaskFactory) {
+                                   ScriptExecuteTaskFactories scriptExecuteTaskFactories
+    ) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;
         this.executionCellFactory = executionCellFactory;
         this.executionViewCtrlFactory = executionViewCtrlFactory;
-        this.scriptExecutionTaskFactory = scriptExecutionTaskFactory;
-        this.scriptDeleteExecutionsTaskFactory = scriptDeleteExecutionsTaskFactory;
+        this.scriptExecuteTaskFactories = scriptExecuteTaskFactories;
         EventBus.register(this);
     }
 
@@ -102,7 +99,7 @@ public class ExecutionViewController extends BaseControllerImpl {
     }
 
     public void onClearExecutionsClicked() {
-        scriptDeleteExecutionsTaskFactory.create(currentName)
+        scriptExecuteTaskFactories.getDeleteExecutionsTask().create(currentName)
                 .onError(error -> alertHelper.unexpectedAlert(error.getUnexpectedError()))
                 .run();
 
@@ -230,7 +227,7 @@ public class ExecutionViewController extends BaseControllerImpl {
         updateExistence();
 
         // Events used here to keep state in background even if window is closed in the meantime.
-        scriptExecutionTaskFactory.create(executionDTO)
+        scriptExecuteTaskFactories.getExecutionFactory().create(executionDTO)
                 .onError(error -> alertHelper.unexpectedAlert(error.getUnexpectedError()))
                 .run();
         return true;

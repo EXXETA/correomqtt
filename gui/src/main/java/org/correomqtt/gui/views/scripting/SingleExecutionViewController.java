@@ -11,17 +11,15 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import org.correomqtt.core.CoreManager;
-import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.eventbus.SubscribeFilter;
 import org.correomqtt.core.scripting.ExecutionDTO;
-import org.correomqtt.core.scripting.ScriptCancelTask;
+import org.correomqtt.core.scripting.ScriptExecuteTaskFactories;
 import org.correomqtt.core.scripting.ScriptExecutionCancelledEvent;
 import org.correomqtt.core.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.core.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.core.scripting.ScriptExecutionSuccessEvent;
-import org.correomqtt.core.scripting.ScriptLoadLogTask;
 import org.correomqtt.core.scripting.ScriptingBackend;
 import org.correomqtt.gui.log.LogToRichtTextFxAppender;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -43,8 +41,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleExecutionViewController.class);
     private final AlertHelper alertHelper;
-    private final ScriptLoadLogTask.Factory scriptLoadLogFactory;
-    private final ScriptCancelTask.Factory scriptCancelTaskFactory;
+    private final ScriptExecuteTaskFactories scriptExecuteTaskFactories;
     private final ExecutionPropertiesDTO executionPropertiesDTO;
     private ResourceBundle resources;
     @FXML
@@ -67,13 +64,11 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     public SingleExecutionViewController(CoreManager coreManager,
                                          ThemeManager themeManager,
                                          AlertHelper alertHelper,
-                                         ScriptLoadLogTask.Factory scriptLoadLogTaskFactory,
-                                         ScriptCancelTask.Factory scriptCancelTaskFactory,
+                                         ScriptExecuteTaskFactories scriptExecuteTaskFactories,
                                          @Assisted ExecutionPropertiesDTO executionPropertiesDTO) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;
-        this.scriptLoadLogFactory = scriptLoadLogTaskFactory;
-        this.scriptCancelTaskFactory = scriptCancelTaskFactory;
+        this.scriptExecuteTaskFactories = scriptExecuteTaskFactories;
         this.executionPropertiesDTO = executionPropertiesDTO;
         EventBus.register(this);
     }
@@ -93,7 +88,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
         ExecutionDTO dto = ScriptingBackend.getExecutionDTO(executionPropertiesDTO.getExecutionId());
 
         if (dto != null) {
-            scriptLoadLogFactory.create(dto)
+            scriptExecuteTaskFactories.getLoadLogFactory().create(dto)
                     .onSuccess(log -> {
                         LogAreaUtils.appendColorful(logArea, log);
                         if (executionPropertiesDTO.getState() == ScriptState.RUNNING) {
@@ -170,7 +165,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
 
     @FXML
     private void onStopButtonClicked() {
-        scriptCancelTaskFactory.create(getExecutionId())
+        scriptExecuteTaskFactories.getCancelFactory().create(getExecutionId())
                 .onError(error -> alertHelper.unexpectedAlert(error.getUnexpectedError()))
                 .run();
     }

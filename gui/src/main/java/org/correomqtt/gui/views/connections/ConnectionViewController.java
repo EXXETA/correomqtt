@@ -46,7 +46,6 @@ public class ConnectionViewController extends BaseConnectionController implement
     private final SubscriptionViewController.Factory subscriptionViewControllerFactory;
     private final ControlBarController.Factory controlBarControllerFactory;
     private final KeyringManager keyringManager;
-    private final CoreManager coreManager;
     private final LoadingViewController.Factory loadingViewControllerFactory;
     private final AlertHelper alertHelper;
     private final ConnectionViewDelegate delegate;
@@ -97,7 +96,6 @@ public class ConnectionViewController extends BaseConnectionController implement
         this.subscriptionViewControllerFactory = subscriptionViewControllerFactory;
         this.controlBarControllerFactory = controlBarControllerFactory;
         this.keyringManager = keyringManager;
-        this.coreManager = coreManager;
         this.loadingViewControllerFactory = loadingViewControllerFactory;
         this.alertHelper = alertHelper;
         this.delegate = delegate;
