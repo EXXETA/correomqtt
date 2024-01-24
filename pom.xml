@@ -38,6 +38,7 @@
     <modules>
         <module>core</module>
         <module>gui</module>
+        <module>plugins</module>
     </modules>
 
 

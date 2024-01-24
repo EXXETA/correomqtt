@@ -25,6 +25,7 @@ import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.shortcut.ShortcutConnectionIdEvent;
 import org.correomqtt.core.utils.VersionUtils;
 import org.correomqtt.gui.keyring.KeyringManager;
+import org.correomqtt.gui.plugin.CorreoExtensionFactory;
 import org.correomqtt.gui.plugin.PluginLauncher;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
@@ -128,10 +129,12 @@ public class CorreoApp extends Application {
             initUpdatesOnFirstStart(settings);
         }
 
+        pluginManager.setExtensionFactory(new CorreoExtensionFactory());
+        pluginCheckUtils.checkMigration();
+
         if (settings.isSearchUpdates()) {
             notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("preloaderSearchingUpdates")));
-            pluginCheckUtils.checkMigration();
-            pluginLauncher.start(false);
+            pluginLauncher.start(true);
             try {
                 checkForUpdates();
             } catch (CorreoMqttUnableToCheckVersionException e) {
@@ -153,7 +156,7 @@ public class CorreoApp extends Application {
         notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("preloaderReady")));
         settingsManager.saveSettings();
 
-        System.setProperty("correo.iconModeCssClass",themeManager.getIconModeCssClass());
+        System.setProperty("correo.iconModeCssClass", themeManager.getIconModeCssClass());
         correoCore.init();
     }
 

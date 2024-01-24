@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0" stylesheets="@../css/sysTopicsView.css" xmlns="http://javafx.com/javafx/8.0.191" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <HBox alignment="CENTER">
+               <styleClass>
+                  <String fx:value="toolbar" />
+                  <String fx:value="bottom" />
+                  <String fx:value="noBorder" />
+               </styleClass>
+               <children>
+                  <Button fx:id="copyToClipboardButton" mnemonicParsing="false" onAction="#copyToClipboard" text="%sysTopicsViewClipboardButton" />
+                  <Pane HBox.hgrow="ALWAYS" />
+                  <VBox alignment="CENTER_RIGHT">
+                     <children>
+                        <Label fx:id="connectionStatusLabel" alignment="CENTER_RIGHT" text="%sysTopicsViewConnectionLabel" textAlignment="RIGHT" />
+                        <Label fx:id="lastUpdateLabel" alignment="CENTER_RIGHT" styleClass="secondaryText" text="%sysTopicsViewUpdateLabel" textAlignment="RIGHT" />
+                     </children>
+                  </VBox>
+               </children>
+            </HBox>
+            <ListView fx:id="listView" VBox.vgrow="ALWAYS" />
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

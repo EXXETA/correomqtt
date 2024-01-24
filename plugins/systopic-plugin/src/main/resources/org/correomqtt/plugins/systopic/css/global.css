@@ -1,0 +1,51 @@
+.noBorder {
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.root {
+    -fx-font-family: "sans-serif";
+    -fx-font-size: 13px;
+}
+
+.list-view .list-cell {
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.list-view .list-cell:empty {
+    -fx-pref-height: 39;
+}
+
+.messageView {
+    -fx-background-color: transparent;
+}
+
+.messageView .topic {
+    -fx-font-family: "sans-serif";
+    -fx-font-weight: bold !important;
+}
+
+.list-cell .firstLine {
+    -fx-padding: 5 5 2 5;
+}
+
+.list-cell .secondLine {
+    -fx-padding: 0 5 5 5;
+}
+
+.toolbar {
+    -fx-padding: 6 8 6 8;
+}
+
+.toolbar.top {
+    -fx-padding: 6 8 0 8;
+    -fx-background-color: derive(-fx-base, 10%);
+}
+
+.toolbar.bottom {
+    -fx-background-color: linear-gradient(to bottom, derive(-fx-base, 10%) 40%, derive(-fx-base, -5%) 95%); /*, derive(-fx-base, 0%));*/
+    -fx-border-width: 0 0 1 0;
+    -fx-border-style: solid;
+    -fx-border-color: transparent transparent derive(-fx-base, -35%) transparent;
+}

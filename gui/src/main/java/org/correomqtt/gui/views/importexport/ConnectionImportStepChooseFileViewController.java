@@ -80,15 +80,11 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
 
     private void onImportError(TaskErrorResult<ImportConnectionsFileTask.Error> errorResult) {
         if (errorResult.isExpected()) {
-            switch (errorResult.getExpectedError()) {
-                case FILE_IS_NULL -> {
-                    // ignore, file dialog was aborted
-                }
-                case FILE_CAN_NOT_BE_READ_OR_PARSED -> {
-                    alertHelper.warn(resources.getString("connectionImportFileFailedTitle"),
-                            resources.getString("connectionImportFileFailedDescription"));
-                    delegate.onCancelClicked();
-                }
+            ImportConnectionsFileTask.Error expectedError = errorResult.getExpectedError();
+            if (expectedError == ImportConnectionsFileTask.Error.FILE_CAN_NOT_BE_READ_OR_PARSED) {
+                alertHelper.warn(resources.getString("connectionImportFileFailedTitle"),
+                        resources.getString("connectionImportFileFailedDescription"));
+                delegate.onCancelClicked();
             }
         } else {
             alertHelper.unexpectedAlert(errorResult.getUnexpectedError());

@@ -7,8 +7,10 @@ import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.utils.ConnectionManager;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 @Getter
+@Singleton
 public class CoreManager {
 
     private final ConnectionManager connectionManager;

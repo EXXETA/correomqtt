@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>correomqtt-gui</artifactId>
+    <artifactId>gui</artifactId>
 
     <name>CorreoMQTT App</name>
     <description>A modern graphical MQTT client using the HiveMQ client library.</description>
@@ -59,7 +59,7 @@
     <dependencies>
         <dependency>
             <groupId>org.correomqtt</groupId>
-            <artifactId>correomqtt-core</artifactId>
+            <artifactId>core</artifactId>
             <version>0.15.0</version>
         </dependency>
         <dependency>
@@ -253,6 +253,12 @@
                                 <transformer implementation=
                                                      "org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>org.correomqtt.Launcher</mainClass>
+                                </transformer>
+
+                                <!-- merge extensions.idx from core and gui -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/extensions.idx</resource>
                                 </transformer>
                             </transformers>
                             <filters>

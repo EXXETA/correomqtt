@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>plugins</artifactId>
+    <version>0.15.0</version>
+    <packaging>pom</packaging>
+
+    <name>CorreoMQTT Plugins Parent</name>
+
+    <parent>
+        <groupId>org.correomqtt</groupId>
+        <artifactId>correomqtt</artifactId>
+        <version>0.15.0</version>
+    </parent>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.release>17</maven.compiler.release>
+        <plugin.provider>Exxeta AG</plugin.provider>
+        <javafx.version>17</javafx.version>
+    </properties>
+
+    <modules>
+        <module>advanced-validator-plugin</module>
+        <module>base64-plugin</module>
+        <module>contains-string-validator-plugin</module>
+        <module>json-format-plugin</module>
+        <module>save-manipulator-plugin</module>
+        <module>systopic-plugin</module>
+        <module>xml-format-plugin</module>
+        <module>xml-xsd-validator-plugin</module>
+        <module>zip-manipulator-plugin</module>
+        <module>repo-build</module>
+
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.correomqtt</groupId>
+                <artifactId>core</artifactId>
+                <version>0.15.0</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.correomqtt</groupId>
+                <artifactId>gui</artifactId>
+                <version>0.15.0</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.pf4j</groupId>
+                <artifactId>pf4j</artifactId>
+                <version>3.9.0</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-base</artifactId>
+                <version>${javafx.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-fxml</artifactId>
+                <version>${javafx.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-graphics</artifactId>
+                <version>${javafx.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-controls</artifactId>
+                <version>${javafx.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.22</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.15.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>2.15.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>2.15.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>2.15.2</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>

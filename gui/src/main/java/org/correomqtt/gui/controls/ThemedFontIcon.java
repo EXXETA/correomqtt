@@ -1,6 +1,8 @@
 package org.correomqtt.gui.controls;
 
 import javafx.scene.paint.Paint;
+import org.correomqtt.CorreoAppComponent;
+import org.correomqtt.FxApplication;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 public class ThemedFontIcon extends FontIcon {
@@ -11,7 +13,14 @@ public class ThemedFontIcon extends FontIcon {
     }
 
     private void setupIconColor() {
-        String iconClass = System.getProperty("correo.iconModeCssClass");
+        CorreoAppComponent component = FxApplication.getAppComponent();
+
+        String iconClass;
+        if (component == null) {
+            iconClass = "white";
+        } else {
+            iconClass = component.themeManager().getIconModeCssClass();
+        }
         if (iconClass != null && !iconClass.isEmpty()) {
             this.iconColorProperty().setValue(Paint.valueOf(iconClass));
         }

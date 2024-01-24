@@ -2,35 +2,34 @@ package org.correomqtt.gui.controls;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.beans.value.ObservableValue;
 import javafx.scene.control.MenuItem;
 
 public class IconMenuItem extends MenuItem {
 
     private final StringProperty iconProperty = new SimpleStringProperty();
 
-    public IconMenuItem(){
+    public IconMenuItem() {
         super();
-        iconProperty.addListener(this::iconChange);
+        iconProperty.addListener((ob, o, n) -> iconChange(n));
     }
 
-    public IconMenuItem(String text){
-        super(text);
-        iconProperty.addListener(this::iconChange);
-    }
-
-    private void iconChange(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+    private void iconChange(String newValue) {
         ThemedFontIcon themedFontIcon = new ThemedFontIcon();
         themedFontIcon.setIconLiteral(newValue);
         themedFontIcon.setIconSize(18);
         this.setGraphic(themedFontIcon);
     }
 
-    public void setIcon(String icon){
-        this.iconProperty.set(icon);
+    public IconMenuItem(String text) {
+        super(text);
+        iconProperty.addListener((ob, o, n) -> iconChange(n));
     }
 
-    public String getIcon(){
-       return this.iconProperty.get();
+    public String getIcon() {
+        return this.iconProperty.get();
+    }
+
+    public void setIcon(String icon) {
+        this.iconProperty.set(icon);
     }
 }

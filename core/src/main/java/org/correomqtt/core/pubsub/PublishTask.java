@@ -37,7 +37,7 @@ public class PublishTask extends SimpleTask {
 
     @AssistedFactory
     public interface Factory {
-        PublishTask create(String connectionId, MessageDTO messageDT);
+        PublishTask create(String connectionId, MessageDTO messageDTO);
     }
 
     @AssistedInject

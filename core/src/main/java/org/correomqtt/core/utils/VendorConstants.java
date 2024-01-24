@@ -35,8 +35,12 @@ public class VendorConstants {
         return getFromCache(DEFAULT_REPO_URL_ENV_OVERRIDE, DEFAULT_REPO_URL_DEFAULT);
     }
 
+    @Getter
+    @Accessors(fluent = true)
     private static final String BUNDLED_PLUGINS_URL_ENV_OVERRIDE = "CORREO_BUNDLED_PLUGINS_URL";
     private static final String BUNDLED_PLUGINS_URL_DEFAULT = "https://github.com/EXXETA/correomqtt-pluginrepo/blob/master/bundled.json";
+    @Getter
+    @Accessors(fluent = true)
     private static final String DEFAULT_REPO_URL_ENV_OVERRIDE = "CORREO_DEFAULT_REPO_URL";
     private static final String DEFAULT_REPO_URL_DEFAULT = "https://github.com/EXXETA/correomqtt-pluginrepo/blob/master/default-repo.json";
 

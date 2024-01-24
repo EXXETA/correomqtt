@@ -1,0 +1,18 @@
+<configuration>
+
+    <property name="COLORPATTERN"
+              value="[%boldBlue(%level)] %0.0throwable%msg%xThrowable{full}%n)"/>
+
+
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${COLORPATTERN}</pattern>
+        </encoder>
+    </appender>
+
+
+    <root level="INFO">
+        <appender-ref ref="stdout"/>
+    </root>
+</configuration>

@@ -1,0 +1,16 @@
+{
+  "versions": {
+    "0.15.0": {
+      "install": [
+        "advanced-validator-plugin",
+        "base64-plugin",
+        "json-format-plugin",
+        "xml-format-plugin",
+        "save-manipulator-plugin",
+        "contains-string-validator-plugin",
+        "systopic-plugin"
+      ],
+      "uninstall": []
+    }
+  }
+}

@@ -98,7 +98,14 @@ public class SettingsViewController extends BaseControllerImpl {
         Map<Object, Object> properties = new HashMap<>();
         properties.put(WindowProperty.WINDOW_TYPE, WindowType.SETTINGS);
 
-        showAsDialog(result, resources.getString("settingsViewControllerTitle"), properties, false, false, null, event -> result.getController().keyHandling(event));
+        showAsDialog(result, resources.getString("settingsViewControllerTitle"),
+                properties,
+                false,
+                false,
+                null,
+                event -> result.getController().keyHandling(event),
+                600,
+                550);
         return result;
     }
 
@@ -177,7 +184,7 @@ public class SettingsViewController extends BaseControllerImpl {
                 if (object == null) {
                     return null;
                 }
-                return object.getLabelTranslationKey();
+                return resources.getString(object.getLabelTranslationKey());
             }
 
             @Override

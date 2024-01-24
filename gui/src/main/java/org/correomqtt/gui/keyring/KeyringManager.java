@@ -3,24 +3,22 @@ package org.correomqtt.gui.keyring;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.core.fileprovider.EncryptionRecoverableException;
 import org.correomqtt.core.fileprovider.SecretStoreProvider;
-import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.keyring.Keyring;
 import org.correomqtt.core.keyring.KeyringException;
 import org.correomqtt.core.keyring.KeyringFactory;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.SettingsDTO;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Singleton
 public class KeyringManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyringManager.class);

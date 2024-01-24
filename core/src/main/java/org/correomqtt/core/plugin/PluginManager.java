@@ -18,6 +18,8 @@ import org.correomqtt.core.plugin.transformer.PluginInfoTransformer;
 import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.utils.VendorConstants;
 import org.correomqtt.core.utils.VersionUtils;
+import org.pf4j.DefaultExtensionFactory;
+import org.pf4j.ExtensionFactory;
 import org.pf4j.JarPluginManager;
 import org.pf4j.PluginState;
 import org.pf4j.PluginWrapper;
@@ -51,12 +53,20 @@ public class PluginManager extends JarPluginManager {
     private final PluginConfigProvider pluginConfigProvider;
     private BundledPluginList.BundledPlugins bundledPlugins;
 
+
     @Inject
     PluginManager(SettingsManager settings,
                   PluginConfigProvider pluginConfigProvider) {
         super(Path.of(pluginConfigProvider.getPluginPath()));
         this.settings = settings;
         this.pluginConfigProvider = pluginConfigProvider;
+
+    }
+
+    @Override
+    protected ExtensionFactory createExtensionFactory() {
+
+        return Objects.requireNonNullElseGet(extensionFactory, DefaultExtensionFactory::new);
     }
 
     private String getInstalledVersion(String pluginId) {
@@ -295,4 +305,9 @@ public class PluginManager extends JarPluginManager {
 
         return getExtensionByDefinition(clazz, extensionDefinition);
     }
+
+    public void setExtensionFactory(ExtensionFactory extensionFactory) {
+        this.extensionFactory = extensionFactory;
+    }
+
 }

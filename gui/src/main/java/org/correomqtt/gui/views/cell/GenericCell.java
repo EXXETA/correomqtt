@@ -37,6 +37,7 @@ public class GenericCell<T extends GenericTranslatable> extends ListCell<T> {
         GenericCell<T> create(ListView<T> listView);
 
     }
+
     @AssistedInject
     public GenericCell(SettingsManager settingsManager,
                        @Assisted ListView<T> listView) {
@@ -55,8 +56,8 @@ public class GenericCell<T extends GenericTranslatable> extends ListCell<T> {
 
             if (loader == null) {
                 try {
-                    loader = new FXMLLoader(GenericCell.class.getResource("genericCell.fxml"),
-                            ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale()));
+                    resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale());
+                    loader = new FXMLLoader(GenericCell.class.getResource("genericCell.fxml"), resources);
                     loader.setController(this);
                     loader.load();
 
@@ -71,9 +72,9 @@ public class GenericCell<T extends GenericTranslatable> extends ListCell<T> {
             mainNode.prefWidthProperty().bind(listView.widthProperty().subtract(20));
 
             String translationKey = item.getLabelTranslationKey();
-            if(translationKey != null) {
-                label.setText(resources.containsKey(translationKey)?resources.getString(translationKey):translationKey);
-            }else{
+            if (translationKey != null) {
+                label.setText(resources.containsKey(translationKey) ? resources.getString(translationKey) : translationKey);
+            } else {
                 label.setText(item.toString());
             }
             setText(null);

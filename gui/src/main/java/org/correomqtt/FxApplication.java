@@ -2,15 +2,21 @@ package org.correomqtt;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import lombok.Getter;
 
 public class FxApplication extends Application {
     private CorreoApp app;
 
+    @Getter
+    private static CorreoAppComponent appComponent;
+
     @Override
     public void init() {
-        app = DaggerCorreoAppComponent.builder()
+        appComponent = DaggerCorreoAppComponent.builder()
                 .hostServices(getHostServices())
-                .build().app();
+                .build();
+
+        app = appComponent.app();
         app.onNotifyPreloader(this::notifyPreloader);
         app.init();
     }

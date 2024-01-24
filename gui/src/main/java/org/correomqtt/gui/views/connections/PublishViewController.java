@@ -109,7 +109,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
 
     @AssistedFactory
     public interface Factory {
-        PublishViewController create(String connectionId, PublishViewDelegate delegat);
+        PublishViewController create(String connectionId, PublishViewDelegate delegate);
 
     }
 

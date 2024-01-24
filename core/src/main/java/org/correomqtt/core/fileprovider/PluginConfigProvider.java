@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,6 +16,7 @@ import java.nio.file.InvalidPathException;
 import java.util.Iterator;
 import java.util.List;
 
+@Singleton
 public class PluginConfigProvider extends BaseUserFileProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginConfigProvider.class);
@@ -117,6 +119,9 @@ public class PluginConfigProvider extends BaseUserFileProvider {
 
     public String getPluginPath() {
         return pluginPath;
+    }
+    public String getClassPath(){
+        return getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
     }
 
 }
