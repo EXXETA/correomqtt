@@ -22,6 +22,7 @@ import java.util.ResourceBundle;
 public class ConnectionImportStepChooseFileViewController extends BaseControllerImpl implements ConnectionImportStepController {
     private ResourceBundle resources;
     private final AlertHelper alertHelper;
+    private final ImportConnectionsFileTask.Factory importConnectionsFileTask;
     private final ConnectionImportStepDelegate delegate;
     @FXML
     private HBox stepHolder;
@@ -35,9 +36,11 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
     public ConnectionImportStepChooseFileViewController(CoreManager coreManager,
                                                         ThemeManager themeManager,
                                                         AlertHelper alertHelper,
+                                                        ImportConnectionsFileTask.Factory importConnectionsFileTask,
                                                         @Assisted ConnectionImportStepDelegate delegate) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;
+        this.importConnectionsFileTask = importConnectionsFileTask;
         this.delegate = delegate;
     }
 
@@ -58,7 +61,7 @@ public class ConnectionImportStepChooseFileViewController extends BaseController
         fileChooser.getExtensionFilters().add(extFilter);
         file = fileChooser.showOpenDialog(stage);
 
-        new ImportConnectionsFileTask(file)
+        importConnectionsFileTask.create(file)
                 .onSuccess(this::onImportSucceeded)
                 .onError(this::onImportError)
                 .run();

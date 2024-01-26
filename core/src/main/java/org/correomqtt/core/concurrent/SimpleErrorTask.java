@@ -1,6 +1,12 @@
 package org.correomqtt.core.concurrent;
 
+import org.correomqtt.core.eventbus.EventBus;
+
 public abstract class SimpleErrorTask<E> extends TaskImpl<Void, Void, E, TaskErrorResult<E>> {
+
+    protected SimpleErrorTask(EventBus eventBus){
+        super(eventBus);
+    }
 
     @SuppressWarnings("unused")
     public SimpleErrorTask<E> onStarted(StartListener listener) {

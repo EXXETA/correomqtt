@@ -1,10 +1,14 @@
 package org.correomqtt.core.importexport.connections;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.encryption.Encryptor;
 import org.correomqtt.core.encryption.EncryptorAesGcm;
+import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.fileprovider.EncryptionRecoverableException;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ConnectionConfigDTOMixin;
@@ -27,7 +31,19 @@ public class ExportConnectionsTask extends NoProgressTask<Integer, ExportConnect
     private final List<ConnectionConfigDTO> connectionList;
     private final String password;
 
-    public ExportConnectionsTask(File file, List<ConnectionConfigDTO> connectionList, String password) {
+    @AssistedFactory
+    public interface Factory {
+        ExportConnectionsTask create(File file,
+                                     List<ConnectionConfigDTO> connectionList,
+                                     String password);
+    }
+
+    @AssistedInject
+    public ExportConnectionsTask(EventBus eventBus,
+                                 @Assisted File file,
+                                 @Assisted List<ConnectionConfigDTO> connectionList,
+                                 @Assisted String password) {
+        super(eventBus);
         this.file = file;
         this.connectionList = connectionList;
         this.password = password;

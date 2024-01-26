@@ -60,6 +60,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     private final MessageViewCell.Factory messageViewCellFactory;
     private final MessageListContextMenu.Factory messageListContextMenuFactory;
     private final MessageUtils messageUtils;
+    private final EventBus eventBus;
     @FXML
     protected SplitPane splitPane;
     @FXML
@@ -103,6 +104,7 @@ public class MessageListViewController extends BaseConnectionController implemen
                                      MessageViewCell.Factory messageViewCellFactory,
                                      MessageListContextMenu.Factory messageListContextMenuFactory,
                                      MessageUtils messageUtils,
+                                     EventBus eventBus,
                                      @Assisted String connectionId,
                                      @Assisted MessageListViewDelegate delegate) {
         super(coreManager, themeManager, connectionId);
@@ -110,7 +112,8 @@ public class MessageListViewController extends BaseConnectionController implemen
         this.messageViewCellFactory = messageViewCellFactory;
         this.messageListContextMenuFactory = messageListContextMenuFactory;
         this.messageUtils = messageUtils;
-        EventBus.register(this);
+        this.eventBus = eventBus;
+        eventBus.register(this);
         this.delegate = delegate;
     }
 
@@ -431,7 +434,7 @@ public class MessageListViewController extends BaseConnectionController implemen
             detailViewController.cleanUp();
         }
 
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 
     @Override

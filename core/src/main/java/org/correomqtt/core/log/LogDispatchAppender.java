@@ -21,6 +21,8 @@ public class LogDispatchAppender extends AppenderBase<ILoggingEvent> {
     private PatternLayoutEncoder encoder;
 
     private final List<String> cache = new CopyOnWriteArrayList<>();
+    private EventBus eventBus; //TODO
+
 
     @Override
     public void start() {
@@ -30,14 +32,14 @@ public class LogDispatchAppender extends AppenderBase<ILoggingEvent> {
         }
         encoder.start();
         super.start();
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     @SuppressWarnings("unused")
     @Subscribe(PopLogCache.class)
     public synchronized void popCache() {
         Set<String> sentCache = cache.stream()
-                .filter(msg -> EventBus.fire(new LogEvent(msg)) > 0)
+                .filter(msg -> eventBus.fire(new LogEvent(msg)) > 0)
                 .collect(Collectors.toSet());
 
         cache.removeAll(sentCache);
@@ -45,14 +47,14 @@ public class LogDispatchAppender extends AppenderBase<ILoggingEvent> {
 
     @Override
     public void stop() {
-        EventBus.unregister(this);
+        eventBus.unregister(this);
         super.stop();
     }
 
     @Override
     protected void append(ILoggingEvent eventObject) {
         String logMsg = new String(this.encoder.encode(eventObject), StandardCharsets.UTF_8);
-        if (EventBus.fire(new LogEvent(logMsg)) == 0) {
+        if (eventBus.fire(new LogEvent(logMsg)) == 0) {
             this.cache.add(logMsg);
         }
     }

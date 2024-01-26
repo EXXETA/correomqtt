@@ -31,23 +31,26 @@ public class AlertController extends BaseControllerImpl {
     public static final String ALERT_EXCEPTION_TITLE = "Exception";
 
     private final ResourceBundle resources;
+    private final EventBus eventBus;
     private final AlertHelper alertHelper;
 
     @Inject
     AlertController(CoreManager coreManager,
                     ThemeManager themeManager,
+                    EventBus eventBus,
                     AlertHelper alertHelper) {
         super(coreManager, themeManager);
+        this.eventBus = eventBus;
         this.alertHelper = alertHelper;
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", coreManager.getSettingsManager().getSettings().getCurrentLocale());
     }
 
     public void activate() {
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     public void deactivate() {
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 
     @SuppressWarnings("unused")

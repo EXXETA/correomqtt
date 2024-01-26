@@ -32,6 +32,7 @@ public class ControlBarController extends BaseConnectionController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ControlBarController.class);
 
     private final ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories;
+    private final EventBus eventBus;
     private final ControlBarDelegate delegate;
 
     @FXML
@@ -84,12 +85,14 @@ public class ControlBarController extends BaseConnectionController {
     public ControlBarController(CoreManager coreManager,
                                 ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
                                 ThemeManager themeManager,
+                                EventBus eventBus,
                                 @Assisted String connectionId,
                                 @Assisted ControlBarDelegate delegate) {
         super(coreManager, themeManager, connectionId);
         this.connectionLifecycleTaskFactories = connectionLifecycleTaskFactories;
+        this.eventBus = eventBus;
         this.delegate = delegate;
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     LoaderResult<ControlBarController> load() {
@@ -289,6 +292,6 @@ public class ControlBarController extends BaseConnectionController {
 
 
     public void cleanUp() {
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 }

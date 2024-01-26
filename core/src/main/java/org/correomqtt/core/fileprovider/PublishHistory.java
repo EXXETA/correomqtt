@@ -27,14 +27,16 @@ public class PublishHistory extends BasePersistHistoryProvider<PublishHistoryLis
     private static final Map<String, PublishHistoryListDTO> historyDTOs = new HashMap<>();
 
     @AssistedInject
-    public PublishHistory(SettingsManager settings, @Assisted String connectionId) {
-        super(settings, connectionId);
-        EventBus.register(this);
+    public PublishHistory(SettingsManager settings,
+                          EventBus eventBus,
+                          @Assisted String connectionId) {
+        super(settings, eventBus, connectionId);
+        eventBus.register(this);
     }
 
     @Override
     protected void readingError(Exception e) {
-        EventBus.fireAsync(new PersistPublishHistoryReadFailedEvent(e));
+        eventBus.fireAsync(new PersistPublishHistoryReadFailedEvent(e));
     }
 
     @Override
@@ -77,7 +79,7 @@ public class PublishHistory extends BasePersistHistoryProvider<PublishHistoryLis
             new ObjectMapper().writeValue(getFile(), historyDTOs.get(connectionId));
         } catch (IOException e) {
             LOGGER.error("Failed to write " + getHistoryFileName(), e);
-            EventBus.fireAsync(new PersistPublishHistoryWriteFailedEvent(e));
+            eventBus.fireAsync(new PersistPublishHistoryWriteFailedEvent(e));
         }
     }
 
@@ -89,7 +91,7 @@ public class PublishHistory extends BasePersistHistoryProvider<PublishHistoryLis
 
 
     public void cleanUp() {
-        EventBus.unregister(this);
+        eventBus.unregister(this);
 
         instances.remove(getConnectionId());
         historyDTOs.remove(getConnectionId());

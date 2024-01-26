@@ -11,6 +11,7 @@ import org.correomqtt.core.plugin.PluginManager;
 public class PluginInstallTask extends SimpleTask {
 
     private final PluginManager pluginManager;
+    private final EventBus eventBus;
     private final String pluginId;
     private final String version;
 
@@ -18,11 +19,15 @@ public class PluginInstallTask extends SimpleTask {
     public interface Factory {
         PluginInstallTask create(@Assisted("pluginId") String pluginId, @Assisted("version") String version);
     }
+
     @AssistedInject
     public PluginInstallTask(PluginManager pluginManager,
+                             EventBus eventBus,
                              @Assisted("pluginId") String pluginId,
                              @Assisted("version") String version) {
+        super(eventBus);
         this.pluginManager = pluginManager;
+        this.eventBus = eventBus;
         this.pluginId = pluginId;
         this.version = version;
     }
@@ -30,16 +35,16 @@ public class PluginInstallTask extends SimpleTask {
     @Override
     protected void execute() {
         pluginManager.getUpdateManager().installPlugin(pluginId, version);
-        EventBus.fireAsync(new PluginInstallEvent(pluginId, version));
+        eventBus.fireAsync(new PluginInstallEvent(pluginId, version));
     }
 
     @Override
     protected void beforeHook() {
-        EventBus.fireAsync(new PluginInstallStartedEvent(pluginId, version));
+        eventBus.fireAsync(new PluginInstallStartedEvent(pluginId, version));
     }
 
     @Override
     protected void errorHook(SimpleTaskErrorResult ignore) {
-        EventBus.fireAsync(new PluginInstallFailedEvent(pluginId, version));
+        eventBus.fireAsync(new PluginInstallFailedEvent(pluginId, version));
     }
 }

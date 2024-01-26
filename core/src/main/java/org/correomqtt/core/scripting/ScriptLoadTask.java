@@ -5,6 +5,7 @@ import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
+import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 
 import java.io.IOException;
@@ -27,7 +28,9 @@ public class ScriptLoadTask extends NoProgressTask<String, ScriptLoadTask.Error>
 
     @AssistedInject
     public ScriptLoadTask(ScriptingProvider scriptingProvider,
+                          EventBus eventBus,
                           @Assisted ScriptFileDTO scriptFileDTO) {
+        super(eventBus);
         this.scriptingProvider = scriptingProvider;
         this.scriptFileDTO = scriptFileDTO;
     }

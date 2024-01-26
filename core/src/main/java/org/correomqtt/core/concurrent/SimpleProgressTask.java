@@ -1,6 +1,12 @@
 package org.correomqtt.core.concurrent;
 
+import org.correomqtt.core.eventbus.EventBus;
+
 public abstract class SimpleProgressTask<P> extends TaskImpl<Void, P, Void, SimpleTaskErrorResult> {
+
+    protected SimpleProgressTask(EventBus eventBus) {
+        super(eventBus);
+    }
 
     public SimpleProgressTask<P> onStarted(StartListener listener) {
         onStartedImpl(listener);

@@ -48,6 +48,7 @@ public class ConnectionViewController extends BaseConnectionController implement
     private final KeyringManager keyringManager;
     private final LoadingViewController.Factory loadingViewControllerFactory;
     private final AlertHelper alertHelper;
+    private final EventBus eventBus;
     private final ConnectionViewDelegate delegate;
     @FXML
     private Pane connectionPane;
@@ -88,6 +89,7 @@ public class ConnectionViewController extends BaseConnectionController implement
                                     LoadingViewController.Factory loadingViewControllerFactory,
                                     AlertHelper alertHelper,
                                     CoreManager coreManager,
+                                    EventBus eventBus,
                                     @Assisted String connectionId,
                                     @Assisted ConnectionViewDelegate delegate) {
         super(coreManager, themeManager, connectionId);
@@ -98,8 +100,9 @@ public class ConnectionViewController extends BaseConnectionController implement
         this.keyringManager = keyringManager;
         this.loadingViewControllerFactory = loadingViewControllerFactory;
         this.alertHelper = alertHelper;
+        this.eventBus = eventBus;
         this.delegate = delegate;
-        EventBus.register(this);
+        eventBus.register(this);
         coreManager.getHistoryManager().activatePublishHistory(connectionId);
         coreManager.getHistoryManager().activatePublishMessageHistory(connectionId);
         coreManager.getHistoryManager().activateSubscriptionHistory(connectionId);
@@ -375,6 +378,6 @@ public class ConnectionViewController extends BaseConnectionController implement
         coreManager.getHistoryManager().tearDownPublishMessageHistory(connectionId);
         coreManager.getHistoryManager().tearDownSubscriptionHistory(connectionId);
 
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 }

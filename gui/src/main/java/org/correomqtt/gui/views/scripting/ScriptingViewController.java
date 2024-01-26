@@ -70,6 +70,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     private final ScriptTaskFactories scriptTaskFactories;
     private final Provider<ExecutionViewController> executionViewControllerProvider;
     private final ScriptingProvider scriptingProvider;
+    private final EventBus eventBus;
     private final HostServices hostServices;
     private ResourceBundle resources;
     @FXML
@@ -110,6 +111,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                                    ScriptTaskFactories scriptTaskFactories,
                                    Provider<ExecutionViewController> executionViewControllerProvider,
                                    ScriptingProvider scriptingProvider,
+                                   EventBus eventBus,
                                    @AppHostServices HostServices hostServices
     ) {
         super(coreManager, themeManager);
@@ -120,8 +122,9 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         this.scriptTaskFactories = scriptTaskFactories;
         this.executionViewControllerProvider = executionViewControllerProvider;
         this.scriptingProvider = scriptingProvider;
+        this.eventBus = eventBus;
         this.hostServices = hostServices;
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     public void showAsDialog() {
@@ -156,7 +159,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
 
         editorStates.values().forEach(es -> es.controller.cleanUp());
         executionController.cleanup();
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 
     @FXML

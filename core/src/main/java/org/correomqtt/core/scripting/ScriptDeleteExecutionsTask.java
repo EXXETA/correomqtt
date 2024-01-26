@@ -19,6 +19,7 @@ public class ScriptDeleteExecutionsTask extends SimpleErrorTask<ScriptDeleteExec
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptDeleteExecutionsTask.class);
 
     private final ScriptingProvider scriptingProvider;
+    private final EventBus eventBus;
     private final String filename;
 
     public enum Error {
@@ -32,8 +33,11 @@ public class ScriptDeleteExecutionsTask extends SimpleErrorTask<ScriptDeleteExec
 
     @AssistedInject
     public ScriptDeleteExecutionsTask(ScriptingProvider scriptingProvider,
+                                      EventBus eventBus,
                                       @Assisted String filename) {
+        super(eventBus);
         this.scriptingProvider = scriptingProvider;
+        this.eventBus = eventBus;
         this.filename = filename;
     }
 
@@ -42,7 +46,7 @@ public class ScriptDeleteExecutionsTask extends SimpleErrorTask<ScriptDeleteExec
         try {
             ScriptingBackend.removeExecutionsForScript(filename);
             scriptingProvider.deleteExecutions(filename);
-            EventBus.fireAsync(new ScriptExecutionsDeletedEvent(filename));
+            eventBus.fireAsync(new ScriptExecutionsDeletedEvent(filename));
         } catch (IOException e) {
             LOGGER.error("Exception removing executions for {}.", filename, e);
             throw new TaskException(IOERROR);

@@ -5,6 +5,8 @@ import org.correomqtt.core.utils.FrontendBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -20,13 +22,14 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+@Singleton
 public class EventBus {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventBus.class);
-    private static final Map<Class<Event>, Set<Callback>> LISTENER = new HashMap<>();
-    private static final Map<Object, HashMap<String, Method>> LISTENER_FILTER = new HashMap<>();
-    private static final Map<Class<Event>, HashMap<String, Method>> EVENT_FILTER = new HashMap<>();
+    private final Map<Class<Event>, Set<Callback>> listener = new HashMap<>();
+    private final Map<Object, HashMap<String, Method>> listenerFilter = new HashMap<>();
+    private final Map<Class<Event>, HashMap<String, Method>> eventFilter = new HashMap<>();
 
     @AllArgsConstructor
     private static class Callback {
@@ -39,11 +42,12 @@ public class EventBus {
     private record EventSubscription(Class<Event> event, boolean sync) {
     }
 
-    private EventBus() {
+    @Inject
+    EventBus() {
         // private constructor
     }
 
-    public static void register(Object listener) {
+    public void register(Object listener) {
         Arrays.stream(listener.getClass().getDeclaredMethods())
                 .forEach(m -> {
 
@@ -60,7 +64,7 @@ public class EventBus {
                     }
 
                     eventSubs.forEach(es -> {
-                        LISTENER.computeIfAbsent(es.event, k -> new HashSet<>())
+                        this.listener.computeIfAbsent(es.event, k -> new HashSet<>())
                                 .add(new Callback(listener, m, m.getParameters().length > 0, es.sync));
                         registerEventType(es.event);
                     });
@@ -68,14 +72,14 @@ public class EventBus {
                     if (m.isAnnotationPresent(SubscribeFilter.class)) {
                         SubscribeFilter annotation = m.getAnnotation(SubscribeFilter.class);
                         String[] name = annotation.value();
-                        Arrays.stream(name).forEach(n -> EventBus.LISTENER_FILTER
+                        Arrays.stream(name).forEach(n -> listenerFilter
                                 .computeIfAbsent(listener, k -> new HashMap<>())
                                 .put(n, m));
                     }
                 });
     }
 
-    private static List<EventSubscription> getEventType(Method m) {
+    private List<EventSubscription> getEventType(Method m) {
 
         if (!m.isAnnotationPresent(Subscribe.class)) {
             return Collections.emptyList();
@@ -111,7 +115,7 @@ public class EventBus {
 
     }
 
-    private static EventSubscription getEventTypeFromParameter(Method m) {
+    private EventSubscription getEventTypeFromParameter(Method m) {
 
         Annotation[][] annotatedParams = m.getParameterAnnotations();
         Subscribe annotation = (Subscribe) Arrays.stream(annotatedParams).map(a1 ->
@@ -139,8 +143,8 @@ public class EventBus {
         return new EventSubscription((Class<Event>) params[0].getType(), annotation.sync());
     }
 
-    private static void registerEventType(Class<Event> eventType) {
-        if (EventBus.EVENT_FILTER.containsKey(eventType))
+    private void registerEventType(Class<Event> eventType) {
+        if (eventFilter.containsKey(eventType))
             return;
 
         Arrays.stream(eventType.getDeclaredMethods())
@@ -149,25 +153,25 @@ public class EventBus {
                     if (m.isAnnotationPresent(SubscribeFilter.class)) {
                         SubscribeFilter annotation = m.getAnnotation(SubscribeFilter.class);
                         String[] name = annotation.value();
-                        Arrays.stream(name).forEach(n -> EventBus.EVENT_FILTER
+                        Arrays.stream(name).forEach(n -> eventFilter
                                 .computeIfAbsent(eventType, k -> new HashMap<>())
                                 .put(n, m));
                     }
                 });
     }
 
-    public static void unregister(Object listener) {
-        EventBus.LISTENER.values().forEach(s -> s.removeIf(c -> c.clazz == listener));
+    public void unregister(Object listener) {
+        this.listener.values().forEach(s -> s.removeIf(c -> c.clazz == listener));
     }
 
-    public static int fire(Event event) {
+    public int fire(Event event) {
         Set<Callback> callbacks = getCallbacksToExecute(event);
         executeFire(event, callbacks);
         return callbacks.size();
     }
 
-    private static Set<Callback> getCallbacksToExecute(Event event) {
-        Set<Callback> callbacks = LISTENER.get(event.getClass());
+    private Set<Callback> getCallbacksToExecute(Event event) {
+        Set<Callback> callbacks = listener.get(event.getClass());
         if (callbacks == null)
             return Collections.emptySet();
 
@@ -176,7 +180,7 @@ public class EventBus {
                 .collect(Collectors.toSet());
     }
 
-    private static void executeFire(Event event, Set<Callback> callbacks) {
+    private void executeFire(Event event, Set<Callback> callbacks) {
         callbacks.forEach(c -> {
             if (c.sync) {
                 executeMethod(c, event);
@@ -186,9 +190,9 @@ public class EventBus {
         });
     }
 
-    private static boolean isValidEvent(Event event, Object listener) {
-        HashMap<String, Method> listenerFilter = LISTENER_FILTER.get(listener);
-        HashMap<String, Method> eventFilter = EVENT_FILTER.get(event.getClass());
+    private boolean isValidEvent(Event event, Object listener) {
+        HashMap<String, Method> listenerFilter = this.listenerFilter.get(listener);
+        HashMap<String, Method> eventFilter = this.eventFilter.get(event.getClass());
 
         // Either listener or event does not have filter -> is valid for sure
         if (listenerFilter == null || eventFilter == null)
@@ -214,7 +218,7 @@ public class EventBus {
         });
     }
 
-    private static void executeMethod(Callback c, Event event) {
+    private void executeMethod(Callback c, Event event) {
 
         try {
             if (c.withPayload) {
@@ -228,7 +232,7 @@ public class EventBus {
         }
     }
 
-    public static int fireAsync(Event event) {
+    public int fireAsync(Event event) {
         Set<Callback> callbacks = getCallbacksToExecute(event);
         CompletableFuture.runAsync(() -> executeFire(event, callbacks));
         return callbacks.size();

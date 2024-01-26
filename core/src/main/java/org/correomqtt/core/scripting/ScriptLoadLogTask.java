@@ -5,6 +5,7 @@ import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
+import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +33,9 @@ public class ScriptLoadLogTask extends NoProgressTask<String, ScriptLoadLogTask.
 
     @AssistedInject
     public ScriptLoadLogTask(ScriptingProvider scriptingProvider,
+                             EventBus eventBus,
                              @Assisted ExecutionDTO dto) {
+        super(eventBus);
         this.scriptingProvider = scriptingProvider;
         this.dto = dto;
     }

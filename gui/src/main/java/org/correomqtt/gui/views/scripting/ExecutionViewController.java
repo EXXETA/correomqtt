@@ -45,6 +45,7 @@ public class ExecutionViewController extends BaseControllerImpl {
     private final ExecutionCell.Factory executionCellFactory;
     private final SingleExecutionViewController.Factory executionViewCtrlFactory;
     private final ScriptExecuteTaskFactories scriptExecuteTaskFactories;
+    private final EventBus eventBus;
     @FXML
     private AnchorPane executionSidebar;
     @FXML
@@ -75,14 +76,16 @@ public class ExecutionViewController extends BaseControllerImpl {
                                    AlertHelper alertHelper,
                                    ExecutionCell.Factory executionCellFactory,
                                    SingleExecutionViewController.Factory executionViewCtrlFactory,
-                                   ScriptExecuteTaskFactories scriptExecuteTaskFactories
+                                   ScriptExecuteTaskFactories scriptExecuteTaskFactories,
+                                   EventBus eventBus
     ) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;
         this.executionCellFactory = executionCellFactory;
         this.executionViewCtrlFactory = executionViewCtrlFactory;
         this.scriptExecuteTaskFactories = scriptExecuteTaskFactories;
-        EventBus.register(this);
+        this.eventBus = eventBus;
+        eventBus.register(this);
     }
 
     public LoaderResult<ExecutionViewController> load() {
@@ -120,7 +123,7 @@ public class ExecutionViewController extends BaseControllerImpl {
         for (ScriptExecutionState state : executionStates.values()) {
             state.controller.cleanup();
         }
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 
     public void filterByScript(String name) {

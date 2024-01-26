@@ -4,6 +4,7 @@ import dagger.assisted.Assisted;
 import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleTask;
+import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 
 public class ScriptCancelTask extends SimpleTask {
@@ -18,7 +19,9 @@ public class ScriptCancelTask extends SimpleTask {
 
     @AssistedInject
     public ScriptCancelTask(ScriptingProvider scriptingProvider,
+                            EventBus eventBus,
                             @Assisted String executionId) {
+        super(eventBus);
         this.scriptingProvider = scriptingProvider;
         this.executionId = executionId;
     }

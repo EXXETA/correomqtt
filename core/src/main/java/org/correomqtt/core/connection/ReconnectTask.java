@@ -4,6 +4,7 @@ import dagger.assisted.Assisted;
 import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.NoProgressTask;
+import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.mqtt.CorreoMqttClientFactory;
@@ -16,6 +17,7 @@ import java.util.Set;
 public class ReconnectTask extends NoProgressTask<Void, Void> {
 
     private final SubscribeTask.Factory subscribeTaskFactory;
+    private final CorreoMqttClientFactory correoMqttClientFactory;
     private final ConnectionManager connectionManager;
     private final String connectionId;
 
@@ -25,8 +27,14 @@ public class ReconnectTask extends NoProgressTask<Void, Void> {
     }
 
     @AssistedInject
-    public ReconnectTask(SubscribeTask.Factory subscribeTaskFactory, ConnectionManager connectionManager, @Assisted String connectionId) {
+    public ReconnectTask(SubscribeTask.Factory subscribeTaskFactory,
+                         EventBus eventBus,
+                         CorreoMqttClientFactory correoMqttClientFactory,
+                         ConnectionManager connectionManager,
+                         @Assisted String connectionId) {
+        super(eventBus);
         this.subscribeTaskFactory = subscribeTaskFactory;
+        this.correoMqttClientFactory = correoMqttClientFactory;
         this.connectionManager = connectionManager;
         this.connectionId = connectionId;
     }
@@ -36,7 +44,7 @@ public class ReconnectTask extends NoProgressTask<Void, Void> {
         CorreoMqttConnection connection = connectionManager.getConnection(connectionId);
         Set<SubscriptionDTO> existingSubscriptions = connection.getClient().getSubscriptions();
 
-        connection.setClient(CorreoMqttClientFactory.createClient(connection.getConfigDTO()));
+        connection.setClient(correoMqttClientFactory.createClient(connection.getConfigDTO()));
         CorreoMqttClient client = connectionManager.getClient(connectionId);
         client.connect();
 

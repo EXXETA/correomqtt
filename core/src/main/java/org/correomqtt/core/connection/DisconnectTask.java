@@ -4,6 +4,7 @@ import dagger.assisted.Assisted;
 import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleTask;
+import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.utils.ConnectionManager;
 
@@ -18,7 +19,10 @@ public class DisconnectTask extends SimpleTask {
     }
 
     @AssistedInject
-    public DisconnectTask(ConnectionManager connectionManager, @Assisted String connectionId) {
+    public DisconnectTask(ConnectionManager connectionManager,
+                          EventBus eventBus,
+                          @Assisted String connectionId) {
+        super(eventBus);
         this.connectionManager = connectionManager;
         this.connectionId = connectionId;
     }

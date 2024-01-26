@@ -12,6 +12,11 @@ import java.util.concurrent.CompletionException;
 
 abstract class TaskImpl<T, P, E, R> {
 
+    protected final EventBus eventBus;
+
+    protected TaskImpl(EventBus eventBus){
+        this.eventBus = eventBus;
+    }
 
     abstract T executeImpl() throws Exception;
 
@@ -73,7 +78,7 @@ abstract class TaskImpl<T, P, E, R> {
                         }
                         if (errorListener.isEmpty()) {
                             LOGGER.error("Unhandled exeception executing Task. Please consider using an ExceptionListener. ", t);
-                            EventBus.fireAsync(new UnhandledTaskExceptionEvent<E>(expectedError, t));
+                            eventBus.fireAsync(new UnhandledTaskExceptionEvent<E>(expectedError, t));
                         }
                         R errorResult = createTaskErrorResult(expectedError, t);
                         errorHookImpl(errorResult);

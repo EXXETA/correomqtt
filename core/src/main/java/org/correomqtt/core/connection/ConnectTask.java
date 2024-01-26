@@ -22,6 +22,8 @@ import static org.correomqtt.core.eventbus.SubscribeFilterNames.CONNECTION_ID;
 public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent> {
 
     private final ConnectionManager connectionManager;
+    private final CorreoMqttClientFactory correoMqttClientFactory;
+    private final EventBus eventBus;
     private final String connectionId;
 
 
@@ -31,8 +33,14 @@ public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent>
     }
 
     @AssistedInject
-    public ConnectTask(ConnectionManager connectionManager, @Assisted String connectionId) {
+    public ConnectTask(ConnectionManager connectionManager,
+                       CorreoMqttClientFactory correoMqttClientFactory,
+                       EventBus eventBus,
+                       @Assisted String connectionId) {
+        super(eventBus);
         this.connectionManager = connectionManager;
+        this.correoMqttClientFactory = correoMqttClientFactory;
+        this.eventBus = eventBus;
         this.connectionId = connectionId;
     }
 
@@ -41,7 +49,7 @@ public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent>
         CorreoMqttClient client = connectionManager.getClient(connectionId);
         if (client == null) {
             CorreoMqttConnection connection = connectionManager.getConnection(connectionId);
-            connection.setClient(CorreoMqttClientFactory.createClient(connection.getConfigDTO()));
+            connection.setClient(correoMqttClientFactory.createClient(connection.getConfigDTO()));
             client = connectionManager.getClient(connectionId);
         }
 
@@ -59,12 +67,12 @@ public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent>
 
     @Override
     protected void beforeHook() {
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     @Override
     protected void finalHook() {
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 
     public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {

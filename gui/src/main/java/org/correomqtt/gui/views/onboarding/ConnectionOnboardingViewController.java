@@ -45,6 +45,7 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionOnboardingViewController.class);
     private final ConnectionCell.Factory connectionCellFactory;
     private final ConnectionSettingsViewController.Factory connectionSettingsViewControllerFactory;
+    private final EventBus eventBus;
     private final ConnectionOnboardingDelegate connectionsOnboardingDelegate;
     @FXML
     private AnchorPane helloViewAnchor;
@@ -77,12 +78,14 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
                                               ThemeManager themeManager,
                                               ConnectionCell.Factory connectionCellFactory,
                                               ConnectionSettingsViewController.Factory connectionSettingsViewControllerFactory,
+                                              EventBus eventBus,
                                               @Assisted ConnectionOnboardingDelegate connectionsOnboardingDelegate) {
         super(coreManager, themeManager);
         this.connectionCellFactory = connectionCellFactory;
         this.connectionSettingsViewControllerFactory = connectionSettingsViewControllerFactory;
+        this.eventBus = eventBus;
         this.connectionsOnboardingDelegate = connectionsOnboardingDelegate;
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     public LoaderResult<ConnectionOnboardingViewController> load() {
@@ -249,6 +252,6 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
     public void cleanUp() {
         ConnectionPropertiesDTO config = connectionListView.getSelectionModel().getSelectedItem();
         connectionsOnboardingDelegate.cleanUpProvider(config);
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 }

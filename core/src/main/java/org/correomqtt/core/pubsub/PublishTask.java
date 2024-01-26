@@ -32,6 +32,7 @@ public class PublishTask extends SimpleTask {
     private final PluginManager pluginManager;
     private final ConnectionManager connectionManager;
     private final LoggerUtils loggerUtils;
+    private final EventBus eventBus;
     private final String connectionId;
     private final MessageDTO messageDTO;
 
@@ -44,11 +45,14 @@ public class PublishTask extends SimpleTask {
     PublishTask(PluginManager pluginManager,
                 ConnectionManager connectionManager,
                 LoggerUtils loggerUtils,
+                EventBus eventBus,
                 @Assisted String connectionId,
                 @Assisted MessageDTO messageDTO) {
+        super(eventBus);
         this.pluginManager = pluginManager;
         this.connectionManager = connectionManager;
         this.loggerUtils = loggerUtils;
+        this.eventBus = eventBus;
         this.connectionId = connectionId;
         this.messageDTO = messageDTO;
     }
@@ -60,7 +64,7 @@ public class PublishTask extends SimpleTask {
         MessageDTO manipulatedMessageDTO = executeOnPublishMessageExtensions(connectionId, messageDTO);
         try {
             client.publish(manipulatedMessageDTO);
-            EventBus.fireAsync(new PublishEvent(connectionId, manipulatedMessageDTO));
+            eventBus.fireAsync(new PublishEvent(connectionId, manipulatedMessageDTO));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TaskException(e);
@@ -71,7 +75,7 @@ public class PublishTask extends SimpleTask {
 
     @Override
     protected void errorHook(SimpleTaskErrorResult ignore) {
-        EventBus.fireAsync(new PublishFailedEvent(connectionId, messageDTO));
+        eventBus.fireAsync(new PublishFailedEvent(connectionId, messageDTO));
     }
 
     private MessageDTO executeOnPublishMessageExtensions(String connectionId, MessageDTO messageDTO) {

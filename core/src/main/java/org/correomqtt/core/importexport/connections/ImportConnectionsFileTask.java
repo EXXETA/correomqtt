@@ -1,8 +1,12 @@
 package org.correomqtt.core.importexport.connections;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
+import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.model.ConnectionExportDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +25,15 @@ public class ImportConnectionsFileTask extends NoProgressTask<ConnectionExportDT
 
     private final File file;
 
-    public ImportConnectionsFileTask(File file) {
+    @AssistedFactory
+    public interface Factory {
+        ImportConnectionsFileTask create(File file);
+    }
+
+    @AssistedInject
+    public ImportConnectionsFileTask(EventBus eventBus,
+                                     @Assisted File file) {
+        super(eventBus);
         this.file = file;
     }
 

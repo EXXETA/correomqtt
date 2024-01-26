@@ -5,6 +5,7 @@ import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleErrorTask;
 import org.correomqtt.core.concurrent.TaskException;
+import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 
 import java.io.IOException;
@@ -28,8 +29,10 @@ public class ScriptSaveTask extends SimpleErrorTask<ScriptSaveTask.Error> {
 
     @AssistedInject
     public ScriptSaveTask(ScriptingProvider scriptingProvider,
+                          EventBus eventBus,
                           @Assisted ScriptFileDTO scriptFileDTO,
                           @Assisted String content) {
+        super(eventBus);
         this.scriptingProvider = scriptingProvider;
         this.scriptFileDTO = scriptFileDTO;
         this.content = content;

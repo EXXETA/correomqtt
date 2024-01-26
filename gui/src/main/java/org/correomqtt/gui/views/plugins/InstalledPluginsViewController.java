@@ -76,6 +76,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
                                           PluginUninstallTask.Factory pluginUninstallTaskFactory,
                                           PluginCell.Factory pluginCellFactory,
                                           ThemeManager themeManager,
+                                          EventBus eventBus,
                                           AlertHelper alertHelper) {
         super(coreManager, themeManager);
         this.pluginEnableTaskFactory = pluginEnableTaskFactory;
@@ -84,7 +85,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
         this.pluginCellFactory = pluginCellFactory;
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", coreManager.getSettingsManager().getSettings().getCurrentLocale());
         this.alertHelper = alertHelper;
-        EventBus.register(this);
+        eventBus.register(this); //TODO cleanup
     }
 
     public LoaderResult<InstalledPluginsViewController> load() {

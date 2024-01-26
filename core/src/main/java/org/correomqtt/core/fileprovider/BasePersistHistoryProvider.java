@@ -2,6 +2,7 @@ package org.correomqtt.core.fileprovider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
+import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.settings.SettingsManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,10 @@ abstract class BasePersistHistoryProvider<D> extends BaseUserFileProvider {
     private final String connectionId;
 
 
-    BasePersistHistoryProvider(SettingsManager settings, String id) {
+    BasePersistHistoryProvider(SettingsManager settings,
+                               EventBus eventBus,
+                               String id) {
+        super(eventBus);
         this.settings = settings;
         connectionId = id;
 

@@ -3,9 +3,13 @@ package org.correomqtt.core.importexport.connections;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.encryption.EncryptorAesGcm;
+import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.fileprovider.EncryptionRecoverableException;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 
@@ -23,8 +27,19 @@ public class ImportDecryptConnectionsTask extends NoProgressTask<List<Connection
     private final String encryptionType;
     private final String password;
 
-    public ImportDecryptConnectionsTask(String encryptedData, String encryptionType, String password) {
+    @AssistedFactory
+    public interface Factory {
+        ImportDecryptConnectionsTask create(@Assisted("encryptedData") String encryptedData,
+                                            @Assisted("encryptedType") String encryptionType,
+                                            @Assisted("password") String password);
+    }
 
+    @AssistedInject
+    public ImportDecryptConnectionsTask(EventBus eventBus,
+                                        @Assisted("encryptedData") String encryptedData,
+                                        @Assisted("encryptedType") String encryptionType,
+                                        @Assisted("password") String password) {
+        super(eventBus);
         this.encryptedData = encryptedData;
         this.encryptionType = encryptionType;
         this.password = password;

@@ -45,21 +45,23 @@ public class SettingsManager extends BaseUserFileProvider {
     private ConfigDTO configDTO;
 
     @Inject
-    public SettingsManager(SecretStoreProvider secretStoreProvider) {
+    public SettingsManager(EventBus eventBus,
+                           SecretStoreProvider secretStoreProvider) {
+        super(eventBus);
         this.secretStoreProvider = secretStoreProvider;
 
         try {
             prepareFile(CONFIG_FILE_NAME);
         } catch (InvalidPathException | SecurityException | UnsupportedOperationException | IOException e) {
             LOGGER.error("Error writing config file {}. ", CONFIG_FILE_NAME, e);
-            EventBus.fire(new UnaccessibleConfigFileEvent(e));
+            eventBus.fire(new UnaccessibleConfigFileEvent(e));
         }
 
         try {
             configDTO = new ObjectMapper().readValue(getFile(), ConfigDTO.class);
         } catch (IOException e) {
             LOGGER.error("Exception parsing config file {}.", CONFIG_FILE_NAME, e);
-            EventBus.fire(new InvalidConfigFileEvent(e));
+            eventBus.fire(new InvalidConfigFileEvent(e));
         }
 
     }
@@ -101,7 +103,7 @@ public class SettingsManager extends BaseUserFileProvider {
     public void saveSettings() {
         saveDTO();
 
-        EventBus.fire(new SettingsUpdatedEvent(false));
+        eventBus.fire(new SettingsUpdatedEvent(false));
     }
 
     private void saveDTO() {
@@ -109,7 +111,7 @@ public class SettingsManager extends BaseUserFileProvider {
         try {
             new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(getFile(), configDTO);
         } catch (IOException e) {
-            EventBus.fire(new ConfigSaveFailedEvent(e));
+            eventBus.fire(new ConfigSaveFailedEvent(e));
         }
     }
 
@@ -151,7 +153,7 @@ public class SettingsManager extends BaseUserFileProvider {
         secretStoreProvider.encryptAndSavePasswords(masterPassword);
 
         connectionChangeListeners.forEach(Runnable::run);
-        EventBus.fire(new ConnectionsUpdatedEvent());
+        eventBus.fire(new ConnectionsUpdatedEvent());
     }
 
     public void initializePasswords(String masterPassword) throws EncryptionRecoverableException {

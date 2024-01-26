@@ -27,7 +27,9 @@ public class ThemeManager extends BaseUserFileProvider {
 
     @Inject
     public ThemeManager(SettingsManager settingsManager,
+                        EventBus eventBus,
                         PluginManager pluginManager) {
+        super(eventBus);
         this.settingsManager = settingsManager;
         this.pluginManager = pluginManager;
     }
@@ -65,6 +67,6 @@ public class ThemeManager extends BaseUserFileProvider {
     public void saveCSS() {
         saveToUserDirectory(CSS_FILE_NAME, getActiveTheme().getCss());
         LOGGER.info("Write CSS to {}.", CSS_FILE_NAME);
-        EventBus.fire(new SettingsUpdatedEvent(false));
+        eventBus.fire(new SettingsUpdatedEvent(false));
     }
 }

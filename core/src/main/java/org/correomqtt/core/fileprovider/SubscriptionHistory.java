@@ -29,9 +29,11 @@ public class SubscriptionHistory extends BasePersistHistoryProvider<Subscription
     private static Map<String, SubscriptionHistoryListDTO> historyDTOs = new HashMap<>();
 
     @AssistedInject
-    SubscriptionHistory(SettingsManager settings, @Assisted String connectionId) {
-        super(settings, connectionId);
-        EventBus.register(this);
+    SubscriptionHistory(SettingsManager settings,
+                        EventBus eventBus,
+                        @Assisted String connectionId) {
+        super(settings, eventBus, connectionId);
+        eventBus.register(this);
     }
 
     public void onSubscribedSucceeded(@Subscribe SubscribeEvent event) {
@@ -66,10 +68,10 @@ public class SubscriptionHistory extends BasePersistHistoryProvider<Subscription
     private void saveHistory(String connectionId) {
         try {
             new ObjectMapper().writeValue(getFile(), historyDTOs.get(connectionId));
-            EventBus.fireAsync(new PersistSubscribeHistoryUpdateEvent(connectionId));
+            eventBus.fireAsync(new PersistSubscribeHistoryUpdateEvent(connectionId));
         } catch (IOException e) {
             LOGGER.error("Failed to write " + getHistoryFileName(), e);
-            EventBus.fireAsync(new PersistSubscribeHistoryWriteFailedEvent(getConnectionId(), e));
+            eventBus.fireAsync(new PersistSubscribeHistoryWriteFailedEvent(getConnectionId(), e));
         }
     }
 
@@ -90,7 +92,7 @@ public class SubscriptionHistory extends BasePersistHistoryProvider<Subscription
 
     @Override
     protected void readingError(Exception e) {
-        EventBus.fireAsync(new PersistSubscribeHistoryReadFailedEvent(getConnectionId(), e));
+        eventBus.fireAsync(new PersistSubscribeHistoryReadFailedEvent(getConnectionId(), e));
     }
 
     @SuppressWarnings("unused")
@@ -100,7 +102,7 @@ public class SubscriptionHistory extends BasePersistHistoryProvider<Subscription
     }
 
     public void cleanUp() {
-        EventBus.unregister(this);
+        eventBus.unregister(this);
 
         historyDTOs.remove(getConnectionId());
     }

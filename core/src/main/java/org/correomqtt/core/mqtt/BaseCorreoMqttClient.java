@@ -37,6 +37,7 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
 
     private static final int MAX_RECONNECTS = 5;
 
+    private final EventBus eventBus;
     private final ConnectionConfigDTO configDTO;
     private final AtomicInteger triedReconnects = new AtomicInteger(0);
     private final Set<SubscriptionDTO> subscriptions = new HashSet<>();
@@ -47,7 +48,9 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
     @Getter
     private ConnectionState state = ConnectionState.DISCONNECTED_GRACEFUL;
 
-    protected BaseCorreoMqttClient(ConnectionConfigDTO configDTO) {
+    protected BaseCorreoMqttClient(EventBus eventBus,
+                                   ConnectionConfigDTO configDTO) {
+        this.eventBus = eventBus;
         this.configDTO = configDTO;
     }
 
@@ -182,7 +185,7 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
         } else {
             getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Connection state changed to {}", state);
         }
-        EventBus.fireAsync(new ConnectionStateChangedEvent(getConfigDTO().getId(),
+        eventBus.fireAsync(new ConnectionStateChangedEvent(getConfigDTO().getId(),
                 state,
                 triedReconnects.get(),
                 MAX_RECONNECTS));

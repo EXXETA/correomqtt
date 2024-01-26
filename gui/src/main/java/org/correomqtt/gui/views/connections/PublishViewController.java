@@ -75,6 +75,8 @@ public class PublishViewController extends BaseMessageBasedViewController {
     private final TopicCell.Factory topicCellFactory;
     private final AlertHelper alertHelper;
     private final LoadingViewController.Factory loadingViewControllerFactory;
+    private final ImportMessageTask.Factory importMessageTaskFactory;
+    private final EventBus eventBus;
     private final PublishViewDelegate delegate;
     private ResourceBundle resources;
     @FXML
@@ -123,6 +125,8 @@ public class PublishViewController extends BaseMessageBasedViewController {
                                  TopicCell.Factory topicCellFactory,
                                  AlertHelper alertHelper,
                                  LoadingViewController.Factory loadingViewControllerFactory,
+                                 ImportMessageTask.Factory importMessageTaskFactory,
+                                 EventBus eventBus,
                                  @Assisted String connectionId,
                                  @Assisted PublishViewDelegate delegate) {
         super(coreManager, themeManager, messageListViewControllerFactory, connectionId);
@@ -132,8 +136,10 @@ public class PublishViewController extends BaseMessageBasedViewController {
         this.topicCellFactory = topicCellFactory;
         this.alertHelper = alertHelper;
         this.loadingViewControllerFactory = loadingViewControllerFactory;
+        this.importMessageTaskFactory = importMessageTaskFactory;
+        this.eventBus = eventBus;
         this.delegate = delegate;
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     LoaderResult<PublishViewController> load() {
@@ -272,7 +278,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
         File file = fileChooser.showOpenDialog(stage);
 
         if (file != null) {
-            new ImportMessageTask(file)
+            importMessageTaskFactory.create(file)
                     .onError(error -> alertHelper.unexpectedAlert(error.getUnexpectedError()))
                     .run();
         }
@@ -334,12 +340,12 @@ public class PublishViewController extends BaseMessageBasedViewController {
 
     @Override
     public void removeMessage(MessageDTO messageDTO) {
-        EventBus.fireAsync(new PublishListRemovedEvent(getConnectionId(), messageDTO));
+        eventBus.fireAsync(new PublishListRemovedEvent(getConnectionId(), messageDTO));
     }
 
     @Override
     public void clearMessages() {
-        EventBus.fireAsync(new PublishListClearEvent(getConnectionId()));
+        eventBus.fireAsync(new PublishListClearEvent(getConnectionId()));
     }
 
     @Override
@@ -389,6 +395,6 @@ public class PublishViewController extends BaseMessageBasedViewController {
 
     public void cleanUp() {
         this.messageListViewController.cleanUp();
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 }

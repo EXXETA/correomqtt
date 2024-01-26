@@ -1,6 +1,9 @@
 package org.correomqtt.core.importexport.messages;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.eventbus.EventBus;
@@ -11,17 +14,28 @@ import java.io.IOException;
 
 public class ExportMessageTask extends SimpleTask {
 
+    private final EventBus eventBus;
     private final File file;
     private final MessageDTO messageDTO;
 
-    public ExportMessageTask(File file, MessageDTO messageDTO) {
+    @AssistedFactory
+    public interface Factory {
+        ExportMessageTask create(File file, MessageDTO messageDTO);
+    }
+
+    @AssistedInject
+    public ExportMessageTask(EventBus eventBus,
+                             @Assisted File file,
+                             @Assisted MessageDTO messageDTO) {
+        super(eventBus);
+        this.eventBus = eventBus;
         this.file = file;
         this.messageDTO = messageDTO;
     }
 
     @Override
     protected void beforeHook() {
-        EventBus.fireAsync(new ExportMessageStartedEvent(file, messageDTO));
+        eventBus.fireAsync(new ExportMessageStartedEvent(file, messageDTO));
     }
 
     @Override
@@ -35,11 +49,11 @@ public class ExportMessageTask extends SimpleTask {
 
     @Override
     protected void successHook() {
-        EventBus.fireAsync(new ExportMessageSuccessEvent());
+        eventBus.fireAsync(new ExportMessageSuccessEvent());
     }
 
     @Override
     protected void errorHook(SimpleTaskErrorResult errorResult) {
-        EventBus.fireAsync(new ExportMessageFailedEvent(file, messageDTO, errorResult.getUnexpectedError()));
+        eventBus.fireAsync(new ExportMessageFailedEvent(file, messageDTO, errorResult.getUnexpectedError()));
     }
 }

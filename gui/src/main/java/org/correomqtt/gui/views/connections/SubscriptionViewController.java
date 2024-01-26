@@ -62,6 +62,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     private final SubscriptionViewCell.Factory subscriptionViewCellFactory;
     private final TopicCell.Factory topicCellFactory;
     private final AlertHelper alertHelper;
+    private final EventBus eventBus;
     private final SubscriptionListMessageContextMenu.Factory subscriptionListMessageContextMenuFactory;
     private final SubscriptionViewDelegate delegate;
     private final PubSubTaskFactories pubSubTaskFactories;
@@ -106,6 +107,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
                                       SubscriptionViewCell.Factory subscriptionViewCellFactory,
                                       TopicCell.Factory topicCellFactory,
                                       AlertHelper alertHelper,
+                                      EventBus eventBus,
                                       SubscriptionListMessageContextMenu.Factory subscriptionListMessageContextMenuFactory,
                                       @Assisted String connectionId,
                                       @Assisted SubscriptionViewDelegate delegate) {
@@ -115,9 +117,10 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         this.subscriptionViewCellFactory = subscriptionViewCellFactory;
         this.topicCellFactory = topicCellFactory;
         this.alertHelper = alertHelper;
+        this.eventBus = eventBus;
         this.subscriptionListMessageContextMenuFactory = subscriptionListMessageContextMenuFactory;
         this.delegate = delegate;
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     LoaderResult<SubscriptionViewController> load() {
@@ -444,7 +447,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
 
     public void cleanUp() {
         this.messageListViewController.cleanUp();
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 }
 

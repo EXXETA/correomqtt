@@ -11,31 +11,37 @@ import org.correomqtt.core.plugin.PluginManager;
 public class PluginUninstallTask extends SimpleTask {
 
     private final PluginManager pluginManager;
+    private final EventBus eventBus;
     private final String pluginId;
 
     @AssistedFactory
     public interface Factory {
         PluginUninstallTask create(String pluginId);
     }
+
     @AssistedInject
-    public PluginUninstallTask(PluginManager pluginManager, @Assisted String pluginId) {
+    public PluginUninstallTask(PluginManager pluginManager,
+                               EventBus eventBus,
+                               @Assisted String pluginId) {
+        super(eventBus);
         this.pluginManager = pluginManager;
+        this.eventBus = eventBus;
         this.pluginId = pluginId;
     }
 
     @Override
     protected void execute() {
         pluginManager.getUpdateManager().uninstallPlugin(pluginId);
-        EventBus.fireAsync(new PluginUninstallEvent(pluginId));
+        eventBus.fireAsync(new PluginUninstallEvent(pluginId));
     }
 
     @Override
     protected void beforeHook() {
-        EventBus.fireAsync(new PluginUninstallStartedEvent(pluginId));
+        eventBus.fireAsync(new PluginUninstallStartedEvent(pluginId));
     }
 
     @Override
     protected void errorHook(SimpleTaskErrorResult ignore) {
-        EventBus.fireAsync(new PluginUninstallFailedEvent(pluginId));
+        eventBus.fireAsync(new PluginUninstallFailedEvent(pluginId));
     }
 }

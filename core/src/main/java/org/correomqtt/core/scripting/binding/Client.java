@@ -35,6 +35,7 @@ public class Client {
 
     private final ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories;
     private final PubSubTaskFactories pubSubTaskFactories;
+    private final EventBus eventBus;
     private String connectionId;
     private Logger scriptLogger;
     private Queue queue;
@@ -49,9 +50,11 @@ public class Client {
 
     @Inject
     Client(ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
-           PubSubTaskFactories pubSubTaskFactories) {
+           PubSubTaskFactories pubSubTaskFactories,
+           EventBus eventBus) {
         this.connectionLifecycleTaskFactories = connectionLifecycleTaskFactories;
         this.pubSubTaskFactories = pubSubTaskFactories;
+        this.eventBus = eventBus;
     }
 
     public void setContext(Context context) {
@@ -60,7 +63,7 @@ public class Client {
         marker = context.getPolyglotBindings().getMember(CORREO_SCRIPT_MARKER).as(Marker.class);
         scriptLogger = context.getPolyglotBindings().getMember(CORREO_SCRIPT_LOGGER).as(Logger.class);
         queue = context.getPolyglotBindings().getMember(CORREO_SCRIPT_QUEUE).as(Queue.class);
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     @Export

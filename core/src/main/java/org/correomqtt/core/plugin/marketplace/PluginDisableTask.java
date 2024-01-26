@@ -11,30 +11,37 @@ import org.correomqtt.core.plugin.PluginManager;
 public class PluginDisableTask extends SimpleTask {
 
     private final PluginManager pluginManager;
+    private final EventBus eventBus;
     private final String pluginId;
+
     @AssistedFactory
     public interface Factory {
         PluginDisableTask create(String pluginId);
     }
+
     @AssistedInject
-    public PluginDisableTask(PluginManager pluginManager, @Assisted String pluginId) {
+    public PluginDisableTask(PluginManager pluginManager,
+                             EventBus eventBus,
+                             @Assisted String pluginId) {
+        super(eventBus);
         this.pluginManager = pluginManager;
+        this.eventBus = eventBus;
         this.pluginId = pluginId;
     }
 
     @Override
     protected void execute() {
         pluginManager.disablePlugin(pluginId);
-        EventBus.fireAsync(new PluginDisabledEvent(pluginId));
+        eventBus.fireAsync(new PluginDisabledEvent(pluginId));
     }
 
     @Override
     protected void beforeHook() {
-        EventBus.fireAsync(new PluginDisabledStartedEvent(pluginId));
+        eventBus.fireAsync(new PluginDisabledStartedEvent(pluginId));
     }
 
     @Override
     protected void errorHook(SimpleTaskErrorResult ignore) {
-        EventBus.fireAsync(new PluginDisabledFailedEvent(pluginId));
+        eventBus.fireAsync(new PluginDisabledFailedEvent(pluginId));
     }
 }

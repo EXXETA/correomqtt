@@ -34,20 +34,21 @@ public class SecretStoreProvider extends BaseUserFileProvider {
 
 
     @Inject
-    public SecretStoreProvider() {
+    public SecretStoreProvider(EventBus eventBus) {
+        super(eventBus);
 
         try {
             prepareFile(PASSWORD_FILE_NAME);
         } catch (InvalidPathException | SecurityException | UnsupportedOperationException | IOException e) {
             LOGGER.error("Error writing passwords file {}. ", PASSWORD_FILE_NAME, e);
-            EventBus.fire(new UnaccessiblePasswordFileEvent(e));
+            eventBus.fire(new UnaccessiblePasswordFileEvent(e));
         }
 
         try {
             passwordsDTO = new ObjectMapper().readValue(this.getFile(), PasswordsDTO.class);
         } catch (IOException e) {
             LOGGER.error("Password file can not be read {}.", PASSWORD_FILE_NAME, e);
-            EventBus.fire(new InvalidPasswordFileEvent());
+            eventBus.fire(new InvalidPasswordFileEvent());
             passwordsDTO = new PasswordsDTO();
         }
 

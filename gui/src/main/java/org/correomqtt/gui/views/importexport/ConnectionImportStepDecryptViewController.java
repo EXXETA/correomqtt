@@ -22,6 +22,7 @@ import java.util.ResourceBundle;
 public class ConnectionImportStepDecryptViewController extends BaseControllerImpl implements ConnectionImportStepController {
     private static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
     private final AlertHelper alertHelper;
+    private final ImportDecryptConnectionsTask.Factory importDecryptConnectionsTaskFactory;
     private final ConnectionImportStepDelegate delegate;
     private ResourceBundle resources;
     @FXML
@@ -36,9 +37,11 @@ public class ConnectionImportStepDecryptViewController extends BaseControllerImp
     public ConnectionImportStepDecryptViewController(CoreManager coreManager,
                                                      ThemeManager themeManager,
                                                      AlertHelper alertHelper,
+                                                     ImportDecryptConnectionsTask.Factory importDecryptConnectionsTaskFactory,
                                                      @Assisted ConnectionImportStepDelegate delegate) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;
+        this.importDecryptConnectionsTaskFactory = importDecryptConnectionsTaskFactory;
         this.delegate = delegate;
     }
 
@@ -59,7 +62,7 @@ public class ConnectionImportStepDecryptViewController extends BaseControllerImp
         }
 
         ConnectionExportDTO dto = this.delegate.getOriginalImportedDTO();
-        new ImportDecryptConnectionsTask(dto.getEncryptedData(), dto.getEncryptionType(), passwordField.getText())
+        importDecryptConnectionsTaskFactory.create(dto.getEncryptedData(), dto.getEncryptionType(), passwordField.getText())
                 .onSuccess(this::onDecryptSucceeded)
                 .onError(this::onDecryptFailed);
     }

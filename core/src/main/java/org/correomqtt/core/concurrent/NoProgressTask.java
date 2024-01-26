@@ -1,6 +1,12 @@
 package org.correomqtt.core.concurrent;
 
+import org.correomqtt.core.eventbus.EventBus;
+
 public abstract class NoProgressTask<T, E> extends TaskImpl<T, Void, E, TaskErrorResult<E>> {
+
+    public NoProgressTask(EventBus eventBus) {
+        super(eventBus);
+    }
 
     public NoProgressTask<T, E> onStarted(StartListener listener) {
         onStartedImpl(listener);

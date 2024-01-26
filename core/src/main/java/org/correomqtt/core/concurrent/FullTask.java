@@ -1,6 +1,12 @@
 package org.correomqtt.core.concurrent;
 
+import org.correomqtt.core.eventbus.EventBus;
+
 public abstract class FullTask<T, P, E> extends TaskImpl<T, P, E, TaskErrorResult<E>> {
+
+    protected FullTask(EventBus eventBus) {
+        super(eventBus);
+    }
 
     public FullTask<T, P, E> onStarted(StartListener listener) {
         onStartedImpl(listener);

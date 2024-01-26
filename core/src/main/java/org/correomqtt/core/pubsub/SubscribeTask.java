@@ -34,6 +34,7 @@ public class SubscribeTask extends SimpleTask {
     private final PluginManager pluginManager;
     private final LoggerUtils loggerUtils;
     private final ConnectionManager connectionManager;
+    private final EventBus eventBus;
     private final String connectionId;
     private final SubscriptionDTO subscriptionDTO;
 
@@ -44,13 +45,16 @@ public class SubscribeTask extends SimpleTask {
 
     @AssistedInject
     SubscribeTask(PluginManager pluginManager,
-                         ConnectionManager connectionManager,
-                         LoggerUtils loggerUtils,
-                         @Assisted String connectionId,
-                         @Assisted SubscriptionDTO subscriptionDTO) {
+                  ConnectionManager connectionManager,
+                  LoggerUtils loggerUtils,
+                  EventBus eventBus,
+                  @Assisted String connectionId,
+                  @Assisted SubscriptionDTO subscriptionDTO) {
+        super(eventBus);
         this.pluginManager = pluginManager;
         this.loggerUtils = loggerUtils;
         this.connectionManager = connectionManager;
+        this.eventBus = eventBus;
         this.connectionId = connectionId;
         this.subscriptionDTO = subscriptionDTO;
     }
@@ -67,18 +71,18 @@ public class SubscribeTask extends SimpleTask {
             throw new TaskException(e);
         }
 
-        EventBus.fireAsync(new SubscribeEvent(connectionId, subscriptionDTO));
+        eventBus.fireAsync(new SubscribeEvent(connectionId, subscriptionDTO));
     }
 
     @Override
     protected void errorHook(SimpleTaskErrorResult ignore) {
-        EventBus.fireAsync(new SubscribeFailedEvent(connectionId, subscriptionDTO));
+        eventBus.fireAsync(new SubscribeFailedEvent(connectionId, subscriptionDTO));
     }
 
     private void onIncomingMessage(MessageDTO messageDTO) {
 
         MessageDTO manipulatedMessageDTO = executeOnMessageIncomingExtensions(messageDTO);
-        EventBus.fireAsync(new IncomingMessageEvent(connectionId, manipulatedMessageDTO, subscriptionDTO));
+        eventBus.fireAsync(new IncomingMessageEvent(connectionId, manipulatedMessageDTO, subscriptionDTO));
     }
 
     private MessageDTO executeOnMessageIncomingExtensions(MessageDTO messageDTO) {

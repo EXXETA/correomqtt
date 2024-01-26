@@ -5,6 +5,7 @@ import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleErrorTask;
 import org.correomqtt.core.concurrent.TaskException;
+import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,9 @@ public class ScriptDeleteTask extends SimpleErrorTask<ScriptDeleteTask.Error> {
 
     @AssistedInject
     public ScriptDeleteTask(ScriptingProvider scriptingProvider,
+                            EventBus eventBus,
                             @Assisted ScriptFileDTO dto) {
+        super(eventBus);
         this.scriptingProvider = scriptingProvider;
         this.dto = dto;
     }

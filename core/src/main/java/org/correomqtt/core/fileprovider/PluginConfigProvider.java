@@ -29,13 +29,14 @@ public class PluginConfigProvider extends BaseUserFileProvider {
     private String pluginPath;
 
     @Inject
-    PluginConfigProvider() {
+    PluginConfigProvider(EventBus eventBus) {
+        super(eventBus);
 
         try {
             prepareFile(HOOK_FILE_NAME);
         } catch (InvalidPathException | SecurityException | UnsupportedOperationException | IOException e) {
             LOGGER.error("Error writing hook file {}. ", HOOK_FILE_NAME, e);
-            EventBus.fire(new UnaccessibleHookFileEvent(e));
+            eventBus.fire(new UnaccessibleHookFileEvent(e));
         }
 
         preparePluginPath();
@@ -44,7 +45,7 @@ public class PluginConfigProvider extends BaseUserFileProvider {
             hooksDTO = new ObjectMapper().readValue(getFile(), HooksDTO.class);
         } catch (IOException e) {
             LOGGER.error("Exception parsing hooks file {}", HOOK_FILE_NAME, e);
-            EventBus.fire(new InvalidHooksFileEvent(e));
+            eventBus.fire(new InvalidHooksFileEvent(e));
         }
 
     }

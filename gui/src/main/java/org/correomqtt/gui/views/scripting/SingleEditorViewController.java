@@ -51,6 +51,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
     private final ConnectionCellButton.Factory connectionCellButtonFactory;
     private final AlertHelper alertHelper;
     private final ScriptTaskFactories scriptTaskFactories;
+    private final EventBus eventBus;
     private final SingleEditorViewDelegate delegate;
     private final ScriptFilePropertiesDTO scriptFilePropertiesDTO;
     private final AtomicBoolean revert = new AtomicBoolean(false);
@@ -89,15 +90,17 @@ public class SingleEditorViewController extends BaseControllerImpl {
                                       ConnectionCellButton.Factory connectionCellButtonFactory,
                                       AlertHelper alertHelper,
                                       ScriptTaskFactories scriptTaskFactories,
+                                      EventBus eventBus,
                                       @Assisted SingleEditorViewDelegate delegate,
                                       @Assisted ScriptFilePropertiesDTO scriptFilePropertiesDTO) {
         super(coreManager, themeManager);
         this.connectionCellButtonFactory = connectionCellButtonFactory;
         this.alertHelper = alertHelper;
         this.scriptTaskFactories = scriptTaskFactories;
+        this.eventBus = eventBus;
         this.delegate = delegate;
         this.scriptFilePropertiesDTO = scriptFilePropertiesDTO;
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     public LoaderResult<SingleEditorViewController> load() {
@@ -291,6 +294,6 @@ public class SingleEditorViewController extends BaseControllerImpl {
     }
 
     public void cleanUp() {
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 }

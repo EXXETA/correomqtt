@@ -1,6 +1,9 @@
 package org.correomqtt.core.importexport.messages;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.SimpleResultTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.eventbus.EventBus;
@@ -13,7 +16,16 @@ public class ImportMessageTask extends SimpleResultTask<MessageDTO> {
 
     private final File file;
 
-    public ImportMessageTask(File file) {
+
+    @AssistedFactory
+    public interface Factory {
+        ImportMessageTask create(File file);
+    }
+
+    @AssistedInject
+    public ImportMessageTask(EventBus eventBus,
+                             @Assisted File file) {
+        super(eventBus);
         this.file = file;
     }
 
@@ -28,16 +40,16 @@ public class ImportMessageTask extends SimpleResultTask<MessageDTO> {
 
     @Override
     protected void beforeHook() {
-        EventBus.fireAsync(new ImportMessageStartedEvent(file));
+        eventBus.fireAsync(new ImportMessageStartedEvent(file));
     }
 
     @Override
     protected void successHook(MessageDTO messageDTO) {
-        EventBus.fireAsync(new ImportMessageSuccessEvent(messageDTO));
+        eventBus.fireAsync(new ImportMessageSuccessEvent(messageDTO));
     }
 
     @Override
     protected void errorHook(SimpleTaskErrorResult errorResult) {
-        EventBus.fireAsync(new ImportMessageFailedEvent(file, errorResult.getUnexpectedError()));
+        eventBus.fireAsync(new ImportMessageFailedEvent(file, errorResult.getUnexpectedError()));
     }
 }

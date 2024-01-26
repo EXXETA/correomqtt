@@ -61,6 +61,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private final ConnectionSettingsViewController.Factory connectionSettingsCtrlFactory;
     private final ConnectionOnboardingViewController.Factory onboardingViewCtrlFactory;
     private final CheckNewVersionUtils checkNewVersionUtils;
+    private final EventBus eventBus;
     private final HostServices hostServices;
     private final javax.inject.Provider<AboutViewController> aboutViewControllerProvider;
     private final Provider<LogTabController> logTabControllerProvider;
@@ -124,6 +125,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                               ConnectionSettingsViewController.Factory connectionSettingsCtrlFactory,
                               ConnectionOnboardingViewController.Factory onboardingViewCtlrFactory,
                               CheckNewVersionUtils checkNewVersionUtils,
+                              EventBus eventBus,
                               @AppHostServices HostServices hostServices,
                               Provider<AboutViewController> aboutViewControllerProvider,
                               Provider<LogTabController> logTabControllerProvider,
@@ -138,6 +140,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         this.connectionSettingsCtrlFactory = connectionSettingsCtrlFactory;
         this.onboardingViewCtrlFactory = onboardingViewCtlrFactory;
         this.checkNewVersionUtils = checkNewVersionUtils;
+        this.eventBus = eventBus;
         this.hostServices = hostServices;
         this.aboutViewControllerProvider = aboutViewControllerProvider;
         this.logTabControllerProvider = logTabControllerProvider;
@@ -146,7 +149,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         this.importViewCtrlProvider = importViewCtrlProvider;
         this.scriptingCtrlProvider = scriptingCtrlProvider;
         this.pluginCtrlProvider = pluginCtrlProvider;
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
 
@@ -201,7 +204,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     private void setMenuEventHandler() {
-        closeItem.setOnAction(event -> EventBus.fireAsync(new ShutdownRequestEvent()));
+        closeItem.setOnAction(event -> eventBus.fireAsync(new ShutdownRequestEvent()));
         connectionsItem.setOnAction(event -> connectionSettingsCtrlFactory.create(null).showAsDialog());
         settingsItem.setOnAction(event -> settingsViewControllerProvider.get().showAsDialog());
         aboutItem.setOnAction(event -> aboutViewControllerProvider.get().showAsDialog());
@@ -335,7 +338,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         connectionOnboardingViewController.cleanUp();
         logViewController.cleanUp();
         connectionViewControllers.remove(this.closedTabId);
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 
     public void onDisconnect() {

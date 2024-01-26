@@ -45,6 +45,7 @@ public class ConnectionExportViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
     private final AlertHelper alertHelper;
+    private final ExportConnectionsTask.Factory exportConnectionTaskFactory;
     private final ExportConnectionCell.Factory exportConnectionCellFactory;
     @FXML
     private Label passwordLabel;
@@ -66,15 +67,13 @@ public class ConnectionExportViewController extends BaseControllerImpl {
     public ConnectionExportViewController(CoreManager coreManager,
                                           ThemeManager themeManager,
                                           AlertHelper alertHelper,
+                                          ExportConnectionsTask.Factory exportConnectionTaskFactory,
                                           ExportConnectionCell.Factory exportConnectionCellFactory) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;
+        this.exportConnectionTaskFactory = exportConnectionTaskFactory;
 
         this.exportConnectionCellFactory = exportConnectionCellFactory;
-    }
-
-    public LoaderResult<ConnectionExportViewController> load() {
-        return load(ConnectionExportViewController.class, "connectionExportView.fxml", () -> this);
     }
 
     public void showAsDialog() {
@@ -91,6 +90,21 @@ public class ConnectionExportViewController extends BaseControllerImpl {
 
         showAsDialog(result, resources.getString("connectionExportViewControllerTitle"), properties, false, false, null,
                 event -> result.getController().keyHandling(event));
+    }
+
+    public LoaderResult<ConnectionExportViewController> load() {
+        return load(ConnectionExportViewController.class, "connectionExportView.fxml", () -> this);
+    }
+
+    private void keyHandling(KeyEvent event) {
+        if (KeyCode.ESCAPE == event.getCode()) {
+            closeDialog();
+        }
+    }
+
+    private void closeDialog() {
+        Stage stage = (Stage) exportButton.getScene().getWindow();
+        stage.close();
     }
 
     @FXML
@@ -130,17 +144,6 @@ public class ConnectionExportViewController extends BaseControllerImpl {
         return cell;
     }
 
-    private void keyHandling(KeyEvent event) {
-        if (KeyCode.ESCAPE == event.getCode()) {
-            closeDialog();
-        }
-    }
-
-    private void closeDialog() {
-        Stage stage = (Stage) exportButton.getScene().getWindow();
-        stage.close();
-    }
-
     private void loadConnectionListFromBackground() {
 
         List<ConnectionConfigDTO> connectionList = coreManager.getConnectionManager().getSortedConnections();
@@ -148,6 +151,9 @@ public class ConnectionExportViewController extends BaseControllerImpl {
         LOGGER.debug("Loading connection list from background");
     }
 
+    public void checkAll() {
+        connectionsListView.getCheckModel().checkAll();
+    }
 
     public void onExportClicked() {
 
@@ -160,9 +166,9 @@ public class ConnectionExportViewController extends BaseControllerImpl {
         fileChooser.getExtensionFilters().add(extFilter);
         File file = fileChooser.showSaveDialog(stage);
 
-        new ExportConnectionsTask(file,
-                ConnectionTransformer.propsListToDtoList(checkedItems),
-                passwordCheckBox.isSelected() ? passwordField.getText() : null)
+        exportConnectionTaskFactory.create(file,
+                        ConnectionTransformer.propsListToDtoList(checkedItems),
+                        passwordCheckBox.isSelected() ? passwordField.getText() : null)
                 .onSuccess(this::onExportSucceeded)
                 .onError(this::onExportFailed)
                 .run();
@@ -205,11 +211,6 @@ public class ConnectionExportViewController extends BaseControllerImpl {
     @FXML
     private void onCancelClicked() {
         closeDialog();
-    }
-
-
-    public void checkAll() {
-        connectionsListView.getCheckModel().checkAll();
     }
 
     public void checkNone() {

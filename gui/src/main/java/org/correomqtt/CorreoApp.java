@@ -64,6 +64,7 @@ public class CorreoApp extends Application {
     private final PluginCheckUtils pluginCheckUtils;
     private final MainViewController mainViewController;
     private final CorreoCore correoCore;
+    private final EventBus eventBus;
     private ResourceBundle resources;
     private Scene scene;
     private Stage primaryStage;
@@ -80,7 +81,8 @@ public class CorreoApp extends Application {
                      AlertController alertController,
                      PluginCheckUtils pluginCheckUtils,
                      MainViewController mainViewController,
-                     CorreoCore correoCore) {
+                     CorreoCore correoCore,
+                     EventBus eventBus) {
         this.pluginManager = pluginManager;
         this.pluginLauncher = pluginLauncher;
         this.keyringManager = keyringManager;
@@ -92,6 +94,7 @@ public class CorreoApp extends Application {
         this.pluginCheckUtils = pluginCheckUtils;
         this.mainViewController = mainViewController;
         this.correoCore = correoCore;
+        this.eventBus = eventBus;
     }
 
     @Override
@@ -106,7 +109,7 @@ public class CorreoApp extends Application {
     public void init() {
 
         alertController.activate();
-        EventBus.register(this);
+        eventBus.register(this);
 
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Application started.");
@@ -268,7 +271,7 @@ public class CorreoApp extends Application {
         LOGGER.info("Saving connection UI settings.");
         saveConnectionUISettings();
         LOGGER.info("Shutting down connections.");
-        EventBus.fire(new ShutdownEvent());
+        eventBus.fire(new ShutdownEvent());
         LOGGER.info("Shutting down plugins.");
         pluginManager.stopPlugins();
         LOGGER.info("Shutting down application. Bye.");
@@ -281,19 +284,19 @@ public class CorreoApp extends Application {
         scene.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
 
                     if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && !event.isShiftDown()) {
-                        EventBus.fireAsync(new ShortcutConnectionIdEvent(SUBSCRIPTION, mainViewController.getUUIDofSelectedTab()));
+                        eventBus.fireAsync(new ShortcutConnectionIdEvent(SUBSCRIPTION, mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && event.isShiftDown()) {
-                        EventBus.fireAsync(new ShortcutConnectionIdEvent(CLEAR_INCOMING, mainViewController.getUUIDofSelectedTab()));
+                        eventBus.fireAsync(new ShortcutConnectionIdEvent(CLEAR_INCOMING, mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && !event.isShiftDown()) {
-                        EventBus.fireAsync(new ShortcutConnectionIdEvent(PUBLISH, mainViewController.getUUIDofSelectedTab()));
+                        eventBus.fireAsync(new ShortcutConnectionIdEvent(PUBLISH, mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && event.isShiftDown()) {
-                        EventBus.fireAsync(new ShortcutConnectionIdEvent(CLEAR_OUTGOING, mainViewController.getUUIDofSelectedTab()));
+                        eventBus.fireAsync(new ShortcutConnectionIdEvent(CLEAR_OUTGOING, mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     //TODO rest

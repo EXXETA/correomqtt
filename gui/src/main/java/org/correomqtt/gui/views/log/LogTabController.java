@@ -19,6 +19,7 @@ import javax.inject.Inject;
 
 public class LogTabController extends BaseControllerImpl {
 
+    private  EventBus eventBus; //TODO
     @Getter
     @FXML
     private AnchorPane logViewAnchor;
@@ -31,7 +32,7 @@ public class LogTabController extends BaseControllerImpl {
     public LogTabController(CoreManager coreManager,
                             ThemeManager themeManager) {
         super(coreManager, themeManager);
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     public LoaderResult<LogTabController> load() {
@@ -41,7 +42,7 @@ public class LogTabController extends BaseControllerImpl {
     @FXML
     private void initialize() {
         trashButton.setOnAction(event -> logTextArea.clear());
-        EventBus.fire(new PopLogCache());
+        eventBus.fire(new PopLogCache());
     }
 
     @SuppressWarnings("unused")
@@ -52,6 +53,6 @@ public class LogTabController extends BaseControllerImpl {
 
 
     public void cleanUp() {
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 }

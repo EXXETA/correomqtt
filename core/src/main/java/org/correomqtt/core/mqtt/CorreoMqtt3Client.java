@@ -11,7 +11,11 @@ import com.hivemq.client.mqtt.mqtt3.message.connect.Mqtt3ConnectBuilder;
 import com.hivemq.client.mqtt.mqtt3.message.connect.connack.Mqtt3ConnAck;
 import com.hivemq.client.mqtt.mqtt3.message.subscribe.suback.Mqtt3SubAck;
 import com.hivemq.client.mqtt.mqtt3.message.subscribe.suback.Mqtt3SubAckReturnCode;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import lombok.Getter;
+import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.exception.CorreoMqtt3SubscriptionFailed;
 import org.correomqtt.core.exception.CorreoMqttConnectionFailedException;
 import org.correomqtt.core.exception.CorreoMqttNotConnectedException;
@@ -34,14 +38,21 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 @Getter
-class CorreoMqtt3Client extends BaseCorreoMqttClient {
+public class CorreoMqtt3Client extends BaseCorreoMqttClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CorreoMqtt3Client.class);
 
     private Mqtt3BlockingClient mqtt3BlockingClient;
 
-    CorreoMqtt3Client(ConnectionConfigDTO configDTO) {
-        super(configDTO);
+    @AssistedFactory
+    public interface Factory {
+        CorreoMqtt3Client create(ConnectionConfigDTO configDTO);
+    }
+
+    @AssistedInject
+    CorreoMqtt3Client(EventBus eventBus,
+                      @Assisted ConnectionConfigDTO configDTO) {
+        super(eventBus, configDTO);
     }
 
     @Override
@@ -49,7 +60,8 @@ class CorreoMqtt3Client extends BaseCorreoMqttClient {
         return LOGGER;
     }
 
-    @SuppressWarnings("java:S5527") // It is a feature to disable SSL (e.g. to allow SSH tunnels)
+    @SuppressWarnings("java:S5527")
+        // It is a feature to disable SSL (e.g. to allow SSH tunnels)
     void executeConnect() throws SSLException, InterruptedException, ExecutionException, TimeoutException {
 
         ConnectionConfigDTO configDTO = getConfigDTO();

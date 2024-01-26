@@ -2,8 +2,8 @@ package org.correomqtt.gui.utils;
 
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.importexport.messages.ExportMessageTask;
+import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 
@@ -14,9 +14,12 @@ import java.util.ResourceBundle;
 public class MessageUtils {
 
     private final SettingsManager settingsManager;
+    private final ExportMessageTask.Factory exportMessageTaskFactory;
 
     @Inject
-    MessageUtils(SettingsManager settingsManager) {
+    MessageUtils(ExportMessageTask.Factory exportMessageTaskFactory,
+                 SettingsManager settingsManager) {
+        this.exportMessageTaskFactory = exportMessageTaskFactory;
         this.settingsManager = settingsManager;
     }
 
@@ -30,7 +33,7 @@ public class MessageUtils {
 
         File file = fileChooser.showSaveDialog(stage);
         if (file != null) {
-            new ExportMessageTask(file, MessageTransformer.propsToDTO(messageDTO)).run();
+            exportMessageTaskFactory.create(file, MessageTransformer.propsToDTO(messageDTO)).run();
         }
     }
 }

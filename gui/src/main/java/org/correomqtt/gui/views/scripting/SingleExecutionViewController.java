@@ -42,6 +42,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleExecutionViewController.class);
     private final AlertHelper alertHelper;
     private final ScriptExecuteTaskFactories scriptExecuteTaskFactories;
+    private final EventBus eventBus;
     private final ExecutionPropertiesDTO executionPropertiesDTO;
     private ResourceBundle resources;
     @FXML
@@ -65,12 +66,14 @@ public class SingleExecutionViewController extends BaseControllerImpl {
                                          ThemeManager themeManager,
                                          AlertHelper alertHelper,
                                          ScriptExecuteTaskFactories scriptExecuteTaskFactories,
+                                         EventBus eventBus,
                                          @Assisted ExecutionPropertiesDTO executionPropertiesDTO) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;
         this.scriptExecuteTaskFactories = scriptExecuteTaskFactories;
+        this.eventBus = eventBus;
         this.executionPropertiesDTO = executionPropertiesDTO;
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     public LoaderResult<SingleExecutionViewController> load() {
@@ -160,7 +163,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
         if (appender != null) {
             appender.stop();
         }
-        EventBus.unregister(this);
+        eventBus.unregister(this);
     }
 
     @FXML
