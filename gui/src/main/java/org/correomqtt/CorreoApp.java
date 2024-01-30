@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.awt.*;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -110,17 +109,6 @@ public class CorreoApp extends Application {
 
         alertController.activate();
         eventBus.register(this);
-
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("Application started.");
-            LOGGER.info("JVM: {} {} {}", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));
-            LOGGER.info("JavaFX: {}, Runtime: {}", System.getProperty("javafx.version"), System.getProperty("javafx.runtime.version"));
-            LOGGER.info("OS: {} {} {}", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"));
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            String xdgCurrentDesktop = System.getenv("XDG_CURRENT_DESKTOP");
-            LOGGER.info("ENV: {}{} x {} ", xdgCurrentDesktop != null ? xdgCurrentDesktop + " " : "", screenSize.getWidth(), screenSize.getHeight());
-            LOGGER.info("CorreoMQTT version is {}", VersionUtils.getVersion());
-        }
 
         final SettingsDTO settings = settingsManager.getSettings();
 

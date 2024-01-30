@@ -50,7 +50,7 @@ public class LoggerUtils {
         return null;
     }
 
-    public static Appender<ILoggingEvent> findScriptAppender(String appenderName) {
+    public static Appender<ILoggingEvent> findLogAppender(String appenderName) {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         for (Logger candidate : context.getLoggerList()) {
             for (Iterator<Appender<ILoggingEvent>> index = candidate.iteratorForAppenders(); index.hasNext(); ) {

@@ -6,13 +6,11 @@ import ch.qos.logback.core.AppenderBase;
 import lombok.Getter;
 import lombok.Setter;
 import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 @Setter
 @Getter
@@ -21,8 +19,8 @@ public class LogDispatchAppender extends AppenderBase<ILoggingEvent> {
     private PatternLayoutEncoder encoder;
 
     private final List<String> cache = new CopyOnWriteArrayList<>();
-    private EventBus eventBus; //TODO
 
+    private EventBus eventBus;
 
     @Override
     public void start() {
@@ -32,30 +30,20 @@ public class LogDispatchAppender extends AppenderBase<ILoggingEvent> {
         }
         encoder.start();
         super.start();
-        eventBus.register(this);
     }
 
-    @SuppressWarnings("unused")
-    @Subscribe(PopLogCache.class)
-    public synchronized void popCache() {
-        Set<String> sentCache = cache.stream()
-                .filter(msg -> eventBus.fire(new LogEvent(msg)) > 0)
-                .collect(Collectors.toSet());
-
-        cache.removeAll(sentCache);
-    }
-
-    @Override
-    public void stop() {
-        eventBus.unregister(this);
-        super.stop();
+    public synchronized List<String> popCache(EventBus eventBus) {
+        ArrayList<String> r = new ArrayList<>(cache);
+        cache.clear();
+        this.eventBus = eventBus;
+        return r;
     }
 
     @Override
     protected void append(ILoggingEvent eventObject) {
         String logMsg = new String(this.encoder.encode(eventObject), StandardCharsets.UTF_8);
-        if (eventBus.fire(new LogEvent(logMsg)) == 0) {
-            this.cache.add(logMsg);
+        if (eventBus == null || eventBus.fireAsync(new LogEvent(logMsg)) == 0) {
+            cache.add(logMsg);
         }
     }
 }

@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import static org.correomqtt.core.utils.LoggerUtils.SCRIPT_APPENDER_NAME;
 import static org.correomqtt.core.utils.LoggerUtils.SCRIPT_COLOR_PATTERN_APPENDER_NAME;
 import static org.correomqtt.core.utils.LoggerUtils.findPatternEncoder;
-import static org.correomqtt.core.utils.LoggerUtils.findScriptAppender;
+import static org.correomqtt.core.utils.LoggerUtils.findLogAppender;
 
 public class ScriptLoggerContext implements AutoCloseable {
 
@@ -60,7 +60,7 @@ public class ScriptLoggerContext implements AutoCloseable {
         fileAppender.setContext(context);
         fileAppender.start();
 
-        scriptAppender = findScriptAppender(SCRIPT_APPENDER_NAME);
+        scriptAppender = findLogAppender(SCRIPT_APPENDER_NAME);
         if (scriptAppender == null) {
             LOGGER.warn("No {} appender is configured for logback. No script output will be logged to standard log in gui, console or file.", SCRIPT_APPENDER_NAME);
         } else {

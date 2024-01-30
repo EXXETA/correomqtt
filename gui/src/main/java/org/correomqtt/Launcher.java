@@ -40,7 +40,6 @@ public class Launcher {
         }
     }
 
-
     private static void setLoggerFilePath() {
         // Set the path for file logging to user directory.
         // TODO  System.setProperty("correomqtt-logfile", SettingsProvider.getInstance().getLogPath());
@@ -55,6 +54,4 @@ public class Launcher {
             System.out.println("Problem configuring logger: " + e.getMessage());
         }
     }
-
-
 }

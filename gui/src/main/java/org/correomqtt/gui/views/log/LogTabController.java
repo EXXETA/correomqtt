@@ -7,8 +7,9 @@ import lombok.Getter;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
+import org.correomqtt.core.log.LogDispatchAppender;
 import org.correomqtt.core.log.LogEvent;
-import org.correomqtt.core.log.PopLogCache;
+import org.correomqtt.core.utils.LoggerUtils;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.LogAreaUtils;
 import org.correomqtt.gui.views.LoaderResult;
@@ -19,7 +20,9 @@ import javax.inject.Inject;
 
 public class LogTabController extends BaseControllerImpl {
 
-    private  EventBus eventBus; //TODO
+    private static final String LOG_APPENDER_GUI_NAME = "GUI";
+    private final EventBus eventBus;
+
     @Getter
     @FXML
     private AnchorPane logViewAnchor;
@@ -30,9 +33,10 @@ public class LogTabController extends BaseControllerImpl {
 
     @Inject
     public LogTabController(CoreManager coreManager,
-                            ThemeManager themeManager) {
+                            ThemeManager themeManager,
+                            EventBus eventBus) {
         super(coreManager, themeManager);
-        eventBus.register(this);
+        this.eventBus = eventBus;
     }
 
     public LoaderResult<LogTabController> load() {
@@ -42,7 +46,12 @@ public class LogTabController extends BaseControllerImpl {
     @FXML
     private void initialize() {
         trashButton.setOnAction(event -> logTextArea.clear());
-        eventBus.fire(new PopLogCache());
+        LogDispatchAppender appender = (LogDispatchAppender) LoggerUtils.findLogAppender(LOG_APPENDER_GUI_NAME);
+        if (appender == null) {
+            throw new IllegalStateException("There is no LogAppender with name = " + LOG_APPENDER_GUI_NAME);
+        }
+        appender.popCache(eventBus).forEach(msg -> LogAreaUtils.appendColorful(logTextArea, msg));
+        logTextArea.requestFollowCaret();
     }
 
     @SuppressWarnings("unused")
@@ -50,7 +59,6 @@ public class LogTabController extends BaseControllerImpl {
         LogAreaUtils.appendColorful(logTextArea, event.logMsg());
         logTextArea.requestFollowCaret();
     }
-
 
     public void cleanUp() {
         eventBus.unregister(this);
