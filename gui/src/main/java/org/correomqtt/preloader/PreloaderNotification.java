@@ -1,4 +1,4 @@
-package org.correomqtt;
+package org.correomqtt.preloader;
 
 import javafx.application.Preloader;
 import lombok.AllArgsConstructor;
@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public class CorreoPreloaderNotification implements Preloader.PreloaderNotification {
+public class PreloaderNotification implements Preloader.PreloaderNotification {
     private String msg;
 
 }

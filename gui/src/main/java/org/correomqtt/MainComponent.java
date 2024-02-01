@@ -15,9 +15,9 @@ import javax.inject.Singleton;
 
 @Singleton
 @Component
-public interface CorreoAppComponent {
+public interface MainComponent {
 
-    CorreoApp app();
+    MainApplication mainApplication();
 
     ThemeManager themeManager();
 
@@ -36,6 +36,6 @@ public interface CorreoAppComponent {
         @BindsInstance
         Builder hostServices(@AppHostServices HostServices hostServices);
 
-        CorreoAppComponent build();
+        MainComponent build();
     }
 }

@@ -1,6 +1,5 @@
 package org.correomqtt;
 
-import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.application.Preloader;
 import javafx.fxml.FXMLLoader;
@@ -33,6 +32,7 @@ import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.utils.PluginCheckUtils;
 import org.correomqtt.gui.views.AlertController;
 import org.correomqtt.gui.views.MainViewController;
+import org.correomqtt.preloader.PreloaderNotification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,9 +49,9 @@ import static org.correomqtt.core.shortcut.ShortcutEvent.Shortcut.PUBLISH;
 import static org.correomqtt.core.shortcut.ShortcutEvent.Shortcut.SUBSCRIPTION;
 
 @Singleton
-public class CorreoApp extends Application {
+public class MainApplication {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CorreoApp.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MainApplication.class);
     private final PluginLauncher pluginLauncher;
     private final PluginManager pluginManager;
     private final KeyringManager keyringManager;
@@ -70,18 +70,18 @@ public class CorreoApp extends Application {
     private Consumer<Preloader.PreloaderNotification> notifyPreloader;
 
     @Inject
-    public CorreoApp(PluginManager pluginManager,
-                     PluginLauncher pluginLauncher,
-                     KeyringManager keyringManager,
-                     SettingsManager settingsManager,
-                     ThemeManager themeManager,
-                     AlertHelper alertHelper,
-                     CheckNewVersionUtils checkNewVersionUtils,
-                     AlertController alertController,
-                     PluginCheckUtils pluginCheckUtils,
-                     MainViewController mainViewController,
-                     CorreoCore correoCore,
-                     EventBus eventBus) {
+    public MainApplication(PluginManager pluginManager,
+                           PluginLauncher pluginLauncher,
+                           KeyringManager keyringManager,
+                           SettingsManager settingsManager,
+                           ThemeManager themeManager,
+                           AlertHelper alertHelper,
+                           CheckNewVersionUtils checkNewVersionUtils,
+                           AlertController alertController,
+                           PluginCheckUtils pluginCheckUtils,
+                           MainViewController mainViewController,
+                           CorreoCore correoCore,
+                           EventBus eventBus) {
         this.pluginManager = pluginManager;
         this.pluginLauncher = pluginLauncher;
         this.keyringManager = keyringManager;
@@ -96,7 +96,6 @@ public class CorreoApp extends Application {
         this.eventBus = eventBus;
     }
 
-    @Override
     public void start(Stage primaryStage) throws IOException {
         this.primaryStage = primaryStage;
         loadPrimaryStage();
@@ -104,7 +103,6 @@ public class CorreoApp extends Application {
         alertController.activate();
     }
 
-    @Override
     public void init() {
 
         alertController.activate();
@@ -114,7 +112,7 @@ public class CorreoApp extends Application {
 
         handleVersionMismatch(settings);
         setLocale(settings);
-        notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("preloaderLanguageSet")));
+        notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderLanguageSet")));
 
         if (settings.isFirstStart()) {
             initUpdatesOnFirstStart(settings);
@@ -124,7 +122,7 @@ public class CorreoApp extends Application {
         pluginCheckUtils.checkMigration();
 
         if (settings.isSearchUpdates()) {
-            notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("preloaderSearchingUpdates")));
+            notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderSearchingUpdates")));
             pluginLauncher.start(true);
             try {
                 checkForUpdates();
@@ -133,7 +131,7 @@ public class CorreoApp extends Application {
             }
         }
 
-        notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("preloaderKeyring")));
+        notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderKeyring")));
         keyringManager.init();
         keyringManager.retryWithMasterPassword(
                 settingsManager::initializePasswords,
@@ -144,7 +142,7 @@ public class CorreoApp extends Application {
                 resources.getString("onPasswordReadFailedTryAgain")
         );
 
-        notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("preloaderReady")));
+        notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderReady")));
         settingsManager.saveSettings();
 
         System.setProperty("correo.iconModeCssClass", themeManager.getIconModeCssClass());
@@ -320,10 +318,6 @@ public class CorreoApp extends Application {
         System.exit(1);
     }
 
-    @Override
-    public void stop() {
-        //TODO Do we need to do something on stop?
-    }
 
     void onNotifyPreloader(Consumer<Preloader.PreloaderNotification> notifyPreloader) {
         this.notifyPreloader = notifyPreloader;

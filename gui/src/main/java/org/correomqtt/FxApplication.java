@@ -4,27 +4,25 @@ import javafx.application.Application;
 import javafx.geometry.Rectangle2D;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.correomqtt.core.utils.VersionUtils;
 
 @Slf4j
 public class FxApplication extends Application {
-    private CorreoApp app;
-
-    @Getter
-    private static CorreoAppComponent appComponent;
+    private MainApplication app;
 
     @Override
     public void init() {
 
         startLog();
 
-        appComponent = DaggerCorreoAppComponent.builder()
+        MainComponent component = DaggerMainComponent.builder()
                 .hostServices(getHostServices())
                 .build();
 
-        app = appComponent.app();
+        GuiCore.setMainComponent(component);
+
+        app = component.mainApplication();
         app.onNotifyPreloader(this::notifyPreloader);
         app.init();
     }

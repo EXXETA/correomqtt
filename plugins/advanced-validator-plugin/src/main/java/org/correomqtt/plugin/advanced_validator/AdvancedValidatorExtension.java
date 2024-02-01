@@ -3,7 +3,7 @@ package org.correomqtt.plugin.advanced_validator;
 import com.fasterxml.jackson.core.type.TypeReference;
 import dagger.Component;
 import javafx.scene.paint.Color;
-import org.correomqtt.CorreoAppComponent;
+import org.correomqtt.MainComponent;
 import org.correomqtt.core.PluginScoped;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.model.HooksDTO;
@@ -28,7 +28,7 @@ public class AdvancedValidatorExtension implements ThemeProvider, ThemeProviderH
     private AdvancedValidatorConfig initialConfig;
 
     @PluginScoped
-    @Component(dependencies = CorreoAppComponent.class)
+    @Component(dependencies = MainComponent.class)
     public interface Factory extends ExtensionComponent<AdvancedValidatorExtension> {
     }
 

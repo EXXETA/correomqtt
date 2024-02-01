@@ -626,6 +626,8 @@ public class DetailViewController extends BaseConnectionController implements
 
         LoaderResult<DetailViewController> result = load();
 
+        resources = result.getResourceBundle();
+
         String title;
         if (messageDTO.getMessageType() == MessageType.INCOMING) {
             title = resources.getString("detailViewControllerIncomingTitle");

@@ -14,15 +14,15 @@ import javafx.scene.control.TabPane;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import lombok.Getter;
-import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.exception.CorreoMqttUnableToCheckVersionException;
+import org.correomqtt.core.utils.ConnectionManager;
 import org.correomqtt.core.utils.VendorConstants;
+import org.correomqtt.GuiCore;
 import org.correomqtt.gui.controls.ThemedFontIcon;
-import org.correomqtt.gui.model.AppHostServices;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.GuiConnectionState;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -50,12 +50,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConnectionSettingsViewDelegate {
 
     public static final String DIRTY_CLASS = "dirty";
     private static final Logger LOGGER = LoggerFactory.getLogger(MainViewController.class);
-    private final CoreManager coreManager;
+    private final ConnectionManager connectionManager;
     private final ThemeManager themeManager;
     private final ConnectionViewController.Factory connectionViewCtlrFactory;
     private final ConnectionSettingsViewController.Factory connectionSettingsCtrlFactory;
@@ -119,14 +118,11 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private String closedTabId;
 
     @Inject
-    public MainViewController(CoreManager coreManager,
-                              ThemeManager themeManager,
+    public MainViewController(GuiCore guiCore,
                               ConnectionViewController.Factory connectionViewCtlrFactory,
                               ConnectionSettingsViewController.Factory connectionSettingsCtrlFactory,
                               ConnectionOnboardingViewController.Factory onboardingViewCtlrFactory,
                               CheckNewVersionUtils checkNewVersionUtils,
-                              EventBus eventBus,
-                              @AppHostServices HostServices hostServices,
                               Provider<AboutViewController> aboutViewControllerProvider,
                               Provider<LogTabController> logTabControllerProvider,
                               Provider<SettingsViewController> settingsViewControllerProvider,
@@ -134,14 +130,14 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                               Provider<ConnectionImportViewController> importViewCtrlProvider,
                               Provider<ScriptingViewController> scriptingCtrlProvider,
                               Provider<PluginsViewController> pluginCtrlProvider) {
-        this.coreManager = coreManager;
-        this.themeManager = themeManager;
+        this.connectionManager = guiCore.getConnectionManager();
+        this.themeManager = guiCore.getThemeManager();
         this.connectionViewCtlrFactory = connectionViewCtlrFactory;
         this.connectionSettingsCtrlFactory = connectionSettingsCtrlFactory;
         this.onboardingViewCtrlFactory = onboardingViewCtlrFactory;
         this.checkNewVersionUtils = checkNewVersionUtils;
-        this.eventBus = eventBus;
-        this.hostServices = hostServices;
+        this.eventBus = guiCore.getEventBus();
+        this.hostServices = guiCore.getHostServices();
         this.aboutViewControllerProvider = aboutViewControllerProvider;
         this.logTabControllerProvider = logTabControllerProvider;
         this.settingsViewControllerProvider = settingsViewControllerProvider;
@@ -151,7 +147,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         this.pluginCtrlProvider = pluginCtrlProvider;
         eventBus.register(this);
     }
-
 
     @FXML
     private void initialize() {
@@ -239,13 +234,12 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     @SuppressWarnings("unused")
     public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {
         if (connectionViewControllers.values().stream().noneMatch(ctrl -> ctrl.getConnectionId().equals(event.getConnectionId()))) {
-            getConnectionViewControllerLoaderResult(ConnectionTransformer.dtoToProps(coreManager.getConnectionManager().getConfig(event.getConnectionId())));
+            getConnectionViewControllerLoaderResult(ConnectionTransformer.dtoToProps(connectionManager.getConfig(event.getConnectionId())));
         }
     }
 
     private LoaderResult<ConnectionViewController> getConnectionViewControllerLoaderResult(ConnectionPropertiesDTO config) {
         String tabId = config.getId();
-
 
         Tab tab = new Tab();
         tab.setId(tabId);
@@ -291,11 +285,9 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         if (connectTab == null) {
             LoaderResult<ConnectionViewController> result = getConnectionViewControllerLoaderResult(config);
             result.getController().connect(config);
-
         } else {
             tabPane.getSelectionModel().select(connectTab);
         }
-
     }
 
     @Override

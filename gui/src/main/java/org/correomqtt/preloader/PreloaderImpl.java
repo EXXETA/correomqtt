@@ -1,4 +1,4 @@
-package org.correomqtt;
+package org.correomqtt.preloader;
 
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
@@ -17,7 +17,7 @@ import org.correomqtt.gui.window.StageHelper;
 
 import java.io.IOException;
 
-public class CorreoPreloader extends Preloader {
+public class PreloaderImpl extends Preloader {
 
     //TODO use a nice image for splash
 
@@ -32,7 +32,7 @@ public class CorreoPreloader extends Preloader {
 
     @Override
     public void init() throws IOException {
-        FXMLLoader loader = new FXMLLoader(CorreoPreloader.class.getResource("preloaderView.fxml"));
+        FXMLLoader loader = new FXMLLoader(PreloaderImpl.class.getResource("preloaderView.fxml"));
         loader.setControllerFactory(param -> this);
         Parent root = loader.load();
 
@@ -68,7 +68,7 @@ public class CorreoPreloader extends Preloader {
 
     @Override
     public void handleApplicationNotification(PreloaderNotification info) {
-        if (info instanceof CorreoPreloaderNotification cInfo) {
+        if (info instanceof org.correomqtt.preloader.PreloaderNotification cInfo) {
             preloaderStepLabel.setText(cInfo.getMsg());
         }
     }

@@ -1,7 +1,7 @@
 package org.correomqtt.gui.plugin;
 
-import org.correomqtt.CorreoAppComponent;
-import org.correomqtt.FxApplication;
+import org.correomqtt.GuiCore;
+import org.correomqtt.MainComponent;
 import org.pf4j.ExtensionFactory;
 import org.pf4j.PluginRuntimeException;
 import org.slf4j.Logger;
@@ -29,7 +29,7 @@ public class CorreoExtensionFactory implements ExtensionFactory {
         try {
             if (factory != null) {
                 Object builder1 = factory.getMethod("builder").invoke(null);
-                Object builder2 = builder1.getClass().getMethod("correoAppComponent", CorreoAppComponent.class).invoke(builder1, FxApplication.getAppComponent());
+                Object builder2 = builder1.getClass().getMethod("correoAppComponent", MainComponent.class).invoke(builder1, GuiCore.getMainComponent());
                 Object component = builder2.getClass().getMethod("build").invoke(builder2);
                 return (T) ((ExtensionComponent) component).extension();
                 // return (T) factory.getMethod("get").invoke(null);

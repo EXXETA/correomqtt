@@ -1,7 +1,7 @@
 package org.correomqtt.plugin.xml_xsd_validator;
 
 import dagger.Component;
-import org.correomqtt.CorreoAppComponent;
+import org.correomqtt.MainComponent;
 import org.correomqtt.core.fileprovider.PluginConfigProvider;
 import org.correomqtt.core.plugin.spi.MessageValidatorHook;
 import org.correomqtt.gui.plugin.ExtensionComponent;
@@ -29,7 +29,7 @@ public class XmlXsdValidator implements MessageValidatorHook<XmlXsdValidatorConf
     private String schemaFile;
 
 
-    @Component(dependencies = CorreoAppComponent.class)
+    @Component(dependencies = MainComponent.class)
     public interface Factory extends ExtensionComponent<XmlXsdValidator> {
 
     }

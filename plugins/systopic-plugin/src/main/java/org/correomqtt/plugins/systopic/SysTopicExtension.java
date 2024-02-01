@@ -2,7 +2,7 @@ package org.correomqtt.plugins.systopic;
 
 import dagger.Component;
 import javafx.scene.layout.HBox;
-import org.correomqtt.CorreoAppComponent;
+import org.correomqtt.MainComponent;
 import org.correomqtt.core.PluginScoped;
 import org.correomqtt.gui.plugin.ExtensionComponent;
 import org.correomqtt.gui.plugin.spi.MainToolbarHook;
@@ -18,7 +18,7 @@ public class SysTopicExtension implements MainToolbarHook {
     private final SysTopicButtonController.Factory sysTopicButtonControllerFactory;
 
     @PluginScoped
-    @Component(dependencies = CorreoAppComponent.class)
+    @Component(dependencies = MainComponent.class)
     public interface Factory extends ExtensionComponent<SysTopicExtension> {
 
     }

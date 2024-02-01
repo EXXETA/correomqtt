@@ -1,7 +1,7 @@
 package org.correomqtt.gui.plugin;
 
 import javafx.application.Preloader;
-import org.correomqtt.CorreoPreloaderNotification;
+import org.correomqtt.preloader.PreloaderNotification;
 import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.plugin.repository.BundledPluginList;
 import org.correomqtt.core.settings.SettingsManager;
@@ -33,13 +33,13 @@ public class PluginLauncher {
     public void start(boolean doPluginUpdates) {
 
         try {
-            notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("preloaderLoadPlugins")));
+            notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderLoadPlugins")));
             pluginManager.loadPlugins();
             if (doPluginUpdates) {
-                notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("preloaderUpdatePlugins")));
+                notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderUpdatePlugins")));
                 updateSystem();
             }
-            notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("preloaderStartPlugins")));
+            notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderStartPlugins")));
             pluginManager.startPlugins();
         } catch (Exception e) {
             LOGGER.error("Error or Exception during loading plugins ", e);
@@ -77,13 +77,13 @@ public class PluginLauncher {
                 continue;
             }
 
-            notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("pluginUpdateManagerInstalling") + " " + pluginId));
+            notifyPreloader.accept(new PreloaderNotification(resources.getString("pluginUpdateManagerInstalling") + " " + pluginId));
             String lastVersion = lastRelease.version;
             try {
                 boolean installed = updateManager.installPlugin(pluginId, lastVersion);
                 if (installed) {
                     LOGGER.info("Installed bundled plugin '{}@{}'", pluginId, lastVersion);
-                    notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("pluginUpdateManagerInstalling")));
+                    notifyPreloader.accept(new PreloaderNotification(resources.getString("pluginUpdateManagerInstalling")));
                     installedPlugins++;
                 } else {
                     LOGGER.error("Cannot install bundled plugin '{}'", pluginId);
@@ -107,7 +107,7 @@ public class PluginLauncher {
             boolean uninstalled = pluginManager.deletePlugin(pluginId);
             if (uninstalled) {
                 LOGGER.info("Uninstalled deprecated plugin '{}'", pluginId);
-                notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("pluginUpdateManagerUninstalled") + " " + pluginId));
+                notifyPreloader.accept(new PreloaderNotification(resources.getString("pluginUpdateManagerUninstalled") + " " + pluginId));
                 return 1;
             } else {
                 LOGGER.error("Cannot uninstall plugin '{}'", pluginId);
@@ -121,7 +121,7 @@ public class PluginLauncher {
         // check for updates
         int updatedPlugins = 0;
         for (PluginInfo plugin : updateManager.getUpdates()) {
-            notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("pluginUpdateManagerUpdating") + " " + plugin.id));
+            notifyPreloader.accept(new PreloaderNotification(resources.getString("pluginUpdateManagerUpdating") + " " + plugin.id));
             PluginInfo.PluginRelease lastRelease = updateManager.getLastPluginRelease(plugin.id);
             String lastVersion = lastRelease.version;
             String installedVersion = pluginManager.getPlugin(plugin.id).getDescriptor().getVersion();
@@ -129,7 +129,7 @@ public class PluginLauncher {
                 if (updateManager.updatePlugin(plugin.id, lastVersion)) {
                     LOGGER.info("Updated plugin '{}@{}' to '{}@{}'", plugin.id, installedVersion, plugin.id, lastVersion);
                     updatedPlugins++;
-                    notifyPreloader.accept(new CorreoPreloaderNotification(resources.getString("pluginUpdateManagerUpdated") + " " + plugin.id));
+                    notifyPreloader.accept(new PreloaderNotification(resources.getString("pluginUpdateManagerUpdated") + " " + plugin.id));
                 } else {
                     LOGGER.warn("Cannot update plugin '{}'", plugin.id);
                 }

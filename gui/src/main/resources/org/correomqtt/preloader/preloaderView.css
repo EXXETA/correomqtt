@@ -10,7 +10,7 @@
 }
 
 .appIcon {
-    -fx-graphic: url("gui/icons/app-icon/Icon_128x128.png");
+    -fx-graphic: url("../gui/icons/app-icon/Icon_128x128.png");
     -fx-padding: 20;
 }
 
