@@ -1,16 +1,14 @@
 package org.correomqtt.plugin.xml_xsd_validator;
 
-import dagger.Component;
-import org.correomqtt.MainComponent;
 import org.correomqtt.core.fileprovider.PluginConfigProvider;
 import org.correomqtt.core.plugin.spi.MessageValidatorHook;
-import org.correomqtt.gui.plugin.ExtensionComponent;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import org.correomqtt.core.cdi.Inject;
 import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -20,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 
+@DefaultBean
 @Extension
 public class XmlXsdValidator implements MessageValidatorHook<XmlXsdValidatorConfig> {
 
@@ -28,11 +27,6 @@ public class XmlXsdValidator implements MessageValidatorHook<XmlXsdValidatorConf
 
     private String schemaFile;
 
-
-    @Component(dependencies = MainComponent.class)
-    public interface Factory extends ExtensionComponent<XmlXsdValidator> {
-
-    }
 
     @Inject
     XmlXsdValidator(PluginConfigProvider pluginConfigProvider) {

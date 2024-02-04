@@ -39,7 +39,7 @@
         <module>di</module>
         <module>core</module>
         <module>gui</module>
-        <!--<module>plugins</module>-->
+        <module>plugins</module>
     </modules>
 
 

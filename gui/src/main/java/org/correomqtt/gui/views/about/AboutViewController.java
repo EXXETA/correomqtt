@@ -20,6 +20,7 @@ import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 
 import org.correomqtt.di.Inject;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -54,7 +55,7 @@ public class AboutViewController extends BaseControllerImpl {
     AboutViewController(CoreManager coreManager,
                         ThemeManager themeManager,
                         AlertHelper alertHelper,
-                         HostServicesWrapper hostServicesWrapper
+                        HostServicesWrapper hostServicesWrapper
     ) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;
@@ -66,10 +67,8 @@ public class AboutViewController extends BaseControllerImpl {
     }
 
     public void showAsDialog() {
-
         Map<Object, Object> properties = new HashMap<>();
         properties.put(WindowProperty.WINDOW_TYPE, WindowType.ABOUT);
-
         if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
             return;
         }
@@ -78,12 +77,9 @@ public class AboutViewController extends BaseControllerImpl {
         showAsDialog(result, resources.getString("aboutViewControllerTitle"), properties, false, false, null, null);
     }
 
-
     @FXML
     private void initialize() {
-
         appNameLabel.setText("CorreoMQTT v" + VersionUtils.getVersion());
-
         Licenses licenses;
         try {
             licenses = new ObjectMapper().readValue(LICENSE_JSON, Licenses.class);
@@ -91,15 +87,11 @@ public class AboutViewController extends BaseControllerImpl {
             alertHelper.unexpectedAlert(e);
             throw new IllegalStateException(e);
         }
-
         addLicenses(licenses.libs(), libsHeadline);
         addLicenses(licenses.icons(), iconsHeadline);
-
         exxetaLink.getProperties().put("link", "https://www.exxeta.com");
-
         exxetaLink.setOnAction(t -> hostServices.showDocument(exxetaLink.getProperties().get("link").toString())
         );
-
     }
 
     private void addLicenses(List<License> licenseList, HBox headline) {

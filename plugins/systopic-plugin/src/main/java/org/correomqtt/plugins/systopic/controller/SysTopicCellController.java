@@ -1,7 +1,5 @@
 package org.correomqtt.plugins.systopic.controller;
 
-import org.correomqtt.core.cdi.Assisted;
-import org.correomqtt.core.cdi.Inject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -9,6 +7,9 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import org.correomqtt.core.CoreManager;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.plugins.systopic.model.SysTopic;
 import org.correomqtt.plugins.systopic.model.SysTopicPropertiesDTO;
 import org.slf4j.Logger;
@@ -16,7 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
-@SuppressWarnings("ALL")
+@DefaultBean
 public class SysTopicCellController extends ListCell<SysTopicPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SysTopicCellController.class);

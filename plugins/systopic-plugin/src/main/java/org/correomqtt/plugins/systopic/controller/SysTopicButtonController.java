@@ -1,7 +1,5 @@
 package org.correomqtt.plugins.systopic.controller;
 
-import org.correomqtt.core.cdi.Assisted;
-import org.correomqtt.core.cdi.Inject;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -11,6 +9,9 @@ import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.eventbus.SubscribeFilter;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +21,7 @@ import static org.correomqtt.core.connection.ConnectionState.CONNECTED;
 import static org.correomqtt.core.connection.ConnectionState.DISCONNECTED_GRACEFUL;
 import static org.correomqtt.core.connection.ConnectionState.DISCONNECTED_UNGRACEFUL;
 
-@SuppressWarnings("ALL")
+@DefaultBean
 public class SysTopicButtonController {
 
     private final SysTopicViewControllerFactory sysTopicViewControllerFactory;
@@ -37,11 +38,12 @@ public class SysTopicButtonController {
     @Inject
     public SysTopicButtonController(
            SysTopicViewControllerFactory sysTopicViewControllerFactory,
-            @Assisted String connectionId) {
+           EventBus eventBus,
+           @Assisted String connectionId) {
         this.connectionId = connectionId;
         this.sysTopicViewControllerFactory = sysTopicViewControllerFactory;
-        EventBus.register(this);
-        EventBus.register(this);
+        eventBus.register(this);
+        eventBus.register(this);
 
         //TODO cleanup
     }

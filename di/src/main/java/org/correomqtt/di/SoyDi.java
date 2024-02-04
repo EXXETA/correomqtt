@@ -5,7 +5,6 @@ import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 import lombok.extern.slf4j.Slf4j;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
@@ -13,35 +12,56 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class SoyDi {
 
     private static final Map<Class<?>, BeanInfo> BEAN_INFO = new HashMap<>();
-    private static final Map<Class<?>, WeakReference<?>> SINGLETON_INSTANCES = new HashMap<>();
+    private static final Map<Class<?>, Object> SINGLETON_INSTANCES = new HashMap<>();
+    private static final Set<ClassLoader> CLASS_LOADER = new HashSet<>();
+    private static boolean initialized = false;
 
     private SoyDi() {
     }
 
-    public static synchronized void scan(String pkg) {
+    private static synchronized void init() {
+        if (initialized)
+            return;
+        CLASS_LOADER.add(SoyDi.class.getClassLoader());
+        initialized = true;
+    }
+
+    public static void addClassLoader(ClassLoader classLoader) {
+        init();
+        CLASS_LOADER.add(classLoader);
+    }
+
+    public static synchronized void scan(String pkg, boolean disableJarScanning) {
+        init();
         log.info("SOY: Scanning {} for soy beans.", pkg);
         long startTime = System.currentTimeMillis();
         int count = 0;
         int singletonCount = 0;
-        try (ScanResult scanResult =
-                     new ClassGraph()
-                             .verbose(log.isTraceEnabled())
-                             .disableJarScanning()
-                             .disableNestedJarScanning()
-                             .disableRuntimeInvisibleAnnotations()
-                             .enableClassInfo()
-                             .enableMethodInfo()
-                             .enableAnnotationInfo()
-                             .acceptPackages(pkg)
-                             .scan()) {
+        ClassGraph classGraph = new ClassGraph()
+                .verbose(log.isTraceEnabled())
+                .enableClassInfo()
+                .enableMethodInfo()
+                .enableAnnotationInfo()
+                .disableRuntimeInvisibleAnnotations()
+                .disableNestedJarScanning()
+                .disableModuleScanning()
+                .acceptPackages(pkg);
+        if (disableJarScanning) {
+            classGraph.disableJarScanning();
+        }
+        CLASS_LOADER.forEach(classGraph::addClassLoader);
+        try (ScanResult scanResult = classGraph.scan()) {
             for (ClassInfo classInfo : scanResult.getClassesWithAnnotation(Bean.class)) {
                 BeanInfo beanInfo = scanClass(classInfo);
                 if (beanInfo != null) {
@@ -66,7 +86,7 @@ public class SoyDi {
             return null;
         }
         try {
-            Class<?> clazz = Class.forName(classInfo.getName());
+            Class<?> clazz = loadClass(classInfo.getName());
             Constructor<?> constructor = findConstructor(clazz);
             List<ParameterInfo> parameters = findConstructorParameter(constructor);
             boolean singleton = clazz.getAnnotation(SingletonBean.class) != null;
@@ -76,6 +96,20 @@ public class SoyDi {
         } catch (Exception e) {
             throw new SoyDiException("Exception while scanning " + classInfo.getName() + " ", e);
         }
+    }
+
+    private static Class<?> loadClass(String className) {
+        return CLASS_LOADER.stream()
+                .map(cl -> {
+                    try {
+                        return Class.forName(className, false, cl);
+                    } catch (ClassNotFoundException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseThrow(() -> new SoyDiException("Unable to load class via available classloaders."));
     }
 
     private static Constructor<?> findConstructor(Class<?> clazz) {
@@ -117,7 +151,7 @@ public class SoyDi {
             throw new SoyDiException("Can not inject " + clazz + ", cause it was not scanned. " + getChainLogMsg(chain));
         }
         if (beanInfo.isSingleton() && SINGLETON_INSTANCES.containsKey(clazz)) {
-            return (T) SINGLETON_INSTANCES.get(clazz).get();
+            return (T) SINGLETON_INSTANCES.get(clazz);
         }
         Object[] params = beanInfo.getConstructorParameters().stream()
                 .map(cp -> {
@@ -130,7 +164,7 @@ public class SoyDi {
             beanInfo.getConstructor().setAccessible(true);
             T instance = (T) beanInfo.getConstructor().newInstance(params);
             if (beanInfo.isSingleton()) {
-                SINGLETON_INSTANCES.put(clazz, new WeakReference<>(instance));
+                SINGLETON_INSTANCES.put(clazz, instance);
             }
             return instance;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {

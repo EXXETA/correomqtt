@@ -1,7 +1,5 @@
 package org.correomqtt.plugins.systopic.controller;
 
-import org.correomqtt.core.cdi.Assisted;
-import org.correomqtt.core.cdi.Inject;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -27,6 +25,9 @@ import org.correomqtt.core.pubsub.IncomingMessageEvent;
 import org.correomqtt.core.pubsub.PubSubTaskFactories;
 import org.correomqtt.core.pubsub.SubscribeEvent;
 import org.correomqtt.core.pubsub.SubscribeFailedEvent;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
@@ -51,7 +52,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("ALL")
+@DefaultBean
 public class SysTopicViewController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SysTopicViewController.class);
@@ -88,6 +89,7 @@ public class SysTopicViewController {
     SysTopicViewController(CoreManager coreManager,
                            ThemeManager themeManager,
                            PubSubTaskFactories pubSubTaskFactories,
+                           EventBus eventBus,
                            SysTopicCellControllerFactory sysTopicCellControllerFactory,
                            @Assisted String connectionId) {
         this.coreManager = coreManager;
@@ -97,7 +99,7 @@ public class SysTopicViewController {
         this.connectionId = connectionId;
         resources = ResourceBundle.getBundle("org.correomqtt.plugins.systopic.i18n", coreManager.getSettingsManager().getSettings().getCurrentLocale());
 
-        EventBus.register(this);
+        eventBus.register(this);
     }
 
     void showAsDialog() throws IOException {

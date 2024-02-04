@@ -49,12 +49,6 @@
       "licenseLink": "https://github.com/apache/commons-io/blob/master/LICENSE.txt"
     },
     {
-      "name": "Dagger 2",
-      "repoLink": "https://github.com/google/dagger",
-      "license": "Apache 2.0",
-      "licenseLink": "https://github.com/google/dagger/blob/master/LICENSE.txt"
-    },
-    {
       "name": "Logback",
       "repoLink": "https://github.com/qos-ch/logback/tree/v_1.2.3",
       "license": "EPL 1.0 / LGPL 2.1",
