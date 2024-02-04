@@ -4,7 +4,7 @@ org.correomqtt.core.applifecycle
 org.correomqtt.core.concurrent
 org.correomqtt.core.connection
 org.correomqtt.core.encryption
-org.correomqtt.core.eventbus
+org.correomqtt.core.events
 org.correomqtt.core.exception
 org.correomqtt.core.fileprovider
 org.correomqtt.core.importexport.connections
