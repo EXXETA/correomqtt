@@ -1,6 +1,10 @@
 package org.correomqtt.core.log;
 
-import org.correomqtt.core.eventbus.Event;
+import org.correomqtt.di.Event;
 
 public record LogEvent(String logMsg) implements Event {
+    @Override
+    public boolean isLogable() {
+        return false;
+    }
 }

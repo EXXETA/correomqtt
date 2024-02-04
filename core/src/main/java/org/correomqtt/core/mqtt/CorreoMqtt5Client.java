@@ -14,7 +14,7 @@ import lombok.Getter;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.exception.CorreoMqtt5SubscriptionFailed;
 import org.correomqtt.core.exception.CorreoMqttConnectionFailedException;
 import org.correomqtt.core.exception.CorreoMqttNotConnectedException;
@@ -47,9 +47,9 @@ public class CorreoMqtt5Client extends BaseCorreoMqttClient {
 
 
     @Inject
-    CorreoMqtt5Client(EventBus eventBus,
+    CorreoMqtt5Client(SoyEvents soyEvents,
                       @Assisted ConnectionConfigDTO configDTO) {
-        super(eventBus, configDTO);
+        super(soyEvents, configDTO);
     }
 
     @Override

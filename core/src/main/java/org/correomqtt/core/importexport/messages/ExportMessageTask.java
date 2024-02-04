@@ -6,7 +6,7 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.model.MessageDTO;
 
 import java.io.File;
@@ -15,25 +15,25 @@ import java.io.IOException;
 @DefaultBean
 public class ExportMessageTask extends SimpleTask {
 
-    private final EventBus eventBus;
+    private final SoyEvents soyEvents;
     private final File file;
     private final MessageDTO messageDTO;
 
 
 
     @Inject
-    public ExportMessageTask(EventBus eventBus,
+    public ExportMessageTask(SoyEvents soyEvents,
                              @Assisted File file,
                              @Assisted MessageDTO messageDTO) {
-        super(eventBus);
-        this.eventBus = eventBus;
+        super(soyEvents);
+        this.soyEvents = soyEvents;
         this.file = file;
         this.messageDTO = messageDTO;
     }
 
     @Override
     protected void beforeHook() {
-        eventBus.fireAsync(new ExportMessageStartedEvent(file, messageDTO));
+        soyEvents.fireAsync(new ExportMessageStartedEvent(file, messageDTO));
     }
 
     @Override
@@ -47,11 +47,11 @@ public class ExportMessageTask extends SimpleTask {
 
     @Override
     protected void successHook() {
-        eventBus.fireAsync(new ExportMessageSuccessEvent());
+        soyEvents.fireAsync(new ExportMessageSuccessEvent());
     }
 
     @Override
     protected void errorHook(SimpleTaskErrorResult errorResult) {
-        eventBus.fireAsync(new ExportMessageFailedEvent(file, messageDTO, errorResult.getUnexpectedError()));
+        soyEvents.fireAsync(new ExportMessageFailedEvent(file, messageDTO, errorResult.getUnexpectedError()));
     }
 }

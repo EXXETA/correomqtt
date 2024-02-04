@@ -1,4 +1,4 @@
-package org.correomqtt.core.eventbus;
+package org.correomqtt.di;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

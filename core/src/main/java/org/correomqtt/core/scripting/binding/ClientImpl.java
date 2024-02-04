@@ -1,22 +1,21 @@
 package org.correomqtt.core.scripting.binding;
 
 import lombok.Getter;
-import org.correomqtt.di.DefaultBean;
 import org.correomqtt.core.connection.ConnectionLifecycleTaskFactories;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.model.MessageDTO;
 import org.correomqtt.core.model.MessageType;
 import org.correomqtt.core.model.Qos;
 import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.pubsub.IncomingMessageEvent;
 import org.correomqtt.core.pubsub.PubSubTaskFactories;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.Observes;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess.Export;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 
-import org.correomqtt.di.Inject;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +36,6 @@ public class ClientImpl {
 
     private final ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories;
     private final PubSubTaskFactories pubSubTaskFactories;
-    private final EventBus eventBus;
     private String connectionId;
     private Logger scriptLogger;
     private Queue queue;
@@ -52,11 +50,9 @@ public class ClientImpl {
 
     @Inject
     ClientImpl(ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
-               PubSubTaskFactories pubSubTaskFactories,
-               EventBus eventBus) {
+               PubSubTaskFactories pubSubTaskFactories) {
         this.connectionLifecycleTaskFactories = connectionLifecycleTaskFactories;
         this.pubSubTaskFactories = pubSubTaskFactories;
-        this.eventBus = eventBus;
     }
 
     public void setContext(Context context) {
@@ -65,7 +61,6 @@ public class ClientImpl {
         marker = context.getPolyglotBindings().getMember(CORREO_SCRIPT_MARKER).as(Marker.class);
         scriptLogger = context.getPolyglotBindings().getMember(CORREO_SCRIPT_LOGGER).as(Logger.class);
         queue = context.getPolyglotBindings().getMember(CORREO_SCRIPT_QUEUE).as(Queue.class);
-        eventBus.register(this);
     }
 
     @Export
@@ -188,7 +183,7 @@ public class ClientImpl {
     }
 
     @SuppressWarnings("unused")
-    public void onSubscribe(@Subscribe IncomingMessageEvent event) {
+    public void onSubscribe(@Observes IncomingMessageEvent event) {
         queue.add(new QueueEvent(() -> {
             String topic = event.getSubscriptionDTO().getTopic();
             if (subscriptions.containsKey(topic)) {

@@ -14,8 +14,8 @@ import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.correomqtt.core.CorreoCore;
 import org.correomqtt.core.applifecycle.ShutdownEvent;
 import org.correomqtt.core.applifecycle.ShutdownRequestEvent;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
+import org.correomqtt.di.SoyEvents;
+import org.correomqtt.di.Observes;
 import org.correomqtt.core.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.core.model.GlobalUISettings;
 import org.correomqtt.core.model.SettingsDTO;
@@ -63,7 +63,7 @@ public class MainApplication {
     private final PluginCheckUtils pluginCheckUtils;
     private final MainViewController mainViewController;
     private final CorreoCore correoCore;
-    private final EventBus eventBus;
+    private final SoyEvents soyEvents;
     private ResourceBundle resources;
     private Scene scene;
     private Stage primaryStage;
@@ -81,7 +81,7 @@ public class MainApplication {
                            PluginCheckUtils pluginCheckUtils,
                            MainViewController mainViewController,
                            CorreoCore correoCore,
-                           EventBus eventBus) {
+                           SoyEvents soyEvents) {
         this.pluginManager = pluginManager;
         this.pluginLauncher = pluginLauncher;
         this.keyringManager = keyringManager;
@@ -93,20 +93,15 @@ public class MainApplication {
         this.pluginCheckUtils = pluginCheckUtils;
         this.mainViewController = mainViewController;
         this.correoCore = correoCore;
-        this.eventBus = eventBus;
+        this.soyEvents = soyEvents;
     }
 
     public void start(Stage primaryStage) throws IOException {
         this.primaryStage = primaryStage;
         loadPrimaryStage();
-
-        alertController.activate();
     }
 
     public void init() {
-
-        alertController.activate();
-        eventBus.register(this);
 
         final SettingsDTO settings = settingsManager.getSettings();
 
@@ -249,7 +244,7 @@ public class MainApplication {
         settingsManager.saveSettings();
     }
 
-    @Subscribe(ShutdownRequestEvent.class)
+    @Observes(ShutdownRequestEvent.class)
     public void onShutdownRequested() {
         LOGGER.info("Main window closed. Initialize shutdown.");
         LOGGER.info("Saving global UI settings.");
@@ -257,11 +252,10 @@ public class MainApplication {
         LOGGER.info("Saving connection UI settings.");
         saveConnectionUISettings();
         LOGGER.info("Shutting down connections.");
-        eventBus.fire(new ShutdownEvent());
+        soyEvents.fire(new ShutdownEvent());
         LOGGER.info("Shutting down plugins.");
         pluginManager.stopPlugins();
         LOGGER.info("Shutting down application. Bye.");
-        alertController.deactivate();
         Platform.exit();
         System.exit(0);
     }
@@ -270,19 +264,19 @@ public class MainApplication {
         scene.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
 
                     if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && !event.isShiftDown()) {
-                        eventBus.fireAsync(new ShortcutConnectionIdEvent(SUBSCRIPTION, mainViewController.getUUIDofSelectedTab()));
+                        soyEvents.fireAsync(new ShortcutConnectionIdEvent(SUBSCRIPTION, mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && event.isShiftDown()) {
-                        eventBus.fireAsync(new ShortcutConnectionIdEvent(CLEAR_INCOMING, mainViewController.getUUIDofSelectedTab()));
+                        soyEvents.fireAsync(new ShortcutConnectionIdEvent(CLEAR_INCOMING, mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && !event.isShiftDown()) {
-                        eventBus.fireAsync(new ShortcutConnectionIdEvent(PUBLISH, mainViewController.getUUIDofSelectedTab()));
+                        soyEvents.fireAsync(new ShortcutConnectionIdEvent(PUBLISH, mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     if (event.getCode().equals(KeyCode.P) && event.isShortcutDown() && event.isShiftDown()) {
-                        eventBus.fireAsync(new ShortcutConnectionIdEvent(CLEAR_OUTGOING, mainViewController.getUUIDofSelectedTab()));
+                        soyEvents.fireAsync(new ShortcutConnectionIdEvent(CLEAR_OUTGOING, mainViewController.getUUIDofSelectedTab()));
                         event.consume();
                     }
                     //TODO rest

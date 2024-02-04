@@ -3,17 +3,11 @@ package org.correomqtt.gui.views.scripting;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.encoder.Encoder;
-import org.correomqtt.di.Assisted;
-import org.correomqtt.di.DefaultBean;
-import org.correomqtt.di.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import org.correomqtt.core.CoreManager;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
-import org.correomqtt.core.eventbus.SubscribeFilter;
 import org.correomqtt.core.scripting.ExecutionDTO;
 import org.correomqtt.core.scripting.ScriptExecuteTaskFactories;
 import org.correomqtt.core.scripting.ScriptExecutionCancelledEvent;
@@ -21,6 +15,11 @@ import org.correomqtt.core.scripting.ScriptExecutionFailedEvent;
 import org.correomqtt.core.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.core.scripting.ScriptExecutionSuccessEvent;
 import org.correomqtt.core.scripting.ScriptingBackend;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.Observes;
+import org.correomqtt.di.ObservesFilter;
 import org.correomqtt.gui.log.LogToRichtTextFxAppender;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
@@ -33,45 +32,16 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
-import static org.correomqtt.core.eventbus.SubscribeFilterNames.SCRIPT_EXECUTION_ID;
+import static org.correomqtt.core.events.ObservesFilterNames.SCRIPT_EXECUTION_ID;
 import static org.correomqtt.core.utils.LoggerUtils.SCRIPT_COLOR_PATTERN_APPENDER_NAME;
 import static org.correomqtt.core.utils.LoggerUtils.findPatternEncoder;
 
 @DefaultBean
 public class SingleExecutionViewController extends BaseControllerImpl {
 
-    @Inject
-    public SingleExecutionViewController(
-            CoreManager coreManager,
-            ThemeManager themeManager,
-            AlertHelper alertHelper,
-            ScriptExecuteTaskFactories scriptExecuteTaskFactories,
-            EventBus eventBus,
-            @Assisted ExecutionPropertiesDTO executionPropertiesDTO) {
-        super(coreManager, themeManager);
-        this.alertHelper = alertHelper;
-        this.scriptExecuteTaskFactories = scriptExecuteTaskFactories;
-        this.eventBus = eventBus;
-        this.executionPropertiesDTO = executionPropertiesDTO;
-        eventBus.register(this);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleExecutionViewController.class);
     private final AlertHelper alertHelper;
     private final ScriptExecuteTaskFactories scriptExecuteTaskFactories;
-    private final EventBus eventBus;
     private final ExecutionPropertiesDTO executionPropertiesDTO;
     private ResourceBundle resources;
     @FXML
@@ -83,6 +53,18 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     @FXML
     private Button scriptingStopButton;
     private LogToRichtTextFxAppender appender;
+    @Inject
+    public SingleExecutionViewController(
+            CoreManager coreManager,
+            ThemeManager themeManager,
+            AlertHelper alertHelper,
+            ScriptExecuteTaskFactories scriptExecuteTaskFactories,
+            @Assisted ExecutionPropertiesDTO executionPropertiesDTO) {
+        super(coreManager, themeManager);
+        this.alertHelper = alertHelper;
+        this.scriptExecuteTaskFactories = scriptExecuteTaskFactories;
+        this.executionPropertiesDTO = executionPropertiesDTO;
+    }
 
     public LoaderResult<SingleExecutionViewController> load() {
         LoaderResult<SingleExecutionViewController> result = load(SingleExecutionViewController.class, "singleExecutionView.fxml",
@@ -130,12 +112,12 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    public void onScriptExecutionProgress(@Subscribe(sync = true) ScriptExecutionProgressEvent event) {
+    public void onScriptExecutionProgress(@Observes(sync = true) ScriptExecutionProgressEvent event) {
         connectLog(event.getExecutionDTO());
     }
 
     @SuppressWarnings("unused")
-    public void onScriptExecutionCancelled(@Subscribe ScriptExecutionCancelledEvent event) {
+    public void onScriptExecutionCancelled(@Observes ScriptExecutionCancelledEvent event) {
         scriptingStopButton.setDisable(true);
         disconnectLog(event.getExecutionDTO());
     }
@@ -148,13 +130,13 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    public void onScriptExecutionSuccess(@Subscribe ScriptExecutionSuccessEvent event) {
+    public void onScriptExecutionSuccess(@Observes ScriptExecutionSuccessEvent event) {
         scriptingStopButton.setDisable(true);
         disconnectLog(event.getExecutionDTO());
     }
 
     @SuppressWarnings("unused")
-    public void onScriptExecutionFailed(@Subscribe ScriptExecutionFailedEvent event) {
+    public void onScriptExecutionFailed(@Observes ScriptExecutionFailedEvent event) {
         scriptingStopButton.setDisable(true);
         disconnectLog(event.getExecutionDTO());
     }
@@ -163,7 +145,6 @@ public class SingleExecutionViewController extends BaseControllerImpl {
         if (appender != null) {
             appender.stop();
         }
-        eventBus.unregister(this);
     }
 
     @FXML
@@ -174,7 +155,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    @SubscribeFilter(SCRIPT_EXECUTION_ID)
+    @ObservesFilter(SCRIPT_EXECUTION_ID)
     public String getExecutionId() {
         return executionPropertiesDTO.getExecutionId();
     }

@@ -1,6 +1,6 @@
 package org.correomqtt.core.fileprovider;
 
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,13 +33,12 @@ public abstract class BaseUserFileProvider {
 
     protected static final String SCRIPT_EXECUTIONS_FOLDER_NAME = SCRIPT_FOLDER_NAME + File.separator + "executions";
     private final Map<String, String> cache = new HashMap<>();
-    protected final EventBus eventBus;
+    protected final SoyEvents soyEvents;
     private File file;
     private String targetDirectoryPathCache;
 
-    protected BaseUserFileProvider(EventBus eventBus){
-
-        this.eventBus = eventBus;
+    protected BaseUserFileProvider(SoyEvents soyEvents){
+        this.soyEvents = soyEvents;
     }
 
     protected File getFile() {
@@ -56,7 +55,7 @@ public abstract class BaseUserFileProvider {
         String targetDirectoryPath = getTargetDirectoryPath();
 
         if (!new File(targetDirectoryPath).exists() && !new File(targetDirectoryPath).mkdir()) {
-            eventBus.fire(new DirectoryCanNotBeCreatedEvent(targetDirectoryPath));
+            soyEvents.fire(new DirectoryCanNotBeCreatedEvent(targetDirectoryPath));
         }
 
         File targetFile;
@@ -93,21 +92,21 @@ public abstract class BaseUserFileProvider {
         if (isWindows()) {
             String appData = System.getenv("APPDATA");
             if (appData == null) {
-                eventBus.fire(new WindowsAppDataNullEvent());
+                soyEvents.fire(new WindowsAppDataNullEvent());
             } else {
                 targetDirectoryPathCache = appData + File.separator + WIN_APP_FOLDER_NAME;
             }
         } else if (isMacOS()) {
 
             if (USER_HOME == null) {
-                eventBus.fire(new UserHomeNull());
+                soyEvents.fire(new UserHomeNull());
             } else {
                 targetDirectoryPathCache = USER_HOME + File.separator + "Library" + File.separator + "Application Support" + File.separator + MAC_APP_FOLDER_NAME;
             }
         } else if (isLinux()) {
 
             if (USER_HOME == null) {
-                eventBus.fire(new UserHomeNull());
+                soyEvents.fire(new UserHomeNull());
             } else {
                 targetDirectoryPathCache = USER_HOME + File.separator + LIN_APP_FOLDER_NAME;
             }
@@ -140,7 +139,7 @@ public abstract class BaseUserFileProvider {
 
         String targetDirectoryPath = getTargetDirectoryPath();
         if (!new File(targetDirectoryPath).exists() && !new File(targetDirectoryPath).mkdir()) {
-            eventBus.fire(new DirectoryCanNotBeCreatedEvent(targetDirectoryPath));
+            soyEvents.fire(new DirectoryCanNotBeCreatedEvent(targetDirectoryPath));
         }
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(targetDirectoryPath + File.separator + filename))) {
@@ -166,7 +165,7 @@ public abstract class BaseUserFileProvider {
 
         return cache.computeIfAbsent(dir, d -> {
             if (!new File(path).exists() && !new File(path).mkdirs()) {
-                eventBus.fire(new DirectoryCanNotBeCreatedEvent(path));
+                soyEvents.fire(new DirectoryCanNotBeCreatedEvent(path));
                 throw new IllegalStateException("Can not create directory: " + path);
             }
             return path;

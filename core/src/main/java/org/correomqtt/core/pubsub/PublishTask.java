@@ -8,7 +8,7 @@ import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.concurrent.TaskException;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.model.MessageDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.plugin.PluginManager;
@@ -33,7 +33,7 @@ public class PublishTask extends SimpleTask {
     private final PluginManager pluginManager;
     private final ConnectionManager connectionManager;
     private final LoggerUtils loggerUtils;
-    private final EventBus eventBus;
+    private final SoyEvents soyEvents;
     private final String connectionId;
     private final MessageDTO messageDTO;
 
@@ -41,14 +41,14 @@ public class PublishTask extends SimpleTask {
     PublishTask(PluginManager pluginManager,
                 ConnectionManager connectionManager,
                 LoggerUtils loggerUtils,
-                EventBus eventBus,
+                SoyEvents soyEvents,
                 @Assisted String connectionId,
                 @Assisted MessageDTO messageDTO) {
-        super(eventBus);
+        super(soyEvents);
         this.pluginManager = pluginManager;
         this.connectionManager = connectionManager;
         this.loggerUtils = loggerUtils;
-        this.eventBus = eventBus;
+        this.soyEvents = soyEvents;
         this.connectionId = connectionId;
         this.messageDTO = messageDTO;
     }
@@ -60,7 +60,7 @@ public class PublishTask extends SimpleTask {
         MessageDTO manipulatedMessageDTO = executeOnPublishMessageExtensions(connectionId, messageDTO);
         try {
             client.publish(manipulatedMessageDTO);
-            eventBus.fireAsync(new PublishEvent(connectionId, manipulatedMessageDTO));
+            soyEvents.fireAsync(new PublishEvent(connectionId, manipulatedMessageDTO));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TaskException(e);
@@ -71,7 +71,7 @@ public class PublishTask extends SimpleTask {
 
     @Override
     protected void errorHook(SimpleTaskErrorResult ignore) {
-        eventBus.fireAsync(new PublishFailedEvent(connectionId, messageDTO));
+        soyEvents.fireAsync(new PublishFailedEvent(connectionId, messageDTO));
     }
 
     private MessageDTO executeOnPublishMessageExtensions(String connectionId, MessageDTO messageDTO) {

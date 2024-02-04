@@ -1,6 +1,6 @@
 package org.correomqtt.core.applifecycle;
 
-import org.correomqtt.core.eventbus.Event;
+import org.correomqtt.di.Event;
 
 public class ShutdownRequestEvent implements Event {
 }

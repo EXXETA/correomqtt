@@ -6,7 +6,7 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.model.ConnectionExportDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,9 +29,9 @@ public class ImportConnectionsFileTask extends NoProgressTask<ConnectionExportDT
 
 
     @Inject
-    public ImportConnectionsFileTask(EventBus eventBus,
+    public ImportConnectionsFileTask(SoyEvents soyEvents,
                                      @Assisted File file) {
-        super(eventBus);
+        super(soyEvents);
         this.file = file;
     }
 

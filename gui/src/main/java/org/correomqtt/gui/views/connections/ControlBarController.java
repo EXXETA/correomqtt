@@ -1,8 +1,5 @@
 package org.correomqtt.gui.views.connections;
 
-import org.correomqtt.di.Assisted;
-import org.correomqtt.di.DefaultBean;
-import org.correomqtt.di.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -13,9 +10,11 @@ import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.connection.ConnectionLifecycleTaskFactories;
 import org.correomqtt.core.connection.ConnectionState;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.model.ConnectionConfigDTO;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.Observes;
 import org.correomqtt.gui.controls.IconLabel;
 import org.correomqtt.gui.model.GuiConnectionState;
 import org.correomqtt.gui.plugin.spi.MainToolbarHook;
@@ -33,7 +32,6 @@ public class ControlBarController extends BaseConnectionController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ControlBarController.class);
 
     private final ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories;
-    private final EventBus eventBus;
     private final ControlBarDelegate delegate;
 
     @FXML
@@ -80,14 +78,11 @@ public class ControlBarController extends BaseConnectionController {
     public ControlBarController(CoreManager coreManager,
                                 ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
                                 ThemeManager themeManager,
-                                EventBus eventBus,
                                 @Assisted String connectionId,
                                 @Assisted ControlBarDelegate delegate) {
         super(coreManager, themeManager, connectionId);
         this.connectionLifecycleTaskFactories = connectionLifecycleTaskFactories;
-        this.eventBus = eventBus;
         this.delegate = delegate;
-        eventBus.register(this);
     }
 
     LoaderResult<ControlBarController> load() {
@@ -217,7 +212,7 @@ public class ControlBarController extends BaseConnectionController {
 
 
     @SuppressWarnings("unused")
-    public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {
+    public void onConnectionStateChanged(@Observes ConnectionStateChangedEvent event) {
 
         ConnectionState state = event.getState();
 
@@ -270,7 +265,6 @@ public class ControlBarController extends BaseConnectionController {
             }
         }
 
-
         updateBrokerInfo();
 
         GuiConnectionState guiState = GuiConnectionState.of(state);
@@ -283,10 +277,5 @@ public class ControlBarController extends BaseConnectionController {
         controlViewSButton.setDisable(state != CONNECTED);
 
 
-    }
-
-
-    public void cleanUp() {
-        eventBus.unregister(this);
     }
 }

@@ -21,8 +21,6 @@ import lombok.AllArgsConstructor;
 import org.correomqtt.HostServicesWrapper;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.TaskErrorResult;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 import org.correomqtt.core.scripting.ScriptDeleteTask;
 import org.correomqtt.core.scripting.ScriptExecutionCancelledEvent;
@@ -36,6 +34,7 @@ import org.correomqtt.core.scripting.ScriptTaskFactories;
 import org.correomqtt.core.scripting.ScriptingBackend;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
+import org.correomqtt.di.Observes;
 import org.correomqtt.gui.controls.IconLabel;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
@@ -71,7 +70,6 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     private final ScriptTaskFactories scriptTaskFactories;
     private final ExecutionViewControllerFactory executionViewControllerFactory;
     private final ScriptingProvider scriptingProvider;
-    private final EventBus eventBus;
     private final HostServices hostServices;
     private ResourceBundle resources;
     @FXML
@@ -112,7 +110,6 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                                    ScriptTaskFactories scriptTaskFactories,
                                    ExecutionViewControllerFactory executionViewControllerFactory,
                                    ScriptingProvider scriptingProvider,
-                                   EventBus eventBus,
                                    HostServicesWrapper hostServicesWrapper
     ) {
         super(coreManager, themeManager);
@@ -123,9 +120,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         this.scriptTaskFactories = scriptTaskFactories;
         this.executionViewControllerFactory = executionViewControllerFactory;
         this.scriptingProvider = scriptingProvider;
-        this.eventBus = eventBus;
         this.hostServices = hostServicesWrapper.getHostServices();
-        eventBus.register(this);
     }
 
     public void showAsDialog() {
@@ -154,9 +149,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
             event.consume();
             return;
         }
-        editorStates.values().forEach(es -> es.controller.cleanUp());
         executionController.cleanup();
-        eventBus.unregister(this);
     }
 
     @FXML
@@ -268,7 +261,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     }
 
     @SuppressWarnings("unused")
-    @Subscribe({
+    @Observes({
             ScriptExecutionCancelledEvent.class,
             ScriptExecutionSuccessEvent.class,
             ScriptExecutionProgressEvent.class,

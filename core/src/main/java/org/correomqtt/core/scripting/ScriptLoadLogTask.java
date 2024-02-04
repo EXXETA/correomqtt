@@ -5,7 +5,7 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +31,9 @@ public class ScriptLoadLogTask extends NoProgressTask<String, ScriptLoadLogTask.
 
     @Inject
     public ScriptLoadLogTask(ScriptingProvider scriptingProvider,
-                             EventBus eventBus,
+                             SoyEvents soyEvents,
                              @Assisted ExecutionDTO dto) {
-        super(eventBus);
+        super(soyEvents);
         this.scriptingProvider = scriptingProvider;
         this.dto = dto;
     }

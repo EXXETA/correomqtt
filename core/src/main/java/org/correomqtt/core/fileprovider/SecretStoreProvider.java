@@ -7,7 +7,7 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.core.encryption.Encryptor;
 import org.correomqtt.core.encryption.EncryptorAesCbc;
 import org.correomqtt.core.encryption.EncryptorAesGcm;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.keyring.KeyringException;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ConnectionPasswordType;
@@ -36,21 +36,21 @@ public class SecretStoreProvider extends BaseUserFileProvider {
 
 
     @Inject
-    public SecretStoreProvider(EventBus eventBus) {
-        super(eventBus);
+    public SecretStoreProvider(SoyEvents soyEvents) {
+        super(soyEvents);
 
         try {
             prepareFile(PASSWORD_FILE_NAME);
         } catch (InvalidPathException | SecurityException | UnsupportedOperationException | IOException e) {
             LOGGER.error("Error writing passwords file {}. ", PASSWORD_FILE_NAME, e);
-            eventBus.fire(new UnaccessiblePasswordFileEvent(e));
+            soyEvents.fire(new UnaccessiblePasswordFileEvent(e));
         }
 
         try {
             passwordsDTO = new ObjectMapper().readValue(this.getFile(), PasswordsDTO.class);
         } catch (IOException e) {
             LOGGER.error("Password file can not be read {}.", PASSWORD_FILE_NAME, e);
-            eventBus.fire(new InvalidPasswordFileEvent());
+            soyEvents.fire(new InvalidPasswordFileEvent());
             passwordsDTO = new PasswordsDTO();
         }
 

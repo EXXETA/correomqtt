@@ -2,7 +2,7 @@ package org.correomqtt.core.fileprovider;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.correomqtt.core.eventbus.Event;
+import org.correomqtt.di.Event;
 
 @AllArgsConstructor
 @Getter

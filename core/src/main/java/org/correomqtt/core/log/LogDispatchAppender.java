@@ -5,7 +5,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 import lombok.Getter;
 import lombok.Setter;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -20,7 +20,7 @@ public class LogDispatchAppender extends AppenderBase<ILoggingEvent> {
 
     private final List<String> cache = new CopyOnWriteArrayList<>();
 
-    private EventBus eventBus;
+    private SoyEvents soyEvents;
 
     @Override
     public void start() {
@@ -32,17 +32,17 @@ public class LogDispatchAppender extends AppenderBase<ILoggingEvent> {
         super.start();
     }
 
-    public synchronized List<String> popCache(EventBus eventBus) {
+    public synchronized List<String> popCache(SoyEvents soyEvents) {
         ArrayList<String> r = new ArrayList<>(cache);
         cache.clear();
-        this.eventBus = eventBus;
+        this.soyEvents = soyEvents;
         return r;
     }
 
     @Override
     protected void append(ILoggingEvent eventObject) {
         String logMsg = new String(this.encoder.encode(eventObject), StandardCharsets.UTF_8);
-        if (eventBus == null || eventBus.fireAsync(new LogEvent(logMsg)) == 0) {
+        if (soyEvents == null || soyEvents.fireAsync(new LogEvent(logMsg)) == 0) {
             cache.add(logMsg);
         }
     }

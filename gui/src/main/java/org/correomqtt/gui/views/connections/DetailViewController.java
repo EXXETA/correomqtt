@@ -25,7 +25,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.correomqtt.core.CoreManager;
-import org.correomqtt.core.eventbus.Subscribe;
+import org.correomqtt.di.Observes;
 import org.correomqtt.core.importexport.messages.ExportMessageFailedEvent;
 import org.correomqtt.core.importexport.messages.ExportMessageStartedEvent;
 import org.correomqtt.core.importexport.messages.ExportMessageSuccessEvent;
@@ -651,19 +651,19 @@ public class DetailViewController extends BaseConnectionController implements
 
 
     @SuppressWarnings("unused")
-    @Subscribe(ExportMessageStartedEvent.class)
+    @Observes(ExportMessageStartedEvent.class)
     public void onExportStarted() {
         Platform.runLater(() -> detailViewVBox.setDisable(true));
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ExportMessageSuccessEvent.class)
+    @Observes(ExportMessageSuccessEvent.class)
     public void onExportSucceeded() {
         Platform.runLater(() -> detailViewVBox.setDisable(false));
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ExportMessageFailedEvent.class)
+    @Observes(ExportMessageFailedEvent.class)
     public void onExportFailed() {
         Platform.runLater(() -> detailViewVBox.setDisable(false));
     }

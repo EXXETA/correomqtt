@@ -6,7 +6,7 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.FullTask;
 import org.correomqtt.core.concurrent.TaskException;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.PolyglotException;
@@ -38,9 +38,9 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
             ScriptLoggerContextFactory scriptLoggerContextFactory,
             ScriptingProvider scriptingProvider,
             JsContextBuilderFactory jsContextBuilderFactory,
-            EventBus eventBus,
+            SoyEvents soyEvents,
             @Assisted ExecutionDTO executionDTO) {
-        super(eventBus);
+        super(soyEvents);
         this.scriptLoggerContextFactory = scriptLoggerContextFactory;
         this.scriptingProvider = scriptingProvider;
         this.jsContextBuilderFactory = jsContextBuilderFactory;
@@ -62,12 +62,12 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
             LOGGER.info(marker(), "Exception during Script execution", e);
             dto.updateExecutionTime();
             dto.setError(new ScriptExecutionError(HOST, e.getMessage()));
-            eventBus.fire(new ScriptExecutionFailedEvent(dto));
+            soyEvents.fire(new ScriptExecutionFailedEvent(dto));
         } catch (Exception e) {
             LOGGER.info(marker(), "Exception during Script execution", e);
             dto.updateExecutionTime();
             dto.setError(new ScriptExecutionError(HOST, e.getMessage()));
-            eventBus.fire(new ScriptExecutionFailedEvent(dto));
+            soyEvents.fire(new ScriptExecutionFailedEvent(dto));
         }
         return dto;
     }
@@ -86,7 +86,7 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
                      .build()) {
             context = c;
             slc.connectSnk(out);
-            eventBus.fire(new ScriptExecutionProgressEvent(dto));
+            soyEvents.fire(new ScriptExecutionProgressEvent(dto));
             reportProgress(dto);
             Source source = Source.newBuilder("js",
                             "logger.info(marker,\"Running script with ECMAScript {} on GraalJS.\", Graal.versionECMAScript);\n" +
@@ -97,7 +97,7 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
             context.eval(source);
             dto.updateExecutionTime();
             scriptLogger.info(marker(), "Script returned in {}ms.", dto.getExecutionTime());
-            eventBus.fire(new ScriptExecutionSuccessEvent(dto));
+            soyEvents.fire(new ScriptExecutionSuccessEvent(dto));
         } catch (PolyglotException pge) {
             dto.updateExecutionTime();
             ScriptExecutionError.Type type = pge.isGuestException() ? GUEST : HOST;
@@ -105,16 +105,16 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
             if (pge.isCancelled()) {
                 dto.setCancelled(true);
                 scriptLogger.info(marker(), "Script cancelled after {}ms by {}.\n{}", dto.getExecutionTime(), type, pge.getMessage());
-                eventBus.fire(new ScriptExecutionCancelledEvent(dto));
+                soyEvents.fire(new ScriptExecutionCancelledEvent(dto));
             } else {
                 scriptLogger.error(marker(), "Script failed after {}ms by {}.\n{}", dto.getExecutionTime(), type, pge.getMessage());
-                eventBus.fire(new ScriptExecutionFailedEvent(dto));
+                soyEvents.fire(new ScriptExecutionFailedEvent(dto));
             }
         } catch (Exception e) {
             LOGGER.info(marker(), "Exception during Script execution", e);
             dto.updateExecutionTime();
             dto.setError(new ScriptExecutionError(HOST, e.getMessage()));
-            eventBus.fire(new ScriptExecutionFailedEvent(dto));
+            soyEvents.fire(new ScriptExecutionFailedEvent(dto));
         }
     }
 

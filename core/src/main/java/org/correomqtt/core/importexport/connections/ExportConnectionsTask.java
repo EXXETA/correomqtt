@@ -8,7 +8,7 @@ import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.encryption.Encryptor;
 import org.correomqtt.core.encryption.EncryptorAesGcm;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.fileprovider.EncryptionRecoverableException;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ConnectionConfigDTOMixin;
@@ -35,11 +35,11 @@ public class ExportConnectionsTask extends NoProgressTask<Integer, ExportConnect
 
 
     @Inject
-    public ExportConnectionsTask(EventBus eventBus,
+    public ExportConnectionsTask(SoyEvents soyEvents,
                                  @Assisted File file,
                                  @Assisted List<ConnectionConfigDTO> connectionList,
                                  @Assisted String password) {
-        super(eventBus);
+        super(soyEvents);
         this.file = file;
         this.connectionList = connectionList;
         this.password = password;

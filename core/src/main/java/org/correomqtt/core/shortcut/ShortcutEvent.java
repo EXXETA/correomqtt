@@ -1,6 +1,6 @@
 package org.correomqtt.core.shortcut;
 
-import org.correomqtt.core.eventbus.Event;
+import org.correomqtt.di.Event;
 
 public record ShortcutEvent(Shortcut shorcut) implements Event {
 

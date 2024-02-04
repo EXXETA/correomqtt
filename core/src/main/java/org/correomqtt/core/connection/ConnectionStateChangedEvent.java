@@ -2,8 +2,8 @@ package org.correomqtt.core.connection;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.correomqtt.core.eventbus.Event;
-import org.correomqtt.core.eventbus.SubscribeFilter;
+import org.correomqtt.di.Event;
+import org.correomqtt.di.ObservesFilter;
 
 @AllArgsConstructor
 @Getter
@@ -13,7 +13,7 @@ public class ConnectionStateChangedEvent implements Event {
     private int retries;
     private int maxRetries;
 
-    @SubscribeFilter(value = "connectionId")
+    @ObservesFilter(value = "connectionId")
     public String getConnectionId() {
         return this.connectionId;
     }

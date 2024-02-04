@@ -10,7 +10,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import lombok.extern.slf4j.Slf4j;
 import org.correomqtt.core.CoreManager;
-import org.correomqtt.core.eventbus.Subscribe;
+import org.correomqtt.di.Observes;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledEvent;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledFailedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginDisabledStartedEvent;
@@ -111,7 +111,7 @@ public class MarketplaceViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    public void onPluginInstallSucceeded(@Subscribe PluginInstallEvent event) {
+    public void onPluginInstallSucceeded(@Observes PluginInstallEvent event) {
         reloadData(event.pluginId());
         Platform.runLater(() -> alertHelper.info(resources.getString("pluginChangeTitle"),
                 resources.getString("pluginChangeContent")));
@@ -179,7 +179,7 @@ public class MarketplaceViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(PluginInstallFailedEvent.class)
+    @Observes(PluginInstallFailedEvent.class)
     public void onPluginInstallFailed() {
         showFail();
     }
@@ -190,60 +190,60 @@ public class MarketplaceViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(PluginInstallStartedEvent.class)
+    @Observes(PluginInstallStartedEvent.class)
     public void onPluginInstallStarted() {
         marketplaceRootPane.setDisable(true);
     }
 
 
     @SuppressWarnings("unused")
-    public void onPluginUninstallSucceeded(@Subscribe PluginUninstallEvent event) {
+    public void onPluginUninstallSucceeded(@Observes PluginUninstallEvent event) {
         reloadData(event.pluginId());
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(PluginUninstallFailedEvent.class)
+    @Observes(PluginUninstallFailedEvent.class)
     public void onPluginUninstallFailed() {
         Platform.runLater(() -> marketplaceRootPane.setDisable(false));
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(PluginUninstallStartedEvent.class)
+    @Observes(PluginUninstallStartedEvent.class)
     public void onPluginUninstallStarted() {
         marketplaceRootPane.setDisable(true);
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(PluginDisabledStartedEvent.class)
+    @Observes(PluginDisabledStartedEvent.class)
     public void onPluginDisableStarted() {
         marketplaceRootPane.setDisable(true);
     }
 
     @SuppressWarnings("unused")
-    public void onPluginDisableSucceeded(@Subscribe PluginDisabledEvent event) {
+    public void onPluginDisableSucceeded(@Observes PluginDisabledEvent event) {
         reloadData(event.pluginId());
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(PluginDisabledFailedEvent.class)
+    @Observes(PluginDisabledFailedEvent.class)
     public void onPluginDisableFailed() {
         Platform.runLater(() -> marketplaceRootPane.setDisable(false));
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(PluginEnabledStartedEvent.class)
+    @Observes(PluginEnabledStartedEvent.class)
     public void onPluginEnableStarted() {
         marketplaceRootPane.setDisable(true);
     }
 
 
     @SuppressWarnings("unused")
-    public void onPluginEnableSucceeded(@Subscribe PluginEnabledEvent event) {
+    public void onPluginEnableSucceeded(@Observes PluginEnabledEvent event) {
         reloadData(event.pluginId());
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(PluginEnabledFailedEvent.class)
+    @Observes(PluginEnabledFailedEvent.class)
     public void onPluginEnableFailed() {
         Platform.runLater(() -> marketplaceRootPane.setDisable(false));
     }

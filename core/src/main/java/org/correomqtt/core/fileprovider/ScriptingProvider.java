@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.io.FileUtils;
 import org.correomqtt.di.DefaultBean;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.scripting.ExecutionDTO;
 import org.correomqtt.core.scripting.ScriptExecutionError;
 import org.correomqtt.core.scripting.ScriptFileDTO;
@@ -34,8 +34,8 @@ public class ScriptingProvider extends BaseUserFileProvider {
     private static final String SCRIPT_FOLDER = "scripts";
 
     @Inject
-    ScriptingProvider(EventBus eventBus) {
-        super(eventBus);
+    ScriptingProvider(SoyEvents soyEvents) {
+        super(soyEvents);
     }
 
     public List<ScriptFileDTO> getScripts() throws IOException {

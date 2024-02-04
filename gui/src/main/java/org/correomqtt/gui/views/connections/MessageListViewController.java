@@ -24,8 +24,6 @@ import javafx.stage.Stage;
 import org.controlsfx.control.textfield.TextFields;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.model.ControllerType;
 import org.correomqtt.core.model.LabelType;
 import org.correomqtt.core.model.MessageListViewConfig;
@@ -34,6 +32,7 @@ import org.correomqtt.core.model.PublishStatus;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
+import org.correomqtt.di.Observes;
 import org.correomqtt.gui.contextmenu.MessageListContextMenu;
 import org.correomqtt.gui.contextmenu.MessageListContextMenuDelegate;
 import org.correomqtt.gui.contextmenu.MessageListContextMenuFactory;
@@ -62,7 +61,6 @@ public class MessageListViewController extends BaseConnectionController implemen
     private final MessageViewCellFactory messageViewCellFactory;
     private final MessageListContextMenuFactory messageListContextMenuFactory;
     private final MessageUtils messageUtils;
-    private final EventBus eventBus;
     @FXML
     protected SplitPane splitPane;
     @FXML
@@ -101,7 +99,6 @@ public class MessageListViewController extends BaseConnectionController implemen
                                      MessageViewCellFactory messageViewCellFactory,
                                      MessageListContextMenuFactory messageListContextMenuFactory,
                                      MessageUtils messageUtils,
-                                     EventBus eventBus,
                                      @Assisted String connectionId,
                                      @Assisted MessageListViewDelegate delegate) {
         super(coreManager, themeManager, connectionId);
@@ -109,8 +106,6 @@ public class MessageListViewController extends BaseConnectionController implemen
         this.messageViewCellFactory = messageViewCellFactory;
         this.messageListContextMenuFactory = messageListContextMenuFactory;
         this.messageUtils = messageUtils;
-        this.eventBus = eventBus;
-        eventBus.register(this);
         this.delegate = delegate;
     }
 
@@ -407,7 +402,7 @@ public class MessageListViewController extends BaseConnectionController implemen
     }
 
     @SuppressWarnings("unused")
-    public void onConnectionChangedEvent(@Subscribe ConnectionStateChangedEvent event) {
+    public void onConnectionChangedEvent(@Observes ConnectionStateChangedEvent event) {
         if (event.getState() == CONNECTED) {
             setUpShortcuts();
         }
@@ -430,8 +425,6 @@ public class MessageListViewController extends BaseConnectionController implemen
         if (this.detailViewController != null) {
             detailViewController.cleanUp();
         }
-
-        eventBus.unregister(this);
     }
 
     @Override
