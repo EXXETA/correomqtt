@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<?import javafx.scene.control.SplitPane?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.VBox?>
-<VBox fx:id="connectionHolder" styleClass="noBorder connectionView" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/8.0.191" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.views.connections.ConnectionViewController">
-    <SplitPane fx:id="splitPane" minHeight="200.0" minWidth="200.0" orientation="HORIZONTAL" styleClass="noBorder" VBox.vgrow="ALWAYS" />
-</VBox>

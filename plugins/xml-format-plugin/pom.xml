@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>xml-format-plugin</artifactId>
+
+    <name>CorreoMQTT Plugin: XML Format</name>
+
+    <parent>
+        <groupId>org.correomqtt</groupId>
+        <artifactId>plugins</artifactId>
+        <version>0.15.0</version>
+    </parent>
+
+    <properties>
+        <plugin.id>xml-format-plugin</plugin.id>
+        <plugin.name>XML Format Plugin</plugin.name>
+        <plugin.provider>Exxeta AG</plugin.provider>
+        <plugin.class />
+        <plugin.description>Formats messages into readable XML</plugin.description>
+        <plugin.requires />
+        <plugin.dependencies />
+        <plugin.license>GPL</plugin.license>
+        <plugin.repositoryId>default</plugin.repositoryId>
+        <plugin.projectUrl>http://www.correomqtt.org</plugin.projectUrl>
+        <plugin.compatibleCorreoVersions>0.15.0</plugin.compatibleCorreoVersions>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.correomqtt</groupId>
+            <artifactId>core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.pf4j</groupId>
+            <artifactId>pf4j</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.correomqtt</groupId>
+            <artifactId>gui</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                        <manifestEntries>
+                            <Plugin-Class>${plugin.class}</Plugin-Class>
+                            <Plugin-Id>${plugin.id}</Plugin-Id>
+                            <Plugin-Version>${project.version}</Plugin-Version>
+                            <Plugin-Description>${plugin.description}</Plugin-Description>
+                            <Plugin-Provider>${plugin.provider}</Plugin-Provider>
+                            <Plugin-Requires>${plugin.requires}</Plugin-Requires>
+                            <Plugin-Dependencies>${plugin.dependencies}</Plugin-Dependencies>
+                            <Plugin-License>${plugin.license}</Plugin-License>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,30 @@
+.root {
+    -fx-base: #000000;
+    -fx-background: #000000;
+    -fx-color: #000000;
+    -fx-control-inner-background: #000000;
+
+    -fx-light-text-color: rgb(255, 255, 255);
+    -fx-mid-text-color: rgb(255, 255, 255);
+    -fx-dark-text-color: rgb(255, 255, 255);
+}
+
+.appIcon {
+    -fx-graphic: url("../gui/icons/app-icon/Icon_128x128.png");
+    -fx-padding: 20;
+}
+
+.appName {
+    -fx-font-family: "sans-serif";
+    -fx-font-size: 40;
+    -fx-padding: 0 20 0 20;
+}
+
+.preloaderProgressLabel {
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+    -fx-min-height: 16;
+    -fx-max-height: 16;
+    -fx-min-width: 16;
+    -fx-max-width: 16;
+}
