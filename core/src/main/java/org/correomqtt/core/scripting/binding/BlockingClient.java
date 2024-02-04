@@ -9,9 +9,9 @@ import java.util.function.BiConsumer;
 
 public class BlockingClient {
 
-    private final Client client;
+    private final ClientImpl client;
 
-    BlockingClient(Client client) {
+    BlockingClient(ClientImpl client) {
         this.client = client;
     }
 

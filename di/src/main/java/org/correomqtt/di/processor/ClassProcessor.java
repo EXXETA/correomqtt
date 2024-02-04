@@ -1,4 +1,4 @@
-package org.correomqtt.di;
+package org.correomqtt.di.processor;
 
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ImportTree;
@@ -6,6 +6,8 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.Inject;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -29,7 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.correomqtt.di.BuilderProcessor.getFqnByElement;
+import static org.correomqtt.di.processor.SoyFactoryProcessor.getFqnByElement;
 
 public class ClassProcessor {
 
@@ -37,6 +39,7 @@ public class ClassProcessor {
     private final Element classElement;
     private final ProcessingEnvironment processingEnv;
     private final Set<String> imports = new HashSet<>();
+    private final Set<String> shortTypes = new HashSet<>();
     private Element constructor;
     private List<Parameter> constructorParameters;
     private String className;
@@ -68,12 +71,12 @@ public class ClassProcessor {
             if (!findConstructor()) {
                 return;
             }
-            if (!findConstructorParameter()) {
-                return;
-            }
+            findConstructorParameter();
             findGenerics();
             findNames();
             writeBuilderFile();
+        } catch (ProcessorRetryException e) {
+            throw e;
         } catch (Exception e) {
             error("Exception parsing %s: %s", className, e.getMessage());
         }
@@ -100,11 +103,8 @@ public class ClassProcessor {
         return true;
     }
 
-    private boolean findConstructorParameter() {
+    private void findConstructorParameter() {
         List<? extends VariableElement> constructorParametersElements = ((ExecutableElement) constructor).getParameters();
-        if (constructorParametersElements.stream().noneMatch(p -> p.getAnnotation(Assisted.class) != null)) {
-            return false;
-        }
         constructorParameters = constructorParametersElements.stream().map(p -> {
                     String typeString = extractType(classElement, p, imports);
                     String referenceString;
@@ -124,7 +124,6 @@ public class ClassProcessor {
                             referenceString);
                 }
         ).toList();
-        return true;
     }
 
     private void findGenerics() {
@@ -166,6 +165,7 @@ public class ClassProcessor {
 
     private void writeBuilderFile() throws IOException {
         imports.add("org.correomqtt.di.DefaultBean");
+        imports.add("javax.annotation.processing.Generated");
         JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(factoryClassName);
         try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
             if (packageName != null) {
@@ -178,11 +178,13 @@ public class ClassProcessor {
                 out.print(imports.stream()
                         .filter(Objects::nonNull)
                         .map(i -> "import " + i + ";")
+                        .sorted()
                         .collect(Collectors.joining("\n")));
                 out.println();
                 out.println();
             }
             out.println("// Generated with SoyDi");
+            out.println("@Generated(\"org.correomqtt.di.processor.SoyFactoryProcessor\")");
             out.println("@DefaultBean");
             out.print("public class ");
             out.print(simpleFactoryClassName);
@@ -218,6 +220,9 @@ public class ClassProcessor {
     private String extractType(Element clazzElement, Element element, Set<String> imports) {
         String typeString = element.asType().toString();
         String plainType;
+        if (typeString.equals("<any>")) { // usage of generated classes -> try in next round
+            throw new ProcessorRetryException();
+        }
         if (typeString.contains("<")) {
             plainType = typeString.substring(0, typeString.indexOf("<"));
         } else {
@@ -226,7 +231,6 @@ public class ClassProcessor {
         if (!plainType.contains(".")) {
             imports.add(getImportFix(clazzElement, plainType));
         }
-        // Shorten -> TODO handle duplicates
         return shortenType(typeString, imports);
     }
 
@@ -235,20 +239,25 @@ public class ClassProcessor {
         while (matcher.find()) {
             String fqn = matcher.group();
             if (!fqn.contains(".")) {
-                continue;
+                shortTypes.add(fqn);
+            } else {
+                String shortType = fqn.substring(fqn.lastIndexOf(".") + 1);
+                if (!shortTypes.contains(shortType)) {
+                    typeString = typeString.replace(fqn, shortType);
+                    imports.add(fqn);
+                    shortTypes.add(shortType);
+                }
             }
-            imports.add(fqn);
-            typeString = typeString.replace(fqn, fqn.substring(fqn.lastIndexOf(".") + 1));
         }
         return typeString;
     }
 
     private String getImportFix(Element element, String simpleClassName) {
         CompilationUnitTree compilationUnit = getCompilationUnit(element);
-        List<? extends ImportTree> imports = compilationUnit.getImports();
-        for (ImportTree importTree : imports) {
+        List<? extends ImportTree> actualImports = compilationUnit.getImports();
+        for (ImportTree importTree : actualImports) {
             String importString = importTree.getQualifiedIdentifier().toString();
-            if (importString.endsWith(simpleClassName)) {
+            if (importString.endsWith("." + simpleClassName)) {
                 return importString;
             }
         }
@@ -259,5 +268,9 @@ public class ClassProcessor {
         Trees trees = Trees.instance(processingEnv);
         TreePath path = trees.getPath(element);
         return path.getCompilationUnit();
+    }
+
+    public void info(String message, Object... args) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, String.format(message, args));
     }
 }

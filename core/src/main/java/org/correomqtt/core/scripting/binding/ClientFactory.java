@@ -9,10 +9,10 @@ import org.correomqtt.di.Inject;
 @DefaultBean
 public class ClientFactory {
 
-    private final Client client;
+    private final ClientImpl client;
 
     @Inject
-    public ClientFactory(Client client) {
+    public ClientFactory(ClientImpl client) {
         this.client = client;
     }
 

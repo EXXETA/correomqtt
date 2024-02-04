@@ -30,7 +30,6 @@ import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
-import org.correomqtt.di.Lazy;
 import org.correomqtt.gui.keyring.KeyringManager;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
@@ -66,7 +65,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
     private final DisconnectTaskFactory disconnectTaskFactory;
     private final ConnectionCellFactory connectionCellFactory;
     private final AlertHelper alertHelper;
-    private final Lazy<MqttSettingsViewController> mqttSettingsViewControllerProvider;
+    private final MqttSettingsViewControllerFactory mqttSettingsViewControllerFactory;
     private final ConnectionPropertiesDTO preSelected;
     Set<String> waitForDisconnectIds = new HashSet<>();
     @FXML
@@ -106,7 +105,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
                                             ThemeManager themeManager,
                                             ConnectionCellFactory connectionCellFactory,
                                             AlertHelper alertHelper,
-                                            Lazy<MqttSettingsViewController> mqttSettingsViewControllerProvider,
+                                            MqttSettingsViewControllerFactory mqttSettingsViewControllerFactory,
                                             @Assisted ConnectionPropertiesDTO preSelected) {
         super(coreManager, themeManager);
         this.keyringManager = keyringManager;
@@ -114,7 +113,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
         this.disconnectTaskFactory = disconnectTaskFactory;
         this.connectionCellFactory = connectionCellFactory;
         this.alertHelper = alertHelper;
-        this.mqttSettingsViewControllerProvider = mqttSettingsViewControllerProvider;
+        this.mqttSettingsViewControllerFactory = mqttSettingsViewControllerFactory;
         this.preSelected = preSelected;
     }
 
@@ -215,7 +214,7 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
 
         connectionState = connectionStates.computeIfAbsent(config.getId(), id -> {
             // TODO for Kafka: Use Factory
-            LoaderResult<MqttSettingsViewController> result = mqttSettingsViewControllerProvider.get().load();
+            LoaderResult<MqttSettingsViewController> result = mqttSettingsViewControllerFactory.create().load();
             return new ConnectionState(result.getController(), result.getMainRegion());
         });
 

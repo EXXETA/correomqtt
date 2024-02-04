@@ -4,7 +4,6 @@ import lombok.Getter;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
-import org.correomqtt.di.Lazy;
 import org.correomqtt.core.concurrent.FullTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.eventbus.EventBus;
@@ -29,7 +28,7 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptExecutionTask.class);
     private final ScriptLoggerContextFactory scriptLoggerContextFactory;
     private final ScriptingProvider scriptingProvider;
-    private final Lazy<JsContextBuilder> jsContextBuilderLazy;
+    private final JsContextBuilderFactory jsContextBuilderFactory;
     @Getter
     private final ExecutionDTO dto;
     private Context context;
@@ -38,13 +37,13 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
     public ScriptExecutionTask(
             ScriptLoggerContextFactory scriptLoggerContextFactory,
             ScriptingProvider scriptingProvider,
-            Lazy<JsContextBuilder> jsContextBuilderLazy,
+            JsContextBuilderFactory jsContextBuilderFactory,
             EventBus eventBus,
             @Assisted ExecutionDTO executionDTO) {
         super(eventBus);
         this.scriptLoggerContextFactory = scriptLoggerContextFactory;
         this.scriptingProvider = scriptingProvider;
-        this.jsContextBuilderLazy = jsContextBuilderLazy;
+        this.jsContextBuilderFactory = jsContextBuilderFactory;
         this.dto = executionDTO;
     }
 
@@ -79,7 +78,7 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
 
     private void executeJs(ScriptLoggerContext slc, ch.qos.logback.classic.Logger scriptLogger) {
         try (PipedOutputStream out = new PipedOutputStream();
-             Context c = jsContextBuilderLazy.get()
+             Context c = jsContextBuilderFactory.create()
                      .dto(dto)
                      .out(out)
                      .marker(marker())

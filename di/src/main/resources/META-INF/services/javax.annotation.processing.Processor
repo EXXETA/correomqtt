@@ -1,1 +1,1 @@
-org.correomqtt.di.BuilderProcessor
+org.correomqtt.di.processor.SoyFactoryProcessor

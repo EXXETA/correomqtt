@@ -13,11 +13,11 @@ import static org.correomqtt.core.scripting.JsContextBuilder.CORREO_ASYNC_LATCH;
 
 public class PromiseClient {
 
-    private final Client client;
+    private final ClientImpl client;
 
     private final AsyncLatch asyncLatch;
 
-    PromiseClient(Client client) {
+    PromiseClient(ClientImpl client) {
         this.client = client;
         Context context = client.getContext();
         this.asyncLatch = context.getPolyglotBindings().getMember(CORREO_ASYNC_LATCH).as(AsyncLatch.class);

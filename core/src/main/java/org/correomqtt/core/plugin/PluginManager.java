@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.di.DefaultBean;
 import org.correomqtt.core.fileprovider.PluginConfigProvider;
 import org.correomqtt.core.model.HooksDTO;
 import org.correomqtt.core.plugin.model.PluginInfoDTO;
@@ -19,6 +18,8 @@ import org.correomqtt.core.plugin.transformer.PluginInfoTransformer;
 import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.utils.VendorConstants;
 import org.correomqtt.core.utils.VersionUtils;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.SingletonBean;
 import org.pf4j.DefaultExtensionFactory;
 import org.pf4j.ExtensionFactory;
 import org.pf4j.JarPluginManager;
@@ -29,8 +30,6 @@ import org.pf4j.update.UpdateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.correomqtt.di.Inject;
-import org.correomqtt.di.SingletonBean;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -46,7 +45,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @SingletonBean
-@DefaultBean
 public class PluginManager extends JarPluginManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginManager.class);

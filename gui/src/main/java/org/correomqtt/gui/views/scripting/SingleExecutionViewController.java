@@ -40,6 +40,34 @@ import static org.correomqtt.core.utils.LoggerUtils.findPatternEncoder;
 @DefaultBean
 public class SingleExecutionViewController extends BaseControllerImpl {
 
+    @Inject
+    public SingleExecutionViewController(
+            CoreManager coreManager,
+            ThemeManager themeManager,
+            AlertHelper alertHelper,
+            ScriptExecuteTaskFactories scriptExecuteTaskFactories,
+            EventBus eventBus,
+            @Assisted ExecutionPropertiesDTO executionPropertiesDTO) {
+        super(coreManager, themeManager);
+        this.alertHelper = alertHelper;
+        this.scriptExecuteTaskFactories = scriptExecuteTaskFactories;
+        this.eventBus = eventBus;
+        this.executionPropertiesDTO = executionPropertiesDTO;
+        eventBus.register(this);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleExecutionViewController.class);
     private final AlertHelper alertHelper;
     private final ScriptExecuteTaskFactories scriptExecuteTaskFactories;
@@ -56,25 +84,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     private Button scriptingStopButton;
     private LogToRichtTextFxAppender appender;
 
-
-
-    @Inject
-    public SingleExecutionViewController(CoreManager coreManager,
-                                         ThemeManager themeManager,
-                                         AlertHelper alertHelper,
-                                         ScriptExecuteTaskFactories scriptExecuteTaskFactories,
-                                         EventBus eventBus,
-                                         @Assisted ExecutionPropertiesDTO executionPropertiesDTO) {
-        super(coreManager, themeManager);
-        this.alertHelper = alertHelper;
-        this.scriptExecuteTaskFactories = scriptExecuteTaskFactories;
-        this.eventBus = eventBus;
-        this.executionPropertiesDTO = executionPropertiesDTO;
-        eventBus.register(this);
-    }
-
     public LoaderResult<SingleExecutionViewController> load() {
-
         LoaderResult<SingleExecutionViewController> result = load(SingleExecutionViewController.class, "singleExecutionView.fxml",
                 () -> this);
         resources = result.getResourceBundle();
@@ -86,7 +96,6 @@ public class SingleExecutionViewController extends BaseControllerImpl {
         logArea.prefWidthProperty().bind(logHolder.widthProperty());
         logArea.prefHeightProperty().bind(logHolder.heightProperty());
         ExecutionDTO dto = ScriptingBackend.getExecutionDTO(executionPropertiesDTO.getExecutionId());
-
         if (dto != null) {
             scriptExecuteTaskFactories.getLoadLogFactory().create(dto)
                     .onSuccess(log -> {
@@ -107,23 +116,17 @@ public class SingleExecutionViewController extends BaseControllerImpl {
         if (appender != null) {
             return;
         }
-
         scriptingStopButton.setDisable(false);
-
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-
         Encoder<ILoggingEvent> encoder = findPatternEncoder(SCRIPT_COLOR_PATTERN_APPENDER_NAME);
-
         appender = new LogToRichtTextFxAppender(logArea);
         appender.setName(executionPropertiesDTO.getExecutionId());
         appender.setContext(context);
         appender.setEncoder(encoder);
         appender.start();
-
         ch.qos.logback.classic.Logger scriptLogger = dto.getLogger();
         //noinspection java:S4792
         scriptLogger.addAppender(appender);
-
     }
 
     @SuppressWarnings("unused")
@@ -175,5 +178,4 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     public String getExecutionId() {
         return executionPropertiesDTO.getExecutionId();
     }
-
 }

@@ -36,7 +36,6 @@ import org.correomqtt.core.scripting.ScriptTaskFactories;
 import org.correomqtt.core.scripting.ScriptingBackend;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
-import org.correomqtt.di.Lazy;
 import org.correomqtt.gui.controls.IconLabel;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
@@ -70,7 +69,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     private final ScriptContextMenuFactory scriptContextMenuFactory;
     private final SingleEditorViewControllerFactory editorViewCtrlFactory;
     private final ScriptTaskFactories scriptTaskFactories;
-    private final Lazy<ExecutionViewController> executionViewControllerProvider;
+    private final ExecutionViewControllerFactory executionViewControllerFactory;
     private final ScriptingProvider scriptingProvider;
     private final EventBus eventBus;
     private final HostServices hostServices;
@@ -111,7 +110,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                                    ScriptContextMenuFactory scriptContextMenuFactory,
                                    SingleEditorViewControllerFactory editorViewCtrlFactory,
                                    ScriptTaskFactories scriptTaskFactories,
-                                   Lazy<ExecutionViewController> executionViewControllerProvider,
+                                   ExecutionViewControllerFactory executionViewControllerFactory,
                                    ScriptingProvider scriptingProvider,
                                    EventBus eventBus,
                                    HostServicesWrapper hostServicesWrapper
@@ -122,7 +121,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         this.scriptContextMenuFactory = scriptContextMenuFactory;
         this.editorViewCtrlFactory = editorViewCtrlFactory;
         this.scriptTaskFactories = scriptTaskFactories;
-        this.executionViewControllerProvider = executionViewControllerProvider;
+        this.executionViewControllerFactory = executionViewControllerFactory;
         this.scriptingProvider = scriptingProvider;
         this.eventBus = eventBus;
         this.hostServices = hostServicesWrapper.getHostServices();
@@ -185,7 +184,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         scriptList.addListener(this::onScriptListChanged);
         scriptListView.setItems(scriptList);
         onScriptListChanged(null);
-        LoaderResult<ExecutionViewController> result = executionViewControllerProvider.get().load();
+        LoaderResult<ExecutionViewController> result = executionViewControllerFactory.create().load();
         executionController = result.getController();
         executionHolder.getChildren().add(result.getMainRegion());
         updateStatusLabel();

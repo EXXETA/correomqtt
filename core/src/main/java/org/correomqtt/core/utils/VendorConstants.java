@@ -22,7 +22,7 @@ public class VendorConstants {
     private static String getFromCache(String envOverride, String defaultValue) {
         return CACHE.computeIfAbsent(envOverride, k -> {
             String env = System.getenv(envOverride);
-            LOGGER.error("Override {} via ENV: {}", envOverride, env);
+            LOGGER.warn("Override {} via ENV: {}", envOverride, env);
             return Objects.requireNonNullElse(env, defaultValue);
         });
     }

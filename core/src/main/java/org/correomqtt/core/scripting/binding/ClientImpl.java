@@ -33,7 +33,7 @@ import static org.correomqtt.core.scripting.JsContextBuilder.CORREO_SCRIPT_MARKE
 import static org.correomqtt.core.scripting.JsContextBuilder.CORREO_SCRIPT_QUEUE;
 
 @DefaultBean
-public class Client {
+public class ClientImpl {
 
     private final ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories;
     private final PubSubTaskFactories pubSubTaskFactories;
@@ -51,9 +51,9 @@ public class Client {
     private final Map<String, Consumer<String>> subscriptions = new HashMap<>();
 
     @Inject
-    Client(ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
-           PubSubTaskFactories pubSubTaskFactories,
-           EventBus eventBus) {
+    ClientImpl(ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
+               PubSubTaskFactories pubSubTaskFactories,
+               EventBus eventBus) {
         this.connectionLifecycleTaskFactories = connectionLifecycleTaskFactories;
         this.pubSubTaskFactories = pubSubTaskFactories;
         this.eventBus = eventBus;

@@ -13,7 +13,6 @@ import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.fileprovider.PluginConfigProvider;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
-import org.correomqtt.di.Lazy;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
@@ -33,8 +32,8 @@ public class PluginsViewController extends BaseControllerImpl {
 
     private final PluginConfigProvider pluginConfigProvider;
     private final HostServices hostServices;
-    private final Lazy<InstalledPluginsViewController> installedPluginsViewControllerProvider;
-    private final Lazy<MarketplaceViewController> marketplaceViewControllerProvider;
+    private final InstalledPluginsViewControllerFactory installedPluginsViewControllerFactory;
+    private final MarketplaceViewControllerFactory marketplaceViewControlleFactory;
     @FXML
     private Tab marketplaceTab;
 
@@ -73,13 +72,13 @@ public class PluginsViewController extends BaseControllerImpl {
                           ThemeManager themeManager,
                           PluginConfigProvider pluginConfigProvider,
                           HostServicesWrapper hostServicesWrapper,
-                          Lazy<InstalledPluginsViewController> installedPluginsViewControllerProvider,
-                          Lazy<MarketplaceViewController> marketplaceViewControllerProvider) {
+                          InstalledPluginsViewControllerFactory installedPluginsViewControllerFactory,
+                          MarketplaceViewControllerFactory marketplaceViewControlleFactory) {
         super(coreManager, themeManager);
         this.pluginConfigProvider = pluginConfigProvider;
         this.hostServices = hostServicesWrapper.getHostServices();
-        this.installedPluginsViewControllerProvider = installedPluginsViewControllerProvider;
-        this.marketplaceViewControllerProvider = marketplaceViewControllerProvider;
+        this.installedPluginsViewControllerFactory = installedPluginsViewControllerFactory;
+        this.marketplaceViewControlleFactory = marketplaceViewControlleFactory;
     }
 
     public void showAsDialog() {
@@ -108,12 +107,12 @@ public class PluginsViewController extends BaseControllerImpl {
     }
 
     private void setupInstalledPluginTab() {
-        LoaderResult<InstalledPluginsViewController> result = installedPluginsViewControllerProvider.get().load();
+        LoaderResult<InstalledPluginsViewController> result = installedPluginsViewControllerFactory.create().load();
         installedPluginsTab.setContent(result.getMainRegion());
     }
 
     private void setupMarketplaceTab() {
-        LoaderResult<MarketplaceViewController> result = marketplaceViewControllerProvider.get().load();
+        LoaderResult<MarketplaceViewController> result = marketplaceViewControlleFactory.create().load();
         marketplaceTab.setContent(result.getMainRegion());
     }
 

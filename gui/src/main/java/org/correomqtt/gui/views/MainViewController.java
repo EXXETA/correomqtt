@@ -24,28 +24,28 @@ import org.correomqtt.core.utils.ConnectionManager;
 import org.correomqtt.core.utils.VendorConstants;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
-import org.correomqtt.di.Lazy;
 import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.GuiConnectionState;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
-import org.correomqtt.gui.views.about.AboutViewController;
+import org.correomqtt.gui.views.about.AboutViewControllerFactory;
 import org.correomqtt.gui.views.connections.ConnectionViewController;
 import org.correomqtt.gui.views.connections.ConnectionViewControllerFactory;
 import org.correomqtt.gui.views.connections.ConnectionViewDelegate;
 import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewControllerFactory;
 import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewDelegate;
-import org.correomqtt.gui.views.importexport.ConnectionExportViewController;
-import org.correomqtt.gui.views.importexport.ConnectionImportViewController;
+import org.correomqtt.gui.views.importexport.ConnectionExportViewControllerFactory;
+import org.correomqtt.gui.views.importexport.ConnectionImportViewControllerFactory;
 import org.correomqtt.gui.views.log.LogTabController;
+import org.correomqtt.gui.views.log.LogTabControllerFactory;
 import org.correomqtt.gui.views.onboarding.ConnectionOnboardingDelegate;
 import org.correomqtt.gui.views.onboarding.ConnectionOnboardingViewController;
 import org.correomqtt.gui.views.onboarding.ConnectionOnboardingViewControllerFactory;
-import org.correomqtt.gui.views.plugins.PluginsViewController;
-import org.correomqtt.gui.views.scripting.ScriptingViewController;
-import org.correomqtt.gui.views.settings.SettingsViewController;
+import org.correomqtt.gui.views.plugins.PluginsViewControllerFactory;
+import org.correomqtt.gui.views.scripting.ScriptingViewControllerFactory;
+import org.correomqtt.gui.views.settings.SettingsViewControllerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,13 +66,13 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private final CheckNewVersionUtils checkNewVersionUtils;
     private final EventBus eventBus;
     private final HostServices hostServices;
-    private final Lazy<AboutViewController> aboutViewControllerProvider;
-    private final Lazy<LogTabController> logTabControllerProvider;
-    private final Lazy<SettingsViewController> settingsViewControllerProvider;
-    private final Lazy<ConnectionExportViewController> exportViewCtrlProvider;
-    private final Lazy<ConnectionImportViewController> importViewCtrlProvider;
-    private final Lazy<ScriptingViewController> scriptingCtrlProvider;
-    private final Lazy<PluginsViewController> pluginCtrlProvider;
+    private final AboutViewControllerFactory aboutViewControllerFactory;
+    private final LogTabControllerFactory logTabControllerFactory;
+    private final SettingsViewControllerFactory settingsViewControllerFactory;
+    private final ConnectionExportViewControllerFactory exportViewCtrlFactory;
+    private final ConnectionImportViewControllerFactory importViewCtrlFactory;
+    private final ScriptingViewControllerFactory scriptingCtrlFactory;
+    private final PluginsViewControllerFactory pluginCtrlFactory;
 
     @FXML
     @Getter
@@ -127,13 +127,13 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                               ConnectionSettingsViewControllerFactory connectionSettingsCtrlFactory,
                               ConnectionOnboardingViewControllerFactory onboardingViewCtlrFactory,
                               CheckNewVersionUtils checkNewVersionUtils,
-                              Lazy<AboutViewController> aboutViewControllerProvider,
-                              Lazy<LogTabController> logTabControllerProvider,
-                              Lazy<SettingsViewController> settingsViewControllerProvider,
-                              Lazy<ConnectionExportViewController> exportViewCtrlProvider,
-                              Lazy<ConnectionImportViewController> importViewCtrlProvider,
-                              Lazy<ScriptingViewController> scriptingCtrlProvider,
-                              Lazy<PluginsViewController> pluginCtrlProvider) {
+                              AboutViewControllerFactory aboutViewControllerFactory,
+                              LogTabControllerFactory logTabControllerFactory,
+                              SettingsViewControllerFactory settingsViewControllerFactory,
+                              ConnectionExportViewControllerFactory exportViewCtrlFactory,
+                              ConnectionImportViewControllerFactory importViewCtrlFactory,
+                              ScriptingViewControllerFactory scriptingCtrlFactory,
+                              PluginsViewControllerFactory pluginCtrlFactory) {
         this.connectionManager = guiCore.getConnectionManager();
         this.themeManager = guiCore.getThemeManager();
         this.connectionViewCtlrFactory = connectionViewCtlrFactory;
@@ -142,13 +142,13 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         this.checkNewVersionUtils = checkNewVersionUtils;
         this.eventBus = guiCore.getEventBus();
         this.hostServices = guiCore.getHostServices();
-        this.aboutViewControllerProvider = aboutViewControllerProvider;
-        this.logTabControllerProvider = logTabControllerProvider;
-        this.settingsViewControllerProvider = settingsViewControllerProvider;
-        this.exportViewCtrlProvider = exportViewCtrlProvider;
-        this.importViewCtrlProvider = importViewCtrlProvider;
-        this.scriptingCtrlProvider = scriptingCtrlProvider;
-        this.pluginCtrlProvider = pluginCtrlProvider;
+        this.aboutViewControllerFactory = aboutViewControllerFactory;
+        this.logTabControllerFactory = logTabControllerFactory;
+        this.settingsViewControllerFactory = settingsViewControllerFactory;
+        this.exportViewCtrlFactory = exportViewCtrlFactory;
+        this.importViewCtrlFactory = importViewCtrlFactory;
+        this.scriptingCtrlFactory = scriptingCtrlFactory;
+        this.pluginCtrlFactory = pluginCtrlFactory;
         eventBus.register(this);
     }
 
@@ -193,7 +193,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     private void createLogTab() {
-        LoaderResult<LogTabController> result = logTabControllerProvider.get().load();
+        LoaderResult<LogTabController> result = logTabControllerFactory.create().load();
         logViewController = result.getController();
         logTab.setClosable(false);
         logTab.setGraphic(new ThemedFontIcon("mdi-chart-box"));
@@ -205,8 +205,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private void setMenuEventHandler() {
         closeItem.setOnAction(event -> eventBus.fireAsync(new ShutdownRequestEvent()));
         connectionsItem.setOnAction(event -> connectionSettingsCtrlFactory.create(null).showAsDialog());
-        settingsItem.setOnAction(event -> settingsViewControllerProvider.get().showAsDialog());
-        aboutItem.setOnAction(event -> aboutViewControllerProvider.get().showAsDialog());
+        settingsItem.setOnAction(event -> settingsViewControllerFactory.create().showAsDialog());
+        aboutItem.setOnAction(event -> aboutViewControllerFactory.create().showAsDialog());
         updateItem.setOnAction(event -> {
             try {
                 checkNewVersionUtils.checkNewVersion(true);
@@ -214,11 +214,11 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                 LOGGER.warn("Exception checking version: {}", e.getMessage());
             }
         });
-        scriptingItem.setOnAction(event -> scriptingCtrlProvider.get().showAsDialog());
+        scriptingItem.setOnAction(event -> scriptingCtrlFactory.create().showAsDialog());
         websiteItem.setOnAction(event -> hostServices.showDocument(new Hyperlink(VendorConstants.WEBSITE()).getText()));
         pluginSettingsItem.setOnAction(event -> openPluginSettings());
-        exportConnectionsItem.setOnAction(event -> exportViewCtrlProvider.get().showAsDialog());
-        importConnectionsItem.setOnAction(event -> importViewCtrlProvider.get().showAsDialog());
+        exportConnectionsItem.setOnAction(event -> exportViewCtrlFactory.create().showAsDialog());
+        importConnectionsItem.setOnAction(event -> importViewCtrlFactory.create().showAsDialog());
     }
 
     private void calcTabWidth() {
@@ -227,7 +227,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     private void openPluginSettings() {
-        pluginCtrlProvider.get().showAsDialog();
+        pluginCtrlFactory.create().showAsDialog();
     }
 
     public String getUUIDofSelectedTab() {
