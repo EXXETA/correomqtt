@@ -3,7 +3,7 @@ package org.correomqtt;
 import javafx.application.HostServices;
 import lombok.Getter;
 import org.correomqtt.core.CoreManager;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.fileprovider.HistoryManager;
 import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.settings.SettingsManager;
@@ -22,14 +22,14 @@ public class GuiCore {
     private final HistoryManager historyManager;
     private final PluginManager pluginManager;
     private final KeyringManager keyringManager;
-    private final EventBus eventBus;
+    private final SoyEvents soyEvents;
     private final ThemeManager themeManager;
     private final HostServices hostServices;
 
     @Inject
     public GuiCore(CoreManager coreManager,
                    KeyringManager keyringManager,
-                   EventBus eventBus,
+                   SoyEvents soyEvents,
                    ThemeManager themeManager,
                    HostServicesWrapper hostServicesWrapper) {
         this.connectionManager = coreManager.getConnectionManager();
@@ -37,7 +37,7 @@ public class GuiCore {
         this.historyManager = coreManager.getHistoryManager();
         this.pluginManager = coreManager.getPluginManager();
         this.keyringManager = keyringManager;
-        this.eventBus = eventBus;
+        this.soyEvents = soyEvents;
         this.themeManager = themeManager;
         this.hostServices = hostServicesWrapper.getHostServices();
     }

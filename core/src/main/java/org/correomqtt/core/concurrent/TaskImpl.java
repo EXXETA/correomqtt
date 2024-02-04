@@ -1,6 +1,6 @@
 package org.correomqtt.core.concurrent;
 
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.utils.FrontendBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,10 +12,10 @@ import java.util.concurrent.CompletionException;
 
 abstract class TaskImpl<T, P, E, R> {
 
-    protected final EventBus eventBus;
+    protected final SoyEvents soyEvents;
 
-    protected TaskImpl(EventBus eventBus){
-        this.eventBus = eventBus;
+    protected TaskImpl(SoyEvents soyEvents){
+        this.soyEvents = soyEvents;
     }
 
     abstract T executeImpl() throws Exception;
@@ -78,7 +78,7 @@ abstract class TaskImpl<T, P, E, R> {
                         }
                         if (errorListener.isEmpty()) {
                             LOGGER.error("Unhandled exeception executing Task. Please consider using an ExceptionListener. ", t);
-                            eventBus.fireAsync(new UnhandledTaskExceptionEvent<E>(expectedError, t));
+                            soyEvents.fireAsync(new UnhandledTaskExceptionEvent<E>(expectedError, t));
                         }
                         R errorResult = createTaskErrorResult(expectedError, t);
                         errorHookImpl(errorResult);

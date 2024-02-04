@@ -8,8 +8,6 @@ import javafx.scene.layout.Region;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.connection.ConnectionLifecycleTaskFactories;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.importexport.messages.ExportMessageFailedEvent;
 import org.correomqtt.core.importexport.messages.ExportMessageStartedEvent;
 import org.correomqtt.core.importexport.messages.ExportMessageSuccessEvent;
@@ -21,6 +19,7 @@ import org.correomqtt.core.model.ConnectionUISettings;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
+import org.correomqtt.di.Observes;
 import org.correomqtt.gui.keyring.KeyringManager;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.GuiConnectionState;
@@ -50,7 +49,6 @@ public class ConnectionViewController extends BaseConnectionController implement
     private final KeyringManager keyringManager;
     private final LoadingViewControllerFactory loadingViewControllerFactory;
     private final AlertHelper alertHelper;
-    private final EventBus eventBus;
     private final ConnectionViewDelegate delegate;
     @FXML
     private Pane connectionPane;
@@ -86,7 +84,6 @@ public class ConnectionViewController extends BaseConnectionController implement
                                     LoadingViewControllerFactory loadingViewControllerFactory,
                                     AlertHelper alertHelper,
                                     CoreManager coreManager,
-                                    EventBus eventBus,
                                     @Assisted String connectionId,
                                     @Assisted ConnectionViewDelegate delegate) {
         super(coreManager, themeManager, connectionId);
@@ -97,9 +94,7 @@ public class ConnectionViewController extends BaseConnectionController implement
         this.keyringManager = keyringManager;
         this.loadingViewControllerFactory = loadingViewControllerFactory;
         this.alertHelper = alertHelper;
-        this.eventBus = eventBus;
         this.delegate = delegate;
-        eventBus.register(this);
         coreManager.getHistoryManager().activatePublishHistory(connectionId);
         coreManager.getHistoryManager().activatePublishMessageHistory(connectionId);
         coreManager.getHistoryManager().activateSubscriptionHistory(connectionId);
@@ -183,7 +178,7 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     @SuppressWarnings("unused")
-    public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {
+    public void onConnectionStateChanged(@Observes ConnectionStateChangedEvent event) {
         switch (event.getState()) {
             case CONNECTED -> splitPane.setDisable(false);
             case CONNECTING, RECONNECTING, DISCONNECTING -> splitPane.setDisable(true);
@@ -206,7 +201,7 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     @SuppressWarnings("unused")
-    public void onExportStarted(@Subscribe ExportMessageStartedEvent event) {
+    public void onExportStarted(@Observes ExportMessageStartedEvent event) {
         Platform.runLater(() -> {
             splitPane.setDisable(true);
             loadingViewController = loadingViewControllerFactory.create(getConnectionId(),
@@ -217,7 +212,7 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ExportMessageSuccessEvent.class)
+    @Observes(ExportMessageSuccessEvent.class)
     public void onExportSucceeded() {
         disableLoading();
     }
@@ -233,7 +228,7 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     @SuppressWarnings("unused")
-    public void onExportFailed(@Subscribe ExportMessageFailedEvent event) {
+    public void onExportFailed(@Observes ExportMessageFailedEvent event) {
         disableLoading();
         alertHelper.warn(resources.getString("connectionViewControllerExportFailedTitle"),
                 resources.getString("connectionViewControllerExportFailedContent")
@@ -241,18 +236,18 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ImportMessageStartedEvent.class)
+    @Observes(ImportMessageStartedEvent.class)
     public void onImportStarted() {
         Platform.runLater(() -> splitPane.setDisable(true));
     }
 
     @SuppressWarnings("unused")
-    public void onImportSucceeded(@Subscribe ImportMessageSuccessEvent event) {
+    public void onImportSucceeded(@Observes ImportMessageSuccessEvent event) {
         disableLoading();
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ImportMessageFailedEvent.class)
+    @Observes(ImportMessageFailedEvent.class)
     public void onImportFailed() {
         disableLoading();
     }
@@ -369,12 +364,9 @@ public class ConnectionViewController extends BaseConnectionController implement
     public void cleanUp() {
         publishController.cleanUp();
         subscribeController.cleanUp();
-        controlBarController.cleanUp();
 
         coreManager.getHistoryManager().tearDownPublishHistory(connectionId);
         coreManager.getHistoryManager().tearDownPublishMessageHistory(connectionId);
         coreManager.getHistoryManager().tearDownSubscriptionHistory(connectionId);
-
-        eventBus.unregister(this);
     }
 }

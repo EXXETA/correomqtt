@@ -5,41 +5,41 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.plugin.PluginManager;
 
 @DefaultBean
 public class PluginUninstallTask extends SimpleTask {
 
     private final PluginManager pluginManager;
-    private final EventBus eventBus;
+    private final SoyEvents soyEvents;
     private final String pluginId;
 
 
 
     @Inject
     public PluginUninstallTask(PluginManager pluginManager,
-                               EventBus eventBus,
+                               SoyEvents soyEvents,
                                @Assisted String pluginId) {
-        super(eventBus);
+        super(soyEvents);
         this.pluginManager = pluginManager;
-        this.eventBus = eventBus;
+        this.soyEvents = soyEvents;
         this.pluginId = pluginId;
     }
 
     @Override
     protected void execute() {
         pluginManager.getUpdateManager().uninstallPlugin(pluginId);
-        eventBus.fireAsync(new PluginUninstallEvent(pluginId));
+        soyEvents.fireAsync(new PluginUninstallEvent(pluginId));
     }
 
     @Override
     protected void beforeHook() {
-        eventBus.fireAsync(new PluginUninstallStartedEvent(pluginId));
+        soyEvents.fireAsync(new PluginUninstallStartedEvent(pluginId));
     }
 
     @Override
     protected void errorHook(SimpleTaskErrorResult ignore) {
-        eventBus.fireAsync(new PluginUninstallFailedEvent(pluginId));
+        soyEvents.fireAsync(new PluginUninstallFailedEvent(pluginId));
     }
 }

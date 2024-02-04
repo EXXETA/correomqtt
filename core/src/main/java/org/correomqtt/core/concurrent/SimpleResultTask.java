@@ -1,11 +1,11 @@
 package org.correomqtt.core.concurrent;
 
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 
 public abstract class SimpleResultTask<T> extends TaskImpl<T, Void, Void, SimpleTaskErrorResult> {
 
-    protected SimpleResultTask(EventBus eventBus) {
-        super(eventBus);
+    protected SimpleResultTask(SoyEvents soyEvents) {
+        super(soyEvents);
     }
 
     public SimpleResultTask<T> onStarted(StartListener listener) {

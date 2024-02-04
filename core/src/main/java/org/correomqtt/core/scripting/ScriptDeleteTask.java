@@ -5,7 +5,7 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleErrorTask;
 import org.correomqtt.core.concurrent.TaskException;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,9 +32,9 @@ public class ScriptDeleteTask extends SimpleErrorTask<ScriptDeleteTask.Error> {
 
     @Inject
     public ScriptDeleteTask(ScriptingProvider scriptingProvider,
-                            EventBus eventBus,
+                            SoyEvents soyEvents,
                             @Assisted ScriptFileDTO dto) {
-        super(eventBus);
+        super(soyEvents);
         this.scriptingProvider = scriptingProvider;
         this.dto = dto;
     }

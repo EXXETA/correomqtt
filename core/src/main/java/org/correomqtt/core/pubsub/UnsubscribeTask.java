@@ -5,7 +5,7 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.utils.ConnectionManager;
@@ -14,18 +14,18 @@ import org.correomqtt.core.utils.ConnectionManager;
 public class UnsubscribeTask extends SimpleTask {
 
     private final ConnectionManager connectionManager;
-    private final EventBus eventBus;
+    private final SoyEvents soyEvents;
     private final String connectionId;
     private final SubscriptionDTO subscriptionDTO;
 
     @Inject
     public UnsubscribeTask(ConnectionManager connectionManager,
-                           EventBus eventBus,
+                           SoyEvents soyEvents,
                            @Assisted String connectionId,
                            @Assisted SubscriptionDTO subscriptionDTO) {
-        super(eventBus);
+        super(soyEvents);
         this.connectionManager = connectionManager;
-        this.eventBus = eventBus;
+        this.soyEvents = soyEvents;
         this.connectionId = connectionId;
         this.subscriptionDTO = subscriptionDTO;
     }
@@ -34,12 +34,12 @@ public class UnsubscribeTask extends SimpleTask {
     protected void execute() {
         CorreoMqttClient client = connectionManager.getClient(connectionId);
         client.unsubscribe(subscriptionDTO);
-        eventBus.fireAsync(new UnsubscribeEvent(connectionId, subscriptionDTO));
+        soyEvents.fireAsync(new UnsubscribeEvent(connectionId, subscriptionDTO));
     }
 
     @Override
     protected void errorHook(SimpleTaskErrorResult ignore) {
-        eventBus.fireAsync(new UnsubscribeFailedEvent(connectionId, subscriptionDTO));
+        soyEvents.fireAsync(new UnsubscribeFailedEvent(connectionId, subscriptionDTO));
     }
 
 }

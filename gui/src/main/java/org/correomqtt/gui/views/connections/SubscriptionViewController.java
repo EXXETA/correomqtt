@@ -13,8 +13,6 @@ import javafx.scene.layout.AnchorPane;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.fileprovider.PersistSubscribeHistoryUpdateEvent;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ControllerType;
@@ -29,6 +27,7 @@ import org.correomqtt.core.pubsub.UnsubscribeEvent;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
+import org.correomqtt.di.Observes;
 import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenu;
 import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenuDelegate;
 import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenuFactory;
@@ -64,7 +63,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     private final SubscriptionViewCellFactory subscriptionViewCellFactory;
     private final TopicCellFactory topicCellFactory;
     private final AlertHelper alertHelper;
-    private final EventBus eventBus;
     private final SubscriptionListMessageContextMenuFactory subscriptionListMessageContextMenuFactory;
     private final SubscriptionViewDelegate delegate;
     private final PubSubTaskFactories pubSubTaskFactories;
@@ -105,7 +103,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
                                       SubscriptionViewCellFactory subscriptionViewCellFactory,
                                       TopicCellFactory topicCellFactory,
                                       AlertHelper alertHelper,
-                                      EventBus eventBus,
                                       SubscriptionListMessageContextMenuFactory subscriptionListMessageContextMenuFactory,
                                       @Assisted String connectionId,
                                       @Assisted SubscriptionViewDelegate delegate) {
@@ -115,10 +112,8 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         this.subscriptionViewCellFactory = subscriptionViewCellFactory;
         this.topicCellFactory = topicCellFactory;
         this.alertHelper = alertHelper;
-        this.eventBus = eventBus;
         this.subscriptionListMessageContextMenuFactory = subscriptionListMessageContextMenuFactory;
         this.delegate = delegate;
-        eventBus.register(this);
     }
 
     LoaderResult<SubscriptionViewController> load() {
@@ -326,7 +321,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     @SuppressWarnings("unused")
-    @Subscribe
+    @Observes
     public void onMessageIncoming(IncomingMessageEvent event) {
         MessagePropertiesDTO messagePropertiesDTO = MessageTransformer.dtoToProps(event.getMessageDTO());
         messagePropertiesDTO.getSubscriptionDTOProperty().setValue(SubscriptionTransformer.dtoToProps(event.getSubscriptionDTO()));
@@ -334,7 +329,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     @SuppressWarnings("unused")
-    @Subscribe
+    @Observes
     public void onSubscribedSucceeded(SubscribeEvent event) {
         afterSubscribe = true;
         subscribeTopicComboBox.getSelectionModel().select("");
@@ -379,20 +374,20 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     }
 
     @SuppressWarnings("unused")
-    public void onConnectionChangedEvent(@Subscribe ConnectionStateChangedEvent event) {
+    public void onConnectionChangedEvent(@Observes ConnectionStateChangedEvent event) {
         if (event.getState() == DISCONNECTED_GRACEFUL || event.getState() == DISCONNECTED_UNGRACEFUL) {
             subscriptionListView.getItems().clear();
         }
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(PersistSubscribeHistoryUpdateEvent.class)
+    @Observes(PersistSubscribeHistoryUpdateEvent.class)
     public void updateSubscriptions() {
         initTopicComboBox();
     }
 
     @SuppressWarnings("unused")
-    public void onUnsubscribeSucceeded(@Subscribe UnsubscribeEvent event) {
+    public void onUnsubscribeSucceeded(@Observes UnsubscribeEvent event) {
 
         SubscriptionPropertiesDTO subscriptionToRemove = subscriptionListView.getItems().stream()
                 .filter(s -> s.getTopic().equals(event.getSubscriptionDTO().getTopic()))
@@ -445,7 +440,6 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
 
     public void cleanUp() {
         this.messageListViewController.cleanUp();
-        eventBus.unregister(this);
     }
 }
 

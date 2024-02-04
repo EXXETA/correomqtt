@@ -15,7 +15,7 @@ import lombok.Getter;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.exception.CorreoMqtt3SubscriptionFailed;
 import org.correomqtt.core.exception.CorreoMqttConnectionFailedException;
 import org.correomqtt.core.exception.CorreoMqttNotConnectedException;
@@ -46,9 +46,9 @@ public class CorreoMqtt3Client extends BaseCorreoMqttClient {
     private Mqtt3BlockingClient mqtt3BlockingClient;
 
     @Inject
-    CorreoMqtt3Client(EventBus eventBus,
+    CorreoMqtt3Client(SoyEvents soyEvents,
                       @Assisted ConnectionConfigDTO configDTO) {
-        super(eventBus, configDTO);
+        super(soyEvents, configDTO);
     }
 
     @Override

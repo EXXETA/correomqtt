@@ -19,8 +19,8 @@ import javafx.stage.Stage;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
+import org.correomqtt.di.SoyEvents;
+import org.correomqtt.di.Observes;
 import org.correomqtt.core.exception.CorreoMqttException;
 import org.correomqtt.core.importexport.messages.ImportMessageFailedEvent;
 import org.correomqtt.core.importexport.messages.ImportMessageStartedEvent;
@@ -78,7 +78,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     private final AlertHelper alertHelper;
     private final LoadingViewControllerFactory loadingViewControllerFactory;
     private final ImportMessageTaskFactory importMessageTaskFactory;
-    private final EventBus eventBus;
+    private final SoyEvents soyEvents;
     private final PublishViewDelegate delegate;
     private ResourceBundle resources;
     @FXML
@@ -124,7 +124,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
                                  AlertHelper alertHelper,
                                  LoadingViewControllerFactory loadingViewControllerFactory,
                                  ImportMessageTaskFactory importMessageTaskFactory,
-                                 EventBus eventBus,
+                                 SoyEvents soyEvents,
                                  @Assisted String connectionId,
                                  @Assisted PublishViewDelegate delegate) {
         super(coreManager, themeManager, messageListViewControllerFactory, connectionId);
@@ -135,9 +135,8 @@ public class PublishViewController extends BaseMessageBasedViewController {
         this.alertHelper = alertHelper;
         this.loadingViewControllerFactory = loadingViewControllerFactory;
         this.importMessageTaskFactory = importMessageTaskFactory;
-        this.eventBus = eventBus;
+        this.soyEvents = soyEvents;
         this.delegate = delegate;
-        eventBus.register(this);
     }
 
     LoaderResult<PublishViewController> load() {
@@ -283,7 +282,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     @SuppressWarnings("unused")
-    public void onConnectionChangedEvent(@Subscribe ConnectionStateChangedEvent event) {
+    public void onConnectionChangedEvent(@Observes ConnectionStateChangedEvent event) {
         if (event.getState() == CONNECTED) {
             // reverse order, because first message in history must be last one to add
             new LinkedList<>(coreManager.getHistoryManager().activatePublishMessageHistory(getConnectionId())
@@ -294,13 +293,13 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     @SuppressWarnings("unused")
-    public void onPublishSucceeded(@Subscribe PublishEvent event) {
+    public void onPublishSucceeded(@Observes PublishEvent event) {
         event.getMessageDTO().setPublishStatus(PublishStatus.SUCCEEDED);
         messageListViewController.onNewMessage(MessageTransformer.dtoToProps(event.getMessageDTO()));
     }
 
     @SuppressWarnings("unused")
-    public void onImportStarted(@Subscribe ImportMessageStartedEvent event) {
+    public void onImportStarted(@Observes ImportMessageStartedEvent event) {
         Platform.runLater(() -> {
             loadingViewController = loadingViewControllerFactory.create(getConnectionId(),
                             resources.getString("publishViewControllerOpenFileTitle") + ": " + event.file().getAbsolutePath())
@@ -310,7 +309,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     @SuppressWarnings("unused")
-    public void onImportSucceeded(@Subscribe ImportMessageSuccessEvent event) {
+    public void onImportSucceeded(@Observes ImportMessageSuccessEvent event) {
         Platform.runLater(() -> {
             topicComboBox.setValue(event.messageDTO().getTopic());
             retainedCheckBox.setSelected(event.messageDTO().isRetained());
@@ -324,7 +323,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ImportMessageFailedEvent.class)
+    @Observes(ImportMessageFailedEvent.class)
     public void onImportFailed() {
         Platform.runLater(() -> {
             if (loadingViewController != null) {
@@ -338,12 +337,12 @@ public class PublishViewController extends BaseMessageBasedViewController {
 
     @Override
     public void removeMessage(MessageDTO messageDTO) {
-        eventBus.fireAsync(new PublishListRemovedEvent(getConnectionId(), messageDTO));
+        soyEvents.fireAsync(new PublishListRemovedEvent(getConnectionId(), messageDTO));
     }
 
     @Override
     public void clearMessages() {
-        eventBus.fireAsync(new PublishListClearEvent(getConnectionId()));
+        soyEvents.fireAsync(new PublishListClearEvent(getConnectionId()));
     }
 
     @Override
@@ -393,6 +392,5 @@ public class PublishViewController extends BaseMessageBasedViewController {
 
     public void cleanUp() {
         this.messageListViewController.cleanUp();
-        eventBus.unregister(this);
     }
 }

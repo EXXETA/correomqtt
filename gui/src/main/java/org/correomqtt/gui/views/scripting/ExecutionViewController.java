@@ -12,12 +12,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 import lombok.AllArgsConstructor;
 import org.correomqtt.core.CoreManager;
-import org.correomqtt.di.DefaultBean;
-import org.correomqtt.di.Inject;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
-import org.correomqtt.core.eventbus.SubscribeFilter;
-import org.correomqtt.core.eventbus.SubscribeFilterNames;
+import org.correomqtt.core.events.ObservesFilterNames;
 import org.correomqtt.core.scripting.BaseExecutionEvent;
 import org.correomqtt.core.scripting.ExecutionDTO;
 import org.correomqtt.core.scripting.ScriptExecuteTaskFactories;
@@ -27,6 +22,10 @@ import org.correomqtt.core.scripting.ScriptExecutionProgressEvent;
 import org.correomqtt.core.scripting.ScriptExecutionSuccessEvent;
 import org.correomqtt.core.scripting.ScriptExecutionsDeletedEvent;
 import org.correomqtt.core.scripting.ScriptingBackend;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.Observes;
+import org.correomqtt.di.ObservesFilter;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
@@ -47,7 +46,6 @@ public class ExecutionViewController extends BaseControllerImpl {
     private final ExecutionCellFactory executionCellFactory;
     private final SingleExecutionViewControllerFactory executionViewCtrlFactory;
     private final ScriptExecuteTaskFactories scriptExecuteTaskFactories;
-    private final EventBus eventBus;
     @FXML
     private AnchorPane executionSidebar;
     @FXML
@@ -78,16 +76,13 @@ public class ExecutionViewController extends BaseControllerImpl {
                                    AlertHelper alertHelper,
                                    ExecutionCellFactory executionCellFactory,
                                    SingleExecutionViewControllerFactory executionViewCtrlFactory,
-                                   ScriptExecuteTaskFactories scriptExecuteTaskFactories,
-                                   EventBus eventBus
+                                   ScriptExecuteTaskFactories scriptExecuteTaskFactories
     ) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;
         this.executionCellFactory = executionCellFactory;
         this.executionViewCtrlFactory = executionViewCtrlFactory;
         this.scriptExecuteTaskFactories = scriptExecuteTaskFactories;
-        this.eventBus = eventBus;
-        eventBus.register(this);
     }
 
     public LoaderResult<ExecutionViewController> load() {
@@ -111,12 +106,12 @@ public class ExecutionViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ScriptExecutionsDeletedEvent.class)
+    @Observes(ScriptExecutionsDeletedEvent.class)
     public void onExecutionsDeleted() {
         executionList.clear();
     }
 
-    @SubscribeFilter(SubscribeFilterNames.SCRIPT_NAME)
+    @ObservesFilter(ObservesFilterNames.SCRIPT_NAME)
     public String getScriptFileName() {
         return currentName;
     }
@@ -125,7 +120,6 @@ public class ExecutionViewController extends BaseControllerImpl {
         for (ScriptExecutionState state : executionStates.values()) {
             state.controller.cleanup();
         }
-        eventBus.unregister(this);
     }
 
     public void filterByScript(String name) {
@@ -239,7 +233,7 @@ public class ExecutionViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    public void onScriptExecutionCancelled(@Subscribe ScriptExecutionCancelledEvent event) {
+    public void onScriptExecutionCancelled(@Observes ScriptExecutionCancelledEvent event) {
         handleScriptExecutionResult(event);
     }
 
@@ -255,17 +249,17 @@ public class ExecutionViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    public void onScriptExecutionSuccess(@Subscribe ScriptExecutionSuccessEvent event) {
+    public void onScriptExecutionSuccess(@Observes ScriptExecutionSuccessEvent event) {
         handleScriptExecutionResult(event);
     }
 
     @SuppressWarnings("unused")
-    public void onScriptExecutionFailed(@Subscribe ScriptExecutionFailedEvent event) {
+    public void onScriptExecutionFailed(@Observes ScriptExecutionFailedEvent event) {
         handleScriptExecutionResult(event);
     }
 
     @SuppressWarnings("unused")
-    public void onScriptExecutionProgress(@Subscribe ScriptExecutionProgressEvent event) {
+    public void onScriptExecutionProgress(@Observes ScriptExecutionProgressEvent event) {
         handleScriptExecutionResult(event);
     }
 }

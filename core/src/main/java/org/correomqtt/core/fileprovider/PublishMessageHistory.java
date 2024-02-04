@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
+import org.correomqtt.di.SoyEvents;
+import org.correomqtt.di.Observes;
 import org.correomqtt.core.model.MessageDTO;
 import org.correomqtt.core.model.PublishMessageHistoryListDTO;
 import org.correomqtt.core.pubsub.PublishEvent;
@@ -32,15 +32,14 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
 
     @Inject
     PublishMessageHistory(SettingsManager settings,
-                          EventBus eventBus,
+                          SoyEvents soyEvents,
                           @Assisted String connectionId) {
-        super(settings, eventBus, connectionId);
-        eventBus.register(this);
+        super(settings, soyEvents, connectionId);
     }
 
     @Override
     protected void readingError(Exception e) {
-        eventBus.fireAsync(new PersistPublishHistoryReadFailedEvent(e));
+        soyEvents.fireAsync(new PersistPublishHistoryReadFailedEvent(e));
     }
 
     @Override
@@ -62,7 +61,7 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
         return historyDTOs.get(connectionId).getMessages();
     }
 
-    public void onPublishSucceeded(@Subscribe PublishEvent event) {
+    public void onPublishSucceeded(@Observes PublishEvent event) {
         LOGGER.info("Persisting new publish history entry: {}", event.getMessageDTO().getTopic());
 
         List<MessageDTO> messageList = getMessages(event.getConnectionId());
@@ -79,12 +78,12 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
             new ObjectMapper().writeValue(getFile(), historyDTOs.get(id));
         } catch (IOException e) {
             LOGGER.error("Failed to write " + getHistoryFileName(), e);
-            eventBus.fireAsync(new PersistPublishHistoryWriteFailedEvent(e));
+            soyEvents.fireAsync(new PersistPublishHistoryWriteFailedEvent(e));
         }
     }
 
     @SuppressWarnings("unused")
-    public void onPublishRemoved(@Subscribe PublishListRemovedEvent event) {
+    public void onPublishRemoved(@Observes PublishListRemovedEvent event) {
         LOGGER.info("Removing {} from publish history for {}.", event.getMessageDTO().getTopic(), event.getConnectionId());
         List<MessageDTO> messageList = getMessages(event.getConnectionId());
         messageList.remove(event.getMessageDTO());
@@ -92,7 +91,7 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
     }
 
     @SuppressWarnings("unused")
-    public void onPublishesCleared(@Subscribe PublishListClearEvent event) {
+    public void onPublishesCleared(@Observes PublishListClearEvent event) {
         LOGGER.info("Clearing publish history for {}.", event.getConnectionId());
         List<MessageDTO> messageList = getMessages(event.getConnectionId());
         messageList.clear();
@@ -100,14 +99,12 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ConnectionsUpdatedEvent.class)
+    @Observes(ConnectionsUpdatedEvent.class)
     public void onConnectionsUpdated() {
         removeFileIfConnectionDeleted();
     }
 
     public void cleanUp() {
-        eventBus.unregister(this);
-
         historyDTOs.remove(getConnectionId());
     }
 }

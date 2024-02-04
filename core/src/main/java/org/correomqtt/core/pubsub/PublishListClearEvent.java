@@ -1,17 +1,17 @@
 package org.correomqtt.core.pubsub;
 
 import lombok.AllArgsConstructor;
-import org.correomqtt.core.eventbus.Event;
-import org.correomqtt.core.eventbus.SubscribeFilter;
+import org.correomqtt.di.Event;
+import org.correomqtt.di.ObservesFilter;
 
-import static org.correomqtt.core.eventbus.SubscribeFilterNames.CONNECTION_ID;
+import static org.correomqtt.core.events.ObservesFilterNames.CONNECTION_ID;
 
 @AllArgsConstructor
 public class PublishListClearEvent implements Event {
 
     private String connectionId;
 
-    @SubscribeFilter(CONNECTION_ID)
+    @ObservesFilter(CONNECTION_ID)
     public String getConnectionId() {
         return connectionId;
     }

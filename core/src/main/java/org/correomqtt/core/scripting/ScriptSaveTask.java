@@ -5,7 +5,7 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleErrorTask;
 import org.correomqtt.core.concurrent.TaskException;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 
 import java.io.IOException;
@@ -26,10 +26,10 @@ public class ScriptSaveTask extends SimpleErrorTask<ScriptSaveTask.Error> {
 
     @Inject
     public ScriptSaveTask(ScriptingProvider scriptingProvider,
-                          EventBus eventBus,
+                          SoyEvents soyEvents,
                           @Assisted ScriptFileDTO scriptFileDTO,
                           @Assisted String content) {
-        super(eventBus);
+        super(soyEvents);
         this.scriptingProvider = scriptingProvider;
         this.scriptFileDTO = scriptFileDTO;
         this.content = content;

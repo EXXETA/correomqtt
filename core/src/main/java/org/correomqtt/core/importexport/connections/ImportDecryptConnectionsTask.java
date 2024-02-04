@@ -9,7 +9,7 @@ import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.encryption.EncryptorAesGcm;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.fileprovider.EncryptionRecoverableException;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 
@@ -31,11 +31,11 @@ public class ImportDecryptConnectionsTask extends NoProgressTask<List<Connection
 
 
     @Inject
-    public ImportDecryptConnectionsTask(EventBus eventBus,
+    public ImportDecryptConnectionsTask(SoyEvents soyEvents,
                                         @Assisted("encryptedData") String encryptedData,
                                         @Assisted("encryptedType") String encryptionType,
                                         @Assisted("password") String password) {
-        super(eventBus);
+        super(soyEvents);
         this.encryptedData = encryptedData;
         this.encryptionType = encryptionType;
         this.password = password;

@@ -9,7 +9,7 @@ import com.hivemq.client.util.KeyStoreUtil;
 import lombok.Getter;
 import org.correomqtt.core.connection.ConnectionState;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.exception.CorreoMqttAlreadySubscribedException;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.MessageDTO;
@@ -37,7 +37,7 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
 
     private static final int MAX_RECONNECTS = 5;
 
-    private final EventBus eventBus;
+    private final SoyEvents soyEvents;
     private final ConnectionConfigDTO configDTO;
     private final AtomicInteger triedReconnects = new AtomicInteger(0);
     private final Set<SubscriptionDTO> subscriptions = new HashSet<>();
@@ -48,9 +48,9 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
     @Getter
     private ConnectionState state = ConnectionState.DISCONNECTED_GRACEFUL;
 
-    protected BaseCorreoMqttClient(EventBus eventBus,
+    protected BaseCorreoMqttClient(SoyEvents soyEvents,
                                    ConnectionConfigDTO configDTO) {
-        this.eventBus = eventBus;
+        this.soyEvents = soyEvents;
         this.configDTO = configDTO;
     }
 
@@ -185,7 +185,7 @@ abstract class BaseCorreoMqttClient implements CorreoMqttClient, MqttClientDisco
         } else {
             getLogger().info(MarkerFactory.getMarker(configDTO.getName()), "Connection state changed to {}", state);
         }
-        eventBus.fireAsync(new ConnectionStateChangedEvent(getConfigDTO().getId(),
+        soyEvents.fireAsync(new ConnectionStateChangedEvent(getConfigDTO().getId(),
                 state,
                 triedReconnects.get(),
                 MAX_RECONNECTS));

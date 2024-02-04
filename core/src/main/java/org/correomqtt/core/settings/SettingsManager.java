@@ -1,7 +1,7 @@
 package org.correomqtt.core.settings;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.exception.CorreoMqttConfigurationMissingException;
 import org.correomqtt.core.fileprovider.BaseUserFileProvider;
 import org.correomqtt.core.fileprovider.ConfigSaveFailedEvent;
@@ -45,23 +45,23 @@ public class SettingsManager extends BaseUserFileProvider {
     private ConfigDTO configDTO;
 
     @Inject
-    public SettingsManager(EventBus eventBus,
+    public SettingsManager(SoyEvents soyEvents,
                            SecretStoreProvider secretStoreProvider) {
-        super(eventBus);
+        super(soyEvents);
         this.secretStoreProvider = secretStoreProvider;
 
         try {
             prepareFile(CONFIG_FILE_NAME);
         } catch (InvalidPathException | SecurityException | UnsupportedOperationException | IOException e) {
             LOGGER.error("Error writing config file {}. ", CONFIG_FILE_NAME, e);
-            eventBus.fire(new UnaccessibleConfigFileEvent(e));
+            soyEvents.fire(new UnaccessibleConfigFileEvent(e));
         }
 
         try {
             configDTO = new ObjectMapper().readValue(getFile(), ConfigDTO.class);
         } catch (IOException e) {
             LOGGER.error("Exception parsing config file {}.", CONFIG_FILE_NAME, e);
-            eventBus.fire(new InvalidConfigFileEvent(e));
+            soyEvents.fire(new InvalidConfigFileEvent(e));
         }
 
     }
@@ -103,7 +103,7 @@ public class SettingsManager extends BaseUserFileProvider {
     public void saveSettings() {
         saveDTO();
 
-        eventBus.fire(new SettingsUpdatedEvent(false));
+        soyEvents.fire(new SettingsUpdatedEvent(false));
     }
 
     private void saveDTO() {
@@ -111,7 +111,7 @@ public class SettingsManager extends BaseUserFileProvider {
         try {
             new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(getFile(), configDTO);
         } catch (IOException e) {
-            eventBus.fire(new ConfigSaveFailedEvent(e));
+            soyEvents.fire(new ConfigSaveFailedEvent(e));
         }
     }
 
@@ -153,7 +153,7 @@ public class SettingsManager extends BaseUserFileProvider {
         secretStoreProvider.encryptAndSavePasswords(masterPassword);
 
         connectionChangeListeners.forEach(Runnable::run);
-        eventBus.fire(new ConnectionsUpdatedEvent());
+        soyEvents.fire(new ConnectionsUpdatedEvent());
     }
 
     public void initializePasswords(String masterPassword) throws EncryptionRecoverableException {

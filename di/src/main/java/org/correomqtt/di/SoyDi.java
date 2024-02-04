@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -92,6 +93,7 @@ public class SoyDi {
             boolean singleton = clazz.getAnnotation(SingletonBean.class) != null;
             BeanInfo beanInfo = new BeanInfo(clazz, constructor, parameters, singleton);
             BEAN_INFO.put(clazz, beanInfo);
+            EventBus.registerClass(clazz);
             return beanInfo;
         } catch (Exception e) {
             throw new SoyDiException("Exception while scanning " + classInfo.getName() + " ", e);
@@ -140,8 +142,7 @@ public class SoyDi {
         return BEAN_INFO.containsKey(clazz);
     }
 
-    @SuppressWarnings({"java:S3011", "unchecked"})
-    // DI must ignore accessibility in order to allow accessibility for users.
+    @SuppressWarnings("unchecked")
     private static synchronized <T> T inject(Class<T> clazz, List<Class<?>> chain) {
         BeanInfo beanInfo = BEAN_INFO.get(clazz);
         if (chain.contains(clazz)) {
@@ -153,21 +154,29 @@ public class SoyDi {
         if (beanInfo.isSingleton() && SINGLETON_INSTANCES.containsKey(clazz)) {
             return (T) SINGLETON_INSTANCES.get(clazz);
         }
-        Object[] params = beanInfo.getConstructorParameters().stream()
-                .map(cp -> {
-                    ArrayList<Class<?>> newChain = new ArrayList<>(chain);
-                    newChain.add(clazz);
-                    return inject(cp.getType(), newChain);
-                })
-                .toArray();
         try {
-            beanInfo.getConstructor().setAccessible(true);
-            T instance = (T) beanInfo.getConstructor().newInstance(params);
+            T instance;
+            if (Factory.class.isAssignableFrom(clazz) || clazz.getName().startsWith("org.correomqtt.di")) {
+                Object[] params = beanInfo.getConstructorParameters().stream()
+                        .map(cp -> {
+                            ArrayList<Class<?>> newChain = new ArrayList<>(chain);
+                            newChain.add(clazz);
+                            return inject(cp.getType(), newChain);
+                        })
+                        .toArray();
+                instance = (T) beanInfo.getConstructor().newInstance(params);
+            } else {
+                Class<?> factoryClass = loadClass(clazz.getName() + "Factory");
+                Object factory = inject(factoryClass);
+                Method factoryMethod = factoryClass.getMethod("create");
+                instance = (T) factoryMethod.invoke(factory);
+            }
             if (beanInfo.isSingleton()) {
                 SINGLETON_INSTANCES.put(clazz, instance);
             }
             return instance;
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
+                 InstantiationException e) {
             throw new SoyDiException("Can not inject " + clazz + ", caused by an exception. " + getChainLogMsg(chain), e);
         }
     }

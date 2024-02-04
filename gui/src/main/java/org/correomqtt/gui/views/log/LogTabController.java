@@ -5,8 +5,8 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.AnchorPane;
 import lombok.Getter;
 import org.correomqtt.core.CoreManager;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
+import org.correomqtt.di.SoyEvents;
+import org.correomqtt.di.Observes;
 import org.correomqtt.core.log.LogDispatchAppender;
 import org.correomqtt.core.log.LogEvent;
 import org.correomqtt.core.utils.LoggerUtils;
@@ -23,7 +23,7 @@ import org.correomqtt.di.Inject;
 public class LogTabController extends BaseControllerImpl {
 
     private static final String LOG_APPENDER_GUI_NAME = "GUI";
-    private final EventBus eventBus;
+    private final SoyEvents soyEvents;
 
     @Getter
     @FXML
@@ -36,9 +36,9 @@ public class LogTabController extends BaseControllerImpl {
     @Inject
     public LogTabController(CoreManager coreManager,
                             ThemeManager themeManager,
-                            EventBus eventBus) {
+                            SoyEvents soyEvents) {
         super(coreManager, themeManager);
-        this.eventBus = eventBus;
+        this.soyEvents = soyEvents;
     }
 
     public LoaderResult<LogTabController> load() {
@@ -52,17 +52,13 @@ public class LogTabController extends BaseControllerImpl {
         if (appender == null) {
             throw new IllegalStateException("There is no LogAppender with name = " + LOG_APPENDER_GUI_NAME);
         }
-        appender.popCache(eventBus).forEach(msg -> LogAreaUtils.appendColorful(logTextArea, msg));
+        appender.popCache(soyEvents).forEach(msg -> LogAreaUtils.appendColorful(logTextArea, msg));
         logTextArea.requestFollowCaret();
     }
 
     @SuppressWarnings("unused")
-    public void updateLog(@Subscribe LogEvent event) {
+    public void updateLog(@Observes LogEvent event) {
         LogAreaUtils.appendColorful(logTextArea, event.logMsg());
         logTextArea.requestFollowCaret();
-    }
-
-    public void cleanUp() {
-        eventBus.unregister(this);
     }
 }

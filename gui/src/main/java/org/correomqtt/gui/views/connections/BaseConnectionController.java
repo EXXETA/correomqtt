@@ -2,14 +2,14 @@ package org.correomqtt.gui.views.connections;
 
 import lombok.Getter;
 import org.correomqtt.core.CoreManager;
-import org.correomqtt.core.eventbus.SubscribeFilter;
+import org.correomqtt.di.ObservesFilter;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import static org.correomqtt.core.eventbus.SubscribeFilterNames.CONNECTION_ID;
+import static org.correomqtt.core.events.ObservesFilterNames.CONNECTION_ID;
 
 public abstract class BaseConnectionController extends BaseControllerImpl {
 
@@ -33,7 +33,7 @@ public abstract class BaseConnectionController extends BaseControllerImpl {
     }
 
 
-    @SubscribeFilter(CONNECTION_ID)
+    @ObservesFilter(CONNECTION_ID)
     public String getConnectionId() {
         return connectionId;
     }

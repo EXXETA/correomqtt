@@ -2,7 +2,7 @@ package org.correomqtt.core.fileprovider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.model.HooksDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,14 +29,14 @@ public class PluginConfigProvider extends BaseUserFileProvider {
     private String pluginPath;
 
     @Inject
-    PluginConfigProvider(EventBus eventBus) {
-        super(eventBus);
+    PluginConfigProvider(SoyEvents soyEvents) {
+        super(soyEvents);
 
         try {
             prepareFile(HOOK_FILE_NAME);
         } catch (InvalidPathException | SecurityException | UnsupportedOperationException | IOException e) {
             LOGGER.error("Error writing hook file {}. ", HOOK_FILE_NAME, e);
-            eventBus.fire(new UnaccessibleHookFileEvent(e));
+            soyEvents.fire(new UnaccessibleHookFileEvent(e));
         }
 
         preparePluginPath();
@@ -45,7 +45,7 @@ public class PluginConfigProvider extends BaseUserFileProvider {
             hooksDTO = new ObjectMapper().readValue(getFile(), HooksDTO.class);
         } catch (IOException e) {
             LOGGER.error("Exception parsing hooks file {}", HOOK_FILE_NAME, e);
-            eventBus.fire(new InvalidHooksFileEvent(e));
+            soyEvents.fire(new InvalidHooksFileEvent(e));
         }
 
     }

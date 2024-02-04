@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
+import org.correomqtt.di.SoyEvents;
+import org.correomqtt.di.Observes;
 import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.model.SubscriptionHistoryListDTO;
 import org.correomqtt.core.pubsub.SubscribeEvent;
@@ -32,13 +32,12 @@ public class SubscriptionHistory extends BasePersistHistoryProvider<Subscription
 
     @Inject
     SubscriptionHistory(SettingsManager settings,
-                        EventBus eventBus,
+                        SoyEvents soyEvents,
                         @Assisted String connectionId) {
-        super(settings, eventBus, connectionId);
-        eventBus.register(this);
+        super(settings, soyEvents, connectionId);
     }
 
-    public void onSubscribedSucceeded(@Subscribe SubscribeEvent event) {
+    public void onSubscribedSucceeded(@Observes SubscribeEvent event) {
 
         SubscriptionDTO subscriptionDTO = event.getSubscriptionDTO();
 
@@ -70,10 +69,10 @@ public class SubscriptionHistory extends BasePersistHistoryProvider<Subscription
     private void saveHistory(String connectionId) {
         try {
             new ObjectMapper().writeValue(getFile(), historyDTOs.get(connectionId));
-            eventBus.fireAsync(new PersistSubscribeHistoryUpdateEvent(connectionId));
+            soyEvents.fireAsync(new PersistSubscribeHistoryUpdateEvent(connectionId));
         } catch (IOException e) {
             LOGGER.error("Failed to write " + getHistoryFileName(), e);
-            eventBus.fireAsync(new PersistSubscribeHistoryWriteFailedEvent(getConnectionId(), e));
+            soyEvents.fireAsync(new PersistSubscribeHistoryWriteFailedEvent(getConnectionId(), e));
         }
     }
 
@@ -94,18 +93,16 @@ public class SubscriptionHistory extends BasePersistHistoryProvider<Subscription
 
     @Override
     protected void readingError(Exception e) {
-        eventBus.fireAsync(new PersistSubscribeHistoryReadFailedEvent(getConnectionId(), e));
+        soyEvents.fireAsync(new PersistSubscribeHistoryReadFailedEvent(getConnectionId(), e));
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ConnectionsUpdatedEvent.class)
+    @Observes(ConnectionsUpdatedEvent.class)
     public void onConnectionsUpdated() {
         removeFileIfConnectionDeleted();
     }
 
     public void cleanUp() {
-        eventBus.unregister(this);
-
         historyDTOs.remove(getConnectionId());
     }
 }

@@ -4,7 +4,7 @@ import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleTask;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.utils.ConnectionManager;
 
@@ -16,9 +16,9 @@ public class DisconnectTask extends SimpleTask {
 
     @Inject
     public DisconnectTask(ConnectionManager connectionManager,
-                          EventBus eventBus,
+                          SoyEvents soyEvents,
                           @Assisted String connectionId) {
-        super(eventBus);
+        super(soyEvents);
         this.connectionManager = connectionManager;
         this.connectionId = connectionId;
     }

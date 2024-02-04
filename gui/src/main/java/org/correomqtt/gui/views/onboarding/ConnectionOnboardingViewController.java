@@ -17,12 +17,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.fileprovider.ConnectionsUpdatedEvent;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
+import org.correomqtt.di.Observes;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
@@ -47,7 +46,6 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionOnboardingViewController.class);
     private final ConnectionCellFactory connectionCellFactory;
     private final ConnectionSettingsViewControllerFactory connectionSettingsViewControllerFactory;
-    private final EventBus eventBus;
     private final ConnectionOnboardingDelegate connectionsOnboardingDelegate;
     @FXML
     private AnchorPane helloViewAnchor;
@@ -77,14 +75,11 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
                                               ThemeManager themeManager,
                                               ConnectionCellFactory connectionCellFactory,
                                               ConnectionSettingsViewControllerFactory connectionSettingsViewControllerFactory,
-                                              EventBus eventBus,
                                               @Assisted ConnectionOnboardingDelegate connectionsOnboardingDelegate) {
         super(coreManager, themeManager);
         this.connectionCellFactory = connectionCellFactory;
         this.connectionSettingsViewControllerFactory = connectionSettingsViewControllerFactory;
-        this.eventBus = eventBus;
         this.connectionsOnboardingDelegate = connectionsOnboardingDelegate;
-        eventBus.register(this);
     }
 
     public LoaderResult<ConnectionOnboardingViewController> load() {
@@ -237,13 +232,13 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ConnectionsUpdatedEvent.class)
+    @Observes(ConnectionsUpdatedEvent.class)
     public void onConnectionsUpdated() {
         updateConnections();
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ConnectionStateChangedEvent.class)
+    @Observes(ConnectionStateChangedEvent.class)
     public void onConnectionStateChanged() {
         connectionListView.refresh();
     }
@@ -251,6 +246,5 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
     public void cleanUp() {
         ConnectionPropertiesDTO config = connectionListView.getSelectionModel().getSelectedItem();
         connectionsOnboardingDelegate.cleanUpProvider(config);
-        eventBus.unregister(this);
     }
 }

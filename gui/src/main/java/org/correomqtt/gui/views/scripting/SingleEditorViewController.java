@@ -7,15 +7,9 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import org.correomqtt.core.CoreManager;
-import org.correomqtt.di.Assisted;
-import org.correomqtt.di.DefaultBean;
-import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.connection.ConnectionState;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
-import org.correomqtt.core.eventbus.SubscribeFilter;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.scripting.ScriptExecutionCancelledEvent;
 import org.correomqtt.core.scripting.ScriptExecutionFailedEvent;
@@ -25,6 +19,11 @@ import org.correomqtt.core.scripting.ScriptLoadTask;
 import org.correomqtt.core.scripting.ScriptSaveTask;
 import org.correomqtt.core.scripting.ScriptTaskFactories;
 import org.correomqtt.core.scripting.ScriptingBackend;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.Observes;
+import org.correomqtt.di.ObservesFilter;
 import org.correomqtt.gui.controls.IconButton;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -43,7 +42,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.correomqtt.core.eventbus.SubscribeFilterNames.SCRIPT_NAME;
+import static org.correomqtt.core.events.ObservesFilterNames.SCRIPT_NAME;
 
 @DefaultBean
 public class SingleEditorViewController extends BaseControllerImpl {
@@ -52,7 +51,6 @@ public class SingleEditorViewController extends BaseControllerImpl {
     private final ConnectionCellButtonFactory connectionCellButtonFactory;
     private final AlertHelper alertHelper;
     private final ScriptTaskFactories scriptTaskFactories;
-    private final EventBus eventBus;
     private final SingleEditorViewDelegate delegate;
     private final ScriptFilePropertiesDTO scriptFilePropertiesDTO;
     private final AtomicBoolean revert = new AtomicBoolean(false);
@@ -86,17 +84,14 @@ public class SingleEditorViewController extends BaseControllerImpl {
                                       ConnectionCellButtonFactory connectionCellButtonFactory,
                                       AlertHelper alertHelper,
                                       ScriptTaskFactories scriptTaskFactories,
-                                      EventBus eventBus,
                                       @Assisted SingleEditorViewDelegate delegate,
                                       @Assisted ScriptFilePropertiesDTO scriptFilePropertiesDTO) {
         super(coreManager, themeManager);
         this.connectionCellButtonFactory = connectionCellButtonFactory;
         this.alertHelper = alertHelper;
         this.scriptTaskFactories = scriptTaskFactories;
-        this.eventBus = eventBus;
         this.delegate = delegate;
         this.scriptFilePropertiesDTO = scriptFilePropertiesDTO;
-        eventBus.register(this);
     }
 
     public LoaderResult<SingleEditorViewController> load() {
@@ -223,7 +218,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
 
     }
 
-    @Subscribe(ConnectionStateChangedEvent.class)
+    @Observes(ConnectionStateChangedEvent.class)
     public void onConnectionChangedEvent() {
         updateConnections();
 
@@ -249,25 +244,25 @@ public class SingleEditorViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ScriptExecutionCancelledEvent.class)
+    @Observes(ScriptExecutionCancelledEvent.class)
     public void onScriptExecutionCancelled() {
         disableActionsOnRunningScript(false);
     }
 
 
     @SuppressWarnings("unused")
-    @Subscribe(ScriptExecutionSuccessEvent.class)
+    @Observes(ScriptExecutionSuccessEvent.class)
     public void onScriptExecutionSuccess() {
         disableActionsOnRunningScript(false);
     }
 
     @SuppressWarnings("unused")
-    @Subscribe(ScriptExecutionFailedEvent.class)
+    @Observes(ScriptExecutionFailedEvent.class)
     public void onScriptExecutionFailed() {
         disableActionsOnRunningScript(false);
     }
 
-    @SubscribeFilter(SCRIPT_NAME)
+    @ObservesFilter(SCRIPT_NAME)
     public String getFileName() {
         return scriptFilePropertiesDTO.getName();
     }
@@ -287,9 +282,5 @@ public class SingleEditorViewController extends BaseControllerImpl {
         scriptingSaveButton.setDisable(true);
         scriptingRevertButton.setDisable(true);
         delegate.onPlainTextChange(scriptFilePropertiesDTO);
-    }
-
-    public void cleanUp() {
-        eventBus.unregister(this);
     }
 }

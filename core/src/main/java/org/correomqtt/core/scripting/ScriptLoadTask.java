@@ -5,7 +5,7 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 
 import java.io.IOException;
@@ -25,9 +25,9 @@ public class ScriptLoadTask extends NoProgressTask<String, ScriptLoadTask.Error>
 
     @Inject
     public ScriptLoadTask(ScriptingProvider scriptingProvider,
-                          EventBus eventBus,
+                          SoyEvents soyEvents,
                           @Assisted ScriptFileDTO scriptFileDTO) {
-        super(eventBus);
+        super(soyEvents);
         this.scriptingProvider = scriptingProvider;
         this.scriptFileDTO = scriptFileDTO;
     }

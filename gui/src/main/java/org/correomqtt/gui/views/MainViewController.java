@@ -17,8 +17,8 @@ import lombok.Getter;
 import org.correomqtt.GuiCore;
 import org.correomqtt.core.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
+import org.correomqtt.di.SoyEvents;
+import org.correomqtt.di.Observes;
 import org.correomqtt.core.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.core.utils.ConnectionManager;
 import org.correomqtt.core.utils.VendorConstants;
@@ -64,7 +64,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     private final ConnectionSettingsViewControllerFactory connectionSettingsCtrlFactory;
     private final ConnectionOnboardingViewControllerFactory onboardingViewCtrlFactory;
     private final CheckNewVersionUtils checkNewVersionUtils;
-    private final EventBus eventBus;
+    private final SoyEvents soyEvents;
     private final HostServices hostServices;
     private final AboutViewControllerFactory aboutViewControllerFactory;
     private final LogTabControllerFactory logTabControllerFactory;
@@ -140,7 +140,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         this.connectionSettingsCtrlFactory = connectionSettingsCtrlFactory;
         this.onboardingViewCtrlFactory = onboardingViewCtlrFactory;
         this.checkNewVersionUtils = checkNewVersionUtils;
-        this.eventBus = guiCore.getEventBus();
+        this.soyEvents = guiCore.getSoyEvents();
         this.hostServices = guiCore.getHostServices();
         this.aboutViewControllerFactory = aboutViewControllerFactory;
         this.logTabControllerFactory = logTabControllerFactory;
@@ -149,7 +149,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         this.importViewCtrlFactory = importViewCtrlFactory;
         this.scriptingCtrlFactory = scriptingCtrlFactory;
         this.pluginCtrlFactory = pluginCtrlFactory;
-        eventBus.register(this);
     }
 
     @FXML
@@ -203,7 +202,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     private void setMenuEventHandler() {
-        closeItem.setOnAction(event -> eventBus.fireAsync(new ShutdownRequestEvent()));
+        closeItem.setOnAction(event -> soyEvents.fireAsync(new ShutdownRequestEvent()));
         connectionsItem.setOnAction(event -> connectionSettingsCtrlFactory.create(null).showAsDialog());
         settingsItem.setOnAction(event -> settingsViewControllerFactory.create().showAsDialog());
         aboutItem.setOnAction(event -> aboutViewControllerFactory.create().showAsDialog());
@@ -236,7 +235,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     }
 
     @SuppressWarnings("unused")
-    public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {
+    public void onConnectionStateChanged(@Observes ConnectionStateChangedEvent event) {
         if (connectionViewControllers.values().stream().noneMatch(ctrl -> ctrl.getConnectionId().equals(event.getConnectionId()))) {
             getConnectionViewControllerLoaderResult(ConnectionTransformer.dtoToProps(connectionManager.getConfig(event.getConnectionId())));
         }
@@ -332,9 +331,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         ConnectionViewController connectionViewController = connectionViewControllers.get(this.closedTabId);
         connectionViewController.cleanUp();
         connectionOnboardingViewController.cleanUp();
-        logViewController.cleanUp();
         connectionViewControllers.remove(this.closedTabId);
-        eventBus.unregister(this);
     }
 
     public void onDisconnect() {

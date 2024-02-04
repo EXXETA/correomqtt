@@ -5,9 +5,9 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
-import org.correomqtt.core.eventbus.SubscribeFilter;
+import org.correomqtt.di.SoyEvents;
+import org.correomqtt.di.Observes;
+import org.correomqtt.di.ObservesFilter;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.mqtt.CorreoMqttClientFactory;
 import org.correomqtt.core.utils.ConnectionManager;
@@ -17,26 +17,24 @@ import javax.net.ssl.SSLException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import static org.correomqtt.core.eventbus.SubscribeFilterNames.CONNECTION_ID;
+import static org.correomqtt.core.events.ObservesFilterNames.CONNECTION_ID;
 
 @DefaultBean
 public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent> {
 
     private final ConnectionManager connectionManager;
     private final CorreoMqttClientFactory correoMqttClientFactory;
-    private final EventBus eventBus;
     private final String connectionId;
 
 
     @Inject
     public ConnectTask(ConnectionManager connectionManager,
                        CorreoMqttClientFactory correoMqttClientFactory,
-                       EventBus eventBus,
+                       SoyEvents soyEvents,
                        @Assisted String connectionId) {
-        super(eventBus);
+        super(soyEvents);
         this.connectionManager = connectionManager;
         this.correoMqttClientFactory = correoMqttClientFactory;
-        this.eventBus = eventBus;
         this.connectionId = connectionId;
     }
 
@@ -61,21 +59,11 @@ public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent>
         }
     }
 
-    @Override
-    protected void beforeHook() {
-        eventBus.register(this);
-    }
-
-    @Override
-    protected void finalHook() {
-        eventBus.unregister(this);
-    }
-
-    public void onConnectionStateChanged(@Subscribe ConnectionStateChangedEvent event) {
+    public void onConnectionStateChanged(@Observes ConnectionStateChangedEvent event) {
         reportProgress(event);
     }
 
-    @SubscribeFilter(CONNECTION_ID)
+    @ObservesFilter(CONNECTION_ID)
     public String getConnectionId() {
         return connectionId;
     }

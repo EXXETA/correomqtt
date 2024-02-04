@@ -2,11 +2,11 @@ package org.correomqtt.core.pubsub;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.correomqtt.core.eventbus.Event;
-import org.correomqtt.core.eventbus.SubscribeFilter;
+import org.correomqtt.di.Event;
+import org.correomqtt.di.ObservesFilter;
 import org.correomqtt.core.model.SubscriptionDTO;
 
-import static org.correomqtt.core.eventbus.SubscribeFilterNames.CONNECTION_ID;
+import static org.correomqtt.core.events.ObservesFilterNames.CONNECTION_ID;
 
 @AllArgsConstructor
 @Getter
@@ -15,7 +15,7 @@ public class UnsubscribeEvent implements Event {
     private String connectionId;
     private SubscriptionDTO subscriptionDTO;
 
-    @SubscribeFilter(CONNECTION_ID)
+    @ObservesFilter(CONNECTION_ID)
     public String getConnectionId(){
         return connectionId;
     }

@@ -1,7 +1,7 @@
 package org.correomqtt.core.connection;
 
 import org.correomqtt.core.concurrent.NoProgressTask;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.mqtt.CorreoMqttClientFactory;
@@ -25,11 +25,11 @@ public class ReconnectTask extends NoProgressTask<Void, Void> {
 
     @Inject
     public ReconnectTask(SubscribeTaskFactory subscribeTaskFactory,
-                         EventBus eventBus,
+                         SoyEvents soyEvents,
                          CorreoMqttClientFactory correoMqttClientFactory,
                          ConnectionManager connectionManager,
                          @Assisted String connectionId) {
-        super(eventBus);
+        super(soyEvents);
         this.subscribeTaskFactory = subscribeTaskFactory;
         this.correoMqttClientFactory = correoMqttClientFactory;
         this.connectionManager = connectionManager;

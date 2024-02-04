@@ -6,7 +6,7 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleResultTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.model.MessageDTO;
 
 import java.io.File;
@@ -21,9 +21,9 @@ public class ImportMessageTask extends SimpleResultTask<MessageDTO> {
 
 
     @Inject
-    public ImportMessageTask(EventBus eventBus,
+    public ImportMessageTask(SoyEvents soyEvents,
                              @Assisted File file) {
-        super(eventBus);
+        super(soyEvents);
         this.file = file;
     }
 
@@ -38,16 +38,16 @@ public class ImportMessageTask extends SimpleResultTask<MessageDTO> {
 
     @Override
     protected void beforeHook() {
-        eventBus.fireAsync(new ImportMessageStartedEvent(file));
+        soyEvents.fireAsync(new ImportMessageStartedEvent(file));
     }
 
     @Override
     protected void successHook(MessageDTO messageDTO) {
-        eventBus.fireAsync(new ImportMessageSuccessEvent(messageDTO));
+        soyEvents.fireAsync(new ImportMessageSuccessEvent(messageDTO));
     }
 
     @Override
     protected void errorHook(SimpleTaskErrorResult errorResult) {
-        eventBus.fireAsync(new ImportMessageFailedEvent(file, errorResult.getUnexpectedError()));
+        soyEvents.fireAsync(new ImportMessageFailedEvent(file, errorResult.getUnexpectedError()));
     }
 }

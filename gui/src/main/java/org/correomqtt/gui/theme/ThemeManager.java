@@ -1,7 +1,7 @@
 package org.correomqtt.gui.theme;
 
 import org.correomqtt.core.settings.SettingsManager;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.fileprovider.BaseUserFileProvider;
 import org.correomqtt.core.fileprovider.SettingsUpdatedEvent;
 import org.correomqtt.core.plugin.PluginManager;
@@ -27,9 +27,9 @@ public class ThemeManager extends BaseUserFileProvider {
 
     @Inject
     public ThemeManager(SettingsManager settingsManager,
-                        EventBus eventBus,
+                        SoyEvents soyEvents,
                         PluginManager pluginManager) {
-        super(eventBus);
+        super(soyEvents);
         this.settingsManager = settingsManager;
         this.pluginManager = pluginManager;
     }
@@ -67,6 +67,6 @@ public class ThemeManager extends BaseUserFileProvider {
     public void saveCSS() {
         saveToUserDirectory(CSS_FILE_NAME, getActiveTheme().getCss());
         LOGGER.info("Write CSS to {}.", CSS_FILE_NAME);
-        eventBus.fire(new SettingsUpdatedEvent(false));
+        soyEvents.fire(new SettingsUpdatedEvent(false));
     }
 }

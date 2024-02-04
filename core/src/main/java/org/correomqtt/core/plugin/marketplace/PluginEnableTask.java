@@ -5,39 +5,39 @@ import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.plugin.PluginManager;
 
 @DefaultBean
 public class PluginEnableTask extends SimpleTask {
 
     private final PluginManager pluginManager;
-    private final EventBus eventBus;
+    private final SoyEvents soyEvents;
     private final String pluginId;
 
     @Inject
     public PluginEnableTask(PluginManager pluginManager,
-                            EventBus eventBus,
+                            SoyEvents soyEvents,
                             @Assisted String pluginId) {
-        super(eventBus);
+        super(soyEvents);
         this.pluginManager = pluginManager;
-        this.eventBus = eventBus;
+        this.soyEvents = soyEvents;
         this.pluginId = pluginId;
     }
 
     @Override
     protected void execute() {
         pluginManager.enablePlugin(pluginId);
-        eventBus.fireAsync(new PluginEnabledEvent(pluginId));
+        soyEvents.fireAsync(new PluginEnabledEvent(pluginId));
     }
 
     @Override
     protected void beforeHook() {
-        eventBus.fireAsync(new PluginEnabledStartedEvent(pluginId));
+        soyEvents.fireAsync(new PluginEnabledStartedEvent(pluginId));
     }
 
     @Override
     protected void errorHook(SimpleTaskErrorResult ignore) {
-        eventBus.fireAsync(new PluginEnabledFailedEvent(pluginId));
+        soyEvents.fireAsync(new PluginEnabledFailedEvent(pluginId));
     }
 }

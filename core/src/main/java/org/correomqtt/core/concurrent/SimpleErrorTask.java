@@ -1,11 +1,11 @@
 package org.correomqtt.core.concurrent;
 
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 
 public abstract class SimpleErrorTask<E> extends TaskImpl<Void, Void, E, TaskErrorResult<E>> {
 
-    protected SimpleErrorTask(EventBus eventBus){
-        super(eventBus);
+    protected SimpleErrorTask(SoyEvents soyEvents){
+        super(soyEvents);
     }
 
     @SuppressWarnings("unused")

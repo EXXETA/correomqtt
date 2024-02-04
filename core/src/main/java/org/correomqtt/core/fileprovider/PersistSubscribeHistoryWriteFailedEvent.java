@@ -1,13 +1,13 @@
 package org.correomqtt.core.fileprovider;
 
-import org.correomqtt.core.eventbus.Event;
-import org.correomqtt.core.eventbus.SubscribeFilter;
+import org.correomqtt.di.Event;
+import org.correomqtt.di.ObservesFilter;
 
-import static org.correomqtt.core.eventbus.SubscribeFilterNames.CONNECTION_ID;
+import static org.correomqtt.core.events.ObservesFilterNames.CONNECTION_ID;
 
 public record PersistSubscribeHistoryWriteFailedEvent(String connectionId, Throwable throwable) implements Event {
 
-    @SubscribeFilter(CONNECTION_ID)
+    @ObservesFilter(CONNECTION_ID)
     public String getConnectionId() {
         return connectionId;
     }

@@ -68,6 +68,10 @@ public class ClassProcessor {
     public void process() {
         className = getFqnByElement(classElement);
         try {
+            imports.add("org.correomqtt.di.DefaultBean");
+            imports.add("javax.annotation.processing.Generated");
+            imports.add("org.correomqtt.di.SoyEvents");
+            imports.add("org.correomqtt.di.Factory");
             if (!findConstructor()) {
                 return;
             }
@@ -164,8 +168,6 @@ public class ClassProcessor {
     }
 
     private void writeBuilderFile() throws IOException {
-        imports.add("org.correomqtt.di.DefaultBean");
-        imports.add("javax.annotation.processing.Generated");
         JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(factoryClassName);
         try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
             if (packageName != null) {
@@ -188,6 +190,7 @@ public class ClassProcessor {
             out.println("@DefaultBean");
             out.print("public class ");
             out.print(simpleFactoryClassName);
+            out.print(" implements Factory");
             out.println(" {");
             out.println();
             out.print("  public ");
@@ -205,9 +208,11 @@ public class ClassProcessor {
                         .map(p -> "    " + p.type + " " + p.name + " = SoyDi.inject(" + p.reference + ");\n")
                         .collect(Collectors.joining()));
             }
-            out.print("    return new " + simpleClassName + "(");
+            out.print("    " + simpleClassName + " instance = new " + simpleClassName + "(");
             out.print(constructorParameters.stream().map(p -> p.name).collect(Collectors.joining(",\n          ")));
             out.println(");");
+            out.println("    SoyEvents.registerInstance(instance);");
+            out.println("    return instance;");
             out.println("  }");
             out.println("}");
         }

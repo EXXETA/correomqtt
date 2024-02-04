@@ -8,7 +8,7 @@ import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.concurrent.TaskException;
-import org.correomqtt.core.eventbus.EventBus;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.model.MessageDTO;
 import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
@@ -35,7 +35,7 @@ public class SubscribeTask extends SimpleTask {
     private final PluginManager pluginManager;
     private final LoggerUtils loggerUtils;
     private final ConnectionManager connectionManager;
-    private final EventBus eventBus;
+    private final SoyEvents soyEvents;
     private final String connectionId;
     private final SubscriptionDTO subscriptionDTO;
 
@@ -43,14 +43,14 @@ public class SubscribeTask extends SimpleTask {
     SubscribeTask(PluginManager pluginManager,
                   ConnectionManager connectionManager,
                   LoggerUtils loggerUtils,
-                  EventBus eventBus,
+                  SoyEvents soyEvents,
                   @Assisted String connectionId,
                   @Assisted SubscriptionDTO subscriptionDTO) {
-        super(eventBus);
+        super(soyEvents);
         this.pluginManager = pluginManager;
         this.loggerUtils = loggerUtils;
         this.connectionManager = connectionManager;
-        this.eventBus = eventBus;
+        this.soyEvents = soyEvents;
         this.connectionId = connectionId;
         this.subscriptionDTO = subscriptionDTO;
     }
@@ -67,18 +67,18 @@ public class SubscribeTask extends SimpleTask {
             throw new TaskException(e);
         }
 
-        eventBus.fireAsync(new SubscribeEvent(connectionId, subscriptionDTO));
+        soyEvents.fireAsync(new SubscribeEvent(connectionId, subscriptionDTO));
     }
 
     @Override
     protected void errorHook(SimpleTaskErrorResult ignore) {
-        eventBus.fireAsync(new SubscribeFailedEvent(connectionId, subscriptionDTO));
+        soyEvents.fireAsync(new SubscribeFailedEvent(connectionId, subscriptionDTO));
     }
 
     private void onIncomingMessage(MessageDTO messageDTO) {
 
         MessageDTO manipulatedMessageDTO = executeOnMessageIncomingExtensions(messageDTO);
-        eventBus.fireAsync(new IncomingMessageEvent(connectionId, manipulatedMessageDTO, subscriptionDTO));
+        soyEvents.fireAsync(new IncomingMessageEvent(connectionId, manipulatedMessageDTO, subscriptionDTO));
     }
 
     private MessageDTO executeOnMessageIncomingExtensions(MessageDTO messageDTO) {

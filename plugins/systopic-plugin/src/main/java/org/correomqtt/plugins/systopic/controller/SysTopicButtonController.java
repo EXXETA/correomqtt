@@ -6,12 +6,11 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.eventbus.EventBus;
-import org.correomqtt.core.eventbus.Subscribe;
-import org.correomqtt.core.eventbus.SubscribeFilter;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
+import org.correomqtt.di.Observes;
+import org.correomqtt.di.ObservesFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,12 +37,9 @@ public class SysTopicButtonController {
     @Inject
     public SysTopicButtonController(
            SysTopicViewControllerFactory sysTopicViewControllerFactory,
-           EventBus eventBus,
            @Assisted String connectionId) {
         this.connectionId = connectionId;
         this.sysTopicViewControllerFactory = sysTopicViewControllerFactory;
-        eventBus.register(this);
-        eventBus.register(this);
 
         //TODO cleanup
     }
@@ -59,8 +55,7 @@ public class SysTopicButtonController {
         sysTopicViewControllerFactory.create(connectionId).showAsDialog();
     }
 
-    @Subscribe(ConnectionStateChangedEvent.class)
-    public void onConnectionChangedEvent(@Subscribe ConnectionStateChangedEvent event) {
+    public void onConnectionChangedEvent(@Observes ConnectionStateChangedEvent event) {
         if (event.getState() == CONNECTED || event.getState() == DISCONNECTED_GRACEFUL || event.getState() == DISCONNECTED_UNGRACEFUL) {
             Platform.runLater(() -> SYSbutton.setDisable(false));
         } else {
@@ -68,7 +63,7 @@ public class SysTopicButtonController {
         }
     }
 
-    @SubscribeFilter(value = "connectionId")
+    @ObservesFilter(value = "connectionId")
     public String getConnectionId() {
         return connectionId;
     }
