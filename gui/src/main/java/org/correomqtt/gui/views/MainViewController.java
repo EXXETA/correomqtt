@@ -14,6 +14,7 @@ import javafx.scene.control.TabPane;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import lombok.Getter;
+import org.correomqtt.GuiCore;
 import org.correomqtt.core.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.core.eventbus.EventBus;
@@ -21,7 +22,9 @@ import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.core.utils.ConnectionManager;
 import org.correomqtt.core.utils.VendorConstants;
-import org.correomqtt.GuiCore;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.Lazy;
 import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.GuiConnectionState;
@@ -30,45 +33,46 @@ import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
 import org.correomqtt.gui.views.about.AboutViewController;
 import org.correomqtt.gui.views.connections.ConnectionViewController;
+import org.correomqtt.gui.views.connections.ConnectionViewControllerFactory;
 import org.correomqtt.gui.views.connections.ConnectionViewDelegate;
-import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewController;
+import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewControllerFactory;
 import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewDelegate;
 import org.correomqtt.gui.views.importexport.ConnectionExportViewController;
 import org.correomqtt.gui.views.importexport.ConnectionImportViewController;
 import org.correomqtt.gui.views.log.LogTabController;
 import org.correomqtt.gui.views.onboarding.ConnectionOnboardingDelegate;
 import org.correomqtt.gui.views.onboarding.ConnectionOnboardingViewController;
+import org.correomqtt.gui.views.onboarding.ConnectionOnboardingViewControllerFactory;
 import org.correomqtt.gui.views.plugins.PluginsViewController;
 import org.correomqtt.gui.views.scripting.ScriptingViewController;
 import org.correomqtt.gui.views.settings.SettingsViewController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+@DefaultBean
 public class MainViewController implements ConnectionOnboardingDelegate, ConnectionViewDelegate, ConnectionSettingsViewDelegate {
 
     public static final String DIRTY_CLASS = "dirty";
     private static final Logger LOGGER = LoggerFactory.getLogger(MainViewController.class);
     private final ConnectionManager connectionManager;
     private final ThemeManager themeManager;
-    private final ConnectionViewController.Factory connectionViewCtlrFactory;
-    private final ConnectionSettingsViewController.Factory connectionSettingsCtrlFactory;
-    private final ConnectionOnboardingViewController.Factory onboardingViewCtrlFactory;
+    private final ConnectionViewControllerFactory connectionViewCtlrFactory;
+    private final ConnectionSettingsViewControllerFactory connectionSettingsCtrlFactory;
+    private final ConnectionOnboardingViewControllerFactory onboardingViewCtrlFactory;
     private final CheckNewVersionUtils checkNewVersionUtils;
     private final EventBus eventBus;
     private final HostServices hostServices;
-    private final javax.inject.Provider<AboutViewController> aboutViewControllerProvider;
-    private final Provider<LogTabController> logTabControllerProvider;
-    private final Provider<SettingsViewController> settingsViewControllerProvider;
-    private final Provider<ConnectionExportViewController> exportViewCtrlProvider;
-    private final Provider<ConnectionImportViewController> importViewCtrlProvider;
-    private final Provider<ScriptingViewController> scriptingCtrlProvider;
-    private final Provider<PluginsViewController> pluginCtrlProvider;
+    private final Lazy<AboutViewController> aboutViewControllerProvider;
+    private final Lazy<LogTabController> logTabControllerProvider;
+    private final Lazy<SettingsViewController> settingsViewControllerProvider;
+    private final Lazy<ConnectionExportViewController> exportViewCtrlProvider;
+    private final Lazy<ConnectionImportViewController> importViewCtrlProvider;
+    private final Lazy<ScriptingViewController> scriptingCtrlProvider;
+    private final Lazy<PluginsViewController> pluginCtrlProvider;
 
     @FXML
     @Getter
@@ -119,17 +123,17 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     @Inject
     public MainViewController(GuiCore guiCore,
-                              ConnectionViewController.Factory connectionViewCtlrFactory,
-                              ConnectionSettingsViewController.Factory connectionSettingsCtrlFactory,
-                              ConnectionOnboardingViewController.Factory onboardingViewCtlrFactory,
+                              ConnectionViewControllerFactory connectionViewCtlrFactory,
+                              ConnectionSettingsViewControllerFactory connectionSettingsCtrlFactory,
+                              ConnectionOnboardingViewControllerFactory onboardingViewCtlrFactory,
                               CheckNewVersionUtils checkNewVersionUtils,
-                              Provider<AboutViewController> aboutViewControllerProvider,
-                              Provider<LogTabController> logTabControllerProvider,
-                              Provider<SettingsViewController> settingsViewControllerProvider,
-                              Provider<ConnectionExportViewController> exportViewCtrlProvider,
-                              Provider<ConnectionImportViewController> importViewCtrlProvider,
-                              Provider<ScriptingViewController> scriptingCtrlProvider,
-                              Provider<PluginsViewController> pluginCtrlProvider) {
+                              Lazy<AboutViewController> aboutViewControllerProvider,
+                              Lazy<LogTabController> logTabControllerProvider,
+                              Lazy<SettingsViewController> settingsViewControllerProvider,
+                              Lazy<ConnectionExportViewController> exportViewCtrlProvider,
+                              Lazy<ConnectionImportViewController> importViewCtrlProvider,
+                              Lazy<ScriptingViewController> scriptingCtrlProvider,
+                              Lazy<PluginsViewController> pluginCtrlProvider) {
         this.connectionManager = guiCore.getConnectionManager();
         this.themeManager = guiCore.getThemeManager();
         this.connectionViewCtlrFactory = connectionViewCtlrFactory;

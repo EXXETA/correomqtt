@@ -1,13 +1,15 @@
 package org.correomqtt.core.keyring;
 
+import org.correomqtt.di.DefaultBean;
 import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.plugin.spi.KeyringHook;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+@DefaultBean
 public class KeyringFactory {
 
     private final PluginManager pluginManager;

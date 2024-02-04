@@ -9,7 +9,8 @@ public class LicenseControl extends HBox {
 
     private final HostServices hostServices;
 
-    public LicenseControl(License license, HostServices hostServices) {
+    public LicenseControl(License license,
+                          HostServices hostServices) {
         super();
         this.hostServices = hostServices;
         Hyperlink repoLink = new Hyperlink();

@@ -1,8 +1,8 @@
 package org.correomqtt.core.connection;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.eventbus.EventBus;
@@ -19,6 +19,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.correomqtt.core.eventbus.SubscribeFilterNames.CONNECTION_ID;
 
+@DefaultBean
 public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent> {
 
     private final ConnectionManager connectionManager;
@@ -27,12 +28,7 @@ public class ConnectTask extends SimpleProgressTask<ConnectionStateChangedEvent>
     private final String connectionId;
 
 
-    @AssistedFactory
-    public interface Factory {
-        ConnectTask create(String connectionId);
-    }
-
-    @AssistedInject
+    @Inject
     public ConnectTask(ConnectionManager connectionManager,
                        CorreoMqttClientFactory correoMqttClientFactory,
                        EventBus eventBus,

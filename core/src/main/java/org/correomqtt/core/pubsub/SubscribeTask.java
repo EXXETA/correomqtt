@@ -2,9 +2,9 @@ package org.correomqtt.core.pubsub;
 
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.concurrent.TaskException;
@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 
+@DefaultBean
 public class SubscribeTask extends SimpleTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscribeTask.class);
@@ -38,12 +39,7 @@ public class SubscribeTask extends SimpleTask {
     private final String connectionId;
     private final SubscriptionDTO subscriptionDTO;
 
-    @AssistedFactory
-    public interface Factory {
-        SubscribeTask create(String connectionId, SubscriptionDTO subscriptionDTO);
-    }
-
-    @AssistedInject
+    @Inject
     SubscribeTask(PluginManager pluginManager,
                   ConnectionManager connectionManager,
                   LoggerUtils loggerUtils,

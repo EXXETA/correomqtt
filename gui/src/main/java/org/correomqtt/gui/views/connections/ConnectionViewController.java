@@ -1,8 +1,5 @@
 package org.correomqtt.gui.views.connections;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.SplitPane;
@@ -21,6 +18,9 @@ import org.correomqtt.core.importexport.messages.ImportMessageStartedEvent;
 import org.correomqtt.core.importexport.messages.ImportMessageSuccessEvent;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ConnectionUISettings;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.keyring.KeyringManager;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.GuiConnectionState;
@@ -29,11 +29,13 @@ import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.LoadingViewController;
+import org.correomqtt.gui.views.LoadingViewControllerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class ConnectionViewController extends BaseConnectionController implements
         PublishViewDelegate,
         SubscriptionViewDelegate,
@@ -42,11 +44,11 @@ public class ConnectionViewController extends BaseConnectionController implement
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionViewController.class);
 
     private final ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories;
-    private final PublishViewController.Factory publishViewControllerFactory;
-    private final SubscriptionViewController.Factory subscriptionViewControllerFactory;
-    private final ControlBarController.Factory controlBarControllerFactory;
+    private final PublishViewControllerFactory publishViewControllerFactory;
+    private final SubscriptionViewControllerFactory subscriptionViewControllerFactory;
+    private final ControlBarControllerFactory controlBarControllerFactory;
     private final KeyringManager keyringManager;
-    private final LoadingViewController.Factory loadingViewControllerFactory;
+    private final LoadingViewControllerFactory loadingViewControllerFactory;
     private final AlertHelper alertHelper;
     private final EventBus eventBus;
     private final ConnectionViewDelegate delegate;
@@ -72,21 +74,16 @@ public class ConnectionViewController extends BaseConnectionController implement
 
     private ControlBarController controlBarController;
 
-    @AssistedFactory
-    public interface Factory {
-        ConnectionViewController create(String connectionId,
-                                        ConnectionViewDelegate delegate);
 
-    }
 
-    @AssistedInject
+    @Inject
     public ConnectionViewController(ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
-                                    PublishViewController.Factory publishViewControllerFactory,
-                                    SubscriptionViewController.Factory subscriptionViewControllerFactory,
-                                    ControlBarController.Factory controlBarControllerFactory,
+                                    PublishViewControllerFactory publishViewControllerFactory,
+                                    SubscriptionViewControllerFactory subscriptionViewControllerFactory,
+                                    ControlBarControllerFactory controlBarControllerFactory,
                                     KeyringManager keyringManager,
                                     ThemeManager themeManager,
-                                    LoadingViewController.Factory loadingViewControllerFactory,
+                                    LoadingViewControllerFactory loadingViewControllerFactory,
                                     AlertHelper alertHelper,
                                     CoreManager coreManager,
                                     EventBus eventBus,

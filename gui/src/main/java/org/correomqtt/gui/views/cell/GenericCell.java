@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views.cell;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ResourceBundle;
 
 @SuppressWarnings("java:S110")
+@DefaultBean
 public class GenericCell<T extends GenericTranslatable> extends ListCell<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GenericCell.class);
@@ -32,13 +33,9 @@ public class GenericCell<T extends GenericTranslatable> extends ListCell<T> {
 
     private FXMLLoader loader;
 
-    @AssistedFactory
-    public interface Factory<T extends GenericTranslatable> {
-        GenericCell<T> create(ListView<T> listView);
 
-    }
 
-    @AssistedInject
+    @Inject
     public GenericCell(SettingsManager settingsManager,
                        @Assisted ListView<T> listView) {
         this.settingsManager = settingsManager;

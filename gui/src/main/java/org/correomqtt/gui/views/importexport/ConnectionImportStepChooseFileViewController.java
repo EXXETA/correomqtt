@@ -1,8 +1,5 @@
 package org.correomqtt.gui.views.importexport;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
@@ -10,7 +7,11 @@ import javafx.stage.Stage;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.importexport.connections.ImportConnectionsFileTask;
+import org.correomqtt.core.importexport.connections.ImportConnectionsFileTaskFactory;
 import org.correomqtt.core.model.ConnectionExportDTO;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
@@ -19,24 +20,22 @@ import org.correomqtt.gui.views.base.BaseControllerImpl;
 import java.io.File;
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class ConnectionImportStepChooseFileViewController extends BaseControllerImpl implements ConnectionImportStepController {
     private ResourceBundle resources;
     private final AlertHelper alertHelper;
-    private final ImportConnectionsFileTask.Factory importConnectionsFileTask;
+    private final ImportConnectionsFileTaskFactory importConnectionsFileTask;
     private final ConnectionImportStepDelegate delegate;
     @FXML
     private HBox stepHolder;
 
-    @AssistedFactory
-    public interface Factory {
-        ConnectionImportStepChooseFileViewController create(ConnectionImportStepDelegate delegate);
-    }
 
-    @AssistedInject
+
+    @Inject
     public ConnectionImportStepChooseFileViewController(CoreManager coreManager,
                                                         ThemeManager themeManager,
                                                         AlertHelper alertHelper,
-                                                        ImportConnectionsFileTask.Factory importConnectionsFileTask,
+                                                        ImportConnectionsFileTaskFactory importConnectionsFileTask,
                                                         @Assisted ConnectionImportStepDelegate delegate) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;

@@ -24,6 +24,7 @@ public class Launcher {
         final Logger logger = LoggerFactory.getLogger(Launcher.class);
         try {
 
+
             // Loading lib secret keyring requires org.objectweb.asm, but including it clashes with lombok.
             // See: https://github.com/projectlombok/lombok/issues/2973
             // Workaround is to disable the use of asm library.

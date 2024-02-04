@@ -5,10 +5,10 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.encoder.Encoder;
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import lombok.Getter;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.fileprovider.ScriptingProvider;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -23,9 +23,10 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.correomqtt.core.utils.LoggerUtils.SCRIPT_APPENDER_NAME;
 import static org.correomqtt.core.utils.LoggerUtils.SCRIPT_COLOR_PATTERN_APPENDER_NAME;
-import static org.correomqtt.core.utils.LoggerUtils.findPatternEncoder;
 import static org.correomqtt.core.utils.LoggerUtils.findLogAppender;
+import static org.correomqtt.core.utils.LoggerUtils.findPatternEncoder;
 
+@DefaultBean
 public class ScriptLoggerContext implements AutoCloseable {
 
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(ScriptLoggerContext.class);
@@ -39,12 +40,7 @@ public class ScriptLoggerContext implements AutoCloseable {
     private final Appender<ILoggingEvent> scriptAppender;
     private final ScriptFileAppender fileAppender;
 
-    @AssistedFactory
-    public interface Factory {
-        ScriptLoggerContext create(ExecutionDTO dto, Marker marker);
-    }
-
-    @AssistedInject
+    @Inject
     public ScriptLoggerContext(ScriptingProvider scriptingProvider,
                                @Assisted ExecutionDTO dto,
                                @Assisted Marker marker) {

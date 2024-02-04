@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views.connections;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ResourceBundle;
 
 @SuppressWarnings("java:S110")
+@DefaultBean
 public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionViewCell.class);
@@ -46,12 +47,8 @@ public class SubscriptionViewCell extends ListCell<SubscriptionPropertiesDTO> {
 
     private FXMLLoader loader;
 
-    @AssistedFactory
-    public interface Factory {
-        SubscriptionViewCell create(ListView<SubscriptionPropertiesDTO> listView);
 
-    }
-    @AssistedInject
+    @Inject
     public SubscriptionViewCell(SettingsManager settingsManager,
                                 @Assisted ListView<SubscriptionPropertiesDTO> listView) {
         this.settingsManager = settingsManager;

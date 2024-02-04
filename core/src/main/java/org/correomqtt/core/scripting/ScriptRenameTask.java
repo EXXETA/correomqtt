@@ -1,8 +1,8 @@
 package org.correomqtt.core.scripting;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.eventbus.EventBus;
@@ -22,6 +22,7 @@ import static org.correomqtt.core.scripting.ScriptRenameTask.Error.FILE_ALREADY_
 import static org.correomqtt.core.scripting.ScriptRenameTask.Error.IOERROR;
 
 
+@DefaultBean
 public class ScriptRenameTask extends NoProgressTask<Path, ScriptRenameTask.Error> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptRenameTask.class);
@@ -38,12 +39,9 @@ public class ScriptRenameTask extends NoProgressTask<Path, ScriptRenameTask.Erro
     private final ScriptFileDTO dto;
     private final String filename;
 
-    @AssistedFactory
-    public interface Factory {
-        ScriptRenameTask create(ScriptFileDTO dto, String filenamee);
-    }
 
-    @AssistedInject
+
+    @Inject
     public ScriptRenameTask(ScriptingProvider scriptingProvider,
                             EventBus eventBus,
                             @Assisted ScriptFileDTO dto,

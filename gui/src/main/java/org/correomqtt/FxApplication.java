@@ -5,6 +5,7 @@ import javafx.geometry.Rectangle2D;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
+import org.correomqtt.di.SoyDi;
 import org.correomqtt.core.utils.VersionUtils;
 
 @Slf4j
@@ -13,16 +14,11 @@ public class FxApplication extends Application {
 
     @Override
     public void init() {
-
         startLog();
-
-        MainComponent component = DaggerMainComponent.builder()
-                .hostServices(getHostServices())
-                .build();
-
-        GuiCore.setMainComponent(component);
-
-        app = component.mainApplication();
+        SoyDi.scan("org.correomqtt");
+        HostServicesWrapper hostServicesWrapper = SoyDi.inject(HostServicesWrapper.class);
+        hostServicesWrapper.setHostServices(getHostServices());
+        app = SoyDi.inject(MainApplication.class);
         app.onNotifyPreloader(this::notifyPreloader);
         app.init();
     }
@@ -33,7 +29,6 @@ public class FxApplication extends Application {
     }
 
     private static void startLog() {
-
         if (log.isInfoEnabled()) {
             log.info("CorreoMQTT version is {}", VersionUtils.getVersion());
             log.info("JVM: {} {} {}", System.getProperty("java.vendor"), System.getProperty("java.runtime.name"), System.getProperty("java.runtime.version"));

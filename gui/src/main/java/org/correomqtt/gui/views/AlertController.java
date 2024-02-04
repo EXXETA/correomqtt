@@ -16,15 +16,18 @@ import org.correomqtt.core.fileprovider.UnaccessibleConfigFileEvent;
 import org.correomqtt.core.fileprovider.UnaccessiblePasswordFileEvent;
 import org.correomqtt.core.fileprovider.UserHomeNull;
 import org.correomqtt.core.fileprovider.WindowsAppDataNullEvent;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.SingletonBean;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.PlatformUtils;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class AlertController extends BaseControllerImpl {
 
     public static final String ALERT_CONTROLLER_WARN_TITLE = "alertControllerWarnTitle";

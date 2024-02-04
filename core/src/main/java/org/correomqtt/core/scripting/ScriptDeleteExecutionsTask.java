@@ -1,8 +1,8 @@
 package org.correomqtt.core.scripting;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleErrorTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.eventbus.EventBus;
@@ -14,6 +14,7 @@ import java.io.IOException;
 
 import static org.correomqtt.core.scripting.ScriptLoadTask.Error.IOERROR;
 
+@DefaultBean
 public class ScriptDeleteExecutionsTask extends SimpleErrorTask<ScriptDeleteExecutionsTask.Error> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptDeleteExecutionsTask.class);
@@ -26,12 +27,9 @@ public class ScriptDeleteExecutionsTask extends SimpleErrorTask<ScriptDeleteExec
         IOERROR
     }
 
-    @AssistedFactory
-    public interface Factory {
-        ScriptDeleteExecutionsTask create(String filename);
-    }
 
-    @AssistedInject
+
+    @Inject
     public ScriptDeleteExecutionsTask(ScriptingProvider scriptingProvider,
                                       EventBus eventBus,
                                       @Assisted String filename) {

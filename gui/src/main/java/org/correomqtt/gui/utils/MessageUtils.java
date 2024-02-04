@@ -2,22 +2,24 @@ package org.correomqtt.gui.utils;
 
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.correomqtt.core.importexport.messages.ExportMessageTask;
+import org.correomqtt.core.importexport.messages.ExportMessageTaskFactory;
 import org.correomqtt.core.settings.SettingsManager;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.transformer.MessageTransformer;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class MessageUtils {
 
     private final SettingsManager settingsManager;
-    private final ExportMessageTask.Factory exportMessageTaskFactory;
+    private final ExportMessageTaskFactory exportMessageTaskFactory;
 
     @Inject
-    MessageUtils(ExportMessageTask.Factory exportMessageTaskFactory,
+    MessageUtils(ExportMessageTaskFactory exportMessageTaskFactory,
                  SettingsManager settingsManager) {
         this.exportMessageTaskFactory = exportMessageTaskFactory;
         this.settingsManager = settingsManager;

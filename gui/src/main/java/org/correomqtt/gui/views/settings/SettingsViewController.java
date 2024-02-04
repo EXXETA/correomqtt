@@ -15,6 +15,8 @@ import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.keyring.KeyringFactory;
 import org.correomqtt.core.model.SettingsDTO;
 import org.correomqtt.core.model.ThemeDTO;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.keyring.KeyringManager;
 import org.correomqtt.gui.model.KeyringModel;
 import org.correomqtt.gui.model.LanguageModel;
@@ -27,11 +29,10 @@ import org.correomqtt.gui.theme.light_legacy.LightLegacyThemeProvider;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.cell.GenericCell;
+import org.correomqtt.gui.views.cell.GenericCellFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,15 +46,16 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+@DefaultBean
 public class SettingsViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SettingsViewController.class);
     private final KeyringManager keyringManager;
     private final KeyringFactory keyringFactory;
     private final AlertHelper alertHelper;
-    private final GenericCell.Factory<ThemeProvider> themeProviderGenericCellFactory;
-    private final GenericCell.Factory<KeyringModel> keyringModelGenericCellFactory;
-    private final GenericCell.Factory<LanguageModel> languageModelGenericCellFactory;
+    private final GenericCellFactory<ThemeProvider> themeProviderGenericCellFactory;
+    private final GenericCellFactory<KeyringModel> keyringModelGenericCellFactory;
+    private final GenericCellFactory<LanguageModel> languageModelGenericCellFactory;
     @FXML
     private AnchorPane settingsPane;
     @FXML
@@ -77,9 +79,9 @@ public class SettingsViewController extends BaseControllerImpl {
                                   KeyringManager keyringManager,
                                   KeyringFactory keyringFactory,
                                   AlertHelper alertHelper,
-                                  GenericCell.Factory<ThemeProvider> themeProviderGenericCellFactory,
-                                  GenericCell.Factory<KeyringModel> keyringModelGenericCellFactory,
-                                  GenericCell.Factory<LanguageModel> languageModelGenericCellFactory) {
+                                  GenericCellFactory<ThemeProvider> themeProviderGenericCellFactory,
+                                  GenericCellFactory<KeyringModel> keyringModelGenericCellFactory,
+                                  GenericCellFactory<LanguageModel> languageModelGenericCellFactory) {
         super(coreManager, themeManager);
         this.keyringManager = keyringManager;
         this.keyringFactory = keyringFactory;

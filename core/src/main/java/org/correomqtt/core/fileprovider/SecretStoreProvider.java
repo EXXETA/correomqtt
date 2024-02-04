@@ -3,6 +3,7 @@ package org.correomqtt.core.fileprovider;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.correomqtt.di.DefaultBean;
 import org.correomqtt.core.encryption.Encryptor;
 import org.correomqtt.core.encryption.EncryptorAesCbc;
 import org.correomqtt.core.encryption.EncryptorAesGcm;
@@ -14,7 +15,7 @@ import org.correomqtt.core.model.PasswordsDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -23,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
+@DefaultBean
 public class SecretStoreProvider extends BaseUserFileProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecretStoreProvider.class);

@@ -19,8 +19,8 @@ import org.correomqtt.core.model.ThemeSettingsDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.SingletonBean;
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.util.HashSet;
@@ -33,7 +33,7 @@ import static org.correomqtt.core.model.ConnectionPasswordType.SSL_KEYSTORE_PASS
 
 //TODO check invalid configs
 
-@Singleton
+@SingletonBean
 public class SettingsManager extends BaseUserFileProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SettingsManager.class);

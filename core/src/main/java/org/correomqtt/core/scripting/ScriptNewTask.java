@@ -1,8 +1,8 @@
 package org.correomqtt.core.scripting;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.eventbus.EventBus;
@@ -20,6 +20,7 @@ import static org.correomqtt.core.scripting.ScriptNewTask.Error.FILENAME_NULL;
 import static org.correomqtt.core.scripting.ScriptNewTask.Error.FILE_ALREADY_EXISTS;
 import static org.correomqtt.core.scripting.ScriptNewTask.Error.IOERROR;
 
+@DefaultBean
 public class ScriptNewTask extends NoProgressTask<Path, ScriptNewTask.Error> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptNewTask.class);
@@ -33,13 +34,7 @@ public class ScriptNewTask extends NoProgressTask<Path, ScriptNewTask.Error> {
 
     private final ScriptingProvider scriptingProvider;
     private final String filename;
-
-    @AssistedFactory
-    public interface Factory {
-        ScriptNewTask create(String filename);
-    }
-
-    @AssistedInject
+    @Inject
     public ScriptNewTask(ScriptingProvider scriptingProvider,
                          EventBus eventBus,
                          @Assisted String filename) {

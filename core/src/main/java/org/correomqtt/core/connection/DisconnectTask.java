@@ -1,24 +1,20 @@
 package org.correomqtt.core.connection;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.utils.ConnectionManager;
 
+@DefaultBean
 public class DisconnectTask extends SimpleTask {
 
     private final ConnectionManager connectionManager;
     private final String connectionId;
 
-    @AssistedFactory
-    public interface Factory {
-        DisconnectTask create(String connectionId);
-    }
-
-    @AssistedInject
+    @Inject
     public DisconnectTask(ConnectionManager connectionManager,
                           EventBus eventBus,
                           @Assisted String connectionId) {

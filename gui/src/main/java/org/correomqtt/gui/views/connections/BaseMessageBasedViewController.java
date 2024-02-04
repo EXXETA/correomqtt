@@ -10,7 +10,7 @@ import org.correomqtt.gui.views.LoaderResult;
 public abstract class BaseMessageBasedViewController extends BaseConnectionController implements MessageListViewDelegate {
 
 
-    private final MessageListViewController.Factory messageListViewControllerFactory;
+    private final MessageListViewControllerFactory messageListViewControllerFactory;
     @FXML
     protected SplitPane splitPane;
 
@@ -18,7 +18,7 @@ public abstract class BaseMessageBasedViewController extends BaseConnectionContr
 
     protected BaseMessageBasedViewController(CoreManager coreManager,
                                              ThemeManager themeManager,
-                                             MessageListViewController.Factory messageListViewControllerFactory,
+                                             MessageListViewControllerFactory messageListViewControllerFactory,
                                              String connectionId) {
         super(coreManager, themeManager, connectionId);
         this.messageListViewControllerFactory = messageListViewControllerFactory;

@@ -1,8 +1,7 @@
 package org.correomqtt.plugins.systopic.controller;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.core.cdi.Assisted;
+import org.correomqtt.core.cdi.Inject;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -24,7 +23,7 @@ import static org.correomqtt.core.connection.ConnectionState.DISCONNECTED_UNGRAC
 @SuppressWarnings("ALL")
 public class SysTopicButtonController {
 
-    private final SysTopicViewController.Factory sysTopicViewControllerFactory;
+    private final SysTopicViewControllerFactory sysTopicViewControllerFactory;
     private Logger LOGGER = LoggerFactory.getLogger(SysTopicButtonController.class);
 
     @FXML
@@ -33,15 +32,11 @@ public class SysTopicButtonController {
     private String connectionId;
 
 
-    @AssistedFactory
-    public interface Factory {
-        SysTopicButtonController create(String connectionId);
 
-    }
 
-    @AssistedInject
+    @Inject
     public SysTopicButtonController(
-           SysTopicViewController.Factory sysTopicViewControllerFactory,
+           SysTopicViewControllerFactory sysTopicViewControllerFactory,
             @Assisted String connectionId) {
         this.connectionId = connectionId;
         this.sysTopicViewControllerFactory = sysTopicViewControllerFactory;

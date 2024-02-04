@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-
+@DefaultBean
 public class LoadingViewController extends BaseConnectionController {
 
     private final String message;
@@ -34,13 +34,8 @@ public class LoadingViewController extends BaseConnectionController {
     @FXML
     private Pane mainPane;
 
-    @AssistedFactory
-    public interface Factory {
-        LoadingViewController create(@Assisted("connectionId") String connectionId,
-                                     @Assisted("message") String message);
 
-    }
-    @AssistedInject
+    @Inject
     LoadingViewController(CoreManager coreManager,
                           ThemeManager themeManager,
                           @Assisted("connectionId") String connectionId,

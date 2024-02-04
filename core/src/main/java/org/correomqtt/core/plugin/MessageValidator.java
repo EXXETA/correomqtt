@@ -1,10 +1,12 @@
 package org.correomqtt.core.plugin;
 
+import org.correomqtt.di.DefaultBean;
 import org.correomqtt.core.plugin.spi.MessageValidatorHook;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 import java.util.List;
 
+@DefaultBean
 public class MessageValidator {
 
     private final PluginManager pluginManager;

@@ -1,8 +1,5 @@
 package org.correomqtt.gui.views.importexport;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -11,6 +8,9 @@ import javafx.scene.control.SelectionMode;
 import org.controlsfx.control.CheckListView;
 import org.controlsfx.control.IndexedCheckModel;
 import org.correomqtt.core.CoreManager;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.gui.keyring.KeyringManager;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
@@ -24,28 +24,26 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Stream;
 
+@DefaultBean
 public class ConnectionImportStepConnectionsViewController extends BaseControllerImpl implements ConnectionImportStepController {
     private ResourceBundle resources;
     private final KeyringManager keyringManager;
     private final AlertHelper alertHelper;
-    private final ExportConnectionCell.Factory exportConnectionCellFactory;
+    private final ExportConnectionCellFactory exportConnectionCellFactory;
     private final ConnectionImportStepDelegate delegate;
     @FXML
     private CheckListView<ConnectionPropertiesDTO> connectionsListView;
     private final ObservableList<ConnectionPropertiesDTO> connectionConfigDTOS = FXCollections.observableArrayList();
     private List<ConnectionPropertiesDTO> disabledConnections;
 
-    @AssistedFactory
-    public interface Factory {
-        ConnectionImportStepConnectionsViewController create(ConnectionImportStepDelegate delegate);
-    }
 
-    @AssistedInject
+
+    @Inject
     public ConnectionImportStepConnectionsViewController(CoreManager coreManager,
                                                          ThemeManager themeManager,
                                                          KeyringManager keyringManager,
                                                          AlertHelper alertHelper,
-                                                         ExportConnectionCell.Factory exportConnectionCellFactory,
+                                                         ExportConnectionCellFactory exportConnectionCellFactory,
                                                          @Assisted ConnectionImportStepDelegate delegate) {
         super(coreManager, themeManager);
         this.keyringManager = keyringManager;

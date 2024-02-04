@@ -3,6 +3,7 @@ package org.correomqtt.core.fileprovider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.io.FileUtils;
+import org.correomqtt.di.DefaultBean;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.scripting.ExecutionDTO;
 import org.correomqtt.core.scripting.ScriptExecutionError;
@@ -11,7 +12,7 @@ import org.correomqtt.core.scripting.ScriptingBackend;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -25,6 +26,7 @@ import java.util.stream.Stream;
 
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 
+@DefaultBean
 public class ScriptingProvider extends BaseUserFileProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptingProvider.class);

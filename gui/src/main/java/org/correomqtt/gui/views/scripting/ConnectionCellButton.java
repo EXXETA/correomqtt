@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views.scripting;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.ListCell;
@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class ConnectionCellButton extends ListCell<ConnectionPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionCellButton.class);
@@ -40,11 +41,8 @@ public class ConnectionCellButton extends ListCell<ConnectionPropertiesDTO> {
 
     private ConnectionPropertiesDTO connectionDTO;
 
-    @AssistedFactory
-    public interface Factory {
-        ConnectionCellButton create(ListView<ConnectionPropertiesDTO> listView);
-    }
-    @AssistedInject
+
+    @Inject
     public ConnectionCellButton(ConnectionManager connectionManager,
                                 SettingsManager settingsManager,
                                 ThemeManager themeManager,

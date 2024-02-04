@@ -1,5 +1,6 @@
 package org.correomqtt.core.scripting;
 
+import org.correomqtt.di.DefaultBean;
 import org.correomqtt.core.scripting.binding.AsyncLatch;
 import org.correomqtt.core.scripting.binding.ClientFactory;
 import org.correomqtt.core.scripting.binding.Queue;
@@ -8,10 +9,11 @@ import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 import java.io.PipedOutputStream;
 import java.util.function.Consumer;
 
+@DefaultBean
 public class JsContextBuilder {
 
     public static final String CORREO_SCRIPT_QUEUE = "queue";

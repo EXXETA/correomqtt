@@ -1,8 +1,5 @@
 package org.correomqtt.gui.views.connections;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -29,8 +26,12 @@ import org.correomqtt.core.pubsub.IncomingMessageEvent;
 import org.correomqtt.core.pubsub.PubSubTaskFactories;
 import org.correomqtt.core.pubsub.SubscribeEvent;
 import org.correomqtt.core.pubsub.UnsubscribeEvent;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenu;
 import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenuDelegate;
+import org.correomqtt.gui.contextmenu.SubscriptionListMessageContextMenuFactory;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.model.SubscriptionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -39,7 +40,7 @@ import org.correomqtt.gui.transformer.SubscriptionTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.CheckTopicHelper;
 import org.correomqtt.gui.views.LoaderResult;
-import org.correomqtt.gui.views.cell.QosCell;
+import org.correomqtt.gui.views.cell.QosCellFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,17 +54,18 @@ import java.util.stream.Collectors;
 import static org.correomqtt.core.connection.ConnectionState.DISCONNECTED_GRACEFUL;
 import static org.correomqtt.core.connection.ConnectionState.DISCONNECTED_UNGRACEFUL;
 
+@DefaultBean
 public class SubscriptionViewController extends BaseMessageBasedViewController implements
         SubscriptionListMessageContextMenuDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionViewController.class);
 
-    private final QosCell.Factory qosCellFactory;
-    private final SubscriptionViewCell.Factory subscriptionViewCellFactory;
-    private final TopicCell.Factory topicCellFactory;
+    private final QosCellFactory qosCellFactory;
+    private final SubscriptionViewCellFactory subscriptionViewCellFactory;
+    private final TopicCellFactory topicCellFactory;
     private final AlertHelper alertHelper;
     private final EventBus eventBus;
-    private final SubscriptionListMessageContextMenu.Factory subscriptionListMessageContextMenuFactory;
+    private final SubscriptionListMessageContextMenuFactory subscriptionListMessageContextMenuFactory;
     private final SubscriptionViewDelegate delegate;
     private final PubSubTaskFactories pubSubTaskFactories;
     private ResourceBundle resources;
@@ -92,23 +94,19 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
     private Button selectNoneButton;
     private boolean afterSubscribe;
 
-    @AssistedFactory
-    public interface Factory {
-        SubscriptionViewController create(String connectionId, SubscriptionViewDelegate delegate);
 
-    }
 
-    @AssistedInject
+    @Inject
     public SubscriptionViewController(CoreManager coreManager,
                                       PubSubTaskFactories pubSubTaskFactories,
                                       ThemeManager themeManager,
-                                      MessageListViewController.Factory messageListViewControllerFactory,
-                                      QosCell.Factory qosCellFactory,
-                                      SubscriptionViewCell.Factory subscriptionViewCellFactory,
-                                      TopicCell.Factory topicCellFactory,
+                                      MessageListViewControllerFactory messageListViewControllerFactory,
+                                      QosCellFactory qosCellFactory,
+                                      SubscriptionViewCellFactory subscriptionViewCellFactory,
+                                      TopicCellFactory topicCellFactory,
                                       AlertHelper alertHelper,
                                       EventBus eventBus,
-                                      SubscriptionListMessageContextMenu.Factory subscriptionListMessageContextMenuFactory,
+                                      SubscriptionListMessageContextMenuFactory subscriptionListMessageContextMenuFactory,
                                       @Assisted String connectionId,
                                       @Assisted SubscriptionViewDelegate delegate) {
         super(coreManager, themeManager, messageListViewControllerFactory, connectionId);

@@ -4,8 +4,8 @@ import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.settings.SettingsManager;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.SingletonBean;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Singleton
+@SingletonBean
 public class ConnectionManager {
 
     private final Map<String /* connectionId*/, CorreoMqttConnection> connectionMap = new ConcurrentHashMap<>();

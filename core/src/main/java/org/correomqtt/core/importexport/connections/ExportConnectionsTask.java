@@ -1,9 +1,9 @@
 package org.correomqtt.core.importexport.connections;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.encryption.Encryptor;
@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+@DefaultBean
 public class ExportConnectionsTask extends NoProgressTask<Integer, ExportConnectionsTask.Error> {
 
     public enum Error {
@@ -31,14 +32,9 @@ public class ExportConnectionsTask extends NoProgressTask<Integer, ExportConnect
     private final List<ConnectionConfigDTO> connectionList;
     private final String password;
 
-    @AssistedFactory
-    public interface Factory {
-        ExportConnectionsTask create(File file,
-                                     List<ConnectionConfigDTO> connectionList,
-                                     String password);
-    }
 
-    @AssistedInject
+
+    @Inject
     public ExportConnectionsTask(EventBus eventBus,
                                  @Assisted File file,
                                  @Assisted List<ConnectionConfigDTO> connectionList,

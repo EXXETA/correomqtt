@@ -10,12 +10,12 @@ import org.pf4j.update.UpdateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.SingletonBean;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
-@Singleton
+@SingletonBean
 public class PluginLauncher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginLauncher.class);

@@ -1,8 +1,7 @@
 package org.correomqtt.plugins.systopic.controller;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.core.cdi.Assisted;
+import org.correomqtt.core.cdi.Inject;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -66,7 +65,7 @@ public class SysTopicViewController {
     private final CoreManager coreManager;
     private final PubSubTaskFactories pubSubTaskFactories;
     private final ThemeManager themeManager;
-    private final SysTopicCellController.Factory sysTopicCellControllerFactory;
+    private final SysTopicCellControllerFactory sysTopicCellControllerFactory;
     @FXML
     private Label connectionStatusLabel;
     @FXML
@@ -83,17 +82,13 @@ public class SysTopicViewController {
     private final Set<SysTopicPropertiesDTO> plainSysTopics = new HashSet<>();
 
 
-    @AssistedFactory
-    public interface Factory {
-        SysTopicViewController create(String connectionId);
 
-    }
 
-    @AssistedInject
+    @Inject
     SysTopicViewController(CoreManager coreManager,
                            ThemeManager themeManager,
                            PubSubTaskFactories pubSubTaskFactories,
-                           SysTopicCellController.Factory sysTopicCellControllerFactory,
+                           SysTopicCellControllerFactory sysTopicCellControllerFactory,
                            @Assisted String connectionId) {
         this.coreManager = coreManager;
         this.pubSubTaskFactories = pubSubTaskFactories;

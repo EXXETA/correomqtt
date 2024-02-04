@@ -10,12 +10,12 @@ import org.correomqtt.gui.theme.light_legacy.LightLegacyThemeProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.SingletonBean;
 import java.io.File;
 import java.util.ArrayList;
 
-@Singleton
+@SingletonBean
 public class ThemeManager extends BaseUserFileProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ThemeManager.class);

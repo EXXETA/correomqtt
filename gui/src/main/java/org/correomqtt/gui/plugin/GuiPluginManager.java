@@ -2,14 +2,16 @@ package org.correomqtt.gui.plugin;
 
 import org.correomqtt.core.fileprovider.PluginConfigProvider;
 import org.correomqtt.core.plugin.PluginManager;
+import org.correomqtt.di.SingletonBean;
 import org.correomqtt.gui.plugin.spi.DetailViewManipulatorHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 import java.util.List;
 import java.util.Objects;
 
+@SingletonBean
 public class GuiPluginManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GuiPluginManager.class);

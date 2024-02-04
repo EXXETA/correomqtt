@@ -25,23 +25,19 @@ abstract class BasePersistHistoryProvider<D> extends BaseUserFileProvider {
     private final SettingsManager settings;
     private final String connectionId;
 
-
     BasePersistHistoryProvider(SettingsManager settings,
                                EventBus eventBus,
                                String id) {
         super(eventBus);
         this.settings = settings;
         connectionId = id;
-
         String historyFileName = getHistoryFileName();
-
         try {
             prepareFile(id, historyFileName);
         } catch (UnsupportedOperationException | InvalidPathException | SecurityException | IOException e) {
             LOGGER.error("Error reading " + historyFileName, e);
             readingError(e);
         }
-
         try {
             setDTO(id, new ObjectMapper().readValue(getFile(), getDTOClass()));
         } catch (IOException e) {

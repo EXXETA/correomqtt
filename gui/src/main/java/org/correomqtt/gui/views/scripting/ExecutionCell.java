@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views.scripting;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionCell.class);
@@ -48,12 +49,8 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
     private FXMLLoader loader;
     private RotateTransition rotateTransition;
 
-    @AssistedFactory
-    public interface Factory {
-        ExecutionCell create(ListView<ExecutionPropertiesDTO> listView);
 
-    }
-    @AssistedInject
+    @Inject
     public ExecutionCell(SettingsManager settingsManager,
                          ThemeManager themeManager,
                          @Assisted ListView<ExecutionPropertiesDTO> listView) {

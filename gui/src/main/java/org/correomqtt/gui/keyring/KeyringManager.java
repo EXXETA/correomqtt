@@ -13,14 +13,14 @@ import org.correomqtt.gui.utils.AlertHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.SingletonBean;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Singleton
+@SingletonBean
 public class KeyringManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyringManager.class);

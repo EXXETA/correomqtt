@@ -1,10 +1,12 @@
 package org.correomqtt.core;
 
+import org.correomqtt.di.DefaultBean;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.settings.SettingsManager;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 
+@DefaultBean
 public class CorreoCore {
 
     private final SettingsManager settingsManager;

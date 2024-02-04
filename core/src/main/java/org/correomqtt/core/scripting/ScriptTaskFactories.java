@@ -1,25 +1,26 @@
 package org.correomqtt.core.scripting;
 
 import lombok.Getter;
-
-import javax.inject.Inject;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 
 @Getter
+@DefaultBean
 public class ScriptTaskFactories {
 
 
-    private final ScriptSaveTask.Factory saveFactory;
-    private final ScriptLoadTask.Factory loadFactory;
-    private final ScriptNewTask.Factory newFactory;
-    private final ScriptRenameTask.Factory renameFactory;
-    private final ScriptDeleteTask.Factory deleteFactory;
+    private final ScriptSaveTaskFactory saveFactory;
+    private final ScriptLoadTaskFactory loadFactory;
+    private final ScriptNewTaskFactory newFactory;
+    private final ScriptRenameTaskFactory renameFactory;
+    private final ScriptDeleteTaskFactory deleteFactory;
 
     @Inject
-    public ScriptTaskFactories(ScriptSaveTask.Factory saveFactory,
-                               ScriptLoadTask.Factory loadFactory,
-                               ScriptNewTask.Factory newFactory,
-                               ScriptRenameTask.Factory renameFactory,
-                               ScriptDeleteTask.Factory deleteFactory) {
+    public ScriptTaskFactories(ScriptSaveTaskFactory saveFactory,
+                               ScriptLoadTaskFactory loadFactory,
+                               ScriptNewTaskFactory newFactory,
+                               ScriptRenameTaskFactory renameFactory,
+                               ScriptDeleteTaskFactory deleteFactory) {
 
         this.saveFactory = saveFactory;
         this.loadFactory = loadFactory;

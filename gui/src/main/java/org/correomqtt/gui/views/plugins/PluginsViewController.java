@@ -8,9 +8,12 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import org.correomqtt.HostServicesWrapper;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.fileprovider.PluginConfigProvider;
-import org.correomqtt.gui.model.AppHostServices;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.Lazy;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
@@ -20,19 +23,18 @@ import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.pf4j.PluginWrapper;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class PluginsViewController extends BaseControllerImpl {
 
     private final PluginConfigProvider pluginConfigProvider;
     private final HostServices hostServices;
-    private final Provider<InstalledPluginsViewController> installedPluginsViewControllerProvider;
-    private final Provider<MarketplaceViewController> marketplaceViewControllerProvider;
+    private final Lazy<InstalledPluginsViewController> installedPluginsViewControllerProvider;
+    private final Lazy<MarketplaceViewController> marketplaceViewControllerProvider;
     @FXML
     private Tab marketplaceTab;
 
@@ -70,12 +72,12 @@ public class PluginsViewController extends BaseControllerImpl {
     PluginsViewController(CoreManager coreManager,
                           ThemeManager themeManager,
                           PluginConfigProvider pluginConfigProvider,
-                          @AppHostServices HostServices hostServices,
-                          Provider<InstalledPluginsViewController> installedPluginsViewControllerProvider,
-                          Provider<MarketplaceViewController> marketplaceViewControllerProvider) {
+                          HostServicesWrapper hostServicesWrapper,
+                          Lazy<InstalledPluginsViewController> installedPluginsViewControllerProvider,
+                          Lazy<MarketplaceViewController> marketplaceViewControllerProvider) {
         super(coreManager, themeManager);
         this.pluginConfigProvider = pluginConfigProvider;
-        this.hostServices = hostServices;
+        this.hostServices = hostServicesWrapper.getHostServices();
         this.installedPluginsViewControllerProvider = installedPluginsViewControllerProvider;
         this.marketplaceViewControllerProvider = marketplaceViewControllerProvider;
     }
@@ -83,11 +85,9 @@ public class PluginsViewController extends BaseControllerImpl {
     public void showAsDialog() {
         Map<Object, Object> properties = new HashMap<>();
         properties.put(WindowProperty.WINDOW_TYPE, WindowType.PLUGIN_SETTINGS);
-
         if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
             return;
         }
-
         LoaderResult<PluginsViewController> result = load(PluginsViewController.class, "pluginsView.fxml", () -> this);
         ResourceBundle resources = result.getResourceBundle();
         showAsDialog(result,
@@ -103,7 +103,6 @@ public class PluginsViewController extends BaseControllerImpl {
 
     @FXML
     private void initialize() {
-
         setupInstalledPluginTab();
         setupMarketplaceTab();
     }

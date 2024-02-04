@@ -1,20 +1,21 @@
 package org.correomqtt.core.connection;
 
 import lombok.Getter;
-
-import javax.inject.Inject;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 
 @Getter
+@DefaultBean
 public class ConnectionLifecycleTaskFactories {
 
-    private final ConnectTask.Factory connectFactory;
-    private final DisconnectTask.Factory disconnectFactory;
-    private final ReconnectTask.Factory reconnectFactory;
+    private final ConnectTaskFactory connectFactory;
+    private final DisconnectTaskFactory disconnectFactory;
+    private final ReconnectTaskFactory reconnectFactory;
 
     @Inject
-    public ConnectionLifecycleTaskFactories(ConnectTask.Factory connectFactory,
-                                            DisconnectTask.Factory disconnectFactory,
-                                            ReconnectTask.Factory reconnectFactory) {
+    public ConnectionLifecycleTaskFactories(ConnectTaskFactory connectFactory,
+                                            DisconnectTaskFactory disconnectFactory,
+                                            ReconnectTaskFactory reconnectFactory) {
         this.connectFactory = connectFactory;
         this.disconnectFactory = disconnectFactory;
         this.reconnectFactory = reconnectFactory;

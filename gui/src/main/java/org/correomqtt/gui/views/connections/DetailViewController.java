@@ -1,8 +1,5 @@
 package org.correomqtt.gui.views.connections;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -35,8 +32,12 @@ import org.correomqtt.core.importexport.messages.ExportMessageSuccessEvent;
 import org.correomqtt.core.model.MessageType;
 import org.correomqtt.core.plugin.MessageValidator;
 import org.correomqtt.core.plugin.spi.MessageValidatorHook;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.contextmenu.DetailContextMenu;
 import org.correomqtt.gui.contextmenu.DetailContextMenuDelegate;
+import org.correomqtt.gui.contextmenu.DetailContextMenuFactory;
 import org.correomqtt.gui.controls.IconCheckMenuItem;
 import org.correomqtt.gui.formats.Format;
 import org.correomqtt.gui.menuitem.DetailViewManipulatorTaskMenuItem;
@@ -68,6 +69,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+@DefaultBean
 public class DetailViewController extends BaseConnectionController implements
         DetailContextMenuDelegate {
 
@@ -78,7 +80,7 @@ public class DetailViewController extends BaseConnectionController implements
     private final MessageValidator messageValidator;
     private final GuiPluginManager guiPluginManager;
     private final AutoFormatPayload autoFormatPayload;
-    private final DetailContextMenu.Factory detailContextMenuFactory;
+    private final DetailContextMenuFactory detailContextMenuFactory;
     private final MessageUtils messageUtils;
     private final DetailViewDelegate delegate;
 
@@ -148,22 +150,15 @@ public class DetailViewController extends BaseConnectionController implements
 
     private DetailViewManipulatorTask lastManipulatorTask;
 
-    @AssistedFactory
-    public interface Factory {
-        DetailViewController create(MessagePropertiesDTO messageDTO,
-                                    String connectionId,
-                                    DetailViewDelegate delegate,
-                                    boolean isInlineView);
 
-    }
 
-    @AssistedInject
+    @Inject
     DetailViewController(CoreManager coreManager,
                          MessageValidator messageValidator,
                          GuiPluginManager guiPluginManager,
                          AutoFormatPayload autoFormatPayload,
                          ThemeManager themeManager,
-                         DetailContextMenu.Factory detailContextMenuFactory,
+                         DetailContextMenuFactory detailContextMenuFactory,
                          MessageUtils messageUtils,
                          @Assisted MessagePropertiesDTO messageDTO,
                          @Assisted String connectionId,

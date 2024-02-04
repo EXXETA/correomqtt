@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views.importexport;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.css.PseudoClass;
@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesDTO> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ExportConnectionCell.class);
     private final SettingsManager settingsManager;
@@ -39,11 +40,8 @@ public class ExportConnectionCell extends CheckBoxListCell<ConnectionPropertiesD
     private FXMLLoader loader;
     private ObservableValue<Boolean> booleanProperty;
 
-    @AssistedFactory
-    public interface Factory {
-        ExportConnectionCell create( CheckListView<ConnectionPropertiesDTO> listView);
-    }
-    @AssistedInject
+
+    @Inject
     public ExportConnectionCell(
             SettingsManager settingsManager,
             @Assisted CheckListView<ConnectionPropertiesDTO> listView) {

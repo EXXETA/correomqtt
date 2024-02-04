@@ -1,10 +1,12 @@
 package org.correomqtt.core.scripting.binding;
 
+import org.correomqtt.di.DefaultBean;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess.Export;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 
+@DefaultBean
 public class ClientFactory {
 
     private final Client client;

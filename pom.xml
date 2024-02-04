@@ -36,9 +36,10 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>di</module>
         <module>core</module>
         <module>gui</module>
-        <module>plugins</module>
+        <!--<module>plugins</module>-->
     </modules>
 
 
@@ -130,11 +131,6 @@
                 <artifactId>pf4j-update</artifactId>
                 <version>2.3.0</version>
             </dependency>
-            <dependency>
-                <groupId>com.google.dagger</groupId>
-                <artifactId>dagger</artifactId>
-                <version>${dagger.version}</version>
-            </dependency>
             <!-- Test Scope -->
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
@@ -142,6 +138,12 @@
                 <version>5.8.2</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.correomqtt</groupId>
+                <artifactId>di</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

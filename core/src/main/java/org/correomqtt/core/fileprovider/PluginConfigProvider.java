@@ -7,8 +7,8 @@ import org.correomqtt.core.model.HooksDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.SingletonBean;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,7 +16,7 @@ import java.nio.file.InvalidPathException;
 import java.util.Iterator;
 import java.util.List;
 
-@Singleton
+@SingletonBean
 public class PluginConfigProvider extends BaseUserFileProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginConfigProvider.class);

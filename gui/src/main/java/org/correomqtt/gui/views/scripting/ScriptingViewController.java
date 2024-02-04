@@ -18,6 +18,7 @@ import javafx.scene.transform.Rotate;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import lombok.AllArgsConstructor;
+import org.correomqtt.HostServicesWrapper;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.eventbus.EventBus;
@@ -33,8 +34,10 @@ import org.correomqtt.core.scripting.ScriptFileDTO;
 import org.correomqtt.core.scripting.ScriptNewTask;
 import org.correomqtt.core.scripting.ScriptTaskFactories;
 import org.correomqtt.core.scripting.ScriptingBackend;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.Lazy;
 import org.correomqtt.gui.controls.IconLabel;
-import org.correomqtt.gui.model.AppHostServices;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
@@ -46,8 +49,6 @@ import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
@@ -58,17 +59,18 @@ import java.util.ResourceBundle;
 
 import static org.correomqtt.gui.utils.JavaFxUtils.addSafeToSplitPane;
 
+@DefaultBean
 public class ScriptingViewController extends BaseControllerImpl implements ScriptContextMenuDelegate, SingleEditorViewDelegate {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptingViewController.class);
     private static final String HELP_LINK = "https://github.com/EXXETA/correomqtt/wiki/scripting";
     private final HashMap<String, ScriptEditorState> editorStates = new HashMap<>();
     private final AlertHelper alertHelper;
-    private final ScriptCell.Factory scriptCellFactory;
-    private final ScriptContextMenu.Factory scriptContextMenuFactory;
-    private final SingleEditorViewController.Factory editorViewCtrlFactory;
+    private final ScriptCellFactory scriptCellFactory;
+    private final ScriptContextMenuFactory scriptContextMenuFactory;
+    private final SingleEditorViewControllerFactory editorViewCtrlFactory;
     private final ScriptTaskFactories scriptTaskFactories;
-    private final Provider<ExecutionViewController> executionViewControllerProvider;
+    private final Lazy<ExecutionViewController> executionViewControllerProvider;
     private final ScriptingProvider scriptingProvider;
     private final EventBus eventBus;
     private final HostServices hostServices;
@@ -105,14 +107,14 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     public ScriptingViewController(CoreManager coreManager,
                                    ThemeManager themeManager,
                                    AlertHelper alertHelper,
-                                   ScriptCell.Factory scriptCellFactory,
-                                   ScriptContextMenu.Factory scriptContextMenuFactory,
-                                   SingleEditorViewController.Factory editorViewCtrlFactory,
+                                   ScriptCellFactory scriptCellFactory,
+                                   ScriptContextMenuFactory scriptContextMenuFactory,
+                                   SingleEditorViewControllerFactory editorViewCtrlFactory,
                                    ScriptTaskFactories scriptTaskFactories,
-                                   Provider<ExecutionViewController> executionViewControllerProvider,
+                                   Lazy<ExecutionViewController> executionViewControllerProvider,
                                    ScriptingProvider scriptingProvider,
                                    EventBus eventBus,
-                                   @AppHostServices HostServices hostServices
+                                   HostServicesWrapper hostServicesWrapper
     ) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;
@@ -123,19 +125,16 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         this.executionViewControllerProvider = executionViewControllerProvider;
         this.scriptingProvider = scriptingProvider;
         this.eventBus = eventBus;
-        this.hostServices = hostServices;
+        this.hostServices = hostServicesWrapper.getHostServices();
         eventBus.register(this);
     }
 
     public void showAsDialog() {
         Map<Object, Object> properties = new HashMap<>();
         properties.put(WindowProperty.WINDOW_TYPE, WindowType.PLUGIN_SETTINGS);
-
-
         if (WindowHelper.focusWindowIfAlreadyThere(properties)) {
             return;
         }
-
         LoaderResult<ScriptingViewController> result = load(ScriptingViewController.class, "scriptingView.fxml", () -> this);
         resources = result.getResourceBundle();
         showAsDialog(result, resources.getString("scriptingViewControllerTitle"), properties, false, false,
@@ -156,7 +155,6 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
             event.consume();
             return;
         }
-
         editorStates.values().forEach(es -> es.controller.cleanUp());
         executionController.cleanup();
         eventBus.unregister(this);
@@ -171,10 +169,8 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         rotateTransition.setDuration(Duration.millis(1000));
         rotateTransition.setNode(statusLabel.getGraphic());
         rotateTransition.setInterpolator(Interpolator.LINEAR);
-
         scriptingRootPane.getStyleClass().add(themeManager.getIconModeCssClass());
         scriptListView.setCellFactory(this::createScriptCell);
-
         List<ScriptFilePropertiesDTO> scriptsList = null;
         try {
             scriptsList = scriptingProvider.getScripts()
@@ -185,18 +181,14 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
             LOGGER.error("Error reading scripts. ", e);
             //TODO ioerror
         }
-
         scriptList = FXCollections.observableArrayList(scriptsList);
         scriptList.addListener(this::onScriptListChanged);
         scriptListView.setItems(scriptList);
         onScriptListChanged(null);
-
         LoaderResult<ExecutionViewController> result = executionViewControllerProvider.get().load();
         executionController = result.getController();
         executionHolder.getChildren().add(result.getMainRegion());
-
         updateStatusLabel();
-
     }
 
     private ListCell<ScriptFilePropertiesDTO> createScriptCell(ListView<ScriptFilePropertiesDTO> scriptListView) {
@@ -212,7 +204,6 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     }
 
     private void onScriptListChanged(ListChangeListener.Change<? extends ScriptFilePropertiesDTO> changedItem) {
-
         // avoid endless loop on sorting
         if (changedItem != null) {
             while (changedItem.next()) {
@@ -221,10 +212,8 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                 }
             }
         }
-
         // keep list sorted
         FXCollections.sort(scriptListView.getItems());
-
         // show or hide list etc.
         if (scriptListView.getItems().isEmpty()) {
             scriptSplitPane.getItems().remove(scriptListSidebar);
@@ -237,7 +226,6 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
             addSafeToSplitPane(scriptSplitPane, editorPane);
             addSafeToSplitPane(mainSplitPane, executionHolder);
         }
-
         if (scriptListView.getSelectionModel().getSelectedIndices().isEmpty()) {
             scriptListView.getSelectionModel().selectFirst();
         }
@@ -248,11 +236,9 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                 .stream()
                 .map(ExecutionTransformer::dtoToProps)
                 .toList();
-
         long running = executions.stream()
                 .filter(e -> e.getState() == ScriptState.RUNNING)
                 .count();
-
         String description;
         if (running == 0) {
             rotateTransition.stop();
@@ -267,24 +253,19 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
             description = MessageFormat.format("{0} running / {1} finished", running, executions.size() - running);
         }
         statusLabel.setText(description);
-
     }
 
     private void onSelectScript(ScriptFilePropertiesDTO selectedItem) {
-
         if (selectedItem == null)
             return;
-
         ScriptingViewController.ScriptEditorState editorState = editorStates.computeIfAbsent(selectedItem.getName(),
                 id -> {
                     LoaderResult<SingleEditorViewController> loaderResult = editorViewCtrlFactory.create(this, selectedItem).load();
                     return new ScriptingViewController.ScriptEditorState(loaderResult.getController(), loaderResult.getMainRegion());
                 });
-
         editorPane.getChildren().clear();
         editorPane.getChildren().add(editorState.region);
         executionController.filterByScript(selectedItem.getName());
-
     }
 
     @SuppressWarnings("unused")
@@ -305,14 +286,11 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     }
 
     private void showNewScriptDialog(String defaultValue) {
-
         String dialogTitle = resources.getString("scripting.newscript.dialog.title");
-
         String filename = alertHelper.input(dialogTitle,
                 resources.getString("scripting.newscript.dialog.header"),
                 resources.getString("scripting.newscript.dialog.content"),
                 defaultValue);
-
         scriptTaskFactories.getNewFactory().create(filename)
                 .onSuccess(this::onNewScriptCreated)
                 .onError(r -> onNewScriptCreatedFailed(r, filename))
@@ -331,7 +309,6 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
             //TODO ioerror
             return;
         }
-
         ScriptFilePropertiesDTO dto = ScriptingTransformer.dtoToProps(newScriptDTO);
         scriptListView.getItems().add(dto);
         scriptListView.getSelectionModel().select(dto);
@@ -339,9 +316,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     }
 
     private void onNewScriptCreatedFailed(TaskErrorResult<ScriptNewTask.Error> result, String filename) {
-
         String dialogTitle = resources.getString("scripting.newscript.dialog.title");
-
         if (result.isExpected()) {
             switch (result.getExpectedError()) {
                 case FILENAME_NULL -> {
@@ -357,7 +332,6 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                     alertHelper.warn(dialogTitle,
                             resources.getString("scripting.newscript.dialog.alreadyexists.content"),
                             true);
-
                     showNewScriptDialog(filename);
                 }
                 case IOERROR -> {
@@ -371,12 +345,10 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
 
     private void renameScript(ScriptFilePropertiesDTO dto, String defaultFilename) {
         String dialogTitle = resources.getString("scripting.renamescript.dialog.title");
-
         String newFilename = alertHelper.input(dialogTitle,
                 resources.getString("scripting.renamescript.dialog.header"),
                 resources.getString("scripting.renamescript.dialog.content"),
                 defaultFilename);
-
         scriptTaskFactories.getRenameFactory().create(ScriptingTransformer.propsToDTO(dto), newFilename)
                 .onSuccess(newPath -> {
                     executionController.renameScript(dto.getName(), newFilename);
@@ -423,15 +395,11 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
     @Override
     public void renameScript(ScriptFilePropertiesDTO dto) {
         renameScript(dto, dto.getName());
-
-
     }
 
     @Override
     public void deleteScript(ScriptFilePropertiesDTO dto) {
-
         String dialogTitle = resources.getString("scripting.deletescript.dialog.title");
-
         if (!alertHelper.confirm(dialogTitle,
                 resources.getString("scripting.deletescript.dialog.header"),
                 MessageFormat.format(resources.getString("scripting.deletescript.dialog.content"), dto.getName()),
@@ -439,7 +407,6 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
                 resources.getString("commonYesButton"))) {
             return;
         }
-
         scriptTaskFactories.getDeleteFactory().create(ScriptingTransformer.propsToDTO(dto))
                 .onSuccess(() -> onScriptDeleted(dto))
                 .onError(r -> {

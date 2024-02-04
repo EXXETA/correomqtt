@@ -7,9 +7,10 @@ import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.correomqtt.HostServicesWrapper;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.utils.VersionUtils;
-import org.correomqtt.gui.model.AppHostServices;
+import org.correomqtt.di.DefaultBean;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -18,7 +19,7 @@ import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class AboutViewController extends BaseControllerImpl {
 
     private static final URL LICENSE_JSON = AboutViewController.class.getResource("/META-INF/resources/licenses.json");
@@ -52,11 +54,11 @@ public class AboutViewController extends BaseControllerImpl {
     AboutViewController(CoreManager coreManager,
                         ThemeManager themeManager,
                         AlertHelper alertHelper,
-                        @AppHostServices HostServices hostServices
+                         HostServicesWrapper hostServicesWrapper
     ) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;
-        this.hostServices = hostServices;
+        this.hostServices = hostServicesWrapper.getHostServices();
     }
 
     public LoaderResult<AboutViewController> load() {

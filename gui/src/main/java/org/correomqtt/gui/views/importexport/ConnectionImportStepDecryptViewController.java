@@ -1,16 +1,17 @@
 package org.correomqtt.gui.views.importexport;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import javafx.fxml.FXML;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.Tooltip;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.importexport.connections.ImportDecryptConnectionsTask;
+import org.correomqtt.core.importexport.connections.ImportDecryptConnectionsTaskFactory;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ConnectionExportDTO;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
@@ -19,25 +20,23 @@ import org.correomqtt.gui.views.base.BaseControllerImpl;
 import java.util.List;
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class ConnectionImportStepDecryptViewController extends BaseControllerImpl implements ConnectionImportStepController {
     private static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
     private final AlertHelper alertHelper;
-    private final ImportDecryptConnectionsTask.Factory importDecryptConnectionsTaskFactory;
+    private final ImportDecryptConnectionsTaskFactory importDecryptConnectionsTaskFactory;
     private final ConnectionImportStepDelegate delegate;
     private ResourceBundle resources;
     @FXML
     private PasswordField passwordField;
 
-    @AssistedFactory
-    public interface Factory {
-        ConnectionImportStepDecryptViewController create(ConnectionImportStepDelegate delegate);
-    }
 
-    @AssistedInject
+
+    @Inject
     public ConnectionImportStepDecryptViewController(CoreManager coreManager,
                                                      ThemeManager themeManager,
                                                      AlertHelper alertHelper,
-                                                     ImportDecryptConnectionsTask.Factory importDecryptConnectionsTaskFactory,
+                                                     ImportDecryptConnectionsTaskFactory importDecryptConnectionsTaskFactory,
                                                      @Assisted ConnectionImportStepDelegate delegate) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;

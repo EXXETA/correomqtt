@@ -1,33 +1,30 @@
 package org.correomqtt.core.connection;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.mqtt.CorreoMqttClientFactory;
-import org.correomqtt.core.pubsub.SubscribeTask;
+import org.correomqtt.core.pubsub.SubscribeTaskFactory;
 import org.correomqtt.core.utils.ConnectionManager;
 import org.correomqtt.core.utils.CorreoMqttConnection;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 
 import java.util.Set;
 
+@DefaultBean
 public class ReconnectTask extends NoProgressTask<Void, Void> {
 
-    private final SubscribeTask.Factory subscribeTaskFactory;
+    private final SubscribeTaskFactory subscribeTaskFactory;
     private final CorreoMqttClientFactory correoMqttClientFactory;
     private final ConnectionManager connectionManager;
     private final String connectionId;
 
-    @AssistedFactory
-    public interface Factory {
-        ReconnectTask create(String connectionId);
-    }
 
-    @AssistedInject
-    public ReconnectTask(SubscribeTask.Factory subscribeTaskFactory,
+    @Inject
+    public ReconnectTask(SubscribeTaskFactory subscribeTaskFactory,
                          EventBus eventBus,
                          CorreoMqttClientFactory correoMqttClientFactory,
                          ConnectionManager connectionManager,

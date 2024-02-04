@@ -10,14 +10,16 @@ import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.log.LogDispatchAppender;
 import org.correomqtt.core.log.LogEvent;
 import org.correomqtt.core.utils.LoggerUtils;
+import org.correomqtt.di.DefaultBean;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.LogAreaUtils;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.fxmisc.richtext.CodeArea;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 
+@DefaultBean
 public class LogTabController extends BaseControllerImpl {
 
     private static final String LOG_APPENDER_GUI_NAME = "GUI";

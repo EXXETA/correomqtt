@@ -1,7 +1,6 @@
 package org.correomqtt.gui.plugin;
 
-import org.correomqtt.GuiCore;
-import org.correomqtt.MainComponent;
+import org.correomqtt.di.SoyDi;
 import org.pf4j.ExtensionFactory;
 import org.pf4j.PluginRuntimeException;
 import org.slf4j.Logger;
@@ -14,26 +13,12 @@ public class CorreoExtensionFactory implements ExtensionFactory {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T create(Class<T> extensionClass) {
-
-        String componentClassName = extensionClass.getPackageName() + ".Dagger" + extensionClass.getSimpleName() + "_Factory";
-
-        Class<?> factory = null;
-
         try {
-            factory = Class.forName(componentClassName, false, extensionClass.getClassLoader());
-            LOGGER.debug("{} exists, injecting {} with DI.", componentClassName, extensionClass.getName());
-        } catch (Exception ignored) {
-            LOGGER.debug("{} does not exist, injecting {} without DI.", componentClassName, extensionClass.getName());
-        }
-
-        try {
-            if (factory != null) {
-                Object builder1 = factory.getMethod("builder").invoke(null);
-                Object builder2 = builder1.getClass().getMethod("correoAppComponent", MainComponent.class).invoke(builder1, GuiCore.getMainComponent());
-                Object component = builder2.getClass().getMethod("build").invoke(builder2);
-                return (T) ((ExtensionComponent) component).extension();
-                // return (T) factory.getMethod("get").invoke(null);
+            if (SoyDi.isInjectable(extensionClass)) {
+                LOGGER.debug("Injecting Plugin Class {} with DI.", extensionClass.getName());
+                return SoyDi.inject(extensionClass);
             } else {
+                LOGGER.debug("Injecting Plugin Class {} without DI.", extensionClass.getName());
                 return extensionClass.getDeclaredConstructor().newInstance();
             }
         } catch (Exception e) {

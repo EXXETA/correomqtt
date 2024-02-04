@@ -6,11 +6,11 @@ import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.utils.ConnectionManager;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.SingletonBean;
 
 @Getter
-@Singleton
+@SingletonBean
 public class CoreManager {
 
     private final ConnectionManager connectionManager;

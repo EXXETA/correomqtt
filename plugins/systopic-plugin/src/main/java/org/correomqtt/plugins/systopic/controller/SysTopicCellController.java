@@ -1,8 +1,7 @@
 package org.correomqtt.plugins.systopic.controller;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.core.cdi.Assisted;
+import org.correomqtt.core.cdi.Inject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -42,13 +41,9 @@ public class SysTopicCellController extends ListCell<SysTopicPropertiesDTO> {
     private SysTopicPropertiesDTO sysTopicDTO;
 
 
-    @AssistedFactory
-    public interface Factory {
-        SysTopicCellController create(ListView<SysTopicPropertiesDTO> listView);
 
-    }
 
-    @AssistedInject
+    @Inject
     public SysTopicCellController(CoreManager coreManager,
                                   @Assisted ListView<SysTopicPropertiesDTO> listView) {
         this.coreManager = coreManager;

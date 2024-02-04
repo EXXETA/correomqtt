@@ -16,7 +16,7 @@ import org.correomqtt.gui.theme.IconMode;
 import org.correomqtt.gui.theme.ThemeProvider;
 import org.pf4j.Extension;
 
-import javax.inject.Inject;
+import org.correomqtt.core.cdi.Inject;
 import java.util.List;
 import java.util.stream.Stream;
 

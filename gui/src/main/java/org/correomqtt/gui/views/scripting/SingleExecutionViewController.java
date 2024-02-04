@@ -3,9 +3,9 @@ package org.correomqtt.gui.views.scripting;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.encoder.Encoder;
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.layout.Pane;
@@ -37,6 +37,7 @@ import static org.correomqtt.core.eventbus.SubscribeFilterNames.SCRIPT_EXECUTION
 import static org.correomqtt.core.utils.LoggerUtils.SCRIPT_COLOR_PATTERN_APPENDER_NAME;
 import static org.correomqtt.core.utils.LoggerUtils.findPatternEncoder;
 
+@DefaultBean
 public class SingleExecutionViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleExecutionViewController.class);
@@ -55,13 +56,9 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     private Button scriptingStopButton;
     private LogToRichtTextFxAppender appender;
 
-    @AssistedFactory
-    public interface Factory {
-        SingleExecutionViewController create(ExecutionPropertiesDTO executionPropertiesDTO);
 
-    }
 
-    @AssistedInject
+    @Inject
     public SingleExecutionViewController(CoreManager coreManager,
                                          ThemeManager themeManager,
                                          AlertHelper alertHelper,

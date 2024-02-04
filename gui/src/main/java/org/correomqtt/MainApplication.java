@@ -36,8 +36,8 @@ import org.correomqtt.preloader.PreloaderNotification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.SingletonBean;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -48,7 +48,7 @@ import static org.correomqtt.core.shortcut.ShortcutEvent.Shortcut.CLEAR_OUTGOING
 import static org.correomqtt.core.shortcut.ShortcutEvent.Shortcut.PUBLISH;
 import static org.correomqtt.core.shortcut.ShortcutEvent.Shortcut.SUBSCRIPTION;
 
-@Singleton
+@SingletonBean
 public class MainApplication {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainApplication.class);

@@ -26,6 +26,8 @@ import org.correomqtt.core.model.Lwt;
 import org.correomqtt.core.model.Proxy;
 import org.correomqtt.core.model.Qos;
 import org.correomqtt.core.model.TlsSsl;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.plugin.spi.LwtSettingsHook;
@@ -33,17 +35,17 @@ import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.CheckTopicHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
-import org.correomqtt.gui.views.cell.GenericCell;
+import org.correomqtt.gui.views.cell.GenericCellFactory;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.util.ResourceBundle;
 import java.util.UUID;
 
+@DefaultBean
 public class MqttSettingsViewController extends BaseControllerImpl
         implements ConnectionSettingsDelegateController,
         LwtSettingsHook.OnSettingsChangedListener {
@@ -61,11 +63,11 @@ public class MqttSettingsViewController extends BaseControllerImpl
     public static final String EMPTY_ERROR_CLASS = "emptyError";
 
     private ResourceBundle resources;
-    private final GenericCell.Factory<CorreoMqttVersion> correoMqttVersionGenericCellFactory;
-    private final GenericCell.Factory<TlsSsl> tlsSslGenericCellFactory;
-    private final GenericCell.Factory<Proxy> proxyGenericCellFactory;
-    private final GenericCell.Factory<Auth> authGenericCellFactory;
-    private final GenericCell.Factory<Lwt> lwtGenericCellFactory;
+    private final GenericCellFactory<CorreoMqttVersion> correoMqttVersionGenericCellFactory;
+    private final GenericCellFactory<TlsSsl> tlsSslGenericCellFactory;
+    private final GenericCellFactory<Proxy> proxyGenericCellFactory;
+    private final GenericCellFactory<Auth> authGenericCellFactory;
+    private final GenericCellFactory<Lwt> lwtGenericCellFactory;
     @FXML
     private CheckBox sslHostVerificationCheckBox;
 
@@ -170,11 +172,11 @@ public class MqttSettingsViewController extends BaseControllerImpl
     @Inject
     MqttSettingsViewController(CoreManager coreManager,
                                ThemeManager themeManager,
-                               GenericCell.Factory<CorreoMqttVersion> correoMqttVersionGenericCellFactory,
-                               GenericCell.Factory<TlsSsl> tlsSslGenericCellFactory,
-                               GenericCell.Factory<Proxy> proxyGenericCellFactory,
-                               GenericCell.Factory<Auth> authGenericCellFactory,
-                               GenericCell.Factory<Lwt> lwtGenericCellFactory) {
+                               GenericCellFactory<CorreoMqttVersion> correoMqttVersionGenericCellFactory,
+                               GenericCellFactory<TlsSsl> tlsSslGenericCellFactory,
+                               GenericCellFactory<Proxy> proxyGenericCellFactory,
+                               GenericCellFactory<Auth> authGenericCellFactory,
+                               GenericCellFactory<Lwt> lwtGenericCellFactory) {
         super(coreManager, themeManager);
         this.correoMqttVersionGenericCellFactory = correoMqttVersionGenericCellFactory;
         this.tlsSslGenericCellFactory = tlsSslGenericCellFactory;
@@ -190,41 +192,30 @@ public class MqttSettingsViewController extends BaseControllerImpl
         return result;
     }
 
-
     @FXML
     private void initialize() {
-
         containerAnchorPane.getStyleClass().add(themeManager.getIconModeCssClass());
-
         mqttVersionComboBox.setItems(FXCollections.observableArrayList(CorreoMqttVersion.values()));
         mqttVersionComboBox.setCellFactory(correoMqttVersionGenericCellFactory::create);
         mqttVersionComboBox.setConverter(getStringConverter());
-
         tlsComboBox.setItems(FXCollections.observableArrayList(TlsSsl.values()));
         tlsComboBox.setCellFactory(tlsSslGenericCellFactory::create);
         tlsComboBox.setConverter(getStringConverter());
-
         proxyComboBox.setItems(FXCollections.observableArrayList(Proxy.values()));
         proxyComboBox.setCellFactory(proxyGenericCellFactory::create);
         proxyComboBox.setConverter(getStringConverter());
-
         authComboBox.setItems(FXCollections.observableArrayList(Auth.values()));
         authComboBox.setCellFactory(authGenericCellFactory::create);
         authComboBox.setConverter(getStringConverter());
-
         lwtComboBox.setItems(FXCollections.observableArrayList(Lwt.values()));
         lwtComboBox.setCellFactory(lwtGenericCellFactory::create);
         lwtComboBox.setConverter(getStringConverter());
-
         lwtQoSComboBox.setItems(FXCollections.observableArrayList(Qos.values()));
-
         lwtPayloadPane.getChildren().add(new VirtualizedScrollPane<>(lwtPayloadCodeArea));
         lwtPayloadCodeArea.prefWidthProperty().bind(lwtPayloadPane.widthProperty());
         lwtPayloadCodeArea.prefHeightProperty().bind(lwtPayloadPane.heightProperty());
-
         coreManager.getPluginManager().getExtensions(LwtSettingsHook.class)
                 .forEach(p -> p.onAddItemsToLwtSettingsBox(this, lwtPluginControlBox));
-
         nameTextField.lengthProperty().addListener((observable, oldValue, newValue) ->
                 checkName(nameTextField, false));
         urlTextField.lengthProperty().addListener(((observable, oldValue, newValue) ->
@@ -233,7 +224,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
                 checkPort(portTextField, false)));
         clientIdTextField.lengthProperty().addListener(((observable, oldValue, newValue) ->
                 checkClientID(clientIdTextField, false)));
-
         nameTextField.textProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
         urlTextField.textProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
         portTextField.textProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
@@ -298,9 +288,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
         lwtQoSComboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
         lwtRetainedCheckBox.selectedProperty().addListener((observable, oldValue, newValue) -> setDirty(true));
         lwtPayloadCodeArea.textProperty().addListener(((observable, oldValue, newValue) -> setDirty(true)));
-
         internalIdLabel.setText("");
-
     }
 
     private <T extends GenericTranslatable> StringConverter<T> getStringConverter() {
@@ -328,7 +316,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Do form checks for connection: {}", config.getId());
         }
-
         boolean checksPassed = !checkName(nameTextField, true);
         checksPassed |= !checkUrl(urlTextField, true);
         checksPassed |= !checkPort(portTextField, true);
@@ -336,13 +323,10 @@ public class MqttSettingsViewController extends BaseControllerImpl
         if (lwtComboBox.getSelectionModel().getSelectedItem().equals(Lwt.ON)) {
             checksPassed |= !CheckTopicHelper.checkPublishTopic(lwtTopicComboBox, true);
         }
-
         return !checksPassed;
     }
 
-
     private void initialFill() {
-
         nameTextField.setText(config.getName());
         urlTextField.setText(config.getUrl());
         portTextField.setText(Integer.toString(config.getPort()));
@@ -361,7 +345,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
         sshHostTextField.setText(config.getSshHost());
         sshPortTextField.setText(Integer.toString(config.getSshPort()));
         localPortTextField.setText(Integer.toString(config.getLocalPort()));
-
         if (config.getAuth().equals(Auth.OFF)) {
             authUsernameTextField.setDisable(true);
             authPasswordField.setDisable(true);
@@ -375,7 +358,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
             authPasswordField.setDisable(true);
             authKeyfileHBox.setDisable(false);
         }
-
         authComboBox.getSelectionModel().select(config.getAuth());
         authUsernameTextField.setText(config.getAuthUsername());
         authPasswordField.setText(config.getAuthPassword());
@@ -388,11 +370,9 @@ public class MqttSettingsViewController extends BaseControllerImpl
         if (config.getLwtPayload() != null) {
             lwtPayloadCodeArea.replaceText(config.getLwtPayload());
         }
-
         internalIdLabel.setText(resources.getString("connectionSettingsViewInternalIdLabel") +
                 ": " + config.getId());
         config.getDirtyProperty().set(false);
-
     }
 
     @Override
@@ -409,7 +389,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
     }
 
     public boolean saveConnection() {
-
         if (doChecks()) {
             config.getNameProperty().set(nameTextField.getText());
             config.getUrlProperty().set(urlTextField.getText());
@@ -468,12 +447,9 @@ public class MqttSettingsViewController extends BaseControllerImpl
 
     private boolean checkName(CustomTextField textField, boolean save) {
         if (isEmpty(textField)) {
-
-
             setError(textField, save, resources.getString("validationNameIsEmpty"));
             return false;
         }
-
         //check name collision
         for (ConnectionConfigDTO configDTO : coreManager.getConnectionManager().getSortedConnections()) {
             if (configDTO.getId().equals(config.getId())) { // I do not want to check myself.
@@ -484,15 +460,11 @@ public class MqttSettingsViewController extends BaseControllerImpl
                 return false;
             }
         }
-
         if (textField.getText().length() > 32) {
             setError(textField, save, resources.getString("validationNameIsTooLong"));
             return false;
         }
-
         unsetError(textField);
-
-
         return true;
     }
 
@@ -507,7 +479,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
             setError(textField, save, resources.getString("validationConnectionIsEmpty"));
             return false;
         }
-
         unsetError(textField);
         return true;
     }
@@ -520,7 +491,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
             setError(textField, save, resources.getString("validationInvalidPort"));
             return false;
         }
-
         unsetError(textField);
         return true;
     }
@@ -533,9 +503,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
             setError(textField, save, resources.getString("validationClientIdIsTooLong"));
             return false;
         }
-
         unsetError(textField);
-
         return true;
     }
 
@@ -543,7 +511,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
         if (save) {
             textField.getStyleClass().add("errorOnSave");
         }
-
         textField.setTooltip(new Tooltip(tooltipText));
         textField.setRight(new ThemedFontIcon("mdi-alert-circle", Paint.valueOf("red")));
         textField.getStyleClass().add(EXCLAMATION_CIRCLE_SOLID);
@@ -566,7 +533,6 @@ public class MqttSettingsViewController extends BaseControllerImpl
         File selectedFile = fileChooser.showOpenDialog(containerAnchorPane.getScene().getWindow());
         authKeyFileTextField.setText(selectedFile.toString());
     }
-
 
     @Override
     public void cleanUp() {

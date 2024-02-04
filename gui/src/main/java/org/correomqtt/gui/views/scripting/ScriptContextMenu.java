@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views.scripting;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import org.correomqtt.core.settings.SettingsManager;
@@ -10,6 +10,7 @@ import org.correomqtt.gui.contextmenu.BaseObjectContextMenu;
 import org.correomqtt.gui.controls.IconMenuItem;
 import org.correomqtt.gui.controls.ThemedFontIcon;
 
+@DefaultBean
 public class ScriptContextMenu extends BaseObjectContextMenu<ScriptFilePropertiesDTO, ScriptContextMenuDelegate> {
 
     private MenuItem renameItem;
@@ -17,12 +18,8 @@ public class ScriptContextMenu extends BaseObjectContextMenu<ScriptFilePropertie
     private MenuItem runItem;
     private SeparatorMenuItem separator1;
 
-    @AssistedFactory
-    public interface Factory {
-        ScriptContextMenu create(ScriptContextMenuDelegate delegate);
 
-    }
-    @AssistedInject
+    @Inject
     public ScriptContextMenu(SettingsManager settingsManager,
                              @Assisted ScriptContextMenuDelegate delegate) {
         super(settingsManager, delegate);

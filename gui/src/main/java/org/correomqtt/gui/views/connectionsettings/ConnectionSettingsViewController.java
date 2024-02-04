@@ -1,8 +1,5 @@
 package org.correomqtt.gui.views.connectionsettings;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import javafx.beans.Observable;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -26,10 +23,14 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import lombok.AllArgsConstructor;
 import org.correomqtt.core.CoreManager;
-import org.correomqtt.core.connection.DisconnectTask;
+import org.correomqtt.core.connection.DisconnectTaskFactory;
 import org.correomqtt.core.keyring.KeyringFactory;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.Lazy;
 import org.correomqtt.gui.keyring.KeyringManager;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
@@ -41,10 +42,10 @@ import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.gui.views.cell.ConnectionCell;
+import org.correomqtt.gui.views.cell.ConnectionCellFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Provider;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,6 +54,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.UUID;
 
+@DefaultBean
 public class ConnectionSettingsViewController extends BaseControllerImpl {
 
     public static final String EXCLAMATION_CIRCLE_SOLID = "exclamationCircleSolid";
@@ -61,10 +63,10 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
     private final Map<String, ConnectionState> connectionStates = new HashMap<>();
     private final KeyringManager keyringManager;
     private final KeyringFactory keyringFactory;
-    private final DisconnectTask.Factory disconnectTaskFactory;
-    private final ConnectionCell.Factory connectionCellFactory;
+    private final DisconnectTaskFactory disconnectTaskFactory;
+    private final ConnectionCellFactory connectionCellFactory;
     private final AlertHelper alertHelper;
-    private final Provider<MqttSettingsViewController> mqttSettingsViewControllerProvider;
+    private final Lazy<MqttSettingsViewController> mqttSettingsViewControllerProvider;
     private final ConnectionPropertiesDTO preSelected;
     Set<String> waitForDisconnectIds = new HashSet<>();
     @FXML
@@ -94,20 +96,17 @@ public class ConnectionSettingsViewController extends BaseControllerImpl {
     private AnchorPane containerAnchorPane;
     private boolean dragging;
 
-    @AssistedFactory
-    public interface Factory {
-        ConnectionSettingsViewController create(ConnectionPropertiesDTO preSelecteded);
-    }
 
-    @AssistedInject
+
+    @Inject
     public ConnectionSettingsViewController(CoreManager coreManager,
                                             KeyringManager keyringManager,
                                             KeyringFactory keyringFactory,
-                                            DisconnectTask.Factory disconnectTaskFactory,
+                                            DisconnectTaskFactory disconnectTaskFactory,
                                             ThemeManager themeManager,
-                                            ConnectionCell.Factory connectionCellFactory,
+                                            ConnectionCellFactory connectionCellFactory,
                                             AlertHelper alertHelper,
-                                            Provider<MqttSettingsViewController> mqttSettingsViewControllerProvider,
+                                            Lazy<MqttSettingsViewController> mqttSettingsViewControllerProvider,
                                             @Assisted ConnectionPropertiesDTO preSelected) {
         super(coreManager, themeManager);
         this.keyringManager = keyringManager;

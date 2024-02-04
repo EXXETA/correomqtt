@@ -1,8 +1,9 @@
 package org.correomqtt.core.fileprovider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.model.SubscriptionDTO;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@DefaultBean
 public class SubscriptionHistory extends BasePersistHistoryProvider<SubscriptionHistoryListDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionHistory.class);
@@ -28,7 +30,7 @@ public class SubscriptionHistory extends BasePersistHistoryProvider<Subscription
 
     private static Map<String, SubscriptionHistoryListDTO> historyDTOs = new HashMap<>();
 
-    @AssistedInject
+    @Inject
     SubscriptionHistory(SettingsManager settings,
                         EventBus eventBus,
                         @Assisted String connectionId) {

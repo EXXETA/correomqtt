@@ -1,8 +1,8 @@
 package org.correomqtt.gui.contextmenu;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.event.ActionEvent;
 import javafx.scene.control.SeparatorMenuItem;
 import org.correomqtt.core.settings.SettingsManager;
@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("java:S110")
+@DefaultBean
 public class MessageListContextMenu extends BaseMessageContextMenu<MessageListContextMenuDelegate> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageListContextMenu.class);
@@ -24,12 +25,8 @@ public class MessageListContextMenu extends BaseMessageContextMenu<MessageListCo
     private SeparatorMenuItem separator2;
     private SeparatorMenuItem separator3;
 
-    @AssistedFactory
-    public interface Factory {
-        MessageListContextMenu create(MessageListContextMenuDelegate delegate);
 
-    }
-    @AssistedInject
+    @Inject
     public MessageListContextMenu(SettingsManager settingsManager,
                                   @Assisted MessageListContextMenuDelegate dispatcher) {
         super(settingsManager, dispatcher);

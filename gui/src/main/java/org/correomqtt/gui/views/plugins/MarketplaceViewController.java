@@ -20,10 +20,12 @@ import org.correomqtt.core.plugin.marketplace.PluginEnabledStartedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginInstallEvent;
 import org.correomqtt.core.plugin.marketplace.PluginInstallFailedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginInstallStartedEvent;
-import org.correomqtt.core.plugin.marketplace.PluginInstallTask;
+import org.correomqtt.core.plugin.marketplace.PluginInstallTaskFactory;
 import org.correomqtt.core.plugin.marketplace.PluginUninstallEvent;
 import org.correomqtt.core.plugin.marketplace.PluginUninstallFailedEvent;
 import org.correomqtt.core.plugin.marketplace.PluginUninstallStartedEvent;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.PluginTransformer;
@@ -31,16 +33,16 @@ import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 
-import javax.inject.Inject;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 @Slf4j
+@DefaultBean
 public class MarketplaceViewController extends BaseControllerImpl {
 
-    private final PluginInstallTask.Factory pluginInstallTaskFactory;
+    private final PluginInstallTaskFactory pluginInstallTaskFactory;
     private final ResourceBundle resources;
-    private final PluginCell.Factory pluginCellFactory;
+    private final PluginCellFactory pluginCellFactory;
     private final AlertHelper alertHelper;
     @FXML
     Pane marketplaceRootPane;
@@ -68,8 +70,8 @@ public class MarketplaceViewController extends BaseControllerImpl {
     @Inject
     public MarketplaceViewController(CoreManager coreManager,
                                      ThemeManager themeManager,
-                                     PluginInstallTask.Factory pluginInstallTaskFactory,
-                                     PluginCell.Factory pluginCellFactory,
+                                     PluginInstallTaskFactory pluginInstallTaskFactory,
+                                     PluginCellFactory pluginCellFactory,
                                      AlertHelper alertHelper) {
         super(coreManager, themeManager);
         this.pluginInstallTaskFactory = pluginInstallTaskFactory;

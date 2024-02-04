@@ -1,10 +1,10 @@
 package org.correomqtt.core.scripting;
 
-import dagger.Lazy;
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import lombok.Getter;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.Lazy;
 import org.correomqtt.core.concurrent.FullTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.eventbus.EventBus;
@@ -23,24 +23,20 @@ import static org.correomqtt.core.scripting.ScriptExecutionError.Type.GUEST;
 import static org.correomqtt.core.scripting.ScriptExecutionError.Type.HOST;
 import static org.slf4j.MarkerFactory.getMarker;
 
+@DefaultBean
 public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, ExecutionDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptExecutionTask.class);
-    private final ScriptLoggerContext.Factory scriptLoggerContextFactory;
+    private final ScriptLoggerContextFactory scriptLoggerContextFactory;
     private final ScriptingProvider scriptingProvider;
     private final Lazy<JsContextBuilder> jsContextBuilderLazy;
     @Getter
     private final ExecutionDTO dto;
     private Context context;
 
-    @AssistedFactory
-    public interface Factory {
-        ScriptExecutionTask create(ExecutionDTO executionDTO);
-    }
-
-    @AssistedInject
+    @Inject
     public ScriptExecutionTask(
-            ScriptLoggerContext.Factory scriptLoggerContextFactory,
+            ScriptLoggerContextFactory scriptLoggerContextFactory,
             ScriptingProvider scriptingProvider,
             Lazy<JsContextBuilder> jsContextBuilderLazy,
             EventBus eventBus,
@@ -54,7 +50,6 @@ public class ScriptExecutionTask extends FullTask<ExecutionDTO, ExecutionDTO, Ex
 
     public ExecutionDTO execute() throws TaskException {
         LOGGER.debug(marker(), "Submit script: {}", dto.getExecutionId());
-
         ScriptingBackend.putExecutionTask(this);
         try (ScriptLoggerContext slc = scriptLoggerContextFactory.create(dto, marker())) {
             dto.setStartTime(LocalDateTime.now());

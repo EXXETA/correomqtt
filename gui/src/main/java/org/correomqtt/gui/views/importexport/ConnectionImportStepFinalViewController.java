@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views.importexport;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import org.correomqtt.core.CoreManager;
@@ -13,6 +13,7 @@ import org.correomqtt.gui.views.base.BaseControllerImpl;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class ConnectionImportStepFinalViewController extends BaseControllerImpl implements ConnectionImportStepController {
 
     private final ConnectionImportStepDelegate delegate;
@@ -20,11 +21,8 @@ public class ConnectionImportStepFinalViewController extends BaseControllerImpl 
     @FXML
     private Label description;
 
-    @AssistedFactory
-    public interface Factory {
-        ConnectionImportStepFinalViewController create(ConnectionImportStepDelegate delegate);
-    }
-    @AssistedInject
+
+    @Inject
     public ConnectionImportStepFinalViewController(CoreManager coreManager,
                                                    ThemeManager themeManager,
                                                    @Assisted ConnectionImportStepDelegate delegate) {

@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views.connections;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -28,6 +28,7 @@ import java.util.ResourceBundle;
 
 import static org.correomqtt.core.connection.ConnectionState.CONNECTED;
 
+@DefaultBean
 public class ControlBarController extends BaseConnectionController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ControlBarController.class);
 
@@ -73,15 +74,9 @@ public class ControlBarController extends BaseConnectionController {
 
     private ConnectionConfigDTO connectionConfigDTO;
 
-    @AssistedFactory
 
-    public interface Factory {
-        ControlBarController create(String connectionId,
-                                    ControlBarDelegate delegate);
 
-    }
-
-    @AssistedInject
+    @Inject
     public ControlBarController(CoreManager coreManager,
                                 ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
                                 ThemeManager themeManager,

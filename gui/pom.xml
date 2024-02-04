@@ -150,10 +150,6 @@
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j-update</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.google.dagger</groupId>
-            <artifactId>dagger</artifactId>
-        </dependency>
         <!--Test-Scope-->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -207,6 +203,11 @@
                     <release>${maven.compiler.release}</release>
                     <annotationProcessorPaths>
                         <annotationProcessorPath>
+                            <groupId>org.correomqtt</groupId>
+                            <artifactId>di</artifactId>
+                            <version>0.15.0</version>
+                        </annotationProcessorPath>
+                        <annotationProcessorPath>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
@@ -216,11 +217,6 @@
                             <artifactId>pf4j</artifactId>
                             <version>3.9.0</version>
                         </annotationProcessorPath>
-                        <path>
-                            <groupId>com.google.dagger</groupId>
-                            <artifactId>dagger-compiler</artifactId>
-                            <version>${dagger.version}</version>
-                        </path>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>

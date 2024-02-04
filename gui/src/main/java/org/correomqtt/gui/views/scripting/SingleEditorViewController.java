@@ -1,8 +1,5 @@
 package org.correomqtt.gui.views.scripting;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -10,6 +7,9 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import org.correomqtt.core.CoreManager;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.connection.ConnectionState;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
@@ -45,10 +45,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.correomqtt.core.eventbus.SubscribeFilterNames.SCRIPT_NAME;
 
+@DefaultBean
 public class SingleEditorViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleEditorViewController.class);
-    private final ConnectionCellButton.Factory connectionCellButtonFactory;
+    private final ConnectionCellButtonFactory connectionCellButtonFactory;
     private final AlertHelper alertHelper;
     private final ScriptTaskFactories scriptTaskFactories;
     private final EventBus eventBus;
@@ -77,17 +78,12 @@ public class SingleEditorViewController extends BaseControllerImpl {
     private ComboBox<ConnectionPropertiesDTO> connectionList;
     private ResourceBundle resources;
 
-    @AssistedFactory
-    public interface Factory {
-        SingleEditorViewController create(SingleEditorViewDelegate delegate,
-                                          ScriptFilePropertiesDTO scriptFilePropertiesDTO);
 
-    }
 
-    @AssistedInject
+    @Inject
     public SingleEditorViewController(CoreManager coreManager,
                                       ThemeManager themeManager,
-                                      ConnectionCellButton.Factory connectionCellButtonFactory,
+                                      ConnectionCellButtonFactory connectionCellButtonFactory,
                                       AlertHelper alertHelper,
                                       ScriptTaskFactories scriptTaskFactories,
                                       EventBus eventBus,

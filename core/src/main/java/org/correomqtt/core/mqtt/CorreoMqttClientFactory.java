@@ -1,18 +1,19 @@
 package org.correomqtt.core.mqtt;
 
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.exception.CorreoMqttUnsupportedMqttVersionException;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 
-import javax.inject.Inject;
-
+@DefaultBean
 public class CorreoMqttClientFactory {
 
-    private final CorreoMqtt3Client.Factory correoMqtt3ClientFactory;
-    private final CorreoMqtt5Client.Factory correoMqtt5ClientFactory;
+    private final CorreoMqtt3ClientFactory correoMqtt3ClientFactory;
+    private final CorreoMqtt5ClientFactory correoMqtt5ClientFactory;
 
     @Inject
-    public CorreoMqttClientFactory(CorreoMqtt3Client.Factory correoMqtt3ClientFactory,
-                                    CorreoMqtt5Client.Factory correoMqtt5ClientFactory) {
+    public CorreoMqttClientFactory(CorreoMqtt3ClientFactory correoMqtt3ClientFactory,
+                                   CorreoMqtt5ClientFactory correoMqtt5ClientFactory) {
         // private constructor
         this.correoMqtt3ClientFactory = correoMqtt3ClientFactory;
         this.correoMqtt5ClientFactory = correoMqtt5ClientFactory;
@@ -25,5 +26,4 @@ public class CorreoMqttClientFactory {
             default -> throw new CorreoMqttUnsupportedMqttVersionException();
         };
     }
-
 }

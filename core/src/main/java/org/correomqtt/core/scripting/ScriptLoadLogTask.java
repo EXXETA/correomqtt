@@ -1,8 +1,8 @@
 package org.correomqtt.core.scripting;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.NoProgressTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.eventbus.EventBus;
@@ -14,6 +14,7 @@ import java.io.IOException;
 
 import static org.correomqtt.core.scripting.ScriptLoadTask.Error.IOERROR;
 
+@DefaultBean
 public class ScriptLoadLogTask extends NoProgressTask<String, ScriptLoadLogTask.Error> {
 
 
@@ -26,12 +27,9 @@ public class ScriptLoadLogTask extends NoProgressTask<String, ScriptLoadLogTask.
         IOERROR
     }
 
-    @AssistedFactory
-    public interface Factory {
-        ScriptLoadLogTask create(ExecutionDTO dto);
-    }
 
-    @AssistedInject
+
+    @Inject
     public ScriptLoadLogTask(ScriptingProvider scriptingProvider,
                              EventBus eventBus,
                              @Assisted ExecutionDTO dto) {

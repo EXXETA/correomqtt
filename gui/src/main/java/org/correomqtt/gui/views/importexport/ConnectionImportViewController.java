@@ -8,6 +8,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import lombok.AllArgsConstructor;
 import org.correomqtt.core.CoreManager;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ConnectionExportDTO;
 import org.correomqtt.gui.model.WindowProperty;
@@ -19,7 +21,6 @@ import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -27,13 +28,14 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.Supplier;
 
+@DefaultBean
 public class ConnectionImportViewController extends BaseControllerImpl implements ConnectionImportStepDelegate {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionImportViewController.class);
     private final Map<Step, StepState> stepStates = new EnumMap<>(Step.class);
-    private final ConnectionImportStepChooseFileViewController.Factory importChooseFileCtrlFactory;
-    private final ConnectionImportStepConnectionsViewController.Factory importConnectionsCtrlFactory;
-    private final ConnectionImportStepDecryptViewController.Factory importDecryptCtrlFactory;
-    private final ConnectionImportStepFinalViewController.Factory importFinalCtrlFactory;
+    private final ConnectionImportStepChooseFileViewControllerFactory importChooseFileCtrlFactory;
+    private final ConnectionImportStepConnectionsViewControllerFactory importConnectionsCtrlFactory;
+    private final ConnectionImportStepDecryptViewControllerFactory importDecryptCtrlFactory;
+    private final ConnectionImportStepFinalViewControllerFactory importFinalCtrlFactory;
     private List<ConnectionConfigDTO> originalImportedConnections;
     private List<ConnectionConfigDTO> importableConnections;
     @FXML
@@ -43,10 +45,10 @@ public class ConnectionImportViewController extends BaseControllerImpl implement
     @Inject
     protected ConnectionImportViewController(CoreManager coreManager,
                                              ThemeManager themeManager,
-                                             ConnectionImportStepChooseFileViewController.Factory importChooseFileCtrlFactory,
-                                             ConnectionImportStepConnectionsViewController.Factory importConnectionsCtrlFactory,
-                                             ConnectionImportStepDecryptViewController.Factory importDecryptCtrlFactory,
-                                             ConnectionImportStepFinalViewController.Factory importFinalCtrlFactory
+                                             ConnectionImportStepChooseFileViewControllerFactory importChooseFileCtrlFactory,
+                                             ConnectionImportStepConnectionsViewControllerFactory importConnectionsCtrlFactory,
+                                             ConnectionImportStepDecryptViewControllerFactory importDecryptCtrlFactory,
+                                             ConnectionImportStepFinalViewControllerFactory importFinalCtrlFactory
     ) {
         super(coreManager, themeManager);
         this.importChooseFileCtrlFactory = importChooseFileCtrlFactory;

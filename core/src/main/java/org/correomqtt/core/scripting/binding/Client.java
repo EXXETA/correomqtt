@@ -1,6 +1,7 @@
 package org.correomqtt.core.scripting.binding;
 
 import lombok.Getter;
+import org.correomqtt.di.DefaultBean;
 import org.correomqtt.core.connection.ConnectionLifecycleTaskFactories;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
@@ -15,7 +16,7 @@ import org.graalvm.polyglot.HostAccess.Export;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +32,7 @@ import static org.correomqtt.core.scripting.JsContextBuilder.CORREO_SCRIPT_LOGGE
 import static org.correomqtt.core.scripting.JsContextBuilder.CORREO_SCRIPT_MARKER;
 import static org.correomqtt.core.scripting.JsContextBuilder.CORREO_SCRIPT_QUEUE;
 
+@DefaultBean
 public class Client {
 
     private final ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories;

@@ -16,12 +16,13 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
+import org.correomqtt.di.SingletonBean;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.window.StageHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static javafx.scene.control.Alert.AlertType.INFORMATION;
 import static javafx.scene.control.Alert.AlertType.WARNING;
 
+@SingletonBean
 public class AlertHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertHelper.class);

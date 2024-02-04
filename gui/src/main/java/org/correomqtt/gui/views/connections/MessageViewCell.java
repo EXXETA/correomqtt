@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views.connections;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
@@ -29,6 +29,7 @@ import java.util.ResourceBundle;
 import java.util.function.Supplier;
 
 @SuppressWarnings("java:S110")
+@DefaultBean
 public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
 
     public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
@@ -86,13 +87,8 @@ public class MessageViewCell extends ListCell<MessagePropertiesDTO> {
     @FXML
     private ResourceBundle resources;
 
-    @AssistedFactory
-    public interface Factory {
-        MessageViewCell create(ListView<MessagePropertiesDTO> listView,
-                               Supplier<MessageListViewConfig> listViewConfigGetter);
 
-    }
-    @AssistedInject
+    @Inject
     public MessageViewCell(PluginManager pluginManager,
                            MessageValidator messageValidator,
                            SettingsManager settingsManager,

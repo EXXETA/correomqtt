@@ -1,8 +1,5 @@
 package org.correomqtt.gui.views.connections;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
@@ -28,7 +25,7 @@ import org.correomqtt.core.exception.CorreoMqttException;
 import org.correomqtt.core.importexport.messages.ImportMessageFailedEvent;
 import org.correomqtt.core.importexport.messages.ImportMessageStartedEvent;
 import org.correomqtt.core.importexport.messages.ImportMessageSuccessEvent;
-import org.correomqtt.core.importexport.messages.ImportMessageTask;
+import org.correomqtt.core.importexport.messages.ImportMessageTaskFactory;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.correomqtt.core.model.ControllerType;
 import org.correomqtt.core.model.MessageDTO;
@@ -39,7 +36,10 @@ import org.correomqtt.core.model.Qos;
 import org.correomqtt.core.pubsub.PublishEvent;
 import org.correomqtt.core.pubsub.PublishListClearEvent;
 import org.correomqtt.core.pubsub.PublishListRemovedEvent;
-import org.correomqtt.core.pubsub.PublishTask;
+import org.correomqtt.core.pubsub.PublishTaskFactory;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.plugin.spi.MessageContextMenuHook;
 import org.correomqtt.gui.plugin.spi.PublishMenuHook;
@@ -50,7 +50,8 @@ import org.correomqtt.gui.utils.AutoFormatPayload;
 import org.correomqtt.gui.utils.CheckTopicHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.LoadingViewController;
-import org.correomqtt.gui.views.cell.QosCell;
+import org.correomqtt.gui.views.LoadingViewControllerFactory;
+import org.correomqtt.gui.views.cell.QosCellFactory;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
@@ -66,16 +67,17 @@ import java.util.function.Supplier;
 
 import static org.correomqtt.core.connection.ConnectionState.CONNECTED;
 
+@DefaultBean
 public class PublishViewController extends BaseMessageBasedViewController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishViewController.class);
-    private final PublishTask.Factory publishTaskFactory;
-    private final QosCell.Factory qosCellFactory;
+    private final PublishTaskFactory publishTaskFactory;
+    private final QosCellFactory qosCellFactory;
     private final AutoFormatPayload autoFormatPayload;
-    private final TopicCell.Factory topicCellFactory;
+    private final TopicCellFactory topicCellFactory;
     private final AlertHelper alertHelper;
-    private final LoadingViewController.Factory loadingViewControllerFactory;
-    private final ImportMessageTask.Factory importMessageTaskFactory;
+    private final LoadingViewControllerFactory loadingViewControllerFactory;
+    private final ImportMessageTaskFactory importMessageTaskFactory;
     private final EventBus eventBus;
     private final PublishViewDelegate delegate;
     private ResourceBundle resources;
@@ -109,23 +111,19 @@ public class PublishViewController extends BaseMessageBasedViewController {
     private LoadingViewController loadingViewController;
     private ChangeListener<String> payloadCodeAreaChangeListener;
 
-    @AssistedFactory
-    public interface Factory {
-        PublishViewController create(String connectionId, PublishViewDelegate delegate);
 
-    }
 
-    @AssistedInject
+    @Inject
     public PublishViewController(CoreManager coreManager,
-                                 PublishTask.Factory publishTaskFactory,
-                                 QosCell.Factory qosCellFactory,
+                                 PublishTaskFactory publishTaskFactory,
+                                 QosCellFactory qosCellFactory,
                                  AutoFormatPayload autoFormatPayload,
                                  ThemeManager themeManager,
-                                 MessageListViewController.Factory messageListViewControllerFactory,
-                                 TopicCell.Factory topicCellFactory,
+                                 MessageListViewControllerFactory messageListViewControllerFactory,
+                                 TopicCellFactory topicCellFactory,
                                  AlertHelper alertHelper,
-                                 LoadingViewController.Factory loadingViewControllerFactory,
-                                 ImportMessageTask.Factory importMessageTaskFactory,
+                                 LoadingViewControllerFactory loadingViewControllerFactory,
+                                 ImportMessageTaskFactory importMessageTaskFactory,
                                  EventBus eventBus,
                                  @Assisted String connectionId,
                                  @Assisted PublishViewDelegate delegate) {

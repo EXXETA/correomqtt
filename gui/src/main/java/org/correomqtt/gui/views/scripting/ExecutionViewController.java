@@ -12,6 +12,8 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 import lombok.AllArgsConstructor;
 import org.correomqtt.core.CoreManager;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.eventbus.Subscribe;
 import org.correomqtt.core.eventbus.SubscribeFilter;
@@ -31,19 +33,19 @@ import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 
-import javax.inject.Inject;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class ExecutionViewController extends BaseControllerImpl {
 
     private ResourceBundle resources;
     private final Map<String, ScriptExecutionState> executionStates = new HashMap<>();
     private final AlertHelper alertHelper;
-    private final ExecutionCell.Factory executionCellFactory;
-    private final SingleExecutionViewController.Factory executionViewCtrlFactory;
+    private final ExecutionCellFactory executionCellFactory;
+    private final SingleExecutionViewControllerFactory executionViewCtrlFactory;
     private final ScriptExecuteTaskFactories scriptExecuteTaskFactories;
     private final EventBus eventBus;
     @FXML
@@ -74,8 +76,8 @@ public class ExecutionViewController extends BaseControllerImpl {
     public ExecutionViewController(CoreManager coreManager,
                                    ThemeManager themeManager,
                                    AlertHelper alertHelper,
-                                   ExecutionCell.Factory executionCellFactory,
-                                   SingleExecutionViewController.Factory executionViewCtrlFactory,
+                                   ExecutionCellFactory executionCellFactory,
+                                   SingleExecutionViewControllerFactory executionViewCtrlFactory,
                                    ScriptExecuteTaskFactories scriptExecuteTaskFactories,
                                    EventBus eventBus
     ) {

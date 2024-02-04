@@ -3,28 +3,28 @@ package org.correomqtt.plugins.systopic;
 import dagger.Component;
 import javafx.scene.layout.HBox;
 import org.correomqtt.MainComponent;
-import org.correomqtt.core.PluginScoped;
 import org.correomqtt.gui.plugin.ExtensionComponent;
 import org.correomqtt.gui.plugin.spi.MainToolbarHook;
 import org.correomqtt.plugins.systopic.controller.SysTopicButtonController;
 import org.pf4j.Extension;
 
-import javax.inject.Inject;
+import org.correomqtt.core.cdi.Inject;
+import org.correomqtt.core.cdi.SingletonBean;
 
 @Extension
 public class SysTopicExtension implements MainToolbarHook {
 
 
-    private final SysTopicButtonController.Factory sysTopicButtonControllerFactory;
+    private final SysTopicButtonControllerFactory sysTopicButtonControllerFactory;
 
-    @PluginScoped
+    @SingletonBean
     @Component(dependencies = MainComponent.class)
     public interface Factory extends ExtensionComponent<SysTopicExtension> {
 
     }
 
     @Inject
-    public SysTopicExtension(SysTopicButtonController.Factory sysTopicButtonControllerFactory) {
+    public SysTopicExtension(SysTopicButtonControllerFactory sysTopicButtonControllerFactory) {
 
         this.sysTopicButtonControllerFactory = sysTopicButtonControllerFactory;
     }

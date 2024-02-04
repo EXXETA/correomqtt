@@ -2,6 +2,7 @@ package org.correomqtt.gui.utils;
 
 import javafx.beans.value.ChangeListener;
 import org.correomqtt.core.plugin.PluginManager;
+import org.correomqtt.di.DefaultBean;
 import org.correomqtt.gui.formats.Format;
 import org.correomqtt.gui.formats.Plain;
 import org.correomqtt.gui.plugin.spi.DetailViewFormatHook;
@@ -9,10 +10,11 @@ import org.fxmisc.richtext.CodeArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 import java.util.ArrayList;
 import java.util.Objects;
 
+@DefaultBean
 public class AutoFormatPayload {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AutoFormatPayload.class);

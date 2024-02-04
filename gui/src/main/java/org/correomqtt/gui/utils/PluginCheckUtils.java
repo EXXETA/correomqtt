@@ -3,9 +3,11 @@ package org.correomqtt.gui.utils;
 import org.correomqtt.core.fileprovider.PluginConfigProvider;
 import org.correomqtt.core.settings.SettingsManager;
 
-import javax.inject.Inject;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class PluginCheckUtils {
     private final PluginConfigProvider pluginConfigProvider;
     private final AlertHelper alertHelper;

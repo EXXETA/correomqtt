@@ -19,7 +19,10 @@ import org.controlsfx.control.CheckListView;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.TaskErrorResult;
 import org.correomqtt.core.importexport.connections.ExportConnectionsTask;
+import org.correomqtt.core.importexport.connections.ExportConnectionsTaskFactory;
 import org.correomqtt.core.model.ConnectionConfigDTO;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
@@ -33,7 +36,6 @@ import org.correomqtt.gui.views.connectionsettings.ConnectionSettingsViewControl
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -41,12 +43,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class ConnectionExportViewController extends BaseControllerImpl {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionExportViewController.class);
     private final AlertHelper alertHelper;
-    private final ExportConnectionsTask.Factory exportConnectionTaskFactory;
-    private final ExportConnectionCell.Factory exportConnectionCellFactory;
+    private final ExportConnectionsTaskFactory exportConnectionTaskFactory;
+    private final ExportConnectionCellFactory exportConnectionCellFactory;
     @FXML
     private Label passwordLabel;
 
@@ -67,8 +70,8 @@ public class ConnectionExportViewController extends BaseControllerImpl {
     public ConnectionExportViewController(CoreManager coreManager,
                                           ThemeManager themeManager,
                                           AlertHelper alertHelper,
-                                          ExportConnectionsTask.Factory exportConnectionTaskFactory,
-                                          ExportConnectionCell.Factory exportConnectionCellFactory) {
+                                          ExportConnectionsTaskFactory exportConnectionTaskFactory,
+                                          ExportConnectionCellFactory exportConnectionCellFactory) {
         super(coreManager, themeManager);
         this.alertHelper = alertHelper;
         this.exportConnectionTaskFactory = exportConnectionTaskFactory;

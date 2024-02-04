@@ -1,8 +1,8 @@
 package org.correomqtt.core.scripting;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleErrorTask;
 import org.correomqtt.core.concurrent.TaskException;
 import org.correomqtt.core.eventbus.EventBus;
@@ -12,6 +12,7 @@ import java.io.IOException;
 
 import static org.correomqtt.core.scripting.ScriptSaveTask.Error.IOERROR;
 
+@DefaultBean
 public class ScriptSaveTask extends SimpleErrorTask<ScriptSaveTask.Error> {
 
     public enum Error {
@@ -22,12 +23,8 @@ public class ScriptSaveTask extends SimpleErrorTask<ScriptSaveTask.Error> {
     private final ScriptFileDTO scriptFileDTO;
     private final String content;
 
-    @AssistedFactory
-    public interface Factory {
-        ScriptSaveTask create(ScriptFileDTO scriptFileDTO, String contente);
-    }
 
-    @AssistedInject
+    @Inject
     public ScriptSaveTask(ScriptingProvider scriptingProvider,
                           EventBus eventBus,
                           @Assisted ScriptFileDTO scriptFileDTO,

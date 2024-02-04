@@ -6,14 +6,16 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.FileAppender;
 import ch.qos.logback.core.encoder.Encoder;
+import org.correomqtt.di.DefaultBean;
 import org.correomqtt.core.model.ConnectionConfigDTO;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import javax.inject.Inject;
+import org.correomqtt.di.Inject;
 import java.util.Iterator;
 
+@DefaultBean
 public class LoggerUtils {
 
     public static final String SCRIPT_APPENDER_NAME = "SCRIPT";

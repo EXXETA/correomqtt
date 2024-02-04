@@ -1,11 +1,11 @@
 package org.correomqtt.core.fileprovider;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.SingletonBean;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Singleton
+@SingletonBean
 public class HistoryManager {
 
     private final Map<String, PublishHistory> publishHistories = new ConcurrentHashMap<>();
@@ -14,7 +14,6 @@ public class HistoryManager {
     private final PublishHistoryFactory publishHistoryFactory;
     private final PublishMessageHistoryFactory publishMessageHistoryFactory;
     private final SubscriptionHistoryFactory subscriptionHistoryFactory;
-
     @Inject
     HistoryManager(PublishHistoryFactory publishHistoryFactory,
                    PublishMessageHistoryFactory publishMessageHistoryFactory,

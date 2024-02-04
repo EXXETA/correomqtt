@@ -10,10 +10,10 @@ import com.hivemq.client.mqtt.mqtt5.message.connect.Mqtt5ConnectBuilder;
 import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAck;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAckReasonCode;
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
 import lombok.Getter;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.eventbus.EventBus;
 import org.correomqtt.core.exception.CorreoMqtt5SubscriptionFailed;
 import org.correomqtt.core.exception.CorreoMqttConnectionFailedException;
@@ -37,6 +37,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 @Getter
+@DefaultBean
 public class CorreoMqtt5Client extends BaseCorreoMqttClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CorreoMqtt5Client.class);
@@ -44,12 +45,8 @@ public class CorreoMqtt5Client extends BaseCorreoMqttClient {
     private Mqtt5BlockingClient mqtt5BlockingClient;
 
 
-    @AssistedFactory
-    public interface Factory {
-        CorreoMqtt5Client create(ConnectionConfigDTO configDTO);
-    }
 
-    @AssistedInject
+    @Inject
     CorreoMqtt5Client(EventBus eventBus,
                       @Assisted ConnectionConfigDTO configDTO) {
         super(eventBus, configDTO);

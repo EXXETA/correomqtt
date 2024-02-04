@@ -1,9 +1,9 @@
 package org.correomqtt.core.importexport.messages;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleResultTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.eventbus.EventBus;
@@ -12,17 +12,15 @@ import org.correomqtt.core.model.MessageDTO;
 import java.io.File;
 import java.io.IOException;
 
+@DefaultBean
 public class ImportMessageTask extends SimpleResultTask<MessageDTO> {
 
     private final File file;
 
 
-    @AssistedFactory
-    public interface Factory {
-        ImportMessageTask create(File file);
-    }
 
-    @AssistedInject
+
+    @Inject
     public ImportMessageTask(EventBus eventBus,
                              @Assisted File file) {
         super(eventBus);

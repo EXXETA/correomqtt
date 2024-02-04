@@ -1,8 +1,8 @@
 package org.correomqtt.core.pubsub;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.core.concurrent.SimpleTask;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.eventbus.EventBus;
@@ -10,6 +10,7 @@ import org.correomqtt.core.model.SubscriptionDTO;
 import org.correomqtt.core.mqtt.CorreoMqttClient;
 import org.correomqtt.core.utils.ConnectionManager;
 
+@DefaultBean
 public class UnsubscribeTask extends SimpleTask {
 
     private final ConnectionManager connectionManager;
@@ -17,12 +18,7 @@ public class UnsubscribeTask extends SimpleTask {
     private final String connectionId;
     private final SubscriptionDTO subscriptionDTO;
 
-    @AssistedFactory
-    public interface Factory {
-        UnsubscribeTask create(String connectionId, SubscriptionDTO subscriptionDTO);
-    }
-
-    @AssistedInject
+    @Inject
     public UnsubscribeTask(ConnectionManager connectionManager,
                            EventBus eventBus,
                            @Assisted String connectionId,

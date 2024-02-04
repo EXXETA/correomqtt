@@ -1,8 +1,8 @@
 package org.correomqtt.gui.views.scripting;
 
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
-import dagger.assisted.AssistedInject;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
@@ -26,6 +26,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
 
+@DefaultBean
 public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptCell.class);
@@ -49,12 +50,8 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
     private FXMLLoader loader;
     private RotateTransition rotateTransition;
 
-    @AssistedFactory
-    public interface Factory {
-        ScriptCell create(ListView<ScriptFilePropertiesDTO> listView);
 
-    }
-    @AssistedInject
+    @Inject
     public ScriptCell(SettingsManager settingsManager,
                       ThemeManager themeManager,
                       @Assisted ListView<ScriptFilePropertiesDTO> listView) {

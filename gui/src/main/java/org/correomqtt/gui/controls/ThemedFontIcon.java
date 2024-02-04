@@ -1,8 +1,8 @@
 package org.correomqtt.gui.controls;
 
 import javafx.scene.paint.Paint;
-import org.correomqtt.GuiCore;
-import org.correomqtt.MainComponent;
+import org.correomqtt.di.SoyDi;
+import org.correomqtt.gui.theme.ThemeManager;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 public class ThemedFontIcon extends FontIcon {
@@ -13,13 +13,15 @@ public class ThemedFontIcon extends FontIcon {
     }
 
     private void setupIconColor() {
-        MainComponent component = GuiCore.getMainComponent();
-
+        ThemeManager themeManager = null;
+        if (SoyDi.isInjectable(ThemeManager.class)) {
+            themeManager = SoyDi.inject(ThemeManager.class);
+        }
         String iconClass;
-        if (component == null) {
+        if (themeManager == null) {
             iconClass = "white";
         } else {
-            iconClass = component.themeManager().getIconModeCssClass();
+            iconClass = themeManager.getIconModeCssClass();
         }
         if (iconClass != null && !iconClass.isEmpty()) {
             this.iconColorProperty().setValue(Paint.valueOf(iconClass));
@@ -51,5 +53,4 @@ public class ThemedFontIcon extends FontIcon {
         this.setIconSize(iconSize);
         this.setIconColor(color);
     }
-
 }
