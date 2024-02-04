@@ -70,7 +70,7 @@ public class SoyFactoryProcessor extends AbstractProcessor {
             final Method unwrapMethod = apiWrappers.getDeclaredMethod("unwrap", Class.class, Object.class);
             unwrapped = (ProcessingEnvironment) unwrapMethod.invoke(null, ProcessingEnvironment.class, wrapper);
         } catch (Throwable e) {
-            info("Unable to unwrap processing environment: %s", e.getMessage());
+            // This is only for intellij. Maven does not need the unwrapping.
         }
         return unwrapped != null ? unwrapped : wrapper;
     }
