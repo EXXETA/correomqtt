@@ -64,4 +64,16 @@ org.correomqtt.gui.views.plugins
 org.correomqtt.gui.views.scripting
 org.correomqtt.gui.views.settings
 org.correomqtt.gui.window
+org.correomqtt.plugin.advanced_validator
+org.correomqtt.plugin.base64
+org.correomqtt.plugin.contains_string_validator
+org.correomqtt.plugin.json_format
+org.correomqtt.plugin.repo_build
+org.correomqtt.plugin.save
+org.correomqtt.plugin.xml_format
+org.correomqtt.plugin.xml_xsd_validator
+org.correomqtt.plugin.zip_manipulator
+org.correomqtt.plugins.systopic
+org.correomqtt.plugins.systopic.controller
+org.correomqtt.plugins.systopic.model
 org.correomqtt.preloader
