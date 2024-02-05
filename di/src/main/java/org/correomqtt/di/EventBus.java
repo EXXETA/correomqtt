@@ -207,8 +207,11 @@ class EventBus {
 
     private static void executeFire(Event event, List<ObserverInfo> observerInfos) {
         observerInfos.forEach(oi -> {
-            //TODO sync
-            executeMethod(oi, event);
+            if (oi.isSync()) {
+                executeMethod(oi, event);
+            } else {
+                FrontendBinding.pushToFrontend(() -> executeMethod(oi, event)); // TODO use interceptor
+            }
         });
     }
 

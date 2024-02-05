@@ -1,4 +1,4 @@
-package org.correomqtt.core.utils;
+package org.correomqtt.di;
 
 public interface TaskToFrontendPush {
 

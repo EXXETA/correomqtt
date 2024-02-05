@@ -1,4 +1,4 @@
-package org.correomqtt.core.utils;
+package org.correomqtt.di;
 
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
