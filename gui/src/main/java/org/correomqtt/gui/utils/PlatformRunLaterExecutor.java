@@ -1,7 +1,7 @@
 package org.correomqtt.gui.utils;
 
 import javafx.application.Platform;
-import org.correomqtt.core.utils.TaskToFrontendPush;
+import org.correomqtt.di.TaskToFrontendPush;
 
 @SuppressWarnings("unused")
 public class PlatformRunLaterExecutor implements TaskToFrontendPush {
