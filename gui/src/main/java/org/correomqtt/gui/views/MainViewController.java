@@ -16,6 +16,7 @@ import javafx.scene.layout.AnchorPane;
 import lombok.Getter;
 import org.correomqtt.GuiCore;
 import org.correomqtt.core.applifecycle.ShutdownRequestEvent;
+import org.correomqtt.core.connection.ConnectionState;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
 import org.correomqtt.di.SoyEvents;
 import org.correomqtt.di.Observes;
@@ -154,13 +155,10 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
     @FXML
     private void initialize() {
         tabPaneAnchorPane.getStyleClass().add(themeManager.getIconModeCssClass());
-
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
         setupAddTab();
         createLogTab();
-
         connectionViewControllers = new HashMap<>();
-
         final String os = System.getProperty("os.name");
         if (os != null && os.startsWith("Mac")) {
             menuBar.getMenus().remove(fileMenu);
@@ -168,15 +166,12 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
             AnchorPane.setTopAnchor(tabPane, 0.0);
             System.setProperty("apple.laf.useScreenMenuBar", "true");
         }
-
         setMenuEventHandler();
-
         tabPane.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode().isDigitKey() && event.isShortcutDown()) {
                 selectionModel.select(Integer.parseInt(event.getText()) - 1);
             }
         });
-
         tabPane.widthProperty().addListener((a, b, c) -> calcTabWidth());
     }
 
@@ -186,7 +181,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         LoaderResult<ConnectionOnboardingViewController> loadResult = onboardingViewCtrlFactory.create(this).load();
         addTab.setContent(loadResult.getMainRegion());
         connectionOnboardingViewController = loadResult.getController();
-
         selectionModel = tabPane.getSelectionModel();
         selectionModel.select(addTab);
     }
@@ -236,6 +230,11 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     @SuppressWarnings("unused")
     public void onConnectionStateChanged(@Observes ConnectionStateChangedEvent event) {
+        if (event.getState() == ConnectionState.DISCONNECTED_GRACEFUL ||
+                event.getState() == ConnectionState.DISCONNECTED_UNGRACEFUL ||
+                event.getState() == ConnectionState.DISCONNECTING) {
+            return;
+        }
         if (connectionViewControllers.values().stream().noneMatch(ctrl -> ctrl.getConnectionId().equals(event.getConnectionId()))) {
             getConnectionViewControllerLoaderResult(ConnectionTransformer.dtoToProps(connectionManager.getConfig(event.getConnectionId())));
         }
@@ -243,7 +242,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private LoaderResult<ConnectionViewController> getConnectionViewControllerLoaderResult(ConnectionPropertiesDTO config) {
         String tabId = config.getId();
-
         Tab tab = new Tab();
         tab.setId(tabId);
         tab.setGraphic(new ThemedFontIcon("correo-wifi-solid"));
@@ -254,20 +252,15 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                 tab.getStyleClass().removeAll(DIRTY_CLASS);
             }
         });
-
         config.getNameProperty().addListener(((observableValue, s, t1) -> tab.setText(t1)));
-
         LoaderResult<ConnectionViewController> result = connectionViewCtlrFactory.create(config.getId(), this).load();
         result.getController().setTabId(tabId);
         tab.setContent(result.getMainRegion());
         tab.setOnCloseRequest(event -> this.onTabClose(result, tabId));
-
         connectionViewControllers.put(tabId, result.getController());
-
         tabPane.getTabs().add(tabPane.getTabs().size() - 1, tab);
         selectionModel = tabPane.getSelectionModel();
         selectionModel.select(tab);
-
         LOGGER.debug("New tab created");
         calcTabWidth();
         return result;
@@ -275,8 +268,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void onTabClose(LoaderResult<ConnectionViewController> result, String tabId) {
         closedTabId = tabId;
-        result.getController().close();
         connectionViewControllers.remove(closedTabId);
+        result.getController().close();
     }
 
     @Override
@@ -295,7 +288,6 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     @Override
     public void cleanUpProvider(ConnectionPropertiesDTO config) {
-
     }
 
     @FXML

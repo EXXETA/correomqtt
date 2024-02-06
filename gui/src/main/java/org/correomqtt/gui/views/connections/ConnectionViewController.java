@@ -75,7 +75,7 @@ public class ConnectionViewController extends BaseConnectionController implement
 
 
     @Inject
-    public ConnectionViewController(ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
+    ConnectionViewController(ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
                                     PublishViewControllerFactory publishViewControllerFactory,
                                     SubscriptionViewControllerFactory subscriptionViewControllerFactory,
                                     ControlBarControllerFactory controlBarControllerFactory,

@@ -1,6 +1,7 @@
 package org.correomqtt.gui.theme;
 
 import org.correomqtt.core.settings.SettingsManager;
+import org.correomqtt.core.utils.DirectoryUtils;
 import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.fileprovider.BaseUserFileProvider;
 import org.correomqtt.core.fileprovider.SettingsUpdatedEvent;
@@ -48,7 +49,7 @@ public class ThemeManager extends BaseUserFileProvider {
 
 
     public String getCssPath() {
-        File cssFile = new File(getTargetDirectoryPath() + File.separator + CSS_FILE_NAME);
+        File cssFile = new File(DirectoryUtils.getTargetDirectoryPath() + File.separator + CSS_FILE_NAME);
         if (!cssFile.exists()) {
             saveToUserDirectory(CSS_FILE_NAME, getActiveTheme().getCss());
             LOGGER.info("Write CSS to {}.", CSS_FILE_NAME);

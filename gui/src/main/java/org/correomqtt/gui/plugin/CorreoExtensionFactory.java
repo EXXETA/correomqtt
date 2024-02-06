@@ -17,7 +17,7 @@ public class CorreoExtensionFactory implements ExtensionFactory {
     public <T> T create(Class<T> extensionClass) {
         try {
             String pkg = extensionClass.getPackageName();
-            if (!pkg.startsWith("org.correomqtt.core") && !pkg.startsWith("org.correomqtt.gui")) {
+            if (!pkg.startsWith("org.correomqtt.core") && !pkg.startsWith("org.correomqtt.gui") && !SoyDi.isInjectable(extensionClass)) {
                 PluginManager pluginManager = SoyDi.inject(PluginManager.class);
                 PluginWrapper plugin = pluginManager.whichPlugin(extensionClass);
                 if (plugin == null) {

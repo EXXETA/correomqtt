@@ -111,7 +111,7 @@ public class SoyDi {
                 })
                 .filter(Objects::nonNull)
                 .findFirst()
-                .orElseThrow(() -> new SoyDiException("Unable to load class via available classloaders."));
+                .orElseThrow(() -> new SoyDiException("Unable to load class via available classloaders: " + className));
     }
 
     private static Constructor<?> findConstructor(Class<?> clazz) {

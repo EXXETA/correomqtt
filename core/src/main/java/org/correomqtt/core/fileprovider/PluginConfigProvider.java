@@ -2,6 +2,7 @@ package org.correomqtt.core.fileprovider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
+import org.correomqtt.core.utils.DirectoryUtils;
 import org.correomqtt.di.SoyEvents;
 import org.correomqtt.core.model.HooksDTO;
 import org.slf4j.Logger;
@@ -67,7 +68,7 @@ public class PluginConfigProvider extends BaseUserFileProvider {
     }
 
     private void preparePluginPath() {
-        pluginPath = getTargetDirectoryPath() + File.separator + PLUGIN_FOLDER;
+        pluginPath = DirectoryUtils.getTargetDirectoryPath() + File.separator + PLUGIN_FOLDER;
         File pluginFolder = new File(pluginPath);
         if (!pluginFolder.exists() && !pluginFolder.mkdir()) {
             LOGGER.error(EX_MSG_PREPARE_PLUGIN_FOLDER);
