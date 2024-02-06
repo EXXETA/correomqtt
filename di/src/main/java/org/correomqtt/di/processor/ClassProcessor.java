@@ -168,22 +168,6 @@ public class ClassProcessor {
     }
 
     private void writeBuilderFile() throws IOException {
-
-
-        /*
-
-        DirtyClass d = new ByteBuddy()
-  .subclass(DirtyClass.class)
-  .method(isSetter().and(not(named("setDirty"))))
-  .intercept(SuperMethodCall.INSTANCE.andThen(
-      MethodCall.invoke(DirtyClass.class.getMethod("setDirty", boolean.class))
-                .with(true)
-  )).make()
-  .load(DirtyClass.class.getClassLoader())
-  .getLoaded()
-  .newInstance();
-         */
-
         JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(factoryClassName);
         try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
             if (packageName != null) {
@@ -224,6 +208,14 @@ public class ClassProcessor {
                         .map(p -> "    " + p.type + " " + p.name + " = SoyDi.inject(" + p.reference + ");\n")
                         .collect(Collectors.joining()));
             }
+
+
+          /*  out.println("    " + simpleClassName + " instance = new ByteBuddy()");
+            out.println("           .subclass(" + simpleClassName + ".class)");
+            out.println("           .make()");
+            out.println("           .load(" + simpleClassName + ".class.getClassLoader())");
+            out.println("           .getLoaded()");
+            out.println("           .newInstance(");*/
             out.print("    " + simpleClassName + " instance = new " + simpleClassName + "(");
             out.print(constructorParameters.stream().map(p -> p.name).collect(Collectors.joining(",\n          ")));
             out.println(");");

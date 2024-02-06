@@ -3,6 +3,7 @@ package org.correomqtt;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
+import org.correomqtt.core.utils.DirectoryUtils;
 import org.correomqtt.preloader.PreloaderImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,8 @@ public class Launcher {
 
     private static void setLoggerFilePath() {
         // Set the path for file logging to user directory.
-        // TODO  System.setProperty("correomqtt-logfile", SettingsProvider.getInstance().getLogPath());
+        System.setProperty("correomqtt-logfile", DirectoryUtils.getLogDirectory());
+        System.out.println(DirectoryUtils.getLogDirectory());
 
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         loggerContext.reset();
@@ -49,7 +51,7 @@ public class Launcher {
             configurator.setContext(loggerContext);
             configurator.doConfigure(configStream);
         } catch (JoranException | IOException e) {
-            System.out.println("Problem configuring logger: " + e.getMessage());
+            throw new IllegalStateException("Problem configuring logger: " + e.getMessage());
         }
     }
 }
