@@ -17,6 +17,8 @@ import lombok.Setter;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ConnectionConfigDTO {
+    @Builder.Default
+    private ConnectionType connectionType = ConnectionType.MQTT;
 
     private String id;
     private String name;
@@ -55,6 +57,16 @@ public class ConnectionConfigDTO {
     private Qos lwtQoS;
     private boolean lwtRetained;
     private String lwtPayload;
+
+    private String groupId;
+    private String bootstrapServers;
+
+    @Builder.Default
+    private SerializerType keySerializer = SerializerType.STRING;
+
+    @Builder.Default
+    private SerializerType valueSerializer = SerializerType.STRING;
+
     @Builder.Default
     private ConnectionUISettings connectionUISettings = null;
 
