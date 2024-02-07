@@ -68,4 +68,11 @@ public class SettingsDTO {
     public void setGlobalUISettings(GlobalUISettings globalUISettings) {
         this.globalUISettings = globalUISettings;
     }
+
+    public Locale getCurrentLocale(){
+        if(currentLocale == null){
+            new Locale("en","US");
+        }
+        return currentLocale;
+    }
 }

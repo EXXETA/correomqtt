@@ -9,6 +9,7 @@ import com.github.windpapi4j.WinDPAPI;
 import org.correomqtt.core.keyring.BaseKeyring;
 import org.correomqtt.core.keyring.KeyringException;
 import org.correomqtt.core.plugin.spi.KeyringHook;
+import org.correomqtt.core.utils.DirectoryUtils;
 import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,7 +119,7 @@ public class WinDPAPIKeyring extends BaseKeyring implements KeyringHook {
     }
 
     private File getFile() {
-        String windpapiPath = System.getProperty("correo.configDirectory") + File.separator + "windpapi.json";
+        String windpapiPath = DirectoryUtils.getTargetDirectoryPath() + File.separator + "windpapi.json";
         return new File(windpapiPath);
     }
 
