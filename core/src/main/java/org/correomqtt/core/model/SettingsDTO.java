@@ -71,7 +71,7 @@ public class SettingsDTO {
 
     public Locale getCurrentLocale(){
         if(currentLocale == null){
-            new Locale("en","US");
+            return new Locale("en","US");
         }
         return currentLocale;
     }
