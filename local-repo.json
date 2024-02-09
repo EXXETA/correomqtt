@@ -1,0 +1,136 @@
+[ {
+  "id" : "advanced-validator-plugin",
+  "name" : "Advanced Validator Plugin",
+  "description" : "Advanced message validation with and + or conjunctions",
+  "provider" : "Exxeta AG",
+  "projectUrl" : "http://www.correomqtt.org",
+  "releases" : [ {
+    "version" : "0.15.0",
+    "date" : "2024-02-09",
+    "requires" : "",
+    "url" : "file:///C:\\devel\\correomqtt\\plugins\\advanced-validator-plugin\\target\\advanced-validator-plugin-0.15.0.jar",
+    "sha512sum" : "701c28814bea785a28f3ea4ef7fafb71ea78bf5406f09b8be2bddbb09aa3f759d1665499f959dde7f7d40be740d2dd305d414aaf9a3c52c07d819eb2e53a7f26",
+    "compatibleCorreoVersions" : [ "0.15.0" ]
+  } ],
+  "repositoryId" : "default"
+}, {
+  "id" : "base64-plugin",
+  "name" : "Base64",
+  "description" : "Decodes Base64 encoded messages",
+  "provider" : "Exxeta AG",
+  "projectUrl" : "http://www.correomqtt.org",
+  "releases" : [ {
+    "version" : "0.15.0",
+    "date" : "2024-02-09",
+    "requires" : "",
+    "url" : "file:///C:\\devel\\correomqtt\\plugins\\base64-plugin\\target\\base64-plugin-0.15.0.jar",
+    "sha512sum" : "88aefe448869ca6aa86d6990608cd1bfb4687648a37ad0eee95da8a63c579d094e64430331a4845efc72a6aa3cdc67642a9c481dc8dcee5a4e47a47e9d647443",
+    "compatibleCorreoVersions" : [ "0.15.0" ]
+  } ],
+  "repositoryId" : "default"
+}, {
+  "id" : "contains-string-validator-plugin",
+  "name" : "Contains String Validator Plugin",
+  "description" : "Checks if the message contains a given string",
+  "provider" : "Exxeta AG",
+  "projectUrl" : "http://www.correomqtt.org",
+  "releases" : [ {
+    "version" : "0.15.0",
+    "date" : "2024-02-09",
+    "requires" : "",
+    "url" : "file:///C:\\devel\\correomqtt\\plugins\\contains-string-validator-plugin\\target\\contains-string-validator-plugin-0.15.0.jar",
+    "sha512sum" : "a1f9e7704df58591d0093ba23a1c817512876127a608837c5c5f41c98880f9ce6c953ebc61a1c4e757d2e2a68fc364091512332d6949c59b45bb41ba534e8010",
+    "compatibleCorreoVersions" : [ "0.15.0" ]
+  } ],
+  "repositoryId" : "default"
+}, {
+  "id" : "json-format-plugin",
+  "name" : "JSON Format Plugin",
+  "description" : "Formats messages into readable JSON",
+  "provider" : "Exxeta AG",
+  "projectUrl" : "http://www.correomqtt.org",
+  "releases" : [ {
+    "version" : "0.15.0",
+    "date" : "2024-02-09",
+    "requires" : "",
+    "url" : "file:///C:\\devel\\correomqtt\\plugins\\json-format-plugin\\target\\json-format-plugin-0.15.0.jar",
+    "sha512sum" : "c01b73e07d112968b30903c0a260b1b7725c1ee907f89e85943a6b545b610adbd70afebeaba3a6cec98c5c83dbcaee4032b349c3f64083dab1c7746a7c200785",
+    "compatibleCorreoVersions" : [ "0.15.0" ]
+  } ],
+  "repositoryId" : "default"
+}, {
+  "id" : "save-manipulator-plugin",
+  "name" : "Save Manipulator Plugin",
+  "description" : "Saves message selection to a file",
+  "provider" : "Exxeta AG",
+  "projectUrl" : "http://www.correomqtt.org",
+  "releases" : [ {
+    "version" : "0.15.0",
+    "date" : "2024-02-09",
+    "requires" : "",
+    "url" : "file:///C:\\devel\\correomqtt\\plugins\\save-manipulator-plugin\\target\\save-manipulator-plugin-0.15.0.jar",
+    "sha512sum" : "550df688367fcab84d57948753ef01c07014a89af214625cbc3b43f4b71b22a26c01e5ac32af2bfd175c4ef7f891e10105c00503047bb877fdd9ac6678f10ae5",
+    "compatibleCorreoVersions" : [ "0.15.0" ]
+  } ],
+  "repositoryId" : "default"
+}, {
+  "id" : "systopic-plugin",
+  "name" : "Systopic Plugin",
+  "description" : "Plugin to show a window with systopic information",
+  "provider" : "Exxeta AG",
+  "projectUrl" : "http://www.correomqtt.org",
+  "releases" : [ {
+    "version" : "0.15.0",
+    "date" : "2024-02-09",
+    "requires" : "",
+    "url" : "file:///C:\\devel\\correomqtt\\plugins\\systopic-plugin\\target\\systopic-plugin-0.15.0.jar",
+    "sha512sum" : "ac9b4173bb1a6ed7d5b4ece35f2c00b8d58c4387903422f35624893492486d09283d706f0e15110386994be22e8c100647e9139c48a91f1000c9f4b8da60705f",
+    "compatibleCorreoVersions" : [ "0.15.0" ]
+  } ],
+  "repositoryId" : "default"
+}, {
+  "id" : "xml-format-plugin",
+  "name" : "XML Format Plugin",
+  "description" : "Formats messages into readable XML",
+  "provider" : "Exxeta AG",
+  "projectUrl" : "http://www.correomqtt.org",
+  "releases" : [ {
+    "version" : "0.15.0",
+    "date" : "2024-02-09",
+    "requires" : "",
+    "url" : "file:///C:\\devel\\correomqtt\\plugins\\xml-format-plugin\\target\\xml-format-plugin-0.15.0.jar",
+    "sha512sum" : "d98d6dd8b99a123c1f6ced704884633c61e68efafc8912a588c1cc1cd19457bc38833b252e35290aae0e1cf157098facdbce97de263ad1c89a93e6f2f7dbde85",
+    "compatibleCorreoVersions" : [ "0.15.0" ]
+  } ],
+  "repositoryId" : "default"
+}, {
+  "id" : "xml-xsd-validator-plugin",
+  "name" : "XML/XSD Validator Plugin",
+  "description" : "Validates xml messages to a given xsd file",
+  "provider" : "Exxeta AG",
+  "projectUrl" : "http://www.correomqtt.org",
+  "releases" : [ {
+    "version" : "0.15.0",
+    "date" : "2024-02-09",
+    "requires" : "",
+    "url" : "file:///C:\\devel\\correomqtt\\plugins\\xml-xsd-validator-plugin\\target\\xml-xsd-validator-plugin-0.15.0.jar",
+    "sha512sum" : "bfd768c7af03eb7235a08f2e3506e27ed63d8cb2b5c733699c778010b65d8dbbf8fab51e4934f41feb6eda87b0b78bd6e18060d5ad4559e401650d2292bb7c07",
+    "compatibleCorreoVersions" : [ "0.15.0" ]
+  } ],
+  "repositoryId" : "default"
+}, {
+  "id" : "zip-manipulator-plugin",
+  "name" : "ZIP Manipulator Plugin",
+  "description" : "Provides zip and unzip manipulators",
+  "provider" : "Exxeta AG",
+  "projectUrl" : "http://www.correomqtt.org",
+  "releases" : [ {
+    "version" : "0.15.0",
+    "date" : "2024-02-09",
+    "requires" : "",
+    "url" : "file:///C:\\devel\\correomqtt\\plugins\\zip-manipulator-plugin\\target\\zip-manipulator-plugin-0.15.0.jar",
+    "sha512sum" : "59f3345455c3d539eb64e6ab553276dcf15f16dfa5ba8451bc9e1fd3f1d19f99bd695f280f956907557fe8e6daebc26e4b9e8a6316848f302d72b961031d58bb",
+    "compatibleCorreoVersions" : [ "0.15.0" ]
+  } ],
+  "repositoryId" : "default"
+} ]
