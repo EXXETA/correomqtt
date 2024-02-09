@@ -24,7 +24,7 @@ public class CorreoExtensionFactory implements ExtensionFactory {
                     throw new IllegalStateException("This class is not part of a plugin and could not be loaded as plugin: " + extensionClass);
                 }
                 SoyDi.addClassLoader(plugin.getPluginClassLoader());
-                SoyDi.scan(pkg, false);
+                SoyDi.scan(pkg);
             }
             if (SoyDi.isInjectable(extensionClass)) {
                 LOGGER.debug("Injecting Plugin Class {} with DI.", extensionClass.getName());

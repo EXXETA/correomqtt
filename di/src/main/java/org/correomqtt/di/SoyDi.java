@@ -43,24 +43,18 @@ public class SoyDi {
         CLASS_LOADER.add(classLoader);
     }
 
-    public static synchronized void scan(String pkg, boolean disableJarScanning) {
+    public static synchronized void scan(String pkg) {
         init();
         log.info("SOY: Scanning {} for soy beans.", pkg);
         long startTime = System.currentTimeMillis();
         int count = 0;
         int singletonCount = 0;
         ClassGraph classGraph = new ClassGraph()
-                .verbose(log.isTraceEnabled())
+                .verbose(log.isInfoEnabled())
                 .enableClassInfo()
                 .enableMethodInfo()
                 .enableAnnotationInfo()
-                .disableRuntimeInvisibleAnnotations()
-                .disableNestedJarScanning()
-                .disableModuleScanning()
                 .acceptPackages(pkg);
-        if (disableJarScanning) {
-            classGraph.disableJarScanning();
-        }
         CLASS_LOADER.forEach(classGraph::addClassLoader);
         try (ScanResult scanResult = classGraph.scan()) {
             for (ClassInfo classInfo : scanResult.getClassesWithAnnotation(Bean.class)) {
