@@ -50,7 +50,7 @@ public class SoyDi {
         int count = 0;
         int singletonCount = 0;
         ClassGraph classGraph = new ClassGraph()
-                .verbose(log.isInfoEnabled())
+                .verbose(log.isTraceEnabled())
                 .enableClassInfo()
                 .enableMethodInfo()
                 .enableAnnotationInfo()
