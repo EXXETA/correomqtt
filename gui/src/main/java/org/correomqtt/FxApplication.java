@@ -15,7 +15,7 @@ public class FxApplication extends Application {
     @Override
     public void init() {
         startLog();
-        SoyDi.scan("org.correomqtt", true);
+        SoyDi.scan("org.correomqtt");
         HostServicesWrapper hostServicesWrapper = SoyDi.inject(HostServicesWrapper.class);
         hostServicesWrapper.setHostServices(getHostServices());
         app = SoyDi.inject(MainApplication.class);
