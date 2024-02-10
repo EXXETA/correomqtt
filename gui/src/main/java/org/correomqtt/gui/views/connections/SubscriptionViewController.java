@@ -38,6 +38,7 @@ import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.transformer.SubscriptionTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.CheckTopicHelper;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.cell.QosCellFactory;
 import org.slf4j.Logger;
@@ -320,6 +321,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         }
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes
     public void onMessageIncoming(IncomingMessageEvent event) {
@@ -328,6 +330,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         messageListViewController.onNewMessage(messagePropertiesDTO);
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes
     public void onSubscribedSucceeded(SubscribeEvent event) {
@@ -373,6 +376,7 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         }
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onConnectionChangedEvent(@Observes ConnectionStateChangedEvent event) {
         if (event.getState() == DISCONNECTED_GRACEFUL || event.getState() == DISCONNECTED_UNGRACEFUL) {
@@ -380,12 +384,14 @@ public class SubscriptionViewController extends BaseMessageBasedViewController i
         }
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PersistSubscribeHistoryUpdateEvent.class)
     public void updateSubscriptions() {
         initTopicComboBox();
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onUnsubscribeSucceeded(@Observes UnsubscribeEvent event) {
 

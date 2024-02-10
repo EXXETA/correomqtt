@@ -19,7 +19,7 @@ public class CheckNewVersionUtils {
     private final AlertHelper alertHelper;
 
     @Inject
-    CheckNewVersionUtils(SettingsManager settingsManager,
+    public CheckNewVersionUtils(SettingsManager settingsManager,
                          AlertHelper alertHelper,
                          HostServicesWrapper hostServices) {
         this.alertHelper = alertHelper;

@@ -29,6 +29,7 @@ import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.fxmisc.flowless.VirtualizedScrollPane;
@@ -218,6 +219,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
 
     }
 
+    @FxThread
     @Observes(ConnectionStateChangedEvent.class)
     public void onConnectionChangedEvent() {
         updateConnections();
@@ -243,6 +245,7 @@ public class SingleEditorViewController extends BaseControllerImpl {
         alertHelper.unexpectedAlert(error.getUnexpectedError());
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ScriptExecutionCancelledEvent.class)
     public void onScriptExecutionCancelled() {
@@ -250,12 +253,14 @@ public class SingleEditorViewController extends BaseControllerImpl {
     }
 
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ScriptExecutionSuccessEvent.class)
     public void onScriptExecutionSuccess() {
         disableActionsOnRunningScript(false);
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ScriptExecutionFailedEvent.class)
     public void onScriptExecutionFailed() {

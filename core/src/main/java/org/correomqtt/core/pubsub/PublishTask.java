@@ -38,7 +38,7 @@ public class PublishTask extends SimpleTask {
     private final MessageDTO messageDTO;
 
     @Inject
-    PublishTask(PluginManager pluginManager,
+    public PublishTask(PluginManager pluginManager,
                 ConnectionManager connectionManager,
                 LoggerUtils loggerUtils,
                 SoyEvents soyEvents,

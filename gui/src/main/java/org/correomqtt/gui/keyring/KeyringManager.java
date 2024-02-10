@@ -35,7 +35,7 @@ public class KeyringManager {
     private Keyring keyring;
 
     @Inject
-    KeyringManager(KeyringFactory keyringFactory,
+    public KeyringManager(KeyringFactory keyringFactory,
                    SettingsManager settingsManager,
                    SecretStoreProvider secretStoreProvider,
                    AlertHelper alertHelper) {

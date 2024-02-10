@@ -52,6 +52,7 @@ import org.correomqtt.gui.plugin.spi.DetailViewManipulatorHook;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.utils.AutoFormatPayload;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.utils.MessageUtils;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.gui.views.LoaderResult;
@@ -153,7 +154,7 @@ public class DetailViewController extends BaseConnectionController implements
 
 
     @Inject
-    DetailViewController(CoreManager coreManager,
+    public DetailViewController(CoreManager coreManager,
                          MessageValidator messageValidator,
                          GuiPluginManager guiPluginManager,
                          AutoFormatPayload autoFormatPayload,
@@ -650,18 +651,21 @@ public class DetailViewController extends BaseConnectionController implements
     }
 
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ExportMessageStartedEvent.class)
     public void onExportStarted() {
         Platform.runLater(() -> detailViewVBox.setDisable(true));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ExportMessageSuccessEvent.class)
     public void onExportSucceeded() {
         Platform.runLater(() -> detailViewVBox.setDisable(false));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ExportMessageFailedEvent.class)
     public void onExportFailed() {

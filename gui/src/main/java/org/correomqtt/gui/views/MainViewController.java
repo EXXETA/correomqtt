@@ -31,6 +31,7 @@ import org.correomqtt.gui.model.GuiConnectionState;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.about.AboutViewControllerFactory;
 import org.correomqtt.gui.views.connections.ConnectionViewController;
 import org.correomqtt.gui.views.connections.ConnectionViewControllerFactory;
@@ -228,6 +229,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         return selectedTab.getId();
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onConnectionStateChanged(@Observes ConnectionStateChangedEvent event) {
         if (event.getState() == ConnectionState.DISCONNECTED_GRACEFUL ||

@@ -49,7 +49,7 @@ public class ClientImpl {
     private final Map<String, Consumer<String>> subscriptions = new HashMap<>();
 
     @Inject
-    ClientImpl(ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
+    public ClientImpl(ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
                PubSubTaskFactories pubSubTaskFactories) {
         this.connectionLifecycleTaskFactories = connectionLifecycleTaskFactories;
         this.pubSubTaskFactories = pubSubTaskFactories;

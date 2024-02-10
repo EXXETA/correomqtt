@@ -68,7 +68,7 @@ public class PluginsViewController extends BaseControllerImpl {
     private Tab installedPluginsTab;
 
     @Inject
-    PluginsViewController(CoreManager coreManager,
+    public PluginsViewController(CoreManager coreManager,
                           ThemeManager themeManager,
                           PluginConfigProvider pluginConfigProvider,
                           HostServicesWrapper hostServicesWrapper,

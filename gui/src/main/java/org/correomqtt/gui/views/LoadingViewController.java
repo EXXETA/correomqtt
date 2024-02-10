@@ -36,7 +36,7 @@ public class LoadingViewController extends BaseConnectionController {
 
 
     @Inject
-    LoadingViewController(CoreManager coreManager,
+    public LoadingViewController(CoreManager coreManager,
                           ThemeManager themeManager,
                           @Assisted("connectionId") String connectionId,
                           @Assisted("message") String message) {

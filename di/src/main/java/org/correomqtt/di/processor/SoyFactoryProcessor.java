@@ -22,8 +22,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SoyFactoryProcessor extends AbstractProcessor {
 
     private final Set<Element> classesToBeGenerated = new HashSet<>();
-    private final AtomicInteger processedCount = new AtomicInteger();
     private int totalCount = 0;
+    private final AtomicInteger factoryCount = new AtomicInteger();
+    private final AtomicInteger wrapperCount = new AtomicInteger();
 
     static String getFqnByElement(Element element) {
         return ((PackageElement) element.getEnclosingElement()).getQualifiedName() + "." + element.getSimpleName();
@@ -33,27 +34,29 @@ public class SoyFactoryProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         info("Processing soy beans...");
         for (TypeElement annotation : annotations) {
-            if (!annotation.getSimpleName().toString().endsWith("Bean")) {
+            if (!annotation.getSimpleName().toString().endsWith("Bean") && !annotation.getSimpleName().toString().endsWith("Thread")) {
                 continue;
             }
             Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
             classesToBeGenerated.addAll(annotatedElements);
         }
         List<Element> workList = new HashSet<>(classesToBeGenerated).stream()
+                .filter(c -> c.getKind().isClass())
                 .filter(c -> c.getAnnotation(Generated.class) == null)
                 .toList();
         totalCount = Math.max(totalCount, workList.size());
         workList.forEach(classElement -> {
             try {
-                new ClassProcessor(classElement, unwrapProcessingEnv(processingEnv)).process();
-                processedCount.getAndIncrement();
+                ClassProcessResult result = new ClassProcessor(classElement, unwrapProcessingEnv(processingEnv)).process();
+                factoryCount.getAndAdd(result.factoryCount());
+                wrapperCount.getAndAdd(result.wrapperCount());
                 classesToBeGenerated.remove(classElement);
             } catch (ProcessorRetryException e) {
                 // Class is waiting for generated classes, so we have to wait for next round.
             }
         });
-        if (processedCount.get() > 0 && totalCount > 0) {
-            info("Produced %s/%s soy factories", processedCount.get(), totalCount);
+        if (factoryCount.get() > 0 && totalCount > 0) {
+            info("Produced %s/%s factories and %s/%s wrapper", factoryCount.get(), totalCount, wrapperCount.get(), wrapperCount.get());
         }
         return true;
     }

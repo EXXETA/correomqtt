@@ -23,6 +23,7 @@ import org.correomqtt.di.ObservesFilter;
 import org.correomqtt.gui.log.LogToRichtTextFxAppender;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.utils.LogAreaUtils;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
@@ -53,6 +54,7 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     @FXML
     private Button scriptingStopButton;
     private LogToRichtTextFxAppender appender;
+
     @Inject
     public SingleExecutionViewController(
             CoreManager coreManager,
@@ -112,11 +114,13 @@ public class SingleExecutionViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
-    public void onScriptExecutionProgress(@Observes(sync = true) ScriptExecutionProgressEvent event) {
+    // NOT IN FX THREAD
+    public void onScriptExecutionProgress(@Observes ScriptExecutionProgressEvent event) {
         connectLog(event.getExecutionDTO());
     }
 
     @SuppressWarnings("unused")
+    @FxThread
     public void onScriptExecutionCancelled(@Observes ScriptExecutionCancelledEvent event) {
         scriptingStopButton.setDisable(true);
         disconnectLog(event.getExecutionDTO());
@@ -129,12 +133,14 @@ public class SingleExecutionViewController extends BaseControllerImpl {
         }
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onScriptExecutionSuccess(@Observes ScriptExecutionSuccessEvent event) {
         scriptingStopButton.setDisable(true);
         disconnectLog(event.getExecutionDTO());
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onScriptExecutionFailed(@Observes ScriptExecutionFailedEvent event) {
         scriptingStopButton.setDisable(true);

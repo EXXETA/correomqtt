@@ -31,7 +31,7 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
     private static final Map<String, PublishMessageHistoryListDTO> historyDTOs = new HashMap<>();
 
     @Inject
-    PublishMessageHistory(SettingsManager settings,
+    public PublishMessageHistory(SettingsManager settings,
                           SoyEvents soyEvents,
                           @Assisted String connectionId) {
         super(settings, soyEvents, connectionId);

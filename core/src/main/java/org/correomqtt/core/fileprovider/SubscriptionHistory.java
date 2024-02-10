@@ -31,7 +31,7 @@ public class SubscriptionHistory extends BasePersistHistoryProvider<Subscription
     private static Map<String, SubscriptionHistoryListDTO> historyDTOs = new HashMap<>();
 
     @Inject
-    SubscriptionHistory(SettingsManager settings,
+    public SubscriptionHistory(SettingsManager settings,
                         SoyEvents soyEvents,
                         @Assisted String connectionId) {
         super(settings, soyEvents, connectionId);

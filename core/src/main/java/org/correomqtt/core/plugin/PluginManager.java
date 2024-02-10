@@ -55,7 +55,7 @@ public class PluginManager extends JarPluginManager {
 
 
     @Inject
-    PluginManager(SettingsManager settings,
+    public PluginManager(SettingsManager settings,
                   PluginConfigProvider pluginConfigProvider) {
         super(Path.of(pluginConfigProvider.getPluginPath()));
         this.settings = settings;

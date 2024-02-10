@@ -1,7 +1,6 @@
 package org.correomqtt.core.concurrent;
 
 import org.correomqtt.di.SoyEvents;
-import org.correomqtt.di.FrontendBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +13,7 @@ abstract class TaskImpl<T, P, E, R> {
 
     protected final SoyEvents soyEvents;
 
-    protected TaskImpl(SoyEvents soyEvents){
+    protected TaskImpl(SoyEvents soyEvents) {
         this.soyEvents = soyEvents;
     }
 
@@ -56,18 +55,15 @@ abstract class TaskImpl<T, P, E, R> {
     }
 
     void reportProgressImpl(P progress) {
-        progressListener.forEach(l -> FrontendBinding.pushToFrontend(() -> l.progress(progress)));
+        progressListener.forEach(l ->  l.progress(progress));
     }
 
     @SuppressWarnings("unchecked")
     public CompletableFuture<Void> run() {
-
-        startListener.forEach(l -> FrontendBinding.pushToFrontend(l::start));
-
+        startListener.forEach(StartListener::start);
         if (errorListener.isEmpty()) {
             LOGGER.warn("You executed {} without providing ExceptionListener. While unexpected Exceptions will be logged please consider adding custom error handling.", this.getClass());
         }
-
         beforeHookImpl();
         return this.getFuture()
                 .handleAsync((result, t) -> {
@@ -82,22 +78,20 @@ abstract class TaskImpl<T, P, E, R> {
                         }
                         R errorResult = createTaskErrorResult(expectedError, t);
                         errorHookImpl(errorResult);
-                        errorListener.forEach(l -> FrontendBinding.pushToFrontend(() -> l.error(errorResult)));
+                        errorListener.forEach(l -> l.error(errorResult));
                     } else {
                         successHookImpl(result);
-                        successListener.forEach(l -> FrontendBinding.pushToFrontend(() -> l.success(result)));
+                        successListener.forEach(l -> l.success(result));
                     }
                     finalHookImpl();
-                    finallyListener.forEach(l -> FrontendBinding.pushToFrontend(l::run));
+                    finallyListener.forEach(FinallyListener::run);
                     return null;
                 });
     }
 
-
     abstract R createTaskErrorResult(E expectedError, Throwable throwable);
 
     private CompletableFuture<T> getFuture() {
-
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return executeImpl();

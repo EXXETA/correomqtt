@@ -52,7 +52,7 @@ public class AboutViewController extends BaseControllerImpl {
     private Label appNameLabel;
 
     @Inject
-    AboutViewController(CoreManager coreManager,
+    public AboutViewController(CoreManager coreManager,
                         ThemeManager themeManager,
                         AlertHelper alertHelper,
                         HostServicesWrapper hostServicesWrapper

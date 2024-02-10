@@ -31,6 +31,7 @@ import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.PluginTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 
@@ -135,6 +136,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
         }
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onPluginInstallSucceeded(@Observes PluginInstallEvent event) {
         reloadData(event.pluginId());
@@ -205,24 +207,28 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
         }
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginInstallFailedEvent.class)
     public void onPluginInstallFailed() {
         Platform.runLater(() -> installedPluginsRootPane.setDisable(false));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginInstallStartedEvent.class)
     public void onPluginInstallStarted() {
         installedPluginsRootPane.setDisable(true);
     }
 
+    @FxThread
     public void onPluginUninstallSucceeded(@Observes PluginUninstallEvent event) {
         reloadData(event.pluginId());
         Platform.runLater(() -> alertHelper.info(resources.getString("pluginChangeTitle"),
                 resources.getString("pluginChangeContent")));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginUninstallFailedEvent.class)
     public void onPluginUninstallFailed() {
@@ -234,6 +240,7 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
         Platform.runLater(() -> installedPluginsRootPane.setDisable(false));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginInstallStartedEvent.class)
     public void onPluginUninstallStarted() {
@@ -241,22 +248,26 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
     }
 
     @SuppressWarnings("unused")
+    @FxThread
     public void onPluginDisableSucceeded(@Observes PluginDisabledEvent event) {
         //TODO?
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginDisabledFailedEvent.class)
     public void onPluginDisableFailed() {
         showFail();
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginDisabledStartedEvent.class)
     public void onPluginDisableStarted() {
         installedPluginsRootPane.setDisable(true);
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onPluginEnableSucceeded(@Observes PluginEnabledEvent event) {
         reloadData(event.pluginId());
@@ -264,12 +275,14 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
                 resources.getString("pluginChangeContent")));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginEnabledFailedEvent.class)
     public void onPluginEnableFailed() {
         showFail();
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginEnabledStartedEvent.class)
     public void onPluginEnableStarted() {

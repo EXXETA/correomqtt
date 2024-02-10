@@ -19,6 +19,7 @@ import org.correomqtt.gui.controls.IconLabel;
 import org.correomqtt.gui.model.GuiConnectionState;
 import org.correomqtt.gui.plugin.spi.MainToolbarHook;
 import org.correomqtt.gui.theme.ThemeManager;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.LoaderResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -211,6 +212,7 @@ public class ControlBarController extends BaseConnectionController {
     }
 
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onConnectionStateChanged(@Observes ConnectionStateChangedEvent event) {
 

@@ -29,7 +29,7 @@ public class JsContextBuilder {
     private Marker marker;
 
     @Inject
-    JsContextBuilder(ClientFactory clientFactory){
+    public JsContextBuilder(ClientFactory clientFactory){
         this.clientFactory = clientFactory;
     }
 
