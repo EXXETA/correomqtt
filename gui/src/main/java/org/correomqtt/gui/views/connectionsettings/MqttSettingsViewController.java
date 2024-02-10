@@ -170,7 +170,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
     private Pane lwtPayloadPane;
 
     @Inject
-    MqttSettingsViewController(CoreManager coreManager,
+    public MqttSettingsViewController(CoreManager coreManager,
                                ThemeManager themeManager,
                                GenericCellFactory<CorreoMqttVersion> correoMqttVersionGenericCellFactory,
                                GenericCellFactory<TlsSsl> tlsSslGenericCellFactory,

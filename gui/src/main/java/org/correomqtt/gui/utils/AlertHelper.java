@@ -38,7 +38,7 @@ public class AlertHelper {
     private final ThemeManager themeManager;
 
     @Inject
-    AlertHelper(ThemeManager themeManager) {
+    public AlertHelper(ThemeManager themeManager) {
         this.themeManager = themeManager;
     }
 

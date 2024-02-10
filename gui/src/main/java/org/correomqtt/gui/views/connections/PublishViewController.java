@@ -48,6 +48,7 @@ import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.AutoFormatPayload;
 import org.correomqtt.gui.utils.CheckTopicHelper;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.LoadingViewController;
 import org.correomqtt.gui.views.LoadingViewControllerFactory;
@@ -281,6 +282,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
         }
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onConnectionChangedEvent(@Observes ConnectionStateChangedEvent event) {
         if (event.getState() == CONNECTED) {
@@ -292,12 +294,14 @@ public class PublishViewController extends BaseMessageBasedViewController {
         }
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onPublishSucceeded(@Observes PublishEvent event) {
         event.getMessageDTO().setPublishStatus(PublishStatus.SUCCEEDED);
         messageListViewController.onNewMessage(MessageTransformer.dtoToProps(event.getMessageDTO()));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onImportStarted(@Observes ImportMessageStartedEvent event) {
         Platform.runLater(() -> {
@@ -308,6 +312,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
         });
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onImportSucceeded(@Observes ImportMessageSuccessEvent event) {
         Platform.runLater(() -> {
@@ -322,6 +327,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
         });
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ImportMessageFailedEvent.class)
     public void onImportFailed() {

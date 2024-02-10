@@ -25,7 +25,7 @@ public class PluginLauncher {
     private Consumer<Preloader.PreloaderNotification> notifyPreloader;
 
     @Inject
-    PluginLauncher(PluginManager pluginManager, SettingsManager settingsManager) {
+    public PluginLauncher(PluginManager pluginManager, SettingsManager settingsManager) {
         this.pluginManager = pluginManager;
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale());
     }

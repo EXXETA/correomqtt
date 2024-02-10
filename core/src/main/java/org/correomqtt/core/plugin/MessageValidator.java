@@ -12,7 +12,7 @@ public class MessageValidator {
     private final PluginManager pluginManager;
 
     @Inject
-    MessageValidator(PluginManager pluginManager) {
+    public MessageValidator(PluginManager pluginManager) {
         this.pluginManager = pluginManager;
     }
 

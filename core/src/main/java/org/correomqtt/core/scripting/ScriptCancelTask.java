@@ -14,7 +14,7 @@ public class ScriptCancelTask extends SimpleTask {
     private final String executionId;
 
     @Inject
-    ScriptCancelTask(ScriptingProvider scriptingProvider,
+    public ScriptCancelTask(ScriptingProvider scriptingProvider,
                             SoyEvents soyEvents,
                             @Assisted String executionId) {
         super(soyEvents);

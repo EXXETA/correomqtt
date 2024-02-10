@@ -29,6 +29,7 @@ import org.correomqtt.gui.plugin.PluginLauncher;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.utils.PluginCheckUtils;
 import org.correomqtt.gui.views.AlertController;
 import org.correomqtt.gui.views.MainViewController;
@@ -244,6 +245,7 @@ public class MainApplication {
         settingsManager.saveSettings();
     }
 
+    @FxThread
     @Observes(ShutdownRequestEvent.class)
     public void onShutdownRequested() {
         LOGGER.info("Main window closed. Initialize shutdown.");

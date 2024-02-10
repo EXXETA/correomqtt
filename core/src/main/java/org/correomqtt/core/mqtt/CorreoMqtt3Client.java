@@ -46,7 +46,7 @@ public class CorreoMqtt3Client extends BaseCorreoMqttClient {
     private Mqtt3BlockingClient mqtt3BlockingClient;
 
     @Inject
-    CorreoMqtt3Client(SoyEvents soyEvents,
+    public CorreoMqtt3Client(SoyEvents soyEvents,
                       @Assisted ConnectionConfigDTO configDTO) {
         super(soyEvents, configDTO);
     }

@@ -171,19 +171,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.google.auto.service</groupId>
-            <artifactId>auto-service</artifactId>
-            <version>1.0.1</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.correomqtt</groupId>
             <artifactId>di</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.bytebuddy</groupId>
-            <artifactId>byte-buddy</artifactId>
-            <version>1.14.6</version>
         </dependency>
         <!-- Test Scope -->
         <dependency>

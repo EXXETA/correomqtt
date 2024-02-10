@@ -29,6 +29,7 @@ import org.correomqtt.di.ObservesFilter;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 
@@ -105,12 +106,14 @@ public class ExecutionViewController extends BaseControllerImpl {
 
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ScriptExecutionsDeletedEvent.class)
     public void onExecutionsDeleted() {
         executionList.clear();
     }
 
+    @FxThread
     @ObservesFilter(ObservesFilterNames.SCRIPT_NAME)
     public String getScriptFileName() {
         return currentName;
@@ -232,6 +235,7 @@ public class ExecutionViewController extends BaseControllerImpl {
         return true;
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onScriptExecutionCancelled(@Observes ScriptExecutionCancelledEvent event) {
         handleScriptExecutionResult(event);
@@ -248,16 +252,19 @@ public class ExecutionViewController extends BaseControllerImpl {
         ExecutionTransformer.updatePropsByDto(props, dto);
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onScriptExecutionSuccess(@Observes ScriptExecutionSuccessEvent event) {
         handleScriptExecutionResult(event);
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onScriptExecutionFailed(@Observes ScriptExecutionFailedEvent event) {
         handleScriptExecutionResult(event);
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onScriptExecutionProgress(@Observes ScriptExecutionProgressEvent event) {
         handleScriptExecutionResult(event);

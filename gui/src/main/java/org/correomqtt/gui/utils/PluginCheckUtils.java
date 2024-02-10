@@ -14,7 +14,7 @@ public class PluginCheckUtils {
     private ResourceBundle resources;
 
     @Inject
-    PluginCheckUtils(SettingsManager settingsManager,
+    public PluginCheckUtils(SettingsManager settingsManager,
                      AlertHelper alertHelper,
                      PluginConfigProvider pluginConfigProvider) {
         this.alertHelper = alertHelper;

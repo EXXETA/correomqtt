@@ -40,7 +40,7 @@ public class SubscribeTask extends SimpleTask {
     private final SubscriptionDTO subscriptionDTO;
 
     @Inject
-    SubscribeTask(PluginManager pluginManager,
+    public SubscribeTask(PluginManager pluginManager,
                   ConnectionManager connectionManager,
                   LoggerUtils loggerUtils,
                   SoyEvents soyEvents,
