@@ -29,8 +29,8 @@ jobs:
         run: |
           mvn -B clean install -DskipTests=true
         shell: bash
-      - name: Install rpmbuild
-        run: sudo apt-get install -y rpmbuild
+      - name: Install rpm
+        run: sudo apt-get install -y rpm
       - name: Package DEB
         run: |
           jpackage \
