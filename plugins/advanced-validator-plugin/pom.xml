@@ -58,7 +58,7 @@
                         <annotationProcessorPath>
                             <groupId>org.correomqtt</groupId>
                             <artifactId>di</artifactId>
-                            <version>0.15.0</version>
+                            <version>${project.version}</version>
                         </annotationProcessorPath>
                         <annotationProcessorPath>
                             <groupId>org.projectlombok</groupId>
