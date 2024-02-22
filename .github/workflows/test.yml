@@ -31,13 +31,13 @@ jobs:
       - name: Set Version Release
         run: |
           mvn -B versions:set -DnewVersion="${{steps.version.outputs.full_without_prefix}}"
-          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./core/src/main/resources/org/correomqtt/core/utils/version.txt
         if: steps.version.outputs.is_valid == 'true'
         shell: bash
       - name: Set Version Test
         run: |
           mvn -B versions:set -DnewVersion="0.0.1"
-          echo -n "0.0.1" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+          echo -n "0.0.1" > ./core/src/main/resources/org/correomqtt/core/utils/version.txt
         shell: bash
         if: steps.version.outputs.is_valid != 'true'
       - name: Build

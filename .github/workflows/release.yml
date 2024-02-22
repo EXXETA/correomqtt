@@ -22,7 +22,7 @@ jobs:
       - name: Set Version Release
         run: |
           mvn -B versions:set -DnewVersion="${{steps.version.outputs.full_without_prefix}}"
-          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./core/src/main/resources/org/correomqtt/core/utils/version.txt
         if: steps.version.outputs.is_valid == 'true'
         shell: bash
       - name: Build
@@ -34,11 +34,11 @@ jobs:
           jpackage \
           --type deb \
           -d target \
-          -i target/shade \
+          -i target \
           -n CorreoMQTT \
-          --main-jar correomqtt-client-${{steps.version.outputs.full_without_prefix}}-runnable.jar \
+          --main-jar target/correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
           --app-version ${{steps.version.outputs.full_without_prefix}} \
-          --icon ./src/main/deploy/package/Icon.png \
+          --icon ./gui/src/main/deploy/package/Icon.png \
           --linux-package-deps libpng16-16 \
           --resource-dir .github/resources/linux
       - name: Package RPM
@@ -46,19 +46,19 @@ jobs:
           jpackage \
           --type rpm \
           -d target \
-          -i target/shade \
+          -i target \
           -n CorreoMQTT \
-          --main-jar correomqtt-client-${{steps.version.outputs.full_without_prefix}}-runnable.jar \
+          --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
           --app-version ${{steps.version.outputs.full_without_prefix}} \
-          --icon ./src/main/deploy/package/Icon.png \
+          --icon ./gui/src/main/deploy/package/Icon.png \
           --resource-dir .github/resources/linux
-      - name: Release 
+      - name: Release
         uses: xresloader/upload-to-github-release@v1.3.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           draft: false
-          file: target/*.deb;target/*.rpm
+          file: target/*.deb;target/*.rpm;target/*.jar;target/*.json
           tags: true
   winbuild:
     runs-on: windows-2019
@@ -90,11 +90,11 @@ jobs:
           jpackage \
           --type msi \
           -d target \
-          -i target/shade \
+          -i target \
           -n CorreoMQTT \
-          --main-jar correomqtt-client-${{steps.version.outputs.full_without_prefix}}-runnable.jar \
+          --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
           --app-version ${{steps.version.outputs.full_without_prefix}} \
-          --icon ./src/main/deploy/package/Icon.ico \
+          --icon ./gui/src/main/deploy/package/Icon.ico \
           --win-dir-chooser \
           --win-menu \
           --win-menu-group CorreoMqtt \
@@ -127,7 +127,7 @@ jobs:
       - name: Set Version Release
         run: |
           mvn -B versions:set -DnewVersion="${{steps.version.outputs.full_without_prefix}}"
-          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./core/src/main/resources/org/correomqtt/core/utils/version.txt
         if: steps.version.outputs.is_valid == 'true'
         shell: bash
       - name: Build
@@ -139,11 +139,11 @@ jobs:
           jpackage \
             --type app-image \
             -d target \
-            -i target/shade \
+            -i target \
             -n CorreoMQTT \
-            --main-jar correomqtt-client-${{steps.version.outputs.full_without_prefix}}-runnable.jar \
+            --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
             --app-version ${{steps.version.outputs.full_without_prefix}} \
-            --icon ./src/main/deploy/package/Icon.icns
+            --icon ./gui/src/main/deploy/package/Icon.icns
 
           openssl req -subj '/CN=correomqtt.org' -config .github/osx.correo.certconfig -x509 -newkey rsa:4096 -keyout correokey.pem -out correocert.pem -days 365 -nodes
           openssl pkcs12 -passout pass:1234 -export -out correomqtt.p12 -inkey correokey.pem -in correocert.pem

@@ -18,14 +18,13 @@ import org.correomqtt.GuiCore;
 import org.correomqtt.core.applifecycle.ShutdownRequestEvent;
 import org.correomqtt.core.connection.ConnectionState;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.di.SoyEvents;
-import org.correomqtt.di.Observes;
 import org.correomqtt.core.exception.CorreoMqttUnableToCheckVersionException;
 import org.correomqtt.core.utils.ConnectionManager;
 import org.correomqtt.core.utils.VendorConstants;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
-import org.correomqtt.gui.controls.ThemedFontIcon;
+import org.correomqtt.di.Observes;
+import org.correomqtt.di.SoyEvents;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.model.GuiConnectionState;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -48,6 +47,7 @@ import org.correomqtt.gui.views.onboarding.ConnectionOnboardingViewControllerFac
 import org.correomqtt.gui.views.plugins.PluginsViewControllerFactory;
 import org.correomqtt.gui.views.scripting.ScriptingViewControllerFactory;
 import org.correomqtt.gui.views.settings.SettingsViewControllerFactory;
+import org.kordamp.ikonli.javafx.FontIcon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,7 +178,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
 
     private void setupAddTab() {
         addTab.setClosable(false);
-        addTab.setGraphic(new ThemedFontIcon("mdi-home"));
+        addTab.setGraphic(new FontIcon("mdi-home"));
         LoaderResult<ConnectionOnboardingViewController> loadResult = onboardingViewCtrlFactory.create(this).load();
         addTab.setContent(loadResult.getMainRegion());
         connectionOnboardingViewController = loadResult.getController();
@@ -190,7 +190,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         LoaderResult<LogTabController> result = logTabControllerFactory.create().load();
         logViewController = result.getController();
         logTab.setClosable(false);
-        logTab.setGraphic(new ThemedFontIcon("mdi-chart-box"));
+        logTab.setGraphic(new FontIcon("mdi-chart-box"));
         logAnchorPane.getChildren().add(logViewController.getLogViewAnchor());
         logViewController.getLogViewAnchor().prefWidthProperty().bind(logAnchorPane.widthProperty());
         logViewController.getLogViewAnchor().prefHeightProperty().bind(logAnchorPane.heightProperty());
@@ -246,7 +246,8 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
         String tabId = config.getId();
         Tab tab = new Tab();
         tab.setId(tabId);
-        tab.setGraphic(new ThemedFontIcon("correo-wifi-solid"));
+        FontIcon icon = new FontIcon("correo-wifi-solid");
+        tab.setGraphic(icon);
         tab.setClosable(true);
         tab.setText(config.getName());
         tab.setOnSelectionChanged(event -> {
@@ -348,7 +349,7 @@ public class MainViewController implements ConnectionOnboardingDelegate, Connect
                 .stream()
                 .filter(t -> t.getId().equals(tabId))
                 .findFirst()
-                .ifPresent(t -> ((ThemedFontIcon) t.getGraphic()).setIconColor(state.getIconColor()));
+                .ifPresent(state::applyCssClass);
     }
 
     @Override

@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import org.correomqtt.di.Inject;
 import org.correomqtt.di.SingletonBean;
+
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.util.HashSet;
@@ -30,7 +31,6 @@ import java.util.Set;
 import static org.correomqtt.core.model.ConnectionPasswordType.AUTH_PASSWORD;
 import static org.correomqtt.core.model.ConnectionPasswordType.PASSWORD;
 import static org.correomqtt.core.model.ConnectionPasswordType.SSL_KEYSTORE_PASSWORD;
-
 //TODO check invalid configs
 
 @SingletonBean
@@ -49,21 +49,18 @@ public class SettingsManager extends BaseUserFileProvider {
                            SecretStoreProvider secretStoreProvider) {
         super(soyEvents);
         this.secretStoreProvider = secretStoreProvider;
-
         try {
             prepareFile(CONFIG_FILE_NAME);
         } catch (InvalidPathException | SecurityException | UnsupportedOperationException | IOException e) {
             LOGGER.error("Error writing config file {}. ", CONFIG_FILE_NAME, e);
             soyEvents.fire(new UnaccessibleConfigFileEvent(e));
         }
-
         try {
             configDTO = new ObjectMapper().readValue(getFile(), ConfigDTO.class);
         } catch (IOException e) {
             LOGGER.error("Exception parsing config file {}.", CONFIG_FILE_NAME, e);
             soyEvents.fire(new InvalidConfigFileEvent(e));
         }
-
     }
 
     public void addConnectionChangeListener(Runnable handler) {
@@ -102,12 +99,10 @@ public class SettingsManager extends BaseUserFileProvider {
 
     public void saveSettings() {
         saveDTO();
-
         soyEvents.fire(new SettingsUpdatedEvent(false));
     }
 
     private void saveDTO() {
-
         try {
             new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(getFile(), configDTO);
         } catch (IOException e) {
@@ -117,11 +112,8 @@ public class SettingsManager extends BaseUserFileProvider {
 
     public String getActiveTheme() {
         if (activeThemeName == null) {
-            if (configDTO.getThemesSettings().getNextTheme() != null) {
-                configDTO.getThemesSettings().setActiveTheme(configDTO.getThemesSettings().getNextTheme());
-                configDTO.getThemesSettings().setNextTheme(null);
-                saveDTO();
-            }
+            configDTO.getThemesSettings().setActiveTheme(configDTO.getThemesSettings().getActiveTheme());
+            saveDTO();
             activeThemeName = configDTO.getThemesSettings().getActiveTheme().getName();
         }
         return activeThemeName;
@@ -144,21 +136,18 @@ public class SettingsManager extends BaseUserFileProvider {
     public void saveConnections(List<ConnectionConfigDTO> connections, String masterPassword) throws EncryptionRecoverableException {
         configDTO.setConnections(connections);
         saveDTO();
-
         for (ConnectionConfigDTO c : connections) {
             secretStoreProvider.setPassword(masterPassword, c, PASSWORD, c.getPassword());
             secretStoreProvider.setPassword(masterPassword, c, AUTH_PASSWORD, c.getAuthPassword());
             secretStoreProvider.setPassword(masterPassword, c, SSL_KEYSTORE_PASSWORD, c.getSslKeystorePassword());
         }
         secretStoreProvider.encryptAndSavePasswords(masterPassword);
-
         connectionChangeListeners.forEach(Runnable::run);
         soyEvents.fire(new ConnectionsUpdatedEvent());
     }
 
     public void initializePasswords(String masterPassword) throws EncryptionRecoverableException {
         secretStoreProvider.migratePasswordEncryption(masterPassword);
-
         List<ConnectionConfigDTO> connections = this.getConnectionConfigs();
         for (ConnectionConfigDTO c : connections) {
             c.setPassword(secretStoreProvider.getPassword(masterPassword, c, PASSWORD));

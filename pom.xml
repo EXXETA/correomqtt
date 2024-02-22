@@ -40,6 +40,7 @@
         <module>core</module>
         <module>gui</module>
         <module>plugins</module>
+        <module>repo-build</module>
     </modules>
 
 
@@ -56,6 +57,18 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.correomqtt</groupId>
+                <artifactId>core</artifactId>
+                <version>0.15.0</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.correomqtt</groupId>
+                <artifactId>gui</artifactId>
+                <version>0.15.0</version>
+                <scope>provided</scope>
+            </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>

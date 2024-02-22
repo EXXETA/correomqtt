@@ -41,7 +41,7 @@ public class CheckNewVersionUtils {
             );
 
             if (confirmed) {
-                hostServices.showDocument(VendorConstants.GITHUB_LATEST());
+                hostServices.showDocument(VendorConstants.getGithubLatest());
 
             }
         } else if (showHintIfUpToDate) {

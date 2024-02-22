@@ -173,6 +173,7 @@
         <dependency>
             <groupId>org.correomqtt</groupId>
             <artifactId>di</artifactId>
+            <scope>compile</scope>
         </dependency>
         <!-- Test Scope -->
         <dependency>

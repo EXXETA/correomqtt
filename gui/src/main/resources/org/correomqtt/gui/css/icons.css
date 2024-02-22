@@ -1,0 +1,20 @@
+.ikonli-font-icon {
+    -fx-icon-color: black;
+}
+
+.successIcon .ikonli-font-icon{
+    -fx-icon-color: green;
+}
+
+.failIcon .ikonli-font-icon {
+    -fx-icon-color: red;
+}
+
+.warnIcon .ikonli-font-icon {
+    -fx-icon-color: orange;
+}
+
+
+.ignoreIcon .ikonli-font-icon {
+    -fx-icon-color: gray;
+}
