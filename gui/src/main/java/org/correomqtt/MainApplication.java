@@ -139,9 +139,9 @@ public class MainApplication {
         );
 
         notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderReady")));
-        settingsManager.saveSettings();
 
-        System.setProperty("correo.iconModeCssClass", themeManager.getIconModeCssClass());
+        themeManager.saveCSS();
+
         correoCore.init();
     }
 

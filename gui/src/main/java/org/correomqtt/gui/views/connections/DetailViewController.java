@@ -213,6 +213,8 @@ public class DetailViewController extends BaseConnectionController implements
         });
 
         initializeManipulation();
+
+        setMessage(messageDTO);
     }
 
     private void initializeManipulation() {

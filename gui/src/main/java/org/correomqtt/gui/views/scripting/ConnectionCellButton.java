@@ -110,7 +110,7 @@ public class ConnectionCellButton extends ListCell<ConnectionPropertiesDTO> {
             state = client.getState();
         }
         GuiConnectionState guiState = GuiConnectionState.of(state);
-        nameLabel.setIconColor(guiState.getIconColor());
+        guiState.applyCssClass(nameLabel);
 
 
     }

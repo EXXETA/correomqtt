@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.*?>
 <?import org.correomqtt.gui.controls.IconButton?>
-<?import org.correomqtt.gui.controls.ThemedFontIcon?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <AnchorPane fx:id="containerAnchorPane" minHeight="450.0" minWidth="650.0" prefHeight="450.0" prefWidth="800.0" styleClass="dialog" stylesheets="@../../css/exportconnections.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.correomqtt.gui.views.importexport.ConnectionExportViewController">
     <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
         <HBox alignment="CENTER_LEFT" VBox.vgrow="NEVER">
@@ -15,7 +15,7 @@
                     <Insets bottom="10.0" />
                 </VBox.margin>
                 <graphic>
-                    <ThemedFontIcon iconLiteral="mdi-export" iconSize="50"/>
+                    <FontIcon iconLiteral="mdi-export" iconSize="50"/>
                 </graphic>
             </Label>
         </HBox>

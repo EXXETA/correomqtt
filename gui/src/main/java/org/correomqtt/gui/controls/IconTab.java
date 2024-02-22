@@ -1,25 +1,33 @@
 package org.correomqtt.gui.controls;
 
+import javafx.beans.Observable;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.control.Tab;
-import javafx.scene.paint.Paint;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 public class IconTab extends Tab {
 
     private final StringProperty iconProperty = new SimpleStringProperty();
-    private ThemedFontIcon themedFontIcon;
+    private final IntegerProperty iconSizeProperty = new SimpleIntegerProperty(18);
+    private final FontIcon fontIcon;
 
     public IconTab() {
         super();
-        iconProperty.addListener((ob, o, n) -> iconChange(n));
+        fontIcon = new FontIcon();
+        setGraphic(fontIcon);
+        iconProperty.addListener(this::iconChange);
+        iconSizeProperty.addListener(this::iconSizeChange);
     }
 
-    private void iconChange(String newValue) {
-        themedFontIcon = new ThemedFontIcon();
-        themedFontIcon.setIconLiteral(newValue);
-        themedFontIcon.setIconSize(18);
-        this.setGraphic(themedFontIcon);
+    private void iconChange(Observable observable) {
+        fontIcon.setIconLiteral(iconProperty.get());
+    }
+
+    private void iconSizeChange(Observable observable) {
+        fontIcon.setIconSize(iconSizeProperty.get());
     }
 
     public String getIcon() {
@@ -30,7 +38,11 @@ public class IconTab extends Tab {
         this.iconProperty.set(icon);
     }
 
-    public void setIconColor(Paint paint) {
-        this.themedFontIcon.setIconColor(paint);
+    public Integer getIconSize() {
+        return this.iconSizeProperty.get();
+    }
+
+    public void setIconSize(Integer iconSize) {
+        this.iconSizeProperty.set(iconSize);
     }
 }

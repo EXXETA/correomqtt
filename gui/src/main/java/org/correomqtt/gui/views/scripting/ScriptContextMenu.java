@@ -1,14 +1,14 @@
 package org.correomqtt.gui.views.scripting;
 
-import org.correomqtt.di.Assisted;
-import org.correomqtt.di.DefaultBean;
-import org.correomqtt.di.Inject;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import org.correomqtt.core.settings.SettingsManager;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.contextmenu.BaseObjectContextMenu;
 import org.correomqtt.gui.controls.IconMenuItem;
-import org.correomqtt.gui.controls.ThemedFontIcon;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 @DefaultBean
 public class ScriptContextMenu extends BaseObjectContextMenu<ScriptFilePropertiesDTO, ScriptContextMenuDelegate> {
@@ -31,15 +31,15 @@ public class ScriptContextMenu extends BaseObjectContextMenu<ScriptFilePropertie
         super.initializeItems();
 
         runItem = new IconMenuItem("Run");
-        runItem.setGraphic(new ThemedFontIcon("mdi-play"));
+        runItem.setGraphic(new FontIcon("mdi-play"));
         runItem.setOnAction(event -> delegate.runScript(dto));
 
         renameItem = new IconMenuItem("Rename");
-        renameItem.setGraphic(new ThemedFontIcon("mdi-rename"));
+        renameItem.setGraphic(new FontIcon("mdi-rename"));
         renameItem.setOnAction(event -> delegate.renameScript(dto));
 
         deleteItem = new IconMenuItem("Delete");
-        deleteItem.setGraphic(new ThemedFontIcon("mdi-trash-can"));
+        deleteItem.setGraphic(new FontIcon("mdi-trash-can"));
         deleteItem.setOnAction(event -> delegate.deleteScript(dto));
 
         separator1 = new SeparatorMenuItem();

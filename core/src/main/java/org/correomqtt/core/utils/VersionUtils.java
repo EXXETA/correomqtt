@@ -48,7 +48,7 @@ public class VersionUtils {
      */
     public static String isNewerVersionAvailable() throws IOException, CorreoMqttUnableToCheckVersionException {
 
-        URL url = new URL(VendorConstants.GITHUB_API_LATEST());
+        URL url = new URL(VendorConstants.getGithubApiLatest());
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", "application/json");
@@ -67,14 +67,14 @@ public class VersionUtils {
             ComparableVersion currentLocalVersion = new ComparableVersion(getVersion());
 
             if (latestGithubVersion.compareTo(currentLocalVersion) > 0) {
-                LOGGER.info("There is a new release available on github! {}", VendorConstants.GITHUB_LATEST());
+                LOGGER.info("There is a new release available on github! {}", VendorConstants.getGithubLatest());
                 return tagName;
             } else {
-                LOGGER.info("Version is up to date or newer! {}", VendorConstants.GITHUB_LATEST());
+                LOGGER.info("Version is up to date or newer! {}", VendorConstants.getGithubLatest());
                 return null;
             }
         } catch (FileNotFoundException fnfe){
-            LOGGER.warn("Unable to find {} while checking for new version. Plugin updates will also be skipped.", VendorConstants.GITHUB_API_LATEST());
+            LOGGER.warn("Unable to find {} while checking for new version. Plugin updates will also be skipped.", VendorConstants.getGithubApiLatest());
         } catch (SocketTimeoutException ste){
             LOGGER.warn("Timeout checking for new version. Plugin updates will also be skipped.");
         } catch (UnknownHostException uhe) {

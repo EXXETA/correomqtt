@@ -19,6 +19,30 @@
     -fx-selection-bar-non-focused: #3daee9; /*rgb(50, 50, 50);*/
 }
 
+
+.root .ikonli-font-icon {
+    -fx-icon-color: white;
+}
+
+.successIcon .ikonli-font-icon{
+    -fx-icon-color: green;
+}
+
+.exclamationCircleSolid .ikonli-font-icon,
+.failIcon .ikonli-font-icon {
+    -fx-icon-color: #da4453;
+}
+
+.warnIcon .ikonli-font-icon {
+    -fx-icon-color: orange;
+}
+
+
+.ignoreIcon .ikonli-font-icon {
+    -fx-icon-color: gray;
+}
+
+
 /* Fix derived prompt color for text fields */
 .text-input {
     -fx-background-color: #232323;

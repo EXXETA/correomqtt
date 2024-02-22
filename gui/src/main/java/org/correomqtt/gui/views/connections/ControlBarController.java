@@ -272,8 +272,7 @@ public class ControlBarController extends BaseConnectionController {
         GuiConnectionState guiState = GuiConnectionState.of(state);
 
         delegate.setConnectionState(guiState);
-        statusLabel.setIconColor(guiState.getIconColor());
-
+        guiState.applyCssClass(statusLabel);
         controlViewPSButton.setDisable(state != CONNECTED);
         controlViewPButton.setDisable(state != CONNECTED);
         controlViewSButton.setDisable(state != CONNECTED);

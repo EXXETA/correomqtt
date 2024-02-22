@@ -53,7 +53,7 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
     }
 
     @Override
-    void setDTO(String id, PublishMessageHistoryListDTO dto) {
+    synchronized void setDTO(String id, PublishMessageHistoryListDTO dto) {
         historyDTOs.put(id, dto);
     }
 
@@ -61,7 +61,7 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
         return historyDTOs.get(connectionId).getMessages();
     }
 
-    public void onPublishSucceeded(@Observes PublishEvent event) {
+    public synchronized void onPublishSucceeded(@Observes PublishEvent event) {
         LOGGER.info("Persisting new publish history entry: {}", event.getMessageDTO().getTopic());
 
         List<MessageDTO> messageList = getMessages(event.getConnectionId());
@@ -73,9 +73,9 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
         saveHistory(event.getConnectionId());
     }
 
-    private void saveHistory(String id) {
+    private synchronized void saveHistory(String id) {
         try {
-            new ObjectMapper().writeValue(getFile(), historyDTOs.get(id));
+            new ObjectMapper().writeValue(getFile(), historyDTOs.get(id).toBuilder().build());
         } catch (IOException e) {
             LOGGER.error("Failed to write " + getHistoryFileName(), e);
             soyEvents.fireAsync(new PersistPublishHistoryWriteFailedEvent(e));
@@ -83,7 +83,7 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
     }
 
     @SuppressWarnings("unused")
-    public void onPublishRemoved(@Observes PublishListRemovedEvent event) {
+    public synchronized void onPublishRemoved(@Observes PublishListRemovedEvent event) {
         LOGGER.info("Removing {} from publish history for {}.", event.getMessageDTO().getTopic(), event.getConnectionId());
         List<MessageDTO> messageList = getMessages(event.getConnectionId());
         messageList.remove(event.getMessageDTO());
@@ -91,7 +91,7 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
     }
 
     @SuppressWarnings("unused")
-    public void onPublishesCleared(@Observes PublishListClearEvent event) {
+    public synchronized void onPublishesCleared(@Observes PublishListClearEvent event) {
         LOGGER.info("Clearing publish history for {}.", event.getConnectionId());
         List<MessageDTO> messageList = getMessages(event.getConnectionId());
         messageList.clear();
@@ -100,11 +100,11 @@ public class PublishMessageHistory extends BasePersistHistoryProvider<PublishMes
 
     @SuppressWarnings("unused")
     @Observes(ConnectionsUpdatedEvent.class)
-    public void onConnectionsUpdated() {
+    public synchronized void onConnectionsUpdated() {
         removeFileIfConnectionDeleted();
     }
 
-    public void cleanUp() {
+    public synchronized void cleanUp() {
         historyDTOs.remove(getConnectionId());
     }
 }

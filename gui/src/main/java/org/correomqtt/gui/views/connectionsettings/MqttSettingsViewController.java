@@ -13,7 +13,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Paint;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.CustomTextField;
@@ -28,7 +27,6 @@ import org.correomqtt.core.model.Qos;
 import org.correomqtt.core.model.TlsSsl;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
-import org.correomqtt.gui.controls.ThemedFontIcon;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.plugin.spi.LwtSettingsHook;
 import org.correomqtt.gui.theme.ThemeManager;
@@ -38,6 +36,7 @@ import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.gui.views.cell.GenericCellFactory;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
+import org.kordamp.ikonli.javafx.FontIcon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -512,7 +511,7 @@ public class MqttSettingsViewController extends BaseControllerImpl
             textField.getStyleClass().add("errorOnSave");
         }
         textField.setTooltip(new Tooltip(tooltipText));
-        textField.setRight(new ThemedFontIcon("mdi-alert-circle", Paint.valueOf("red")));
+        textField.setRight(new FontIcon("mdi-alert-circle")); //TODO red with css
         textField.getStyleClass().add(EXCLAMATION_CIRCLE_SOLID);
     }
 
