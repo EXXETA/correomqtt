@@ -36,7 +36,7 @@ jobs:
           -d target \
           -i target \
           -n CorreoMQTT \
-          --main-jar target/correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
+          --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
           --app-version ${{steps.version.outputs.full_without_prefix}} \
           --icon ./gui/src/main/deploy/package/Icon.png \
           --linux-package-deps libpng16-16 \
