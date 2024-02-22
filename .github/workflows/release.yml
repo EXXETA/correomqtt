@@ -88,6 +88,7 @@ jobs:
           mvn -B clean install -DskipTests=true
         shell: bash
       - name: Package MSI
+        shell: bash
         run: | 
           jpackage \
           --type msi \
