@@ -60,13 +60,13 @@
             <dependency>
                 <groupId>org.correomqtt</groupId>
                 <artifactId>core</artifactId>
-                <version>0.15.0</version>
+                <version>${project.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.correomqtt</groupId>
                 <artifactId>gui</artifactId>
-                <version>0.15.0</version>
+                <version>${project.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
