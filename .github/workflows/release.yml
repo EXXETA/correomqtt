@@ -162,7 +162,7 @@ jobs:
             -d target \
             -n CorreoMQTT \
             --app-version ${{steps.version.outputs.full_without_prefix}} \
-            --app-image target/CorreoMQTT.app
+            --app-image dist/CorreoMQTT.app
       - name: Release 
         uses: xresloader/upload-to-github-release@v1.3.2
         env:
