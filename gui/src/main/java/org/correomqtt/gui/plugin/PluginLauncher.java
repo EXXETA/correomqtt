@@ -1,17 +1,19 @@
 package org.correomqtt.gui.plugin;
 
 import javafx.application.Preloader;
-import org.correomqtt.preloader.PreloaderNotification;
 import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.plugin.repository.BundledPluginList;
 import org.correomqtt.core.settings.SettingsManager;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.SingletonBean;
+import org.correomqtt.di.SoyDi;
+import org.correomqtt.preloader.PreloaderNotification;
+import org.pf4j.PluginState;
 import org.pf4j.update.PluginInfo;
 import org.pf4j.update.UpdateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.correomqtt.di.Inject;
-import org.correomqtt.di.SingletonBean;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
@@ -21,7 +23,9 @@ public class PluginLauncher {
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginLauncher.class);
 
     private final ResourceBundle resources;
+
     private final PluginManager pluginManager;
+
     private Consumer<Preloader.PreloaderNotification> notifyPreloader;
 
     @Inject
@@ -41,6 +45,13 @@ public class PluginLauncher {
             }
             notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderStartPlugins")));
             pluginManager.startPlugins();
+            pluginManager.getPlugins().stream().filter(p -> p.getPluginState() == PluginState.STARTED).forEach(
+                    p -> {
+                        SoyDi.addClassLoader(p.getPluginClassLoader());
+                        SoyDi.scan(p.getClass().getPackageName());
+                    }
+
+            );
         } catch (Exception e) {
             LOGGER.error("Error or Exception during loading plugins ", e);
         }
@@ -58,10 +69,12 @@ public class PluginLauncher {
         LOGGER.info("Plugin Update: Updated({}), Installed({}), Uninstalled({})", updatedPlugins, installedPlugins, uninstalledPlugins);
     }
 
-    private int installBundledPlugins(UpdateManager updateManager, PluginManager pluginManager, BundledPluginList.BundledPlugins bundledPlugins) {
+    private int installBundledPlugins(UpdateManager updateManager,
+            PluginManager pluginManager,
+            BundledPluginList.BundledPlugins bundledPlugins) {
 
         int installedPlugins = 0;
-        for (String pluginId : bundledPlugins.getInstall()) {
+        for ( String pluginId : bundledPlugins.getInstall() ) {
 
             // Already installed?
             if (pluginManager.getPlugin(pluginId) != null) {
@@ -98,7 +111,7 @@ public class PluginLauncher {
 
     private int uninstallBundledPlugins(PluginManager pluginManager, BundledPluginList.BundledPlugins bundledPlugins) {
         int uninstalledPlugins = 0;
-        for (String pluginId : bundledPlugins.getUninstall()) {
+        for ( String pluginId : bundledPlugins.getUninstall() ) {
             // Already uninstalled?
             if (pluginManager.getPlugin(pluginId) == null) {
                 continue;
@@ -120,7 +133,7 @@ public class PluginLauncher {
     private int updateExisitingPlugins(UpdateManager updateManager, PluginManager pluginManager) {
         // check for updates
         int updatedPlugins = 0;
-        for (PluginInfo plugin : updateManager.getUpdates()) {
+        for ( PluginInfo plugin : updateManager.getUpdates() ) {
             notifyPreloader.accept(new PreloaderNotification(resources.getString("pluginUpdateManagerUpdating") + " " + plugin.id));
             PluginInfo.PluginRelease lastRelease = updateManager.getLastPluginRelease(plugin.id);
             String lastVersion = lastRelease.version;
