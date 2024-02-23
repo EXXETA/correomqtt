@@ -39,7 +39,7 @@ jobs:
           -i target \
           -n CorreoMQTT \
           --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
-          --app-version ${{steps.version.outputs.major_without_prefix}}.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}}-${{steps.version.outputs.prerelease} \
+          --app-version ${{steps.version.outputs.major_without_prefix}}.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}}-${{steps.version.outputs.prerelease}} \
           --icon ./gui/src/main/deploy/package/Icon.png \
           --linux-package-deps libpng16-16 \
           --resource-dir .github/resources/linux
@@ -51,7 +51,7 @@ jobs:
           -i target \
           -n CorreoMQTT \
           --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
-          --app-version ${{steps.version.outputs.major_without_prefix}}.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}}+${{steps.version.outputs.prerelease} \
+          --app-version ${{steps.version.outputs.major_without_prefix}}.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}}+${{steps.version.outputs.prerelease}} \
           --icon ./gui/src/main/deploy/package/Icon.png \
           --resource-dir .github/resources/linux
       - name: Release
