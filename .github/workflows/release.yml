@@ -35,11 +35,11 @@ jobs:
         run: |
           jpackage \
           --type deb \
-          -d target \
+          -d dist \
           -i target \
           -n CorreoMQTT \
           --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
-          --app-version ${{steps.version.outputs.full_without_prefix}} \
+          --app-version ${{major_without_prefix}}.${{minor}}.${{patch}}-${{prerelease} \
           --icon ./gui/src/main/deploy/package/Icon.png \
           --linux-package-deps libpng16-16 \
           --resource-dir .github/resources/linux
@@ -47,11 +47,11 @@ jobs:
         run: |
           jpackage \
           --type rpm \
-          -d target \
+          -d dist \
           -i target \
           -n CorreoMQTT \
           --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
-          --app-version ${{steps.version.outputs.full_without_prefix}} \
+          --app-version ${{major_without_prefix}}.${{minor}}.${{patch}}+${{prerelease} \
           --icon ./gui/src/main/deploy/package/Icon.png \
           --resource-dir .github/resources/linux
       - name: Release
@@ -60,7 +60,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           draft: false
-          file: target/*.deb;target/*.rpm;target/*.jar;target/*.json
+          file: dist/*.deb;dist/*.rpm;target/*.jar;target/*.json
           tags: true
   winbuild:
     runs-on: windows-2019
@@ -92,11 +92,11 @@ jobs:
         run: | 
           jpackage \
           --type msi \
-          -d target \
+          -d dist \
           -i target \
           -n CorreoMQTT \
           --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
-          --app-version ${{steps.version.outputs.full_without_prefix}} \
+          --app-version ${{major_without_prefix}}.${{minor}}.${{patch}} \
           --icon ./gui/src/main/deploy/package/Icon.ico \
           --win-dir-chooser \
           --win-menu \
@@ -110,7 +110,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           draft: false
-          file: target/*.msi
+          file: dist/*.msi
           tags: true
   macbuild:
     runs-on: macos-11
@@ -141,11 +141,11 @@ jobs:
         run: |
           jpackage \
             --type app-image \
-            -d target \
+            -d dist \
             -i target \
             -n CorreoMQTT \
             --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
-            --app-version ${{steps.version.outputs.full_without_prefix}} \
+            --app-version 1.${{minor}}.${{patch}} \
             --icon ./gui/src/main/deploy/package/Icon.icns
 
           openssl req -subj '/CN=correomqtt.org' -config .github/osx.correo.certconfig -x509 -newkey rsa:4096 -keyout correokey.pem -out correocert.pem -days 365 -nodes
@@ -169,5 +169,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           draft: false
-          file: target/*.dmg
+          file: dist/*.dmg
           tags: true
