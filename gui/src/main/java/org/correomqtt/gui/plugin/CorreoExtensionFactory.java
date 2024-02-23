@@ -16,8 +16,6 @@ public class CorreoExtensionFactory implements ExtensionFactory {
     @Override
     public <T> T create(Class<T> extensionClass) {
         try {
-            String pkg = extensionClass.getPackageName();
-
             if (SoyDi.isInjectable(extensionClass)) {
                 LOGGER.debug("Injecting Plugin Class {} with DI.", extensionClass.getName());
                 return SoyDi.inject(extensionClass);

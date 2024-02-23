@@ -134,7 +134,7 @@ public class RepoBuild {
                 .toList();
         String url;
         if (repoBaseUrl != null) {
-            url = repoBaseUrl + jarFileName;
+            url = repoBaseUrl + "/" + jarFileName;
         } else {
             url = "file://" + files[0].getAbsolutePath();
         }

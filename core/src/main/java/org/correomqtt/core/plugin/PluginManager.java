@@ -33,7 +33,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -53,19 +55,16 @@ public class PluginManager extends JarPluginManager {
     private final PluginConfigProvider pluginConfigProvider;
     private BundledPluginList.BundledPlugins bundledPlugins;
 
-
     @Inject
     public PluginManager(SettingsManager settings,
-                  PluginConfigProvider pluginConfigProvider) {
+                         PluginConfigProvider pluginConfigProvider) {
         super(Path.of(pluginConfigProvider.getPluginPath()));
         this.settings = settings;
         this.pluginConfigProvider = pluginConfigProvider;
-
     }
 
     @Override
     protected ExtensionFactory createExtensionFactory() {
-
         return Objects.requireNonNullElseGet(extensionFactory, DefaultExtensionFactory::new);
     }
 
@@ -87,30 +86,36 @@ public class PluginManager extends JarPluginManager {
     }
 
     public BundledPluginList.BundledPlugins getBundledPlugins() {
-
         if (bundledPlugins != null) {
             return bundledPlugins;
         }
-
         if (settings.getSettings().isInstallBundledPlugins()) {
-
             String bundledPluginUrl = settings.getSettings().getBundledPluginsUrl();
-
             if (bundledPluginUrl == null) {
                 bundledPluginUrl = VendorConstants.getBundledPluginsUrl();
+            }
+
+            if (bundledPluginUrl.contains("{version}")) {
+                String latestBundled = bundledPluginUrl.replace("{version}", "latest");
+                if (checkUrl(latestBundled)) {
+                    bundledPluginUrl = latestBundled;
+                } else {
+                    String versionBundled = bundledPluginUrl.replace("{version}", "v" + VersionUtils.getVersion());
+                    if (checkUrl(versionBundled)) {
+                        bundledPluginUrl = versionBundled;
+                    }
+                }
             }
 
             try {
                 LOGGER.info("Read bundled plugins '{}'", bundledPluginUrl);
                 BundledPluginList bundledPluginList = new ObjectMapper().readValue(new URL(bundledPluginUrl), BundledPluginList.class);
-
                 BundledPluginList.BundledPlugins bundledPluginsByVersion = bundledPluginList.getVersions().get(VersionUtils.getVersion().trim());
                 if (bundledPluginsByVersion == null) {
                     return BundledPluginList.BundledPlugins.builder().build();
                 }
                 bundledPlugins = bundledPluginsByVersion;
                 return bundledPluginsByVersion;
-
             } catch (IOException e) {
                 LOGGER.warn("Unable to load bundled plugin list from {}.", bundledPluginUrl);
                 return BundledPluginList.BundledPlugins.builder().build();
@@ -119,7 +124,6 @@ public class PluginManager extends JarPluginManager {
             LOGGER.info("Do not install bundled plugins.");
             return BundledPluginList.BundledPlugins.builder().build();
         }
-
     }
 
     private boolean isPluginBundled(String pluginId) {
@@ -133,12 +137,33 @@ public class PluginManager extends JarPluginManager {
                 .toList();
     }
 
+    private boolean checkUrl(String urlString) {
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection huc = (HttpURLConnection) url.openConnection();
+            huc.setRequestMethod("HEAD");
+            return (huc.getResponseCode() == 200 || huc.getResponseCode() == 302);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     public UpdateManager getUpdateManager() {
         List<UpdateRepository> repos = new ArrayList<>();
-
         if (settings.getSettings().isSearchUpdates()) {
             if (settings.getSettings().isUseDefaultRepo()) {
                 String defaultRepo = VendorConstants.getDefaultRepoUrl();
+                if (defaultRepo.contains("{version}")) {
+                    String latestRepo = defaultRepo.replace("{version}", "latest");
+                    if (checkUrl(latestRepo)) {
+                        defaultRepo = latestRepo;
+                    } else {
+                        String versionRepo = defaultRepo.replace("{version}", "v" + VersionUtils.getVersion());
+                        if (checkUrl(versionRepo)) {
+                            defaultRepo = versionRepo;
+                        }
+                    }
+                }
                 try {
                     repos.add(new CorreoUpdateRepository(DEFAULT_REPO_ID, defaultRepo));
                 } catch (MalformedURLException e) {
@@ -153,7 +178,6 @@ public class PluginManager extends JarPluginManager {
                 }
             });
         }
-
         return new UpdateManager(this, repos);
     }
 
@@ -192,7 +216,6 @@ public class PluginManager extends JarPluginManager {
                 .filter(Objects::nonNull)
                 .toList();
     }
-
 
     public List<MessageValidatorHook<?>> getMessageValidators(String topic) {
         return pluginConfigProvider.getMessageValidators()
@@ -266,7 +289,6 @@ public class PluginManager extends JarPluginManager {
             }
         } else {
             PluginWrapper pluginWrapper = getPlugin(pluginId);
-
             if (pluginWrapper != null && getPlugin(pluginId).getPluginState().equals(PluginState.STARTED)) {
                 LOGGER.warn("Plugin {} declared for {} has no valid extension", pluginId, type.getSimpleName());
             } else {
@@ -283,11 +305,9 @@ public class PluginManager extends JarPluginManager {
             LOGGER.debug("Unload Plugin \"{}\"", pluginId);
             unloadPlugin(pluginId);
         }
-
     }
 
     public <P extends BaseExtensionPoint<T>, T> P getExtensionByDefinition(Class<P> clazz, HooksDTO.Extension extensionDefinition) {
-
         P extension = getExtensionById(clazz, extensionDefinition.getPluginId(), extensionDefinition.getId());
         enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
         return extension;
@@ -295,19 +315,15 @@ public class PluginManager extends JarPluginManager {
 
     @SuppressWarnings("unchecked")
     public <P extends BaseExtensionPoint<T>, T> P getExtensionByDefinition(TypeReference<P> typeReference, HooksDTO.Extension extensionDefinition) {
-
         Type type = typeReference.getType();
-
         // https://stackoverflow.com/a/28615143
         Class<P> clazz = (Class<P>) (type instanceof ParameterizedType parameterizedType ?
                 parameterizedType.getRawType() :
                 type);
-
         return getExtensionByDefinition(clazz, extensionDefinition);
     }
 
     public void setExtensionFactory(ExtensionFactory extensionFactory) {
         this.extensionFactory = extensionFactory;
     }
-
 }
