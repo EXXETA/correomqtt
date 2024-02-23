@@ -159,7 +159,7 @@ jobs:
 
           jpackage \
             --type dmg \
-            -d target \
+            -d dist_mac \
             -n CorreoMQTT \
             --app-version ${{steps.version.outputs.full_without_prefix}} \
             --app-image dist/CorreoMQTT.app
@@ -169,5 +169,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           draft: false
-          file: dist/*.dmg
+          file: dist_mac/*.dmg
           tags: true
