@@ -27,7 +27,7 @@ jobs:
         shell: bash
       - name: Build
         run: |
-          mvn -B clean install -DskipTests=true
+          mvn -B clean install -DskipTests=true -DrepoBaseUrl=https://github.com/EXXETA/correomqtt/releases/download/${{steps.version.outputs.full_without_prefix}} -DkeepOldReleasesFromUrl=true
         shell: bash
       - name: Install rpm
         run: sudo apt-get install -y rpm
