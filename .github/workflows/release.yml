@@ -39,7 +39,7 @@ jobs:
           -i target \
           -n CorreoMQTT \
           --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
-          --app-version ${{major_without_prefix}}.${{minor}}.${{patch}}-${{prerelease} \
+          --app-version ${{steps.version.outputs.major_without_prefix}}.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}}-${{steps.version.outputs.prerelease} \
           --icon ./gui/src/main/deploy/package/Icon.png \
           --linux-package-deps libpng16-16 \
           --resource-dir .github/resources/linux
@@ -51,7 +51,7 @@ jobs:
           -i target \
           -n CorreoMQTT \
           --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
-          --app-version ${{major_without_prefix}}.${{minor}}.${{patch}}+${{prerelease} \
+          --app-version ${{steps.version.outputs.major_without_prefix}}.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}}+${{steps.version.outputs.prerelease} \
           --icon ./gui/src/main/deploy/package/Icon.png \
           --resource-dir .github/resources/linux
       - name: Release
@@ -96,7 +96,7 @@ jobs:
           -i target \
           -n CorreoMQTT \
           --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
-          --app-version ${{major_without_prefix}}.${{minor}}.${{patch}} \
+          --app-version ${{steps.version.outputs.major_without_prefix}}.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}} \
           --icon ./gui/src/main/deploy/package/Icon.ico \
           --win-dir-chooser \
           --win-menu \
@@ -145,7 +145,7 @@ jobs:
             -i target \
             -n CorreoMQTT \
             --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
-            --app-version 1.${{minor}}.${{patch}} \
+            --app-version 1.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}} \
             --icon ./gui/src/main/deploy/package/Icon.icns
 
           openssl req -subj '/CN=correomqtt.org' -config .github/osx.correo.certconfig -x509 -newkey rsa:4096 -keyout correokey.pem -out correocert.pem -days 365 -nodes
