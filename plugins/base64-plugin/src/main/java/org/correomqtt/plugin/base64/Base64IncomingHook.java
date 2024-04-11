@@ -27,6 +27,7 @@ public class Base64IncomingHook implements IncomingMessageHook<Base64IncomingHoo
         this.config = config;
     }
 
+    @Override
     public Class<Base64IncomingHookDTO> getConfigClass() {
         return Base64IncomingHookDTO.class;
     }

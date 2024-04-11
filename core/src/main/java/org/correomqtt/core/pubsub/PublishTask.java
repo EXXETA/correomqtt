@@ -78,16 +78,30 @@ public class PublishTask extends SimpleTask {
         MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
         for (OutgoingMessageHook<?> p : pluginManager.getOutgoingMessageHooks()) {
             OutgoingMessageHookDTO config = p.getConfig();
-            if (config != null && config.isEnabled() && (config.getTopicFilter() == null ||
-                    config.getTopicFilter()
-                            .stream()
-                            .anyMatch(tp -> MqttTopicFilter.of(tp)
-                                    .matches(MqttTopic.of(messageDTO.getTopic()))
-                            )
-            )) {
-                LOGGER.info(loggerUtils.getConnectionMarker(connectionId), "[HOOK] Manipulated outgoing message on {} with {}", messageDTO.getTopic(), p.getClass().getName());
-                messageExtensionDTO = p.onPublishMessage(connectionId, messageExtensionDTO);
+
+            if(config == null){
+                LOGGER.info(loggerUtils.getConnectionMarker(connectionId), "[HOOK] Skipping outgoing message extension " +
+                        "point {} due to empty config.",p.getClass().getName());
+                continue;
             }
+
+            if(!config.isEnabled()){
+                LOGGER.info(loggerUtils.getConnectionMarker(connectionId), "[HOOK] Skipping outgoing message extension " +
+                        "point {} due to disabled config.",p.getClass().getName());
+                continue;
+            }
+
+            if(config.getTopicFilter() != null && config.getTopicFilter()
+                    .stream()
+                    .anyMatch(tp -> MqttTopicFilter.of(tp)
+                            .matches(MqttTopic.of(messageDTO.getTopic()))
+                    )){
+                LOGGER.info(loggerUtils.getConnectionMarker(connectionId), "[HOOK] Skipping outgoing message extension " +
+                        "point {} due to not matching topic filter: {}",p.getClass().getName(), config.getTopicFilter());
+                continue;
+            }
+
+            messageExtensionDTO = p.onPublishMessage(connectionId, messageExtensionDTO);
         }
         return MessageExtensionTransformer.mergeDTO(messageExtensionDTO, messageDTO);
     }

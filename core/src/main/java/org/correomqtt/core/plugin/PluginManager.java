@@ -218,9 +218,8 @@ public class PluginManager extends JarPluginManager {
     public <T> void enrichExtensionWithConfig(BaseExtensionPoint<T> extension, JsonNode configNode) {
         try {
             Class<T> configClass = extension.getConfigClass();
-            String configNamespace = extension.getConfigNamespace();
-            if (configClass != null && configNamespace != null) {
-                extension.onConfigReceived(new ObjectMapper().treeToValue(configNode.get(configNamespace), configClass));
+            if (configClass != null) {
+                extension.onConfigReceived(new ObjectMapper().treeToValue(configNode, configClass));
             }
         } catch (JsonProcessingException e) {
             LOGGER.error("Exception parsing plugin configuration object for {}", extension.getConfigClass());
