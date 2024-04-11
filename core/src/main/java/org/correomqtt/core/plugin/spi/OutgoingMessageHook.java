@@ -11,4 +11,9 @@ public interface OutgoingMessageHook<T extends OutgoingMessageHookDTO> extends B
 
     @Override
     void onConfigReceived(T config);
+
+    @Override
+    default String getConfigNamespace(){
+        return "outgoing";
+    }
 }

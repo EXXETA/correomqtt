@@ -125,6 +125,8 @@ public class MainApplication {
             } catch (CorreoMqttUnableToCheckVersionException e) {
                 LOGGER.debug("Unable to check version", e);
             }
+        }else{
+            pluginLauncher.start(false);
         }
 
         notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderKeyring")));

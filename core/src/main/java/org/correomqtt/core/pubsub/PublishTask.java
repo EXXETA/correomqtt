@@ -78,8 +78,8 @@ public class PublishTask extends SimpleTask {
         MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
         for (OutgoingMessageHook<?> p : pluginManager.getOutgoingMessageHooks()) {
             OutgoingMessageHookDTO config = p.getConfig();
-            if (config != null && config.isEnableOutgoing() && (config.getOutgoingTopicFilter() == null ||
-                    config.getOutgoingTopicFilter()
+            if (config != null && config.isEnabled() && (config.getTopicFilter() == null ||
+                    config.getTopicFilter()
                             .stream()
                             .anyMatch(tp -> MqttTopicFilter.of(tp)
                                     .matches(MqttTopic.of(messageDTO.getTopic()))

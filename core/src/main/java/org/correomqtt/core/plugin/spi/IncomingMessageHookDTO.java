@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface IncomingMessageHookDTO {
 
-    boolean isEnableIncoming();
+    boolean isEnabled();
 
-    List<String> getIncomingTopicFilter();
+    List<String> getTopicFilter();
 }

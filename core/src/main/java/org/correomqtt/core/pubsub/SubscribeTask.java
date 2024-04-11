@@ -87,8 +87,8 @@ public class SubscribeTask extends SimpleTask {
         MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
         for (IncomingMessageHook<?> p : pluginManager.getIncomingMessageHooks()) {
             IncomingMessageHookDTO config = p.getConfig();
-            if (config != null && config.isEnableIncoming() && (config.getIncomingTopicFilter() == null ||
-                    config.getIncomingTopicFilter()
+            if (config != null && config.isEnabled() && (config.getTopicFilter() == null ||
+                    config.getTopicFilter()
                             .stream()
                             .anyMatch(tp -> MqttTopicFilter.of(tp)
                                     .matches(MqttTopic.of(messageDTO.getTopic()))
