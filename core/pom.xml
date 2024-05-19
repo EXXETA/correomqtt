@@ -143,6 +143,12 @@
             <type>pom</type>
         </dependency>
         <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>tools</artifactId>
+            <version>${graalvm.version}</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
         </dependency>
