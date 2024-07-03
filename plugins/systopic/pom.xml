@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>systopic-plugin</artifactId>
+    <artifactId>systopic</artifactId>
 
     <name>CorreoMQTT Plugin: Systopic</name>
 
@@ -15,7 +15,7 @@
     </parent>
 
     <properties>
-        <plugin.id>systopic-plugin</plugin.id>
+        <plugin.id>systopic</plugin.id>
         <plugin.name>Systopic Plugin</plugin.name>
         <plugin.provider>Exxeta AG</plugin.provider>
         <plugin.class>org.correomqtt.plugins.systopic.SysTopicPlugin</plugin.class>

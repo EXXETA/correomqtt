@@ -4,8 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>contains-string-validator-plugin</artifactId>
-    <name>CorreoMQTT Plugin: Contains String Validator</name>
+    <artifactId>xml-format</artifactId>
+
+    <name>CorreoMQTT Plugin: XML Format</name>
 
     <parent>
         <groupId>org.correomqtt</groupId>
@@ -13,13 +14,12 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-
     <properties>
-        <plugin.id>contains-string-validator-plugin</plugin.id>
-        <plugin.name>Contains String Validator Plugin</plugin.name>
+        <plugin.id>xml-format</plugin.id>
+        <plugin.name>XML Format Plugin</plugin.name>
         <plugin.provider>Exxeta AG</plugin.provider>
         <plugin.class />
-        <plugin.description>Checks if the message contains a given string</plugin.description>
+        <plugin.description>Formats messages into readable XML</plugin.description>
         <plugin.requires />
         <plugin.dependencies />
         <plugin.license>GPL</plugin.license>
@@ -37,6 +37,11 @@
         <dependency>
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.correomqtt</groupId>
+            <artifactId>gui</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>

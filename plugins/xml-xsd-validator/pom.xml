@@ -4,24 +4,25 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>xml-format-plugin</artifactId>
+    <artifactId>xml-xsd-validator</artifactId>
 
-    <name>CorreoMQTT Plugin: XML Format</name>
+    <name>CorreoMQTT Plugin: XML/XSD Validator</name>
 
     <parent>
         <groupId>org.correomqtt</groupId>
         <artifactId>plugins</artifactId>
         <version>1.0-SNAPSHOT</version>
+
     </parent>
 
     <properties>
-        <plugin.id>xml-format-plugin</plugin.id>
-        <plugin.name>XML Format Plugin</plugin.name>
+        <plugin.id>xml-xsd-validator</plugin.id>
+        <plugin.name>XML/XSD Validator Plugin</plugin.name>
         <plugin.provider>Exxeta AG</plugin.provider>
-        <plugin.class />
-        <plugin.description>Formats messages into readable XML</plugin.description>
-        <plugin.requires />
-        <plugin.dependencies />
+        <plugin.class>org.correomqtt.plugin.xml_xsd_validator.XmlXsdValidatorPlugin</plugin.class>
+        <plugin.description>Validates xml messages to a given xsd file</plugin.description>
+        <plugin.requires/>
+        <plugin.dependencies/>
         <plugin.license>GPL</plugin.license>
         <plugin.repositoryId>default</plugin.repositoryId>
         <plugin.projectUrl>http://www.correomqtt.org</plugin.projectUrl>
@@ -48,6 +49,32 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                    <annotationProcessorPaths>
+                        <annotationProcessorPath>
+                            <groupId>org.correomqtt</groupId>
+                            <artifactId>di</artifactId>
+                            <version>${project.version}</version>
+                        </annotationProcessorPath>
+                        <annotationProcessorPath>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </annotationProcessorPath>
+                        <annotationProcessorPath>
+                            <groupId>org.pf4j</groupId>
+                            <artifactId>pf4j</artifactId>
+                            <version>3.9.0</version>
+                        </annotationProcessorPath>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

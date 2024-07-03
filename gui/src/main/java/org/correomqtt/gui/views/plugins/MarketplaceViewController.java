@@ -98,7 +98,7 @@ public class MarketplaceViewController extends BaseControllerImpl {
     @FXML
     private void onInstall() {
         PluginInfoPropertiesDTO selectedPlugin = marketplacePluginList.getSelectionModel().getSelectedItem();
-        pluginInstallTaskFactory.create(selectedPlugin.getId(), selectedPlugin.getInstallableVersion());
+        pluginInstallTaskFactory.create(selectedPlugin.getId(), selectedPlugin.getInstallableVersion()).run(); //TODO error handling
     }
 
     private ListCell<PluginInfoPropertiesDTO> createCell(ListView<PluginInfoPropertiesDTO> pluginInfoDTOListView) {
