@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>base64-plugin</artifactId>
-    <name>CorreoMQTT Plugin: Base64</name>
+    <artifactId>json-format</artifactId>
+    <name>CorreoMQTT Plugin: JSON Format</name>
 
     <parent>
         <groupId>org.correomqtt</groupId>
@@ -14,11 +14,11 @@
     </parent>
 
     <properties>
-        <plugin.id>base64-plugin</plugin.id>
-        <plugin.name>Base64</plugin.name>
+        <plugin.id>json-format</plugin.id>
+        <plugin.name>JSON Format Plugin</plugin.name>
         <plugin.provider>Exxeta AG</plugin.provider>
-        <plugin.class />
-        <plugin.description>Decodes Base64 encoded messages</plugin.description>
+        <plugin.class>org.correomqtt.plugin.json_format.JsonFormatPlugin</plugin.class>
+        <plugin.description>Formats messages into readable JSON</plugin.description>
         <plugin.requires />
         <plugin.dependencies />
         <plugin.license>GPL</plugin.license>
@@ -34,45 +34,19 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.correomqtt</groupId>
-            <artifactId>gui</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
             <scope>provided</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.correomqtt</groupId>
+            <artifactId>gui</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
-                <configuration>
-                    <release>${maven.compiler.release}</release>
-                    <annotationProcessorPaths>
-                        <annotationProcessorPath>
-                            <groupId>org.correomqtt</groupId>
-                            <artifactId>di</artifactId>
-                            <version>${project.version}</version>
-                        </annotationProcessorPath>
-                        <annotationProcessorPath>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
-                        </annotationProcessorPath>
-                        <annotationProcessorPath>
-                            <groupId>org.pf4j</groupId>
-                            <artifactId>pf4j</artifactId>
-                            <version>3.9.0</version>
-                        </annotationProcessorPath>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

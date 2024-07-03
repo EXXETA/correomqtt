@@ -1,5 +1,6 @@
 package org.correomqtt.gui.utils;
 
+import java.util.Arrays;
 import javafx.beans.value.ChangeListener;
 import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.di.DefaultBean;
@@ -60,7 +61,7 @@ public class AutoFormatPayload {
                 .orElseThrow(() -> new IllegalArgumentException("Plain format did not match."));
 
 
-        //ChangeListener<String> listener is needed to disable it when the text of the PublishCodeArea changes. It is reenabled after the manipulation.
+        // ChangeListener<String> listener is needed to disable it when the text of the PublishCodeArea changes. It is reenabled after the manipulation.
         if (listener != null) {
             codeArea.textProperty().removeListener(listener);
         }
@@ -71,10 +72,6 @@ public class AutoFormatPayload {
             codeArea.setStyleSpans(0, foundFormat.getFxSpans());
         } catch (Exception e) {
             LOGGER.error("Formatter failed. ", e);
-            foundFormat = new Plain();
-            foundFormat.setText(payload);
-            codeArea.replaceText(0, 0, foundFormat.getPrettyString());
-            codeArea.setStyleSpans(0, foundFormat.getFxSpans());
         }
 
         if (listener != null) {

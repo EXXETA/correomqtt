@@ -26,15 +26,15 @@
     </properties>
 
     <modules>
-        <module>advanced-validator-plugin</module>
-        <module>base64-plugin</module>
-        <module>contains-string-validator-plugin</module>
-        <module>json-format-plugin</module>
-        <module>save-manipulator-plugin</module>
-        <module>systopic-plugin</module>
-        <module>xml-format-plugin</module>
-        <module>xml-xsd-validator-plugin</module>
-        <module>zip-manipulator-plugin</module>
+        <module>advanced-validator</module>
+        <module>base64</module>
+        <module>contains-string-validator</module>
+        <module>json-format</module>
+        <module>save-manipulator</module>
+        <module>systopic</module>
+        <module>xml-format</module>
+        <module>xml-xsd-validator</module>
+        <module>zip-manipulator</module>
 
     </modules>
 

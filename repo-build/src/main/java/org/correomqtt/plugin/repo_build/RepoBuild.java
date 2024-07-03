@@ -120,8 +120,11 @@ public class RepoBuild {
         Element propertiesElement = (Element) project.getElementsByTagName("properties").item(0);
         File f = new File(PLUGINS_FOLDER + File.separator + moduleId + File.separator + TARGET_FOLDER);
         File[] files = f.listFiles((dir, name) -> name.startsWith(moduleId) && name.endsWith("jar"));
-        if (files == null || files.length != 1) {
-            throw new IllegalStateException("None or more than one jars found.");
+        if (files == null || files.length == 0) {
+            throw new IllegalStateException("jar was not found for moduleId " + moduleId + " in " + f);
+        }
+        if (files.length != 1) {
+            throw new IllegalStateException("More than one jars found for moduleId " + moduleId + " in " + f + ": " + Arrays.stream(files).map(File::getName).collect(Collectors.joining(", ")));
         }
         String jarFileName = files[0].getName();
         String sha512sum = DigestUtils.sha512Hex(
@@ -136,7 +139,12 @@ public class RepoBuild {
         if (repoBaseUrl != null) {
             url = repoBaseUrl + "/" + jarFileName;
         } else {
-            url = "file://" + files[0].getAbsolutePath();
+            // Fixes plugins not being able to be loaded under windows
+            if(System.getProperty("os.name").contains("Windows")) {
+                url = "file:///" + files[0].getAbsolutePath();
+            } else {
+                url = "file://" + files[0].getAbsolutePath();
+            }
         }
         List<RepoPluginInfoDTO.PluginRelease> releaseList = oldPluginInfo == null ?
                 new ArrayList<>() :

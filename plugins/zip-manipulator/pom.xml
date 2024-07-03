@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>save-manipulator-plugin</artifactId>
+    <artifactId>zip-manipulator</artifactId>
 
-    <name>CorreoMQTT Plugin: Save Manipulator</name>
+    <name>CorreoMQTT Plugin: ZIP Manipulator</name>
 
     <parent>
         <groupId>org.correomqtt</groupId>
@@ -15,11 +15,11 @@
     </parent>
 
     <properties>
-        <plugin.id>save-manipulator-plugin</plugin.id>
-        <plugin.name>Save Manipulator Plugin</plugin.name>
+        <plugin.id>zip-manipulator</plugin.id>
+        <plugin.name>ZIP Manipulator Plugin</plugin.name>
         <plugin.provider>Exxeta AG</plugin.provider>
-        <plugin.class>org.correomqtt.plugin.save.SavePlugin</plugin.class>
-        <plugin.description>Saves message selection to a file</plugin.description>
+        <plugin.class />
+        <plugin.description>Provides zip and unzip manipulators</plugin.description>
         <plugin.requires />
         <plugin.dependencies />
         <plugin.license>GPL</plugin.license>
@@ -38,22 +38,6 @@
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-base</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-controls</artifactId>
         </dependency>
         <dependency>
             <groupId>org.correomqtt</groupId>

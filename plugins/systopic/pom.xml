@@ -4,8 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>advanced-validator-plugin</artifactId>
-    <name>CorreoMQTT Plugin: Advanced Validator</name>
+    <artifactId>systopic</artifactId>
+
+    <name>CorreoMQTT Plugin: Systopic</name>
 
     <parent>
         <groupId>org.correomqtt</groupId>
@@ -14,11 +15,11 @@
     </parent>
 
     <properties>
-        <plugin.id>advanced-validator-plugin</plugin.id>
-        <plugin.class/>
-        <plugin.name>Advanced Validator Plugin</plugin.name>
+        <plugin.id>systopic</plugin.id>
+        <plugin.name>Systopic Plugin</plugin.name>
         <plugin.provider>Exxeta AG</plugin.provider>
-        <plugin.description>Advanced message validation with and + or conjunctions</plugin.description>
+        <plugin.class>org.correomqtt.plugins.systopic.SysTopicPlugin</plugin.class>
+        <plugin.description>Plugin to show a window with systopic information</plugin.description>
         <plugin.requires/>
         <plugin.dependencies/>
         <plugin.license>GPL</plugin.license>
@@ -31,14 +32,33 @@
         <dependency>
             <groupId>org.correomqtt</groupId>
             <artifactId>core</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.correomqtt</groupId>
             <artifactId>gui</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -122,4 +142,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>
