@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.correomqtt</groupId>
         <artifactId>correomqtt</artifactId>
-        <version>0.15.0</version>
+        <version>1.0-SNAPSHOT</version>
     </parent>
 
     <licenses>

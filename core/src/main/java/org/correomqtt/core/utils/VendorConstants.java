@@ -48,11 +48,11 @@ public class VendorConstants {
     @Getter
     @Accessors(fluent = true)
     private static final String BUNDLED_PLUGINS_URL_ENV_OVERRIDE = "CORREO_BUNDLED_PLUGINS_URL";
-    private static final String BUNDLED_PLUGINS_URL_DEFAULT = "https://github.com/EXXETA/correomqtt/releases/download/latest/bundled.json";
+    private static final String BUNDLED_PLUGINS_URL_DEFAULT = "https://github.com/EXXETA/correomqtt/releases/download/{version}/bundled.json";
     @Getter
     @Accessors(fluent = true)
     private static final String DEFAULT_REPO_URL_ENV_OVERRIDE = "CORREO_DEFAULT_REPO_URL";
-    private static final String DEFAULT_REPO_URL_DEFAULT = "https://github.com/EXXETA/correomqtt/releases/download/latest/default-repo.json";
+    private static final String DEFAULT_REPO_URL_DEFAULT = "https://github.com/EXXETA/correomqtt/releases/download/{version}/default-repo.json";
 
     @Getter
     @Accessors(fluent = true)
