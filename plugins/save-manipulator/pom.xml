@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>json-format-plugin</artifactId>
-    <name>CorreoMQTT Plugin: JSON Format</name>
+    <artifactId>save-manipulator</artifactId>
+
+    <name>CorreoMQTT Plugin: Save Manipulator</name>
 
     <parent>
         <groupId>org.correomqtt</groupId>
@@ -14,11 +15,11 @@
     </parent>
 
     <properties>
-        <plugin.id>json-format-plugin</plugin.id>
-        <plugin.name>JSON Format Plugin</plugin.name>
+        <plugin.id>${artifactId}</plugin.id>
+        <plugin.name>Save Manipulator Plugin</plugin.name>
         <plugin.provider>Exxeta AG</plugin.provider>
-        <plugin.class>org.correomqtt.plugin.json_format.JsonFormatPlugin</plugin.class>
-        <plugin.description>Formats messages into readable JSON</plugin.description>
+        <plugin.class>org.correomqtt.plugin.save.SavePlugin</plugin.class>
+        <plugin.description>Saves message selection to a file</plugin.description>
         <plugin.requires />
         <plugin.dependencies />
         <plugin.license>GPL</plugin.license>
@@ -37,6 +38,22 @@
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
         </dependency>
         <dependency>
             <groupId>org.correomqtt</groupId>

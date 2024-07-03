@@ -40,7 +40,7 @@
     </developers>
 
     <properties>
-        <graalvm.version>23.1.1</graalvm.version>
+        <graalvm.version>23.1.2</graalvm.version>
     </properties>
 
     <repositories>
@@ -147,11 +147,6 @@
             <artifactId>tools</artifactId>
             <version>${graalvm.version}</version>
             <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.graalvm.truffle</groupId>
-            <artifactId>truffle-api</artifactId>
-            <version>${graalvm.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.classgraph</groupId>

@@ -4,8 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>advanced-validator-plugin</artifactId>
-    <name>CorreoMQTT Plugin: Advanced Validator</name>
+    <artifactId>zip-manipulator</artifactId>
+
+    <name>CorreoMQTT Plugin: ZIP Manipulator</name>
 
     <parent>
         <groupId>org.correomqtt</groupId>
@@ -14,13 +15,13 @@
     </parent>
 
     <properties>
-        <plugin.id>advanced-validator-plugin</plugin.id>
-        <plugin.class/>
-        <plugin.name>Advanced Validator Plugin</plugin.name>
+        <plugin.id>${artifactId}</plugin.id>
+        <plugin.name>ZIP Manipulator Plugin</plugin.name>
         <plugin.provider>Exxeta AG</plugin.provider>
-        <plugin.description>Advanced message validation with and + or conjunctions</plugin.description>
-        <plugin.requires/>
-        <plugin.dependencies/>
+        <plugin.class />
+        <plugin.description>Provides zip and unzip manipulators</plugin.description>
+        <plugin.requires />
+        <plugin.dependencies />
         <plugin.license>GPL</plugin.license>
         <plugin.repositoryId>default</plugin.repositoryId>
         <plugin.projectUrl>http://www.correomqtt.org</plugin.projectUrl>
@@ -31,48 +32,22 @@
         <dependency>
             <groupId>org.correomqtt</groupId>
             <artifactId>core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.correomqtt</groupId>
-            <artifactId>gui</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
+            <groupId>org.correomqtt</groupId>
+            <artifactId>gui</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
-                <configuration>
-                    <release>${maven.compiler.release}</release>
-                    <annotationProcessorPaths>
-                        <annotationProcessorPath>
-                            <groupId>org.correomqtt</groupId>
-                            <artifactId>di</artifactId>
-                            <version>${project.version}</version>
-                        </annotationProcessorPath>
-                        <annotationProcessorPath>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
-                        </annotationProcessorPath>
-                        <annotationProcessorPath>
-                            <groupId>org.pf4j</groupId>
-                            <artifactId>pf4j</artifactId>
-                            <version>3.9.0</version>
-                        </annotationProcessorPath>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>zip-manipulator-plugin</artifactId>
-
-    <name>CorreoMQTT Plugin: ZIP Manipulator</name>
+    <artifactId>json-format</artifactId>
+    <name>CorreoMQTT Plugin: JSON Format</name>
 
     <parent>
         <groupId>org.correomqtt</groupId>
@@ -15,11 +14,11 @@
     </parent>
 
     <properties>
-        <plugin.id>zip-manipulator-plugin</plugin.id>
-        <plugin.name>ZIP Manipulator Plugin</plugin.name>
+        <plugin.id>${artifactId}</plugin.id>
+        <plugin.name>JSON Format Plugin</plugin.name>
         <plugin.provider>Exxeta AG</plugin.provider>
-        <plugin.class />
-        <plugin.description>Provides zip and unzip manipulators</plugin.description>
+        <plugin.class>org.correomqtt.plugin.json_format.JsonFormatPlugin</plugin.class>
+        <plugin.description>Formats messages into readable JSON</plugin.description>
         <plugin.requires />
         <plugin.dependencies />
         <plugin.license>GPL</plugin.license>
