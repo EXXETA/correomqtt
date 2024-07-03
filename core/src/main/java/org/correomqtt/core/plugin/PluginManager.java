@@ -35,11 +35,11 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -182,7 +182,13 @@ public class PluginManager extends JarPluginManager {
     }
 
     public List<? extends OutgoingMessageHook<?>> getOutgoingMessageHooks() {
-        return pluginConfigProvider.getOutgoingMessageHooks()
+        List<HooksDTO.Extension> hooks = pluginConfigProvider.getOutgoingMessageHooks();
+
+        if(hooks == null){
+            return Collections.emptyList();
+        }
+
+        return hooks
                 .stream()
                 .map(extensionDefinition -> {
                     OutgoingMessageHook<?> extension = getExtensionById(OutgoingMessageHook.class,
@@ -200,7 +206,13 @@ public class PluginManager extends JarPluginManager {
     }
 
     public List<? extends IncomingMessageHook<?>> getIncomingMessageHooks() {
-        return pluginConfigProvider.getIncomingMessageHooks()
+        List<HooksDTO.Extension> hooks = pluginConfigProvider.getIncomingMessageHooks();
+
+        if(hooks == null){
+            return Collections.emptyList();
+        }
+
+        return hooks
                 .stream()
                 .map(extensionDefinition -> {
                     IncomingMessageHook<?> extension = getExtensionById(IncomingMessageHook.class,
@@ -218,8 +230,13 @@ public class PluginManager extends JarPluginManager {
     }
 
     public List<MessageValidatorHook<?>> getMessageValidators(String topic) {
-        return pluginConfigProvider.getMessageValidators()
-                .stream()
+        List<HooksDTO.MessageValidator> validators = pluginConfigProvider.getMessageValidators();
+
+        if(validators == null){
+            return Collections.emptyList();
+        }
+
+        return validators.stream()
                 .filter(validatorDefinition -> validatorDefinition.getTopic().equals(topic))
                 .map(validatorDefinition -> validatorDefinition.getExtensions().stream()
                         .map(extensionDefinition -> {
