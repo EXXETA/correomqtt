@@ -32,7 +32,7 @@ class EventBus {
     // event class -> filter identifier : filter method of event
     private static final Map<Class<Event>, HashMap<String, Method>> EVENT_TO_FILTER = new HashMap<>();
 
-    private record EventObservers(Class<Event> event, boolean sync, boolean autocreate) {
+    private record EventObservers(Class<Event> event, boolean autocreate) {
     }
 
     EventBus() {
@@ -73,7 +73,7 @@ class EventBus {
                         throw new IllegalArgumentException("Type is not compatible to Event.");
                     }
                     //noinspection unchecked
-                    return new EventObservers((Class<Event>) type, annotation.sync(), annotation.autocreate());
+                    return new EventObservers((Class<Event>) type, annotation.autocreate());
                 })
                 .toList();
     }
@@ -98,16 +98,19 @@ class EventBus {
         if (!Event.class.isAssignableFrom(params[0].getType())) {
             throw new UnsupportedOperationException("@Observes must be used for parameters compatible with Event.");
         }
-        return new EventObservers((Class<Event>) params[0].getType(), annotation.sync(), annotation.autocreate());
+        return new EventObservers((Class<Event>) params[0].getType(),  annotation.autocreate());
     }
 
     private static void registerObservers(EventObservers es, Class<?> listenerClass, Method m) {
         log.debug("SoyEvents:  -> {} -> {}:{}", es.event, listenerClass, m);
-        //TODO error if someone use autocreate with assisted constructor
+
+        if(es.autocreate && SoyDi.isAssisted(listenerClass)){
+            throw new SoyDiException("Beans using assisted inject can not observe events with autocreate = true.");
+        }
+
         ObserverInfo observerInfo = new ObserverInfo(new HashSet<>(),
                 m,
                 m.getParameters().length > 0,
-                es.sync,
                 es.autocreate);
         EVENT_TO_OBSERVERS.computeIfAbsent(es.event, k -> new HashMap<>())
                 .put(listenerClass, observerInfo);
@@ -158,9 +161,8 @@ class EventBus {
         return types;
     }
 
-    public static <T> void registerInstance(T instance) {
+    public static <T> void registerInstance(Class<?> clazz, T instance) {
         log.debug("SoyEvents: Register instance for events {}", instance);
-        Class<?> clazz = instance.getClass();
         if (!OBSERVERS_TO_EVENT.containsKey(clazz)) {
             return;
         }
@@ -206,13 +208,7 @@ class EventBus {
     }
 
     private static void executeFire(Event event, List<ObserverInfo> observerInfos) {
-        observerInfos.forEach(oi -> {
-            if (oi.isSync()) {
-                executeMethod(oi, event);
-            } else {
-                FrontendBinding.pushToFrontend(() -> executeMethod(oi, event)); // TODO use interceptor
-            }
-        });
+        observerInfos.forEach(oi -> executeMethod(oi, event));
     }
 
     private static boolean isValidEvent(Event event, Class<?> observer) {
@@ -233,7 +229,7 @@ class EventBus {
             try {
                 return eventMethod.invoke(event).equals(listenerMethod.invoke(observer));
             } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new EventCallbackExecutionException(e);
+                throw new SoyDiException("Exception filtering event: ",e);
             }
         });
     }
@@ -254,8 +250,7 @@ class EventBus {
                             log.debug("SoyEvents: Sent {} to {}:{}", event.getClass(), c, oi.getMethod());
                         }
                     } catch (Exception e) {
-                        log.error("Unexpected Exception firing event. ", e);
-                        throw new EventCallbackExecutionException(e);
+                        throw new SoyDiException("Unexpected exception firing event: ", e);
                     }
                 });
     }

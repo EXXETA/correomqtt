@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 
 <?import javafx.scene.control.Label?>
-<?import org.correomqtt.gui.controls.ThemedFontIcon?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.geometry.Insets?>
 <AnchorPane fx:id="pluginRootPane" minHeight="200.0" minWidth="400.0" prefHeight="500.0" prefWidth="1000.0"
@@ -20,7 +20,7 @@
                 <Insets bottom="10.0"/>
             </VBox.margin>
             <graphic>
-                <ThemedFontIcon iconLiteral="mdi-toy-brick" iconSize="50"/>
+                <FontIcon iconLiteral="mdi-toy-brick" iconSize="50"/>
             </graphic>
         </Label>
 

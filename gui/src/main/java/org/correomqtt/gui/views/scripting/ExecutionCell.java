@@ -1,8 +1,5 @@
 package org.correomqtt.gui.views.scripting;
 
-import org.correomqtt.di.Assisted;
-import org.correomqtt.di.DefaultBean;
-import org.correomqtt.di.Inject;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
@@ -16,8 +13,11 @@ import javafx.scene.layout.Pane;
 import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
 import org.correomqtt.core.settings.SettingsManager;
-import org.correomqtt.gui.controls.ThemedFontIcon;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.theme.ThemeManager;
+import org.kordamp.ikonli.javafx.FontIcon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +42,7 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
     @FXML
     private Label executionTimeLabel;
     @FXML
-    private ThemedFontIcon themedIcon;
+    private FontIcon fontIcon;
     @FXML
     private ResourceBundle resources;
 
@@ -68,7 +68,7 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
         rotateTransition.setByAngle(360);
         rotateTransition.setCycleCount(Animation.INDEFINITE);
         rotateTransition.setDuration(Duration.millis(1000));
-        rotateTransition.setNode(themedIcon);
+        rotateTransition.setNode(fontIcon);
         rotateTransition.setInterpolator(Interpolator.LINEAR);
 
     }
@@ -127,11 +127,11 @@ public class ExecutionCell extends ListCell<ExecutionPropertiesDTO> {
         if (state.isAnimation()) {
             rotateTransition.play();
         } else {
-            themedIcon.setRotate(0);
+            fontIcon.setRotate(0);
             rotateTransition.stop();
         }
 
-        themedIcon.setIconLiteral(state.getIcon());
+        fontIcon.setIconLiteral(state.getIcon());
 
         if (state.isFinalState()) {
             Long time = dto.getExecutionTime();

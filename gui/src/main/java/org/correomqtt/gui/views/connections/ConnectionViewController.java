@@ -26,6 +26,7 @@ import org.correomqtt.gui.model.GuiConnectionState;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.LoadingViewController;
 import org.correomqtt.gui.views.LoadingViewControllerFactory;
@@ -75,7 +76,7 @@ public class ConnectionViewController extends BaseConnectionController implement
 
 
     @Inject
-    ConnectionViewController(ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
+    public ConnectionViewController(ConnectionLifecycleTaskFactories connectionLifecycleTaskFactories,
                                     PublishViewControllerFactory publishViewControllerFactory,
                                     SubscriptionViewControllerFactory subscriptionViewControllerFactory,
                                     ControlBarControllerFactory controlBarControllerFactory,
@@ -177,6 +178,7 @@ public class ConnectionViewController extends BaseConnectionController implement
         }
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onConnectionStateChanged(@Observes ConnectionStateChangedEvent event) {
         switch (event.getState()) {
@@ -200,6 +202,7 @@ public class ConnectionViewController extends BaseConnectionController implement
         connectionLifecycleTaskFactories.getConnectFactory().create(getConnectionId()).run();
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onExportStarted(@Observes ExportMessageStartedEvent event) {
         Platform.runLater(() -> {
@@ -212,6 +215,7 @@ public class ConnectionViewController extends BaseConnectionController implement
     }
 
     @SuppressWarnings("unused")
+    @FxThread
     @Observes(ExportMessageSuccessEvent.class)
     public void onExportSucceeded() {
         disableLoading();
@@ -227,6 +231,7 @@ public class ConnectionViewController extends BaseConnectionController implement
         });
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onExportFailed(@Observes ExportMessageFailedEvent event) {
         disableLoading();
@@ -235,17 +240,20 @@ public class ConnectionViewController extends BaseConnectionController implement
                         + event.throwable().getLocalizedMessage());
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ImportMessageStartedEvent.class)
     public void onImportStarted() {
         Platform.runLater(() -> splitPane.setDisable(true));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onImportSucceeded(@Observes ImportMessageSuccessEvent event) {
         disableLoading();
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ImportMessageFailedEvent.class)
     public void onImportFailed() {

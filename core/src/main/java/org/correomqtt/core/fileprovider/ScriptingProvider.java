@@ -34,7 +34,7 @@ public class ScriptingProvider extends BaseUserFileProvider {
     private static final String SCRIPT_FOLDER = "scripts";
 
     @Inject
-    ScriptingProvider(SoyEvents soyEvents) {
+    public ScriptingProvider(SoyEvents soyEvents) {
         super(soyEvents);
     }
 

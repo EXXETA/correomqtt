@@ -7,7 +7,5 @@ import java.lang.annotation.RetentionPolicy;
 public @interface Observes {
     Class<? extends Event>[] value() default {};
 
-    boolean sync() default false;
-
     boolean autocreate() default false;
 }

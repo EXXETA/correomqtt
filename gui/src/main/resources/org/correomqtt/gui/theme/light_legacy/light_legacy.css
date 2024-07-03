@@ -2,6 +2,29 @@
     -fx-base: #ececec;
 }
 
+
+.root .ikonli-font-icon {
+    -fx-icon-color: black;
+}
+
+.successIcon .ikonli-font-icon{
+    -fx-icon-color: green;
+}
+
+.exclamationCircleSolid .ikonli-font-icon,
+.failIcon .ikonli-font-icon {
+    -fx-icon-color: red;
+}
+
+.warnIcon .ikonli-font-icon {
+    -fx-icon-color: orange;
+}
+
+
+.ignoreIcon .ikonli-font-icon {
+    -fx-icon-color: gray;
+}
+
 .basicColors {
     -fx-background-color: #ececec;
     -fx-text-fill: black;

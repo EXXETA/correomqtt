@@ -1,17 +1,19 @@
 package org.correomqtt.gui.plugin;
 
 import javafx.application.Preloader;
-import org.correomqtt.preloader.PreloaderNotification;
 import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.core.plugin.repository.BundledPluginList;
 import org.correomqtt.core.settings.SettingsManager;
+import org.correomqtt.di.Inject;
+import org.correomqtt.di.SingletonBean;
+import org.correomqtt.di.SoyDi;
+import org.correomqtt.preloader.PreloaderNotification;
+import org.pf4j.PluginState;
 import org.pf4j.update.PluginInfo;
 import org.pf4j.update.UpdateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.correomqtt.di.Inject;
-import org.correomqtt.di.SingletonBean;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
@@ -21,17 +23,18 @@ public class PluginLauncher {
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginLauncher.class);
 
     private final ResourceBundle resources;
+
     private final PluginManager pluginManager;
+
     private Consumer<Preloader.PreloaderNotification> notifyPreloader;
 
     @Inject
-    PluginLauncher(PluginManager pluginManager, SettingsManager settingsManager) {
+    public PluginLauncher(PluginManager pluginManager, SettingsManager settingsManager) {
         this.pluginManager = pluginManager;
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale());
     }
 
     public void start(boolean doPluginUpdates) {
-
         try {
             notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderLoadPlugins")));
             pluginManager.loadPlugins();
@@ -41,42 +44,44 @@ public class PluginLauncher {
             }
             notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderStartPlugins")));
             pluginManager.startPlugins();
+            pluginManager.getPlugins()
+                    .stream()
+                    .filter(pw -> pw.getPluginState() == PluginState.STARTED)
+                    .forEach(pw -> {
+                                SoyDi.addClassLoader(pw.getPluginClassLoader());
+                                SoyDi.scan(pw.getPlugin().getClass().getPackageName());
+                            }
+                    );
         } catch (Exception e) {
             LOGGER.error("Error or Exception during loading plugins ", e);
         }
     }
 
     private void updateSystem() {
-
         UpdateManager updateManager = pluginManager.getUpdateManager();
         BundledPluginList.BundledPlugins bundledPlugins = pluginManager.getBundledPlugins();
-
         int updatedPlugins = updateExisitingPlugins(updateManager, pluginManager);
         int installedPlugins = installBundledPlugins(updateManager, pluginManager, bundledPlugins);
         int uninstalledPlugins = uninstallBundledPlugins(pluginManager, bundledPlugins);
-
         LOGGER.info("Plugin Update: Updated({}), Installed({}), Uninstalled({})", updatedPlugins, installedPlugins, uninstalledPlugins);
     }
 
-    private int installBundledPlugins(UpdateManager updateManager, PluginManager pluginManager, BundledPluginList.BundledPlugins bundledPlugins) {
-
+    private int installBundledPlugins(UpdateManager updateManager,
+                                      PluginManager pluginManager,
+                                      BundledPluginList.BundledPlugins bundledPlugins) {
         int installedPlugins = 0;
         for (String pluginId : bundledPlugins.getInstall()) {
-
             // Already installed?
             if (pluginManager.getPlugin(pluginId) != null) {
                 LOGGER.info("Skip installing bundled plugin '{}', as it is already installed.", pluginId);
                 continue;
             }
-
             PluginInfo.PluginRelease lastRelease = updateManager.getLastPluginRelease(pluginId);
-
             // Plugin available?
             if (lastRelease == null) {
                 LOGGER.warn("Skip installing bundled plugin '{}', as it is not available in repositories.", pluginId);
                 continue;
             }
-
             notifyPreloader.accept(new PreloaderNotification(resources.getString("pluginUpdateManagerInstalling") + " " + pluginId));
             String lastVersion = lastRelease.version;
             try {
@@ -92,7 +97,6 @@ public class PluginLauncher {
                 LOGGER.error("Plugin installation failed: '{}'", pluginId, e);
             }
         }
-
         return installedPlugins;
     }
 
@@ -103,7 +107,6 @@ public class PluginLauncher {
             if (pluginManager.getPlugin(pluginId) == null) {
                 continue;
             }
-
             boolean uninstalled = pluginManager.deletePlugin(pluginId);
             if (uninstalled) {
                 LOGGER.info("Uninstalled deprecated plugin '{}'", pluginId);
@@ -141,7 +144,6 @@ public class PluginLauncher {
     }
 
     public void onNotifyPreloader(Consumer<Preloader.PreloaderNotification> notifyPreloader) {
-
         this.notifyPreloader = notifyPreloader;
     }
 }

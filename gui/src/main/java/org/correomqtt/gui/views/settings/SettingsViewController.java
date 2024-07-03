@@ -87,7 +87,6 @@ public class SettingsViewController extends BaseControllerImpl {
         this.keyringFactory = keyringFactory;
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", coreManager.getSettingsManager().getSettings().getCurrentLocale());
         this.alertHelper = alertHelper;
-
         this.themeProviderGenericCellFactory = themeProviderGenericCellFactory;
         this.keyringModelGenericCellFactory = keyringModelGenericCellFactory;
         this.languageModelGenericCellFactory = languageModelGenericCellFactory;
@@ -96,10 +95,8 @@ public class SettingsViewController extends BaseControllerImpl {
     public LoaderResult<SettingsViewController> showAsDialog() {
         LoaderResult<SettingsViewController> result = load();
         resources = result.getResourceBundle();
-
         Map<Object, Object> properties = new HashMap<>();
         properties.put(WindowProperty.WINDOW_TYPE, WindowType.SETTINGS);
-
         showAsDialog(result, resources.getString("settingsViewControllerTitle"),
                 properties,
                 false,
@@ -130,7 +127,6 @@ public class SettingsViewController extends BaseControllerImpl {
     private void initialize() {
         settings = coreManager.getSettingsManager().getSettings();
         setupGUI();
-
         // Unfortunately @FXML Handler does not work with Combobox, so the action must be bound manually.
         themeComboBox.setOnAction(actionEvent -> onThemeChanged());
         languageComboBox.setOnAction(actionEvent -> onLanguageChanged());
@@ -138,12 +134,10 @@ public class SettingsViewController extends BaseControllerImpl {
 
     private void setupGUI() {
         searchUpdatesCheckbox.setSelected(settings.isSearchUpdates());
-
         ArrayList<ThemeProvider> themes = new ArrayList<>(coreManager.getPluginManager().getExtensions(ThemeProviderHook.class));
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(themes.stream().map(ThemeProvider::getName).collect(Collectors.joining(",")));
         }
-
         themeComboBox.setOnAction(null);
         themeComboBox.setItems(FXCollections.observableArrayList(themes));
         themeComboBox.setCellFactory(themeProviderGenericCellFactory::create);
@@ -161,18 +155,11 @@ public class SettingsViewController extends BaseControllerImpl {
                 return null;
             }
         });
-
         themeComboBox.getSelectionModel().select(themes.
                 stream()
-                .filter(t -> {
-                    if (coreManager.getSettingsManager().getThemeSettings().getNextTheme() != null) {
-                        return t.getName().equals(coreManager.getSettingsManager().getThemeSettings().getNextTheme().getName());
-                    }
-                    return t.getName().equals(coreManager.getSettingsManager().getThemeSettings().getActiveTheme().getName());
-                })
+                .filter(t -> t.getName().equals(coreManager.getSettingsManager().getThemeSettings().getActiveTheme().getName()))
                 .findFirst()
                 .orElse(new LightLegacyThemeProvider()));
-
         List<KeyringModel> keyringModels = keyringFactory.getSupportedKeyrings()
                 .stream()
                 .map(KeyringModel::new)
@@ -194,19 +181,15 @@ public class SettingsViewController extends BaseControllerImpl {
                 return null;
             }
         });
-
         KeyringModel selectedKeyring = keyringModels.
                 stream()
                 .filter(t -> t.getKeyring().getIdentifier().equals(coreManager.getSettingsManager().getSettings().getKeyringIdentifier()))
                 .findFirst()
                 .orElse(null);
-
         keyringBackendComboBox.getSelectionModel().select(selectedKeyring);
-
         if (selectedKeyring != null) {
             updateKeyringDescription(selectedKeyring);
         }
-
         languageComboBox.setCellFactory(languageModelGenericCellFactory::create);
         languageComboBox.setConverter(new StringConverter<>() {
             @Override
@@ -219,7 +202,6 @@ public class SettingsViewController extends BaseControllerImpl {
                 return null;
             }
         });
-
         Set<Locale> availableLocales = new HashSet<>();
         for (Locale locale : Locale.getAvailableLocales()) {
             if (SettingsViewController.class.getResource(
@@ -228,14 +210,12 @@ public class SettingsViewController extends BaseControllerImpl {
                 availableLocales.add(locale);
             }
         }
-
         languageComboBox.setItems(FXCollections.observableArrayList(
                 availableLocales.stream()
                         .filter(distinctByKey(l -> l.getLanguage() + "_" + l.getCountry()))
                         .map(LanguageModel::new)
                         .toList()));
         languageComboBox.getSelectionModel().select(new LanguageModel(settings.getSavedLocale()));
-
         settingsPane.setMinHeight(500);
         settingsPane.setMaxHeight(500);
     }
@@ -276,7 +256,6 @@ public class SettingsViewController extends BaseControllerImpl {
 
     private void saveSettings() {
         LOGGER.debug("Saving settings");
-
         String newKeyringIdentifier = keyringBackendComboBox.getSelectionModel().getSelectedItem().getKeyring().getIdentifier();
         String oldKeyringIdentifier = settings.getKeyringIdentifier();
         if (!newKeyringIdentifier.equals(oldKeyringIdentifier)) {
@@ -286,10 +265,8 @@ public class SettingsViewController extends BaseControllerImpl {
         settings.setSearchUpdates(searchUpdatesCheckbox.isSelected());
         ThemeProvider selectedTheme = themeComboBox.getSelectionModel().getSelectedItem();
         settings.setSavedLocale(languageComboBox.getSelectionModel().getSelectedItem().getLocale());
-        coreManager.getSettingsManager().getThemeSettings().setNextTheme(
-                new ThemeDTO(selectedTheme.getName()));
+        coreManager.getSettingsManager().getThemeSettings().setActiveTheme(new ThemeDTO(selectedTheme.getName()));
         coreManager.getSettingsManager().saveSettings();
-        themeManager.saveCSS();
     }
 
     @FXML
@@ -300,7 +277,6 @@ public class SettingsViewController extends BaseControllerImpl {
                 resources.getString("wipeCurrentKeyringContent"),
                 resources.getString("commonCancelButton"),
                 resources.getString("wipeOutYesButton"));
-
         if (confirmed) {
             keyringManager.retryWithMasterPassword(
                     masterPassword -> {

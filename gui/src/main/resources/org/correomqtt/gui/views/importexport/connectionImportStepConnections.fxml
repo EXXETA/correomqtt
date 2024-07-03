@@ -1,14 +1,13 @@
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
-<?import java.lang.String?>
-<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 <?import org.controlsfx.control.CheckListView?>
 <?import org.correomqtt.gui.controls.IconButton?>
+<?import java.lang.String?>
 <HBox fx:id="stepHolder"
       prefHeight="450.0" prefWidth="800.0" stylesheets="@../../css/exportconnections.css"
       VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1"

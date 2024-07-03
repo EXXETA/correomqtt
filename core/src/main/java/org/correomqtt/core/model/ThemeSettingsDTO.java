@@ -17,5 +17,4 @@ import lombok.Setter;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ThemeSettingsDTO {
     private ThemeDTO activeTheme;
-    private ThemeDTO nextTheme;
 }

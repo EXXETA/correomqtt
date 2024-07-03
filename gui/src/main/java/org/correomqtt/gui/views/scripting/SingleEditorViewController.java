@@ -29,6 +29,7 @@ import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.fxmisc.flowless.VirtualizedScrollPane;
@@ -76,8 +77,6 @@ public class SingleEditorViewController extends BaseControllerImpl {
     private ComboBox<ConnectionPropertiesDTO> connectionList;
     private ResourceBundle resources;
 
-
-
     @Inject
     public SingleEditorViewController(CoreManager coreManager,
                                       ThemeManager themeManager,
@@ -95,7 +94,6 @@ public class SingleEditorViewController extends BaseControllerImpl {
     }
 
     public LoaderResult<SingleEditorViewController> load() {
-
         LoaderResult<SingleEditorViewController> result = load(SingleEditorViewController.class, "singleEditorView.fxml", () -> this);
         resources = result.getResourceBundle();
         return result;
@@ -103,28 +101,21 @@ public class SingleEditorViewController extends BaseControllerImpl {
 
     @FXML
     private void initialize() {
-
         updateConnections();
-
         ScriptFileDTO scriptFileDTO = ScriptingTransformer.propsToDTO(scriptFilePropertiesDTO);
         scriptTaskFactories.getLoadFactory().create(scriptFileDTO)
                 .onSuccess(scriptCode -> onLoadScriptSucceeded(scriptFileDTO, scriptCode))
                 .onError(this::onLoadScriptFailed)
                 .run();
-
         connectionList.setCellFactory(connectionCellButtonFactory::create);
         connectionList.setButtonCell(connectionCellButtonFactory.create(null));
-
     }
 
     private void updateConnections() {
-
         ConnectionPropertiesDTO selectedItem = connectionList.getSelectionModel().getSelectedItem();
-
         connectionList.setItems(FXCollections.observableArrayList(
                 ConnectionTransformer.dtoListToPropList(coreManager.getConnectionManager().getSortedConnections())
         ));
-
         if (selectedItem == null) {
             selectedItem = connectionList.getItems().stream()
                     .filter(c -> {
@@ -139,36 +130,30 @@ public class SingleEditorViewController extends BaseControllerImpl {
                         return null;
                     });
         }
-
         if (selectedItem != null) {
-
             String selectedConnectionId = selectedItem.getId();
             ConnectionPropertiesDTO newItemToSelect = connectionList.getItems().stream()
                     .filter(c -> c.getId().equals(selectedConnectionId))
                     .findFirst()
                     .orElseThrow();
-
-
             connectionList.getSelectionModel().select(newItemToSelect);
         }
-
     }
 
-    private void onLoadScriptSucceeded(ScriptFileDTO scriptFileDTO, String scriptCode) {
+    @FxThread
+    protected void onLoadScriptSucceeded(ScriptFileDTO scriptFileDTO, String scriptCode) {
         scriptFilePropertiesDTO.getCodeProperty().set(scriptCode);
-        codeArea.replaceText(scriptCode);
         scriptingViewCodeAreaPane.setManaged(true);
         scriptingViewCodeAreaPane.setVisible(true);
         scriptingViewCodeAreaPane.getChildren().add(new VirtualizedScrollPane<>(codeArea));
+        codeArea.replaceText(scriptCode);
         codeArea.prefWidthProperty().bind(scriptingViewCodeAreaPane.widthProperty());
         codeArea.prefHeightProperty().bind(scriptingViewCodeAreaPane.heightProperty());
-
         List<ExecutionPropertiesDTO> executions = ScriptingBackend.getExecutions()
                 .stream()
                 .filter(e -> scriptFileDTO.getName().equals(e.getScriptFile().getName()))
                 .map(ExecutionTransformer::dtoToProps)
                 .toList();
-
         long running = executions.stream()
                 .filter(e -> e.getState() == ScriptState.RUNNING)
                 .count();
@@ -209,19 +194,16 @@ public class SingleEditorViewController extends BaseControllerImpl {
     }
 
     public void runScript(ScriptFilePropertiesDTO dto) {
-
         ConnectionPropertiesDTO selectedConnection = connectionList.getSelectionModel().getSelectedItem();
-
         if (delegate.addExecution(dto, selectedConnection, codeArea.getText())) {
             disableActionsOnRunningScript(true);
         }
-
     }
 
+    @FxThread
     @Observes(ConnectionStateChangedEvent.class)
     public void onConnectionChangedEvent() {
         updateConnections();
-
     }
 
     public void onSaveClicked() {
@@ -243,19 +225,21 @@ public class SingleEditorViewController extends BaseControllerImpl {
         alertHelper.unexpectedAlert(error.getUnexpectedError());
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ScriptExecutionCancelledEvent.class)
     public void onScriptExecutionCancelled() {
         disableActionsOnRunningScript(false);
     }
 
-
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ScriptExecutionSuccessEvent.class)
     public void onScriptExecutionSuccess() {
         disableActionsOnRunningScript(false);
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ScriptExecutionFailedEvent.class)
     public void onScriptExecutionFailed() {

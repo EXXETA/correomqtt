@@ -19,6 +19,7 @@ import org.correomqtt.di.Inject;
 import org.correomqtt.di.Observes;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.utils.PlatformUtils;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 
@@ -35,7 +36,7 @@ public class AlertController extends BaseControllerImpl {
     private final AlertHelper alertHelper;
 
     @Inject
-    AlertController(CoreManager coreManager,
+    public AlertController(CoreManager coreManager,
                     ThemeManager themeManager,
                     AlertHelper alertHelper) {
         super(coreManager, themeManager);
@@ -43,6 +44,7 @@ public class AlertController extends BaseControllerImpl {
         resources = ResourceBundle.getBundle("org.correomqtt.i18n", coreManager.getSettingsManager().getSettings().getCurrentLocale());
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onConfigDirectoryEmpty(@Observes(autocreate = true) DirectoryCanNotBeCreatedEvent event) {
         PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(resources.getString(ALERT_CONTROLLER_WARN_TITLE),
@@ -50,6 +52,7 @@ public class AlertController extends BaseControllerImpl {
         ));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(autocreate = true, value = UnaccessibleConfigFileEvent.class)
     public void onConfigDirectoryNotAccessible() {
@@ -58,6 +61,7 @@ public class AlertController extends BaseControllerImpl {
         ));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(autocreate = true, value = UnaccessiblePasswordFileEvent.class)
     public void onPasswordDirectoryNotAccessible() {
@@ -66,6 +70,7 @@ public class AlertController extends BaseControllerImpl {
         ));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(autocreate = true, value = UnaccessiblePasswordFileEvent.class)
     public void onHooksDirectoryNotAccessible() {
@@ -74,6 +79,7 @@ public class AlertController extends BaseControllerImpl {
         ));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(autocreate = true, value = WindowsAppDataNullEvent.class)
     public void onAppDataNull() {
@@ -82,6 +88,7 @@ public class AlertController extends BaseControllerImpl {
         ));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(autocreate = true, value = UserHomeNull.class)
     public void onUserHomeNull() {
@@ -90,6 +97,7 @@ public class AlertController extends BaseControllerImpl {
         ));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(autocreate = true, value = InvalidConfigFileEvent.class)
     public void onInvalidConfigJsonFormat() {
@@ -98,6 +106,7 @@ public class AlertController extends BaseControllerImpl {
         ));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(autocreate = true, value = InvalidPasswordFileEvent.class)
     public void onInvalidPasswordJsonFormat() {
@@ -108,6 +117,7 @@ public class AlertController extends BaseControllerImpl {
         ));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(autocreate = true, value = InvalidHooksFileEvent.class)
     public void onInvalidHooksJsonFormat() {
@@ -116,6 +126,7 @@ public class AlertController extends BaseControllerImpl {
         ));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onSettingsUpdated(@Observes(autocreate = true) SettingsUpdatedEvent event) {
         if (event.restartRequired()) {
@@ -125,6 +136,7 @@ public class AlertController extends BaseControllerImpl {
         }
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void errorReadingSubscriptionHistory(@Observes(autocreate = true) PersistSubscribeHistoryReadFailedEvent event) {
         PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(ALERT_EXCEPTION_TITLE,
@@ -132,6 +144,7 @@ public class AlertController extends BaseControllerImpl {
         ));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void errorReadingPublishHistory(@Observes(autocreate = true) PersistPublishHistoryReadFailedEvent event) {
         PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(ALERT_EXCEPTION_TITLE,
@@ -140,6 +153,7 @@ public class AlertController extends BaseControllerImpl {
         ));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void errorWritingPublishHistory(@Observes(autocreate = true) PersistPublishHistoryWriteFailedEvent event) {
         PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(ALERT_EXCEPTION_TITLE,
@@ -148,6 +162,7 @@ public class AlertController extends BaseControllerImpl {
         ));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void errorWritingSubscriptionHistory(@Observes(autocreate = true) PersistSubscribeHistoryWriteFailedEvent event) {
         PlatformUtils.runLaterIfNotInFxThread(() -> alertHelper.warn(ALERT_EXCEPTION_TITLE,

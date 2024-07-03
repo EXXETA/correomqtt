@@ -40,6 +40,7 @@ import org.correomqtt.gui.controls.IconCheckMenuItem;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.MessageTransformer;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.utils.MessageUtils;
 import org.correomqtt.gui.views.LoaderResult;
 import org.slf4j.Logger;
@@ -401,6 +402,7 @@ public class MessageListViewController extends BaseConnectionController implemen
         setLabelVisibility(LabelType.TIMESTAMP, checkMenuItem.isSelected());
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onConnectionChangedEvent(@Observes ConnectionStateChangedEvent event) {
         if (event.getState() == CONNECTED) {

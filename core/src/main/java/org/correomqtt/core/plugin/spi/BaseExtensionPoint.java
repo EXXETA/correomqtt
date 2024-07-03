@@ -13,4 +13,8 @@ public interface BaseExtensionPoint<T> extends ExtensionPoint {
     }
 
     default void onConfigReceived(T config) {}
+
+    default String getConfigNamespace(){
+        return null;
+    }
 }

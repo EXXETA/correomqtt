@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>plugins</artifactId>
-    <version>0.15.0</version>
+    <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>CorreoMQTT Plugins Parent</name>
@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.correomqtt</groupId>
         <artifactId>correomqtt</artifactId>
-        <version>0.15.0</version>
+        <version>1.0-SNAPSHOT</version>
     </parent>
 
     <properties>
@@ -35,24 +35,11 @@
         <module>xml-format-plugin</module>
         <module>xml-xsd-validator-plugin</module>
         <module>zip-manipulator-plugin</module>
-        <module>repo-build</module>
 
     </modules>
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.correomqtt</groupId>
-                <artifactId>core</artifactId>
-                <version>0.15.0</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.correomqtt</groupId>
-                <artifactId>gui</artifactId>
-                <version>0.15.0</version>
-                <scope>provided</scope>
-            </dependency>
             <dependency>
                 <groupId>org.pf4j</groupId>
                 <artifactId>pf4j</artifactId>

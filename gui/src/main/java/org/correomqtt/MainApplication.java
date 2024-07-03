@@ -29,6 +29,7 @@ import org.correomqtt.gui.plugin.PluginLauncher;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.CheckNewVersionUtils;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.utils.PluginCheckUtils;
 import org.correomqtt.gui.views.AlertController;
 import org.correomqtt.gui.views.MainViewController;
@@ -124,6 +125,8 @@ public class MainApplication {
             } catch (CorreoMqttUnableToCheckVersionException e) {
                 LOGGER.debug("Unable to check version", e);
             }
+        }else{
+            pluginLauncher.start(false);
         }
 
         notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderKeyring")));
@@ -138,9 +141,9 @@ public class MainApplication {
         );
 
         notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderReady")));
-        settingsManager.saveSettings();
 
-        System.setProperty("correo.iconModeCssClass", themeManager.getIconModeCssClass());
+        themeManager.saveCSS();
+
         correoCore.init();
     }
 
@@ -244,6 +247,7 @@ public class MainApplication {
         settingsManager.saveSettings();
     }
 
+    @FxThread
     @Observes(ShutdownRequestEvent.class)
     public void onShutdownRequested() {
         LOGGER.info("Main window closed. Initialize shutdown.");

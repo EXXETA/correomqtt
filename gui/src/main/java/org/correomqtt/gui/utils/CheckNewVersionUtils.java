@@ -19,7 +19,7 @@ public class CheckNewVersionUtils {
     private final AlertHelper alertHelper;
 
     @Inject
-    CheckNewVersionUtils(SettingsManager settingsManager,
+    public CheckNewVersionUtils(SettingsManager settingsManager,
                          AlertHelper alertHelper,
                          HostServicesWrapper hostServices) {
         this.alertHelper = alertHelper;
@@ -41,7 +41,7 @@ public class CheckNewVersionUtils {
             );
 
             if (confirmed) {
-                hostServices.showDocument(VendorConstants.GITHUB_LATEST());
+                hostServices.showDocument(VendorConstants.getGithubLatest());
 
             }
         } else if (showHintIfUpToDate) {

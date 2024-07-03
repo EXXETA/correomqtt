@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.correomqtt</groupId>
         <artifactId>correomqtt</artifactId>
-        <version>0.15.0</version>
+        <version>1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>di</artifactId>
@@ -27,11 +27,6 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.bytebuddy</groupId>
-            <artifactId>byte-buddy</artifactId>
-            <version>1.14.6</version>
         </dependency>
     </dependencies>
 

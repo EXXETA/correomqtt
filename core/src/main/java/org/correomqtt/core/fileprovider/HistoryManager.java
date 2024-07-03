@@ -15,7 +15,7 @@ public class HistoryManager {
     private final PublishMessageHistoryFactory publishMessageHistoryFactory;
     private final SubscriptionHistoryFactory subscriptionHistoryFactory;
     @Inject
-    HistoryManager(PublishHistoryFactory publishHistoryFactory,
+    public HistoryManager(PublishHistoryFactory publishHistoryFactory,
                    PublishMessageHistoryFactory publishMessageHistoryFactory,
                    SubscriptionHistoryFactory subscriptionHistoryFactory) {
         this.publishHistoryFactory = publishHistoryFactory;

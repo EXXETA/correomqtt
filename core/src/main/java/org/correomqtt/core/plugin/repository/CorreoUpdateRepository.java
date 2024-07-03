@@ -55,7 +55,6 @@ public class CorreoUpdateRepository implements UpdateRepository {
         if (plugins == null) {
             initPlugins();
         }
-
         return plugins;
     }
 
@@ -75,7 +74,6 @@ public class CorreoUpdateRepository implements UpdateRepository {
             plugins = Collections.emptyMap();
             return;
         }
-
         plugins = new HashMap<>();
         for (RepoPluginInfoDTO p : items) {
             List<RepoPluginInfoDTO.PluginRelease> releases = new ArrayList<>();
@@ -87,13 +85,11 @@ public class CorreoUpdateRepository implements UpdateRepository {
                     releases.add(r);
                 }
             }
-
             // Skip if plugin has no compatible releases
-            if(releases.isEmpty()){
+            if (releases.isEmpty()) {
                 log.info("Plugin {} is not compatible to this CorreoMQTT version.", p.getName());
                 continue;
             }
-
             p.setRepositoryId(getId());
             p.setReleases(releases);
             plugins.put(p.getId(), p.transformToPf4jInfo());
@@ -105,9 +101,12 @@ public class CorreoUpdateRepository implements UpdateRepository {
     private boolean isPluginCompatible(RepoPluginInfoDTO.PluginRelease release) {
         List<String> compatibleCorreoVersions = release.getCompatibleCorreoVersions();
         return compatibleCorreoVersions != null &&
-                release.getCompatibleCorreoVersions().contains(VersionUtils.getVersion());
+                release.getCompatibleCorreoVersions().stream()
+                        .map(v -> VersionUtils.getMajorMinor(v).equals(VersionUtils.getMajorMinor(VersionUtils.getVersion())))
+                        .filter(b -> b)
+                        .findAny()
+                        .orElse(false);
     }
-
 
     /**
      * Causes {@code plugins.json} to be read again to look for new updates from repositories.
@@ -125,11 +124,11 @@ public class CorreoUpdateRepository implements UpdateRepository {
     /**
      * Gets a file verifier to execute on the downloaded file for it to be claimed valid.
      * May be a CompoundVerifier in order to chain several verifiers.
+     *
      * @return list of {@link FileVerifier}s
      */
     @Override
     public FileVerifier getFileVerifier() {
         return new CompoundVerifier();
     }
-
 }

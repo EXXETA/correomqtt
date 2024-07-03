@@ -21,7 +21,7 @@
       </VBox>
       <HBox AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0">
          <children>
-            <IconLabel fx:id="preloaderProgressLabel" icon="mdi-loading" iconColor="white"/>
+            <IconLabel fx:id="preloaderProgressLabel" icon="mdi-loading"/>
             <Label fx:id="preloaderStepLabel">
                <HBox.margin>
                   <Insets left="7.0" />

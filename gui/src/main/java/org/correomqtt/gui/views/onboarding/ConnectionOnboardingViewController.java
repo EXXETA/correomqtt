@@ -25,6 +25,7 @@ import org.correomqtt.di.Observes;
 import org.correomqtt.gui.model.ConnectionPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.ConnectionTransformer;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 import org.correomqtt.gui.views.cell.ConnectionCell;
@@ -231,12 +232,14 @@ public class ConnectionOnboardingViewController extends BaseControllerImpl {
         connect();
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ConnectionsUpdatedEvent.class)
     public void onConnectionsUpdated() {
         updateConnections();
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(ConnectionStateChangedEvent.class)
     public void onConnectionStateChanged() {

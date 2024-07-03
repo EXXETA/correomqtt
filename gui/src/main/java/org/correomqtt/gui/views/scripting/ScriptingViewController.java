@@ -41,6 +41,7 @@ import org.correomqtt.gui.model.WindowProperty;
 import org.correomqtt.gui.model.WindowType;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.utils.WindowHelper;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
@@ -260,6 +261,7 @@ public class ScriptingViewController extends BaseControllerImpl implements Scrip
         executionController.filterByScript(selectedItem.getName());
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes({
             ScriptExecutionCancelledEvent.class,

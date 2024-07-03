@@ -4,6 +4,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Insets;
 import javafx.scene.control.ToggleButton;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 public class IconToggleButton extends ToggleButton {
 
@@ -15,10 +16,10 @@ public class IconToggleButton extends ToggleButton {
     }
 
     private void iconChange(String newValue) {
-        ThemedFontIcon themedFontIcon = new ThemedFontIcon();
-        themedFontIcon.setIconLiteral(newValue);
-        themedFontIcon.setIconSize(18);
-        this.setGraphic(themedFontIcon);
+        FontIcon fontIcon = new FontIcon();
+        fontIcon.setIconLiteral(newValue);
+        fontIcon.setIconSize(18);
+        this.setGraphic(fontIcon);
         this.setPadding(new Insets(1, 8, 1, 8));
         this.setHeight(28);
         this.setMinHeight(28);

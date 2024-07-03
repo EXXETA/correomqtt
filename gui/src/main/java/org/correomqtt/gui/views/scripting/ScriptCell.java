@@ -1,8 +1,5 @@
 package org.correomqtt.gui.views.scripting;
 
-import org.correomqtt.di.Assisted;
-import org.correomqtt.di.DefaultBean;
-import org.correomqtt.di.Inject;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
@@ -14,10 +11,13 @@ import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
-import org.correomqtt.core.settings.SettingsManager;
 import org.correomqtt.core.scripting.ScriptingBackend;
-import org.correomqtt.gui.controls.ThemedFontIcon;
+import org.correomqtt.core.settings.SettingsManager;
+import org.correomqtt.di.Assisted;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.correomqtt.gui.theme.ThemeManager;
+import org.kordamp.ikonli.javafx.FontIcon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +46,7 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
     private ResourceBundle resources;
 
     @FXML
-    private ThemedFontIcon themedIcon;
+    private FontIcon fontIcon;
     private FXMLLoader loader;
     private RotateTransition rotateTransition;
 
@@ -69,7 +69,7 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
         rotateTransition.setByAngle(360);
         rotateTransition.setCycleCount(Animation.INDEFINITE);
         rotateTransition.setDuration(Duration.millis(1000));
-        rotateTransition.setNode(themedIcon);
+        rotateTransition.setNode(fontIcon);
         rotateTransition.setInterpolator(Interpolator.LINEAR);
     }
 
@@ -122,9 +122,9 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
 
         if (executions.isEmpty()) {
             descriptionLabel.setText(resources.getString("scriptingCellNoExecutionsYet"));
-            themedIcon.setIconLiteral("mdi-script");
+            fontIcon.setIconLiteral("mdi-script");
             rotateTransition.stop();
-            themedIcon.setRotate(0);
+            fontIcon.setRotate(0);
         } else {
             long running = executions.stream()
                     .filter(e -> e.getState() == ScriptState.RUNNING)
@@ -147,11 +147,11 @@ public class ScriptCell extends ListCell<ScriptFilePropertiesDTO> {
             if (state.isAnimation()) {
                 rotateTransition.play();
             } else {
-                themedIcon.setRotate(0);
+                fontIcon.setRotate(0);
                 rotateTransition.stop();
             }
 
-            themedIcon.setIconLiteral(state.getIcon());
+            fontIcon.setIconLiteral(state.getIcon());
 
         }
     }

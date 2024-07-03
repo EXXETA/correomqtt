@@ -13,6 +13,5 @@ class ObserverInfo {
     private final Set<WeakReference<?>> classes;
     private final Method method;
     private final boolean withPayload;
-    private final boolean sync;
     private final boolean autocreate;
 }

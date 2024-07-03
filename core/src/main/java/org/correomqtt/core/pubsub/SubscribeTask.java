@@ -40,7 +40,7 @@ public class SubscribeTask extends SimpleTask {
     private final SubscriptionDTO subscriptionDTO;
 
     @Inject
-    SubscribeTask(PluginManager pluginManager,
+    public SubscribeTask(PluginManager pluginManager,
                   ConnectionManager connectionManager,
                   LoggerUtils loggerUtils,
                   SoyEvents soyEvents,
@@ -83,20 +83,33 @@ public class SubscribeTask extends SimpleTask {
 
     private MessageDTO executeOnMessageIncomingExtensions(MessageDTO messageDTO) {
 
-        //TODO plugin stuff in business ... bäääh ... solve via EventBus
         MessageExtensionDTO messageExtensionDTO = new MessageExtensionDTO(messageDTO);
         for (IncomingMessageHook<?> p : pluginManager.getIncomingMessageHooks()) {
             IncomingMessageHookDTO config = p.getConfig();
-            if (config != null && config.isEnableIncoming() && (config.getIncomingTopicFilter() == null ||
-                    config.getIncomingTopicFilter()
-                            .stream()
-                            .anyMatch(tp -> MqttTopicFilter.of(tp)
-                                    .matches(MqttTopic.of(messageDTO.getTopic()))
-                            )
-            )) {
-                LOGGER.info(loggerUtils.getConnectionMarker(connectionId), "[HOOK] Manipulated incoming message on {} with {}", messageDTO.getTopic(), p.getClass().getName());
-                messageExtensionDTO = p.onMessageIncoming(connectionId, messageExtensionDTO);
+
+            if(config == null){
+                LOGGER.info(loggerUtils.getConnectionMarker(connectionId), "[HOOK] Skipping incoming message extension " +
+                        "point {} due to empty config.",p.getClass().getName());
+                continue;
             }
+
+            if(!config.isEnabled()){
+                LOGGER.info(loggerUtils.getConnectionMarker(connectionId), "[HOOK] Skipping incoming message extension " +
+                        "point {} due to disabled config.",p.getClass().getName());
+                continue;
+            }
+
+            if(config.getTopicFilter() != null && config.getTopicFilter()
+                    .stream()
+                    .anyMatch(tp -> MqttTopicFilter.of(tp)
+                            .matches(MqttTopic.of(messageDTO.getTopic()))
+                    )){
+                LOGGER.info(loggerUtils.getConnectionMarker(connectionId), "[HOOK] Skipping incoming message extension " +
+                        "point {} due to not matching topic filter: {}",p.getClass().getName(), config.getTopicFilter());
+                continue;
+            }
+
+            messageExtensionDTO = p.onMessageIncoming(connectionId, messageExtensionDTO);
         }
         return MessageExtensionTransformer.mergeDTO(messageExtensionDTO, messageDTO);
     }

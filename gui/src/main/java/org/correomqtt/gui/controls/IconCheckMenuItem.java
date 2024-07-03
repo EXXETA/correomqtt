@@ -7,6 +7,7 @@ import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.scene.control.MenuItem;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 public class IconCheckMenuItem extends MenuItem {
 
@@ -30,10 +31,10 @@ public class IconCheckMenuItem extends MenuItem {
     }
 
     private void iconChange(String newValue) {
-        ThemedFontIcon themedFontIcon = new ThemedFontIcon();
-        themedFontIcon.setIconLiteral(newValue);
-        themedFontIcon.setIconSize(18);
-        this.setGraphic(themedFontIcon);
+        FontIcon fontIcon = new FontIcon();
+        fontIcon.setIconLiteral(newValue);
+        fontIcon.setIconSize(18);
+        this.setGraphic(fontIcon);
     }
 
     private void onActionHandler(ActionEvent actionEvent) {

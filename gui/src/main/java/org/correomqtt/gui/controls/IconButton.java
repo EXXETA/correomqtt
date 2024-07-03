@@ -4,6 +4,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 public class IconButton extends Button {
 
@@ -15,7 +16,7 @@ public class IconButton extends Button {
     }
 
     private void iconChange(String newValue) {
-        ThemedFontIcon themedFontIcon = new ThemedFontIcon();
+        FontIcon themedFontIcon = new FontIcon();
         themedFontIcon.setIconLiteral(newValue);
         themedFontIcon.setIconSize(18);
         this.setGraphic(themedFontIcon);

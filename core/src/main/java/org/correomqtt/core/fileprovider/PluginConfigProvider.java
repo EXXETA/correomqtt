@@ -30,7 +30,7 @@ public class PluginConfigProvider extends BaseUserFileProvider {
     private String pluginPath;
 
     @Inject
-    PluginConfigProvider(SoyEvents soyEvents) {
+    public PluginConfigProvider(SoyEvents soyEvents) {
         super(soyEvents);
 
         try {

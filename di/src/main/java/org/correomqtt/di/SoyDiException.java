@@ -1,6 +1,10 @@
 package org.correomqtt.di;
 
 public class SoyDiException extends RuntimeException {
+
+    public SoyDiException(Exception e){
+        super(e);
+    }
     public SoyDiException(String msg) {
         super(msg);
     }

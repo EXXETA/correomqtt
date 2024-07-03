@@ -29,7 +29,7 @@ public class XmlXsdValidator implements MessageValidatorHook<XmlXsdValidatorConf
 
 
     @Inject
-    XmlXsdValidator(PluginConfigProvider pluginConfigProvider) {
+    public XmlXsdValidator(PluginConfigProvider pluginConfigProvider) {
         this.pluginConfigProvider = pluginConfigProvider;
     }
 

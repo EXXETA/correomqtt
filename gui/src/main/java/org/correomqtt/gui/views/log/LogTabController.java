@@ -12,6 +12,7 @@ import org.correomqtt.core.log.LogEvent;
 import org.correomqtt.core.utils.LoggerUtils;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.gui.theme.ThemeManager;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.utils.LogAreaUtils;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
@@ -56,6 +57,7 @@ public class LogTabController extends BaseControllerImpl {
         logTextArea.requestFollowCaret();
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void updateLog(@Observes LogEvent event) {
         LogAreaUtils.appendColorful(logTextArea, event.logMsg());

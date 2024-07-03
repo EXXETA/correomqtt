@@ -15,7 +15,7 @@ public class KeyringFactory {
     private final PluginManager pluginManager;
 
     @Inject
-    KeyringFactory(PluginManager pluginManager) {
+    public KeyringFactory(PluginManager pluginManager) {
         this.pluginManager = pluginManager;
     }
 

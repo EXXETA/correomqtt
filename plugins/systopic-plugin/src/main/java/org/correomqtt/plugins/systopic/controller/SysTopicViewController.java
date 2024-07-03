@@ -82,7 +82,7 @@ public class SysTopicViewController {
     private final Set<SysTopicPropertiesDTO> plainSysTopics = new HashSet<>();
 
     @Inject
-    SysTopicViewController(CoreManager coreManager,
+    public SysTopicViewController(CoreManager coreManager,
                            ThemeManager themeManager,
                            PubSubTaskFactories pubSubTaskFactories,
                            SysTopicCellControllerFactory sysTopicCellControllerFactory,

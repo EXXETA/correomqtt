@@ -19,7 +19,7 @@ public class MessageUtils {
     private final ExportMessageTaskFactory exportMessageTaskFactory;
 
     @Inject
-    MessageUtils(ExportMessageTaskFactory exportMessageTaskFactory,
+    public MessageUtils(ExportMessageTaskFactory exportMessageTaskFactory,
                  SettingsManager settingsManager) {
         this.exportMessageTaskFactory = exportMessageTaskFactory;
         this.settingsManager = settingsManager;

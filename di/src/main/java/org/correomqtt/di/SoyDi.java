@@ -1,5 +1,7 @@
 package org.correomqtt.di;
 
+import io.github.classgraph.AnnotationClassRef;
+import io.github.classgraph.AnnotationInfo;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
@@ -24,6 +26,8 @@ import java.util.stream.Collectors;
 public class SoyDi {
 
     private static final Map<Class<?>, BeanInfo> BEAN_INFO = new HashMap<>();
+
+    private static final Map<Class<?>, InterceptorInfo> INTERCEPTOR_INFO = new HashMap<>();
     private static final Map<Class<?>, Object> SINGLETON_INSTANCES = new HashMap<>();
     private static final Set<ClassLoader> CLASS_LOADER = new HashSet<>();
     private static boolean initialized = false;
@@ -46,8 +50,8 @@ public class SoyDi {
     public static synchronized void scan(String pkg) {
         init();
         log.info("SOY: Scanning {} for soy beans.", pkg);
-        long startTime = System.currentTimeMillis();
         int count = 0;
+        int interceptorCount = 0;
         int singletonCount = 0;
         ClassGraph classGraph = new ClassGraph()
                 .verbose(log.isTraceEnabled())
@@ -60,19 +64,43 @@ public class SoyDi {
             for (ClassInfo classInfo : scanResult.getClassesWithAnnotation(Bean.class)) {
                 BeanInfo beanInfo = scanClass(classInfo);
                 if (beanInfo != null) {
-                    if (beanInfo.isSingleton()) {
-                        singletonCount++;
-                    }
+                    singletonCount += beanInfo.isSingleton() ? 1 : 0;
                     count++;
+                }
+                if (classInfo.hasAnnotation(InterceptorBean.class)) {
+                    scanInterceptor(classInfo);
+                    interceptorCount++;
                 }
             }
         } catch (Exception e) {
             log.error("error", e);
         }
         if (log.isInfoEnabled()) {
-            long endTime = System.currentTimeMillis();
-            log.info("SOY: Found {} soy beans, containing {} singletons.", count, singletonCount);
-            log.info("SOY: Scan of {} finished in {}ms.", pkg, endTime - startTime);
+            log.info("SOY: Found {} soy beans, containing {} singletons and {} interceptors.", count, singletonCount, interceptorCount);
+        }
+    }
+
+    private static void scanInterceptor(ClassInfo classInfo) {
+        if (classInfo.isAnnotation()) {
+            return;
+        }
+        try {
+            Class<?> clazz = loadClass(classInfo.getName());
+            List<Method> aroundInvokeMethods = Arrays.stream(clazz.getDeclaredMethods())
+                    .filter(m -> m.isAnnotationPresent(AroundInvoke.class))
+                    .toList();
+            if (aroundInvokeMethods.size() != 1) {
+                throw new SoyDiException("@InterceptorBean's must have one method annotated with with @AroundInvoke: " + classInfo.getName());
+            }
+            InterceptorInfo interceptorInfo = new InterceptorInfo(clazz, aroundInvokeMethods.get(0));
+            AnnotationInfo annotationInfo = classInfo.getAnnotationInfo(InterceptorBean.class);
+            Object value = annotationInfo.getParameterValues().getValue("value");
+            if (value == null) {
+                throw new SoyDiException("@InterceptorBean's must have a value pointing to the interceptor annotation class: " + classInfo.getName());
+            }
+            INTERCEPTOR_INFO.put(((AnnotationClassRef) value).loadClass(), interceptorInfo);
+        } catch (Exception e) {
+            throw new SoyDiException("Exception while scanning interceptor bean " + classInfo.getName() + " ", e);
         }
     }
 
@@ -149,21 +177,11 @@ public class SoyDi {
             return (T) SINGLETON_INSTANCES.get(clazz);
         }
         try {
-            T instance;
+            final T instance;
             if (Factory.class.isAssignableFrom(clazz) || clazz.getName().startsWith("org.correomqtt.di")) {
-                Object[] params = beanInfo.getConstructorParameters().stream()
-                        .map(cp -> {
-                            ArrayList<Class<?>> newChain = new ArrayList<>(chain);
-                            newChain.add(clazz);
-                            return inject(cp.getType(), newChain);
-                        })
-                        .toArray();
-                instance = (T) beanInfo.getConstructor().newInstance(params);
+                instance = getNewInstance(clazz, chain, beanInfo);
             } else {
-                Class<?> factoryClass = loadClass(clazz.getName() + "Factory");
-                Object factory = inject(factoryClass);
-                Method factoryMethod = factoryClass.getMethod("create");
-                instance = (T) factoryMethod.invoke(factory);
+                instance = getInstanceViaFactory(clazz);
             }
             if (beanInfo.isSingleton()) {
                 SINGLETON_INSTANCES.put(clazz, instance);
@@ -173,6 +191,28 @@ public class SoyDi {
                  InstantiationException e) {
             throw new SoyDiException("Can not inject " + clazz + ", caused by an exception. " + getChainLogMsg(chain), e);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T getInstanceViaFactory(Class<T> clazz)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Class<?> factoryClass = loadClass(clazz.getName() + "Factory");
+        Object factory = inject(factoryClass);
+        Method factoryMethod = factoryClass.getMethod("create");
+        return (T) factoryMethod.invoke(factory);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T getNewInstance(Class<T> clazz, List<Class<?>> chain, BeanInfo beanInfo)
+            throws InstantiationException, IllegalAccessException, InvocationTargetException {
+        Object[] params = beanInfo.getConstructorParameters().stream()
+                .map(cp -> {
+                    ArrayList<Class<?>> newChain = new ArrayList<>(chain);
+                    newChain.add(clazz);
+                    return inject(cp.getType(), newChain);
+                })
+                .toArray();
+        return (T) beanInfo.getConstructor().newInstance(params);
     }
 
     private static String getChainLogMsg(List<Class<?>> chain) {
@@ -192,7 +232,7 @@ public class SoyDi {
         return inject(rawType, new ArrayList<>());
     }
 
-    private static Class<?> getRawType(Type type) {
+    public static Class<?> getRawType(Type type) {
         if (type instanceof Class) {
             return (Class<?>) type;
         } else if (type instanceof ParameterizedType) {
@@ -200,5 +240,19 @@ public class SoyDi {
         } else {
             throw new SoyDiException("Unable to cast TypeReference: " + type);
         }
+    }
+
+    public static InterceptorInfo getInterceptor(Class<?> clazz) {
+        return INTERCEPTOR_INFO.get(clazz);
+    }
+
+    static boolean isAssisted(Class<?> listenerClass) {
+        BeanInfo beanInfo = BEAN_INFO.get(listenerClass);
+        if (beanInfo == null) {
+            throw new SoyDiException("Class " + listenerClass + " was not scanned. Unable to check if it is assisted.");
+        }
+        return beanInfo.getConstructorParameters()
+                .stream()
+                .anyMatch(ParameterInfo::isAssisted);
     }
 }

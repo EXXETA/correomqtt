@@ -30,6 +30,7 @@ import org.correomqtt.gui.model.PluginInfoPropertiesDTO;
 import org.correomqtt.gui.theme.ThemeManager;
 import org.correomqtt.gui.transformer.PluginTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
+import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.base.BaseControllerImpl;
 
@@ -110,6 +111,7 @@ public class MarketplaceViewController extends BaseControllerImpl {
         return cell;
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onPluginInstallSucceeded(@Observes PluginInstallEvent event) {
         reloadData(event.pluginId());
@@ -178,6 +180,7 @@ public class MarketplaceViewController extends BaseControllerImpl {
         }
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginInstallFailedEvent.class)
     public void onPluginInstallFailed() {
@@ -189,6 +192,7 @@ public class MarketplaceViewController extends BaseControllerImpl {
         Platform.runLater(() -> marketplaceRootPane.setDisable(false));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginInstallStartedEvent.class)
     public void onPluginInstallStarted() {
@@ -196,40 +200,47 @@ public class MarketplaceViewController extends BaseControllerImpl {
     }
 
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onPluginUninstallSucceeded(@Observes PluginUninstallEvent event) {
         reloadData(event.pluginId());
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginUninstallFailedEvent.class)
     public void onPluginUninstallFailed() {
         Platform.runLater(() -> marketplaceRootPane.setDisable(false));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginUninstallStartedEvent.class)
     public void onPluginUninstallStarted() {
         marketplaceRootPane.setDisable(true);
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginDisabledStartedEvent.class)
     public void onPluginDisableStarted() {
         marketplaceRootPane.setDisable(true);
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onPluginDisableSucceeded(@Observes PluginDisabledEvent event) {
         reloadData(event.pluginId());
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginDisabledFailedEvent.class)
     public void onPluginDisableFailed() {
         Platform.runLater(() -> marketplaceRootPane.setDisable(false));
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginEnabledStartedEvent.class)
     public void onPluginEnableStarted() {
@@ -237,11 +248,13 @@ public class MarketplaceViewController extends BaseControllerImpl {
     }
 
 
+    @FxThread
     @SuppressWarnings("unused")
     public void onPluginEnableSucceeded(@Observes PluginEnabledEvent event) {
         reloadData(event.pluginId());
     }
 
+    @FxThread
     @SuppressWarnings("unused")
     @Observes(PluginEnabledFailedEvent.class)
     public void onPluginEnableFailed() {

@@ -47,7 +47,7 @@ public class CorreoMqtt5Client extends BaseCorreoMqttClient {
 
 
     @Inject
-    CorreoMqtt5Client(SoyEvents soyEvents,
+    public CorreoMqtt5Client(SoyEvents soyEvents,
                       @Assisted ConnectionConfigDTO configDTO) {
         super(soyEvents, configDTO);
     }

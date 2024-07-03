@@ -12,5 +12,4 @@ public interface IncomingMessageHook<T extends IncomingMessageHookDTO> extends B
 
     @Override
     void onConfigReceived(T config);
-
 }

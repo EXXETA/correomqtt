@@ -22,43 +22,45 @@ jobs:
       - name: Set Version Release
         run: |
           mvn -B versions:set -DnewVersion="${{steps.version.outputs.full_without_prefix}}"
-          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./core/src/main/resources/org/correomqtt/core/utils/version.txt
         if: steps.version.outputs.is_valid == 'true'
         shell: bash
       - name: Build
         run: |
-          mvn -B clean install -DskipTests=true
+          mvn -B clean install -DskipTests=true -DrepoBaseUrl=https://github.com/EXXETA/correomqtt/releases/download/v${{steps.version.outputs.full_without_prefix}}
         shell: bash
+      - name: Install rpm
+        run: sudo apt-get install -y rpm
       - name: Package DEB
         run: |
           jpackage \
           --type deb \
-          -d target \
-          -i target/shade \
+          -d dist \
+          -i target \
           -n CorreoMQTT \
-          --main-jar correomqtt-client-${{steps.version.outputs.full_without_prefix}}-runnable.jar \
-          --app-version ${{steps.version.outputs.full_without_prefix}} \
-          --icon ./src/main/deploy/package/Icon.png \
+          --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
+          --app-version ${{steps.version.outputs.major_without_prefix}}.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}}-${{steps.version.outputs.prerelease}} \
+          --icon ./gui/src/main/deploy/package/Icon.png \
           --linux-package-deps libpng16-16 \
           --resource-dir .github/resources/linux
       - name: Package RPM
         run: |
           jpackage \
           --type rpm \
-          -d target \
-          -i target/shade \
+          -d dist \
+          -i target \
           -n CorreoMQTT \
-          --main-jar correomqtt-client-${{steps.version.outputs.full_without_prefix}}-runnable.jar \
-          --app-version ${{steps.version.outputs.full_without_prefix}} \
-          --icon ./src/main/deploy/package/Icon.png \
+          --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
+          --app-version ${{steps.version.outputs.major_without_prefix}}.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}}+${{steps.version.outputs.prerelease}} \
+          --icon ./gui/src/main/deploy/package/Icon.png \
           --resource-dir .github/resources/linux
-      - name: Release 
+      - name: Release
         uses: xresloader/upload-to-github-release@v1.3.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           draft: false
-          file: target/*.deb;target/*.rpm
+          file: dist/*.deb;dist/*.rpm;target/*.jar;target/*.json
           tags: true
   winbuild:
     runs-on: windows-2019
@@ -78,7 +80,7 @@ jobs:
       - name: Set Version Release
         run: |
           mvn -B versions:set -DnewVersion="${{steps.version.outputs.full_without_prefix}}"
-          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./core/src/main/resources/org/correomqtt/core/utils/version.txt
         if: steps.version.outputs.is_valid == 'true'
         shell: bash
       - name: Build
@@ -86,15 +88,16 @@ jobs:
           mvn -B clean install -DskipTests=true
         shell: bash
       - name: Package MSI
+        shell: bash
         run: | 
           jpackage \
           --type msi \
-          -d target \
-          -i target/shade \
+          -d dist \
+          -i target \
           -n CorreoMQTT \
-          --main-jar correomqtt-client-${{steps.version.outputs.full_without_prefix}}-runnable.jar \
-          --app-version ${{steps.version.outputs.full_without_prefix}} \
-          --icon ./src/main/deploy/package/Icon.ico \
+          --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
+          --app-version ${{steps.version.outputs.major_without_prefix}}.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}} \
+          --icon ./gui/src/main/deploy/package/Icon.ico \
           --win-dir-chooser \
           --win-menu \
           --win-menu-group CorreoMqtt \
@@ -107,7 +110,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           draft: false
-          file: target/*.msi
+          file: dist/*.msi
           tags: true
   macbuild:
     runs-on: macos-11
@@ -127,7 +130,7 @@ jobs:
       - name: Set Version Release
         run: |
           mvn -B versions:set -DnewVersion="${{steps.version.outputs.full_without_prefix}}"
-          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./src/main/resources/org/correomqtt/business/utils/version.txt
+          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./core/src/main/resources/org/correomqtt/core/utils/version.txt
         if: steps.version.outputs.is_valid == 'true'
         shell: bash
       - name: Build
@@ -138,12 +141,12 @@ jobs:
         run: |
           jpackage \
             --type app-image \
-            -d target \
-            -i target/shade \
+            -d dist \
+            -i target \
             -n CorreoMQTT \
-            --main-jar correomqtt-client-${{steps.version.outputs.full_without_prefix}}-runnable.jar \
-            --app-version ${{steps.version.outputs.full_without_prefix}} \
-            --icon ./src/main/deploy/package/Icon.icns
+            --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
+            --app-version 1.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}} \
+            --icon ./gui/src/main/deploy/package/Icon.icns
 
           openssl req -subj '/CN=correomqtt.org' -config .github/osx.correo.certconfig -x509 -newkey rsa:4096 -keyout correokey.pem -out correocert.pem -days 365 -nodes
           openssl pkcs12 -passout pass:1234 -export -out correomqtt.p12 -inkey correokey.pem -in correocert.pem
@@ -152,19 +155,19 @@ jobs:
           security default-keychain -d user -s /tmp/correomqtt-db
           security unlock-keychain -p 1234 /tmp/correomqtt-db
           security list-keychains -s /tmp/correomqtt-db
-          codesign -h -fs correomqtt.org --keychain /tmp/correomqtt-db --force target/CorreoMQTT.app
+          codesign -h -fs correomqtt.org --keychain /tmp/correomqtt-db --force dist/CorreoMQTT.app
 
           jpackage \
             --type dmg \
-            -d target \
+            -d dist_mac \
             -n CorreoMQTT \
             --app-version ${{steps.version.outputs.full_without_prefix}} \
-            --app-image target/CorreoMQTT.app
+            --app-image dist/CorreoMQTT.app
       - name: Release 
         uses: xresloader/upload-to-github-release@v1.3.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           draft: false
-          file: target/*.dmg
+          file: dist_mac/*.dmg
           tags: true
