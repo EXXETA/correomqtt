@@ -26,7 +26,7 @@ public class VersionUtils {
 
     private static String version;
 
-    private static final Pattern MAJOR_MINOR_PATTERN = Pattern.compile("$([0-9]+).([0-9]+)");
+    private static final Pattern MAJOR_MINOR_PATTERN = Pattern.compile("^([0-9]+).([0-9]+)");
 
     private VersionUtils() {
         // private constructor

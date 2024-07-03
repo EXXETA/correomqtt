@@ -139,7 +139,12 @@ public class RepoBuild {
         if (repoBaseUrl != null) {
             url = repoBaseUrl + "/" + jarFileName;
         } else {
-            url = "file://" + files[0].getAbsolutePath();
+            // Fixes plugins not being able to be loaded under windows
+            if(System.getProperty("os.name").contains("Windows")) {
+                url = "file:///" + files[0].getAbsolutePath();
+            } else {
+                url = "file://" + files[0].getAbsolutePath();
+            }
         }
         List<RepoPluginInfoDTO.PluginRelease> releaseList = oldPluginInfo == null ?
                 new ArrayList<>() :

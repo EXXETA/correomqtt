@@ -143,6 +143,7 @@ public class XmlFormatPlugin implements DetailViewFormatHook {
     private Document createXmlDocument() {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try {
+            factory.setFeature(CustomXMLConstants.FEATURE_DISALLOW_DOCTYPE_DECL, true);
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         } catch (ParserConfigurationException e) {
             LOGGER.debug("Could not configure document builder factory. ", e);
@@ -184,6 +185,7 @@ public class XmlFormatPlugin implements DetailViewFormatHook {
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer;
         try {
+            transformerFactory.setFeature(CustomXMLConstants.FEATURE_DISALLOW_DOCTYPE_DECL, true);
             transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             transformer = transformerFactory.newTransformer();
         } catch (TransformerConfigurationException e) {

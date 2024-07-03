@@ -27,3 +27,5 @@ share/
 zulu13*
 wix
 hs_err*
+
+local-repo.json
