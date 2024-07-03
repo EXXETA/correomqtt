@@ -10,11 +10,11 @@
     <parent>
         <groupId>org.correomqtt</groupId>
         <artifactId>plugins</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
 
     <properties>
-        <plugin.id>${artifactId}</plugin.id>
+        <plugin.id>base64</plugin.id>
         <plugin.name>Base64</plugin.name>
         <plugin.provider>Exxeta AG</plugin.provider>
         <plugin.class />
