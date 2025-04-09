@@ -93,7 +93,7 @@ public class PublishTask extends SimpleTask {
 
             if(config.getTopicFilter() != null && config.getTopicFilter()
                     .stream()
-                    .anyMatch(tp -> MqttTopicFilter.of(tp)
+                    .noneMatch(tp -> MqttTopicFilter.of(tp)
                             .matches(MqttTopic.of(messageDTO.getTopic()))
                     )){
                 LOGGER.info(loggerUtils.getConnectionMarker(connectionId), "[HOOK] Skipping outgoing message extension " +
