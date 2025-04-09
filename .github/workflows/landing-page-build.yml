@@ -26,7 +26,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          cache-dependency-path: landingpage/package-lock.json
+          cache-dependency-path: /landingpage/package-lock.json
           node-version: '20'
           cache: 'npm'
 
