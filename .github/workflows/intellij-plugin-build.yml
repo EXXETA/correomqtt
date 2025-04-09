@@ -49,17 +49,17 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build correo core
-        run: |
-          mvn -B clean install -DskipTests=true
-        shell: bash
-        working-directory: ./application/core
-
       - name: Build correo di
         run: |
           mvn -B clean install -DskipTests=true
         shell: bash
         working-directory: ./application/di
+
+      - name: Build correo core
+        run: |
+          mvn -B clean install -DskipTests=true
+        shell: bash
+        working-directory: ./application/core
 
       # Set environment variables
       - name: Export Properties
