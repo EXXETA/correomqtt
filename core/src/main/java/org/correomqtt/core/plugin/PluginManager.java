@@ -9,7 +9,6 @@ import org.correomqtt.core.model.HooksDTO;
 import org.correomqtt.core.plugin.model.PluginInfoDTO;
 import org.correomqtt.core.plugin.repository.BundledPluginList;
 import org.correomqtt.core.plugin.repository.CorreoUpdateRepository;
-import org.correomqtt.core.plugin.repository.RepoPluginInfoDTO;
 import org.correomqtt.core.plugin.spi.BaseExtensionPoint;
 import org.correomqtt.core.plugin.spi.ExtensionId;
 import org.correomqtt.core.plugin.spi.IncomingMessageHook;
@@ -21,7 +20,12 @@ import org.correomqtt.core.utils.VendorConstants;
 import org.correomqtt.core.utils.VersionUtils;
 import org.correomqtt.di.Inject;
 import org.correomqtt.di.SingletonBean;
-import org.pf4j.*;
+import org.pf4j.DefaultExtensionFactory;
+import org.pf4j.ExtensionFactory;
+import org.pf4j.JarPluginManager;
+import org.pf4j.PluginState;
+import org.pf4j.PluginWrapper;
+import org.pf4j.VersionManager;
 import org.pf4j.update.UpdateManager;
 import org.pf4j.update.UpdateRepository;
 import org.slf4j.Logger;
@@ -35,12 +39,9 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -55,15 +56,19 @@ import java.util.stream.Collectors;
 @SingletonBean
 public class PluginManager extends JarPluginManager {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PluginManager.class);
     public static final String DEFAULT_REPO_ID = "default";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluginManager.class);
+
     private final SettingsManager settings;
+
     private final PluginConfigProvider pluginConfigProvider;
+
     private BundledPluginList.BundledPlugins bundledPlugins;
 
     @Inject
     public PluginManager(SettingsManager settings,
-                         PluginConfigProvider pluginConfigProvider) {
+            PluginConfigProvider pluginConfigProvider) {
         super(Path.of(pluginConfigProvider.getPluginPath()));
         this.settings = settings;
         this.pluginConfigProvider = pluginConfigProvider;
@@ -75,7 +80,7 @@ public class PluginManager extends JarPluginManager {
     }
 
     private String getInstalledVersion(String pluginId) {
-        PluginWrapper installedPlugin = this.getPlugin(pluginId);
+        PluginWrapper installedPlugin = getPlugin(pluginId);
         if (installedPlugin == null) {
             return null;
         }
@@ -83,7 +88,7 @@ public class PluginManager extends JarPluginManager {
     }
 
     public List<PluginInfoDTO> getInstalledPlugins() {
-        return this.getPlugins().stream()
+        return getPlugins().stream()
                 .map(wrapper -> PluginInfoTransformer.wrapperToDTO(wrapper, wrapper.getDescriptor().getVersion(),
                         isPluginDisabled(wrapper.getPluginId()),
                         isPluginBundled(wrapper.getPluginId())))
@@ -212,8 +217,13 @@ public class PluginManager extends JarPluginManager {
                 String repo = VendorConstants.getDefaultRepoUrl();
                 if ("dev".equals(System.getProperty("correo.mode"))) {
                     try {
-                        repo = "file://" + Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())
-                                .getParent().getParent().getParent().toString() + File.separator + "target" + File.separator + "default-repo.json";
+                        repo = "file://" +
+                                Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())
+                                        .getParent().getParent().getParent().toString() +
+                                File.separator +
+                                "target" +
+                                File.separator +
+                                "default-repo.json";
                         LOGGER.warn("DEV MODE: Reading plugins repo from {}", repo);
                     } catch (URISyntaxException e) {
                         LOGGER.debug("Unable to locate locale plugin repo", e);
@@ -252,6 +262,9 @@ public class PluginManager extends JarPluginManager {
                 }
             });
         }
+        if ("dev".equals(System.getProperty("correo.mode"))) {
+            return new DevUpdateManager(this, repos);
+        }
         return new UpdateManager(this, repos);
     }
 
@@ -267,7 +280,9 @@ public class PluginManager extends JarPluginManager {
                             extensionDefinition.getPluginId(),
                             extensionDefinition.getId());
                     if (extension == null) {
-                        LOGGER.warn("Extension for Outgoing Message Hook with id {} from plugin {} not found.", extensionDefinition.getId(), extensionDefinition.getPluginId());
+                        LOGGER.warn("Extension for Outgoing Message Hook with id {} from plugin {} not found.",
+                                extensionDefinition.getId(),
+                                extensionDefinition.getPluginId());
                         return null;
                     }
                     enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
@@ -289,7 +304,9 @@ public class PluginManager extends JarPluginManager {
                             extensionDefinition.getPluginId(),
                             extensionDefinition.getId());
                     if (extension == null) {
-                        LOGGER.warn("Extension for Incoming Message Hook with id {} from plugin {} not found.", extensionDefinition.getId(), extensionDefinition.getPluginId());
+                        LOGGER.warn("Extension for Incoming Message Hook with id {} from plugin {} not found.",
+                                extensionDefinition.getId(),
+                                extensionDefinition.getPluginId());
                         return null;
                     }
                     enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
@@ -312,7 +329,9 @@ public class PluginManager extends JarPluginManager {
                             String extensionId = extensionDefinition.getId();
                             MessageValidatorHook<?> extension = getExtensionById(MessageValidatorHook.class, pluginId, extensionId);
                             if (extension == null) {
-                                LOGGER.warn("Plugin extension {}:{} in messageValidators is configured, but does not exist.", pluginId, extensionId);
+                                LOGGER.warn("Plugin extension {}:{} in messageValidators is configured, but does not exist.",
+                                        pluginId,
+                                        extensionId);
                                 return null;
                             }
                             enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
@@ -363,14 +382,18 @@ public class PluginManager extends JarPluginManager {
     private <T> boolean isExtensionIdResolved(T e, String id) {
         if (e.getClass().isAnnotationPresent(ExtensionId.class)) {
             return e.getClass().getAnnotation(ExtensionId.class).value().equals(id);
-        } else return true;
+        } else {
+            return true;
+        }
     }
 
     private <T> void logInvalidPluginDeclaration(Class<T> type, String pluginId, String extensionId) {
         Optional<T> defaultExtension = super.getExtensions(type, pluginId).stream().findFirst();
         if (defaultExtension.isPresent()) {
             if (extensionId == null) {
-                LOGGER.info("Plugin {} declared for {} offers multiple valid extensions, please specify an extensionId", pluginId, type.getSimpleName());
+                LOGGER.info("Plugin {} declared for {} offers multiple valid extensions, please specify an extensionId",
+                        pluginId,
+                        type.getSimpleName());
             } else {
                 LOGGER.info("Plugin {} declared for {} has no extension named: {}", pluginId, type.getSimpleName(), extensionId);
             }
@@ -388,7 +411,7 @@ public class PluginManager extends JarPluginManager {
     public void unloadPlugins() {
         LOGGER.debug("Unload Plugins");
         List<String> pluginIds = resolvedPlugins.stream().map(PluginWrapper::getPluginId).toList();
-        for (String pluginId : pluginIds) {
+        for ( String pluginId : pluginIds ) {
             LOGGER.debug("Unload Plugin \"{}\"", pluginId);
             unloadPlugin(pluginId);
         }
