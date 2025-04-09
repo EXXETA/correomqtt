@@ -43,8 +43,18 @@ jobs:
       - name: Build
         run: |
           mvn -B clean install -DskipTests=true
-          ls ~.m2/repository/org
         shell: bash
+      # Store already-built plugin as an artifact for downloading
+      - name: Upload core artifactt
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-1.0-SNAPSHOT.jar
+          path: ./core/target/
+      - name: Upload d artifactt
+        uses: actions/upload-artifact@v4
+        with:
+          name: di-1.0-SNAPSHOT.jar
+          path: ./di/target/
   # Prepare environment and build the plugin
   build:
     name: Build
