@@ -10,7 +10,7 @@
 #
 # GitHub Actions reference: https://help.github.com/en/actions
 #
-## JBIJPPTPL
+#
 
 name: Intellij plugin Build
 on:
