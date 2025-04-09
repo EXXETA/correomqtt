@@ -1,4 +1,4 @@
-name: Sonar
+name: Application Sonar
 
 on:
   push:

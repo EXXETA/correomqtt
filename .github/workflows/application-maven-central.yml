@@ -1,4 +1,4 @@
-name: Maven Central CI
+name: Application Maven Central CI
 on:
   create:
     tags:

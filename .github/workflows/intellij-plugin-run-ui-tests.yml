@@ -7,7 +7,7 @@
 #
 # Workflow is triggered manually.
 
-name: Run UI Tests
+name: Intellij plugin Run UI Tests
 on:
   workflow_dispatch
 

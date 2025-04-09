@@ -1,4 +1,4 @@
-name: Release CI
+name: Application Release CI
 on:
   release:
     types: [published]
