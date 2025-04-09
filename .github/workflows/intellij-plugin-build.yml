@@ -205,7 +205,7 @@ jobs:
   releaseDraft:
     name: Release draft
     if: github.event_name != 'pull_request'
-    needs: [ build, inspectCode, verify ]
+    needs: [ build, verify ]
     runs-on: ubuntu-latest
     defaults:
       run:
