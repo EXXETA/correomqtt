@@ -15,6 +15,9 @@ jobs:
 
   testUI:
     runs-on: ${{ matrix.os }}
+    defaults:
+     run:
+       working-directory: ./intellij-plugin
     strategy:
       fail-fast: false
       matrix:
