@@ -1,5 +1,6 @@
 name: Application Release CI
 on:
+  paths: ["application/**"]
   release:
     types: [published]
   workflow_dispatch:

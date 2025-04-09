@@ -3,10 +3,11 @@ name: Application Sonar
 on:
   push:
     branches: [ develop ]
+    paths: ["application/**"]
   workflow_dispatch:
 jobs:
-  linuxbuild:
-    name: testbuild
+  linux-build:
+    name: correo test build
     runs-on: ubuntu-latest
     defaults:
       run:

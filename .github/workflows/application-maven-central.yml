@@ -1,6 +1,7 @@
 name: Application Maven Central CI
 on:
   create:
+    paths: ["application/**"]
     tags:
       - v*
   workflow_dispatch:

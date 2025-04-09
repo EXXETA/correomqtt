@@ -6,6 +6,7 @@ name: Application Test CI
 on:
   push:
     branches:
+    paths: ["application/**"]
   pull_request:
     branches:
   workflow_dispatch:

@@ -6,7 +6,7 @@ name: Release
 on:
   release:
     types: [prereleased, released]
-
+    paths: ["intellij-plugin/**"]
 jobs:
 
   # Prepare and publish the plugin to JetBrains Marketplace repository
