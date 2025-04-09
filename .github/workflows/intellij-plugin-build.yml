@@ -215,6 +215,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Build correo
+        run: |
+          mvn -B clean install -DskipTests=true
+        shell: bash
+        working-directory: ./application/
+
       # Cache Plugin Verifier IDEs
       - name: Setup Plugin Verifier IDEs Cache
         uses: actions/cache@v4
