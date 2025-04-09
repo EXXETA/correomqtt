@@ -9,6 +9,7 @@ import org.correomqtt.core.model.HooksDTO;
 import org.correomqtt.core.plugin.model.PluginInfoDTO;
 import org.correomqtt.core.plugin.repository.BundledPluginList;
 import org.correomqtt.core.plugin.repository.CorreoUpdateRepository;
+import org.correomqtt.core.plugin.repository.RepoPluginInfoDTO;
 import org.correomqtt.core.plugin.spi.BaseExtensionPoint;
 import org.correomqtt.core.plugin.spi.ExtensionId;
 import org.correomqtt.core.plugin.spi.IncomingMessageHook;
@@ -30,13 +31,22 @@ import org.pf4j.update.UpdateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -89,11 +99,22 @@ public class PluginManager extends JarPluginManager {
         if (bundledPlugins != null) {
             return bundledPlugins;
         }
-        if (settings.getSettings().isInstallBundledPlugins()) {
+        if (settings.getSettings().isInstallBundledPlugins() && settings.getSettings().isSearchUpdates()) {
             String bundledPluginUrl = settings.getSettings().getBundledPluginsUrl();
+            if ("dev".equals(System.getProperty("correo.mode"))) {
+                try {
+                    bundledPluginUrl = "file://" + Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())
+                            .getParent().getParent().getParent().toString() + File.separator + "bundled.json";
+                    LOGGER.warn("DEV MODE: Reading bundled plugins from {}", bundledPluginUrl);
+                } catch (URISyntaxException e) {
+                    LOGGER.debug("Unable to locate locale bundled configuratoion.", e);
+                    return BundledPluginList.BundledPlugins.builder().build();
+                }
+            }
             if (bundledPluginUrl == null) {
                 bundledPluginUrl = VendorConstants.getBundledPluginsUrl();
             }
+            boolean offlineOrUnavailable = false;
             if (bundledPluginUrl.contains("{version}")) {
                 String latestBundled = bundledPluginUrl.replace("{version}", "latest");
                 if (checkUrl(latestBundled)) {
@@ -103,36 +124,44 @@ public class PluginManager extends JarPluginManager {
                     if (checkUrl(versionBundled)) {
                         bundledPluginUrl = versionBundled;
                     } else {
-                        // todo use local stored bundled
+                        offlineOrUnavailable = true;
                     }
                 }
             }
-            try {
-                LOGGER.info("Read bundled plugins '{}'", bundledPluginUrl);
-                BundledPluginList bundledPluginList = new ObjectMapper().readValue(new URL(bundledPluginUrl), BundledPluginList.class);
-                String versionSharp = VersionUtils.getVersion();
-                String versionUnsharp = VersionUtils.getMajorMinorPatch(versionSharp);
-                BundledPluginList.BundledPlugins bundledPluginsByVersion = bundledPluginList.getVersions().get(versionSharp);
-                if(bundledPluginsByVersion == null) {
-                    bundledPluginsByVersion = bundledPluginList.getVersions().get(versionUnsharp);
-                }
-                if (bundledPluginsByVersion == null) {
-                    LOGGER.warn("No bundled plugins found for version '{}'", versionSharp);
-                    bundledPlugins = BundledPluginList.BundledPlugins.builder().build();
-                } else {
-                    LOGGER.info("Found {} bundled plugins and {} plugins to be removed for version '{}'.",
-                            bundledPluginsByVersion.getInstall().size(),
-                            bundledPluginsByVersion.getUninstall().size(),
-                            versionSharp);
-                    bundledPlugins = bundledPluginsByVersion;
-                }
-                return bundledPluginsByVersion;
-            } catch (IOException e) {
-                LOGGER.warn("Unable to load bundled plugin list from {}.", bundledPluginUrl);
+            if (offlineOrUnavailable) {
+                LOGGER.warn("Offline or no release available. Skip bundled plugins.");
                 return BundledPluginList.BundledPlugins.builder().build();
+            } else {
+                try {
+                    LOGGER.info("Read bundled plugins '{}'", bundledPluginUrl);
+                    BundledPluginList bundledPluginList;
+                    String versionSharp = VersionUtils.getVersion();
+                    try (BufferedReader in = downloadUrl(bundledPluginUrl)) {
+                        bundledPluginList = new ObjectMapper().readValue(in, BundledPluginList.class);
+                    }
+                    String versionUnsharp = VersionUtils.getMajorMinorPatch(versionSharp);
+                    BundledPluginList.BundledPlugins bundledPluginsByVersion = bundledPluginList.getVersions().get(versionSharp);
+                    if (bundledPluginsByVersion == null) {
+                        bundledPluginsByVersion = bundledPluginList.getVersions().get(versionUnsharp);
+                    }
+                    if (bundledPluginsByVersion == null) {
+                        LOGGER.warn("No bundled plugins found for version '{}'", versionSharp);
+                        bundledPlugins = BundledPluginList.BundledPlugins.builder().build();
+                    } else {
+                        LOGGER.info("Found {} bundled plugins and {} plugins to be removed for version '{}'.",
+                                bundledPluginsByVersion.getInstall().size(),
+                                bundledPluginsByVersion.getUninstall().size(),
+                                versionSharp);
+                        bundledPlugins = bundledPluginsByVersion;
+                    }
+                    return bundledPluginsByVersion;
+                } catch (IOException e) {
+                    LOGGER.warn("Unable to load bundled plugin list from {}.", bundledPluginUrl);
+                    return BundledPluginList.BundledPlugins.builder().build();
+                }
             }
         } else {
-            LOGGER.info("Do not install bundled plugins.");
+            LOGGER.debug("Do not install bundled plugins due to config.");
             return BundledPluginList.BundledPlugins.builder().build();
         }
     }
@@ -153,32 +182,70 @@ public class PluginManager extends JarPluginManager {
             URL url = new URL(urlString);
             HttpURLConnection huc = (HttpURLConnection) url.openConnection();
             huc.setRequestMethod("HEAD");
+            huc.setConnectTimeout(2000);
+            huc.setReadTimeout(2000);
             return (huc.getResponseCode() == 200 || huc.getResponseCode() == 302);
         } catch (IOException e) {
             return false;
         }
     }
 
+    private BufferedReader downloadUrl(String urlString) throws IOException {
+        URL url = URI.create(urlString).toURL();
+        switch (url.getProtocol()) {
+            case "file" -> {
+                return new BufferedReader(new InputStreamReader(url.openStream()));
+            }
+            case "http", "https" -> {
+                HttpURLConnection huc = (HttpURLConnection) url.openConnection();
+                huc.setRequestMethod("GET");
+                huc.setInstanceFollowRedirects(true);
+                huc.setConnectTimeout(2000);
+                huc.setReadTimeout(2000);
+                return new BufferedReader(new InputStreamReader(huc.getInputStream()));
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + url.getProtocol());
+        }
+    }
+
     public UpdateManager getUpdateManager() {
         List<UpdateRepository> repos = new ArrayList<>();
+        boolean offlineOrDisabled = false;
         if (settings.getSettings().isSearchUpdates()) {
             if (settings.getSettings().isUseDefaultRepo()) {
-                String defaultRepo = VendorConstants.getDefaultRepoUrl();
-                if (defaultRepo.contains("{version}")) {
-                    String latestRepo = defaultRepo.replace("{version}", "latest");
-                    if (checkUrl(latestRepo)) {
-                        defaultRepo = latestRepo;
-                    } else {
-                        String versionRepo = defaultRepo.replace("{version}", "v" + VersionUtils.getVersion());
-                        if (checkUrl(versionRepo)) {
-                            defaultRepo = versionRepo;
+                String repo = VendorConstants.getDefaultRepoUrl();
+                if ("dev".equals(System.getProperty("correo.mode"))) {
+                    try {
+                        repo = "file://" + Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())
+                                .getParent().getParent().getParent().toString() + File.separator + "local-repo.json";
+                        LOGGER.warn("DEV MODE: Reading plugins repo from {}", repo);
+                    } catch (URISyntaxException e) {
+                        LOGGER.debug("Unable to locate locale plugin repo", e);
+                        offlineOrDisabled = true;
+                    }
+                } else {
+                    if (repo.contains("{version}")) {
+                        String latestRepo = repo.replace("{version}", "latest");
+                        if (checkUrl(latestRepo)) {
+                            repo = latestRepo;
+                        } else {
+                            String versionRepo = repo.replace("{version}", "v" + VersionUtils.getVersion());
+                            if (checkUrl(versionRepo)) {
+                                repo = versionRepo;
+                            } else {
+                                offlineOrDisabled = true;
+                            }
                         }
                     }
                 }
-                try {
-                    repos.add(new CorreoUpdateRepository(DEFAULT_REPO_ID, defaultRepo));
-                } catch (MalformedURLException e) {
-                    LOGGER.error("Invalid url for repo {} with url {}", DEFAULT_REPO_ID, defaultRepo);
+                if (offlineOrDisabled) {
+                    LOGGER.warn("Offline or no release available. No marketplace repository is used.");
+                } else {
+                    try {
+                        repos.add(new CorreoUpdateRepository(DEFAULT_REPO_ID, repo));
+                    } catch (MalformedURLException e) {
+                        LOGGER.error("Invalid url for repo {} with url {}", DEFAULT_REPO_ID, repo);
+                    }
                 }
             }
             settings.getSettings().getPluginRepositories().forEach((id, url) -> {
@@ -271,7 +338,8 @@ public class PluginManager extends JarPluginManager {
         }
     }
 
-    public <P extends BaseExtensionPoint<T>, T> P getExtensionByIdWithConfig(Class<P> type, String pluginId, String extensionId, T config) {
+    public <P extends BaseExtensionPoint<T>, T> P
+    getExtensionByIdWithConfig(Class<P> type, String pluginId, String extensionId, T config) {
         P extension = getExtensionById(type, pluginId, extensionId);
         if (extension != null) {
             extension.onConfigReceived(config);
@@ -279,7 +347,8 @@ public class PluginManager extends JarPluginManager {
         return extension;
     }
 
-    public <P extends BaseExtensionPoint<?>> P getExtensionById(Class<P> type, String pluginId, String extensionId) {
+    public <P extends BaseExtensionPoint<?>> P getExtensionById(Class<P> type, String pluginId, String
+            extensionId) {
         return super.getExtensions(type, pluginId)
                 .stream()
                 .filter(e -> isExtensionIdResolved(e, extensionId))
@@ -329,14 +398,16 @@ public class PluginManager extends JarPluginManager {
         }
     }
 
-    public <P extends BaseExtensionPoint<T>, T> P getExtensionByDefinition(Class<P> clazz, HooksDTO.Extension extensionDefinition) {
+    public <P extends BaseExtensionPoint<T>, T> P
+    getExtensionByDefinition(Class<P> clazz, HooksDTO.Extension extensionDefinition) {
         P extension = getExtensionById(clazz, extensionDefinition.getPluginId(), extensionDefinition.getId());
         enrichExtensionWithConfig(extension, extensionDefinition.getConfig());
         return extension;
     }
 
     @SuppressWarnings("unchecked")
-    public <P extends BaseExtensionPoint<T>, T> P getExtensionByDefinition(TypeReference<P> typeReference, HooksDTO.Extension extensionDefinition) {
+    public <P extends BaseExtensionPoint<T>, T> P
+    getExtensionByDefinition(TypeReference<P> typeReference, HooksDTO.Extension extensionDefinition) {
         Type type = typeReference.getType();
         // https://stackoverflow.com/a/28615143
         Class<P> clazz = (Class<P>) (type instanceof ParameterizedType parameterizedType ?

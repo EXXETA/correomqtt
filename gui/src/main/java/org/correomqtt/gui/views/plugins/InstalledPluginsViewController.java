@@ -250,7 +250,9 @@ public class InstalledPluginsViewController extends BaseControllerImpl {
     @SuppressWarnings("unused")
     @FxThread
     public void onPluginDisableSucceeded(@Observes PluginDisabledEvent event) {
-        //TODO?
+        reloadData(event.pluginId());
+        Platform.runLater(() -> alertHelper.info(resources.getString("pluginChangeTitle"),
+                resources.getString("pluginChangeContent")));
     }
 
     @FxThread

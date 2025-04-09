@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import org.correomqtt.di.Inject;
 import org.correomqtt.di.SingletonBean;
+
 import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -103,20 +104,35 @@ public class MainApplication {
     }
 
     public void init() {
-
+        boolean devIntelliJ = false;
+        boolean devProperty = false;
+        boolean prodProperty = "prod".equals(System.getProperty("correo.mode"));
+        if (prodProperty) {
+            LOGGER.warn("System property correo.mode == {}. Enforcing PROD MODE.", "prod");
+        } else {
+            try {
+                devIntelliJ = getClass().getClassLoader().loadClass("com.intellij.rt.execution.application.AppMainV2") != null;
+                LOGGER.warn("IntelliJ detected. Running in DEV MODE.");
+            } catch (ClassNotFoundException e) {
+                LOGGER.trace("No IntelliJ detected.");
+            }
+            devProperty = "dev".equals(System.getProperty("correo.mode"));
+            if (devProperty) {
+                LOGGER.warn("System property correo.mode == {}. Running in DEV MODE.", "dev");
+            }
+        }
+        if (devIntelliJ || devProperty) {
+            System.setProperty("correo.mode", "dev");
+        }
         final SettingsDTO settings = settingsManager.getSettings();
-
         handleVersionMismatch(settings);
         setLocale(settings);
         notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderLanguageSet")));
-
         if (settings.isFirstStart()) {
             initUpdatesOnFirstStart(settings);
         }
-
         pluginManager.setExtensionFactory(new CorreoExtensionFactory());
         pluginCheckUtils.checkMigration();
-
         if (settings.isSearchUpdates()) {
             notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderSearchingUpdates")));
             pluginLauncher.start(true);
@@ -125,10 +141,10 @@ public class MainApplication {
             } catch (CorreoMqttUnableToCheckVersionException e) {
                 LOGGER.debug("Unable to check version", e);
             }
-        }else{
+        } else {
+            LOGGER.warn("Search updates is disabled via config. Correo won't search for application and plugin updates. Also the marketplace place is disabled.");
             pluginLauncher.start(false);
         }
-
         notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderKeyring")));
         keyringManager.init();
         keyringManager.retryWithMasterPassword(
@@ -139,26 +155,20 @@ public class MainApplication {
                 resources.getString("onPasswordReadFailedGiveUp"),
                 resources.getString("onPasswordReadFailedTryAgain")
         );
-
         notifyPreloader.accept(new PreloaderNotification(resources.getString("preloaderReady")));
-
         themeManager.saveCSS();
-
         correoCore.init();
     }
 
     private void loadPrimaryStage() throws IOException {
         String cssPath = themeManager.getCssPath();
-
         FXMLLoader loader = new FXMLLoader(MainViewController.class.getResource("mainView.fxml"),
                 ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale()));
         loader.setControllerFactory(param -> mainViewController);
         Parent root = loader.load();
-
         primaryStage.setTitle("CorreoMQTT v" + VersionUtils.getVersion());
         scene = new Scene(root, 900, 800);
         scene.setFill(themeManager.getActiveTheme().getBackgroundColor());
-
         if (cssPath != null) {
             scene.getStylesheets().add(cssPath);
         }
@@ -166,9 +176,7 @@ public class MainApplication {
         primaryStage.sizeToScene();
         primaryStage.setMinHeight(400);
         primaryStage.setMinWidth(850);
-
         final SettingsDTO settings = settingsManager.getSettings();
-
         if (settings.getGlobalUISettings() == null) {
             primaryStage.show();
             saveGlobalUISettings();
@@ -177,12 +185,9 @@ public class MainApplication {
             primaryStage.setY(settings.getGlobalUISettings().getWindowPositionY());
             primaryStage.setWidth(settings.getGlobalUISettings().getWindowWidth());
             primaryStage.setHeight(settings.getGlobalUISettings().getWindowHeight());
-
             primaryStage.show();
         }
-
         primaryStage.setOnCloseRequest(t -> onShutdownRequested());
-
         setupShortcut();
     }
 
@@ -219,7 +224,6 @@ public class MainApplication {
                 resources.getString("commonNoButton"),
                 resources.getString("commonYesButton")
         );
-
         settings.setFirstStart(false);
         settings.setSearchUpdates(checkForUpdates);
     }
@@ -236,14 +240,12 @@ public class MainApplication {
 
     private void saveGlobalUISettings() {
         final SettingsDTO settings = settingsManager.getSettings();
-
         settings.setGlobalUISettings(new GlobalUISettings(
                 primaryStage.getX(),
                 primaryStage.getY(),
                 primaryStage.getWidth(),
                 primaryStage.getHeight()
         ));
-
         settingsManager.saveSettings();
     }
 
@@ -266,7 +268,6 @@ public class MainApplication {
 
     private void setupShortcut() {
         scene.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
-
                     if (event.getCode().equals(KeyCode.S) && event.isShortcutDown() && !event.isShiftDown()) {
                         soyEvents.fireAsync(new ShortcutConnectionIdEvent(SUBSCRIPTION, mainViewController.getUUIDofSelectedTab()));
                         event.consume();
@@ -315,7 +316,6 @@ public class MainApplication {
         );
         System.exit(1);
     }
-
 
     void onNotifyPreloader(Consumer<Preloader.PreloaderNotification> notifyPreloader) {
         this.notifyPreloader = notifyPreloader;
