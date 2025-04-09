@@ -43,6 +43,7 @@ jobs:
       - name: Build
         run: |
           mvn -B clean install -DskipTests=true
+          ls ~.m2/repository/org
         shell: bash
   # Prepare environment and build the plugin
   build:
