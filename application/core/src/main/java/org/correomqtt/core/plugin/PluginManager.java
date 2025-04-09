@@ -21,11 +21,7 @@ import org.correomqtt.core.utils.VendorConstants;
 import org.correomqtt.core.utils.VersionUtils;
 import org.correomqtt.di.Inject;
 import org.correomqtt.di.SingletonBean;
-import org.pf4j.DefaultExtensionFactory;
-import org.pf4j.ExtensionFactory;
-import org.pf4j.JarPluginManager;
-import org.pf4j.PluginState;
-import org.pf4j.PluginWrapper;
+import org.pf4j.*;
 import org.pf4j.update.UpdateManager;
 import org.pf4j.update.UpdateRepository;
 import org.slf4j.Logger;
@@ -104,7 +100,7 @@ public class PluginManager extends JarPluginManager {
             if ("dev".equals(System.getProperty("correo.mode"))) {
                 try {
                     bundledPluginUrl = "file://" + Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())
-                            .getParent().getParent().getParent().toString() + File.separator + "bundled.json";
+                            .getParent().getParent().getParent().toString() + File.separator + "target" + File.separator + "bundled.json";
                     LOGGER.warn("DEV MODE: Reading bundled plugins from {}", bundledPluginUrl);
                 } catch (URISyntaxException e) {
                     LOGGER.debug("Unable to locate locale bundled configuratoion.", e);
@@ -217,7 +213,7 @@ public class PluginManager extends JarPluginManager {
                 if ("dev".equals(System.getProperty("correo.mode"))) {
                     try {
                         repo = "file://" + Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())
-                                .getParent().getParent().getParent().toString() + File.separator + "local-repo.json";
+                                .getParent().getParent().getParent().toString() + File.separator + "target" + File.separator + "default-repo.json";
                         LOGGER.warn("DEV MODE: Reading plugins repo from {}", repo);
                     } catch (URISyntaxException e) {
                         LOGGER.debug("Unable to locate locale plugin repo", e);
@@ -418,5 +414,20 @@ public class PluginManager extends JarPluginManager {
 
     public void setExtensionFactory(ExtensionFactory extensionFactory) {
         this.extensionFactory = extensionFactory;
+    }
+
+    @Override
+    public VersionManager getVersionManager() {
+        return new VersionManager() {
+            @Override
+            public boolean checkVersionConstraint(String version, String constraint) {
+                return true;
+            }
+
+            @Override
+            public int compareVersions(String v1, String v2) {
+                return v1.compareTo(v2);
+            }
+        };
     }
 }
