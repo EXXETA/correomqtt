@@ -1,0 +1,37 @@
+services:
+  hiveV1:
+    build: hive
+    image: correo_hive
+    container_name: correo_hive_v1
+    ports:
+      - "8484:8080" # default port
+      - "8844:8888" # REST endpoint
+      - "7800:7800" # hive
+      - "7900:7900" # hive
+      - "1883:1883" # hive
+      - "8555:8555" # hive
+      - "8883:8883" # hive
+      - "8082:8082" # hive web console
+      - "15000:15000" # hive
+      - "9399:9399" # hive metrics
+  hiveV2:
+    build: hive
+    image: correo_hive
+    container_name: correo_hive_v2
+    ports:
+      - "8485:8080" # default port
+      - "8845:8888" # REST endpoint
+      - "7801:7800" # hive
+      - "7901:7900" # hive
+      - "1884:1883" # hive
+      - "8556:8555" # hive
+      - "8884:8883" # hive
+      - "8083:8082" # hive web console
+      - "15001:15000" # hive
+      - "9400:9399" # hive metrics
+    networks:
+      - correo
+
+networks:
+  correo:
+    external: true
