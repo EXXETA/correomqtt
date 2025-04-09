@@ -11,4 +11,9 @@
 
   <name>Monorepo Aggregator</name>
   <description>Dummy aggregator POM for IntelliJ project structure</description>
+
+
+  <modules>
+    <module>application</module>
+  </modules>
 </project>
