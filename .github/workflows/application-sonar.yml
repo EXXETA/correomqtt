@@ -8,6 +8,9 @@ jobs:
   linuxbuild:
     name: testbuild
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./application
     steps:
       - name: Checkout master
         uses: actions/checkout@v2
