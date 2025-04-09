@@ -5,8 +5,8 @@ name: Landingpage build
 
 on:
   push:
-    branches:
     paths: ["landingpage/**"]
+    branches:
   pull_request:
     branches:
   workflow_dispatch:
