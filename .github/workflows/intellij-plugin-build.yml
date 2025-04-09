@@ -14,7 +14,7 @@ name: Intellij plugin Build
 on:
   # Trigger the workflow on pushes to only the 'main' branch (this avoids duplicate checks being run e.g., for dependabot pull requests)
   push:
-    branches: [ main ]
+    branches: [ develop ]
   # Trigger the workflow on any pull request
   pull_request:
 
@@ -23,11 +23,9 @@ concurrency:
   cancel-in-progress: true
   
 jobs:
-  # Prepare environment and build the plugin
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [ build-correo ]
     defaults:
       run:
         working-directory: ./intellij-plugin
@@ -36,7 +34,6 @@ jobs:
       changelog: ${{ steps.properties.outputs.changelog }}
       pluginVerifierHomeDir: ${{ steps.properties.outputs.pluginVerifierHomeDir }}
     steps:
-
       # Check out the current repository
       - name: Fetch Sources
         uses: actions/checkout@v4
