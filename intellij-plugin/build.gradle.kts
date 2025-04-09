@@ -39,7 +39,7 @@ repositories {
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
-    kapt("org.correomqtt:di:0.15.0")
+    kapt("org.correomqtt:di:1.0-SNAPSHOT")
     implementation("org.correomqtt:di:1.0-SNAPSHOT")
     implementation("org.correomqtt:core:1.0-SNAPSHOT")
     implementation("com.fifesoft:rsyntaxtextarea:3.4.1")
