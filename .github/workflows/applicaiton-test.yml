@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 jobs:
   linuxbuild:
-    name: testbuild
+    name: correo linux test build
     runs-on: ubuntu-latest
     defaults:
      run:
