@@ -1,5 +1,6 @@
 package org.correomqtt.gui.views.importexport;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -110,9 +111,11 @@ public class ConnectionImportViewController extends BaseControllerImpl implement
             LoaderResult<Z> result = resultGenerator.get();
             return new StepState(result.getController(), result.getMainRegion());
         });
-        stepStates.forEach((k, s) -> contentHolder.getChildren().remove(s.region));
-        stepState.controller.initFromWizard();
-        contentHolder.getChildren().add(1, stepState.region);
+        Platform.runLater(() -> {
+            stepStates.forEach((k, s) -> contentHolder.getChildren().remove(s.region));
+            stepState.controller.initFromWizard();
+            contentHolder.getChildren().add(1, stepState.region);
+        });
     }
 
     @Override

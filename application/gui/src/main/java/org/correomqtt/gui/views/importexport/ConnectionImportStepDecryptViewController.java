@@ -63,7 +63,8 @@ public class ConnectionImportStepDecryptViewController extends BaseControllerImp
         ConnectionExportDTO dto = this.delegate.getOriginalImportedDTO();
         importDecryptConnectionsTaskFactory.create(dto.getEncryptedData(), dto.getEncryptionType(), passwordField.getText())
                 .onSuccess(this::onDecryptSucceeded)
-                .onError(this::onDecryptFailed);
+                .onError(this::onDecryptFailed)
+                .run();
     }
 
     public void onDecryptSucceeded(List<ConnectionConfigDTO> decryptedConnectionList) {

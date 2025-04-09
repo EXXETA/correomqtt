@@ -34,7 +34,7 @@
                     </HBox.margin>
                 </IconButton>
                 <IconButton fx:id="showDetailsButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
-                        onAction="#showDetailsOfMessage" icon="mdi-open-in-new">
+                            onAction="#showDetailsOfMessage" icon="mdi-open-in-new">
                     <tooltip>
                         <Tooltip text="%messageListViewShowDetailsTooltip"/>
                     </tooltip>
@@ -43,7 +43,7 @@
 
 
                 <IconButton fx:id="clearMessagesButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
-                        onAction="#clearList" icon="mdi-trash-can">
+                            onAction="#clearList" icon="mdi-trash-can">
                     <tooltip>
                         <Tooltip text="%messageListViewClearMessagesButton"/>
                     </tooltip>
@@ -58,12 +58,13 @@
                     </tooltip>
                     <items>
                         <IconCheckMenuItem fx:id="changeDisplayRetained" mnemonicParsing="false"
-                                       onAction="#changeRetainDisplay" styleClass="menuItem" text="%retainedMenuItem"/>
+                                           onAction="#changeRetainDisplay" styleClass="menuItem"
+                                           text="%retainedMenuItem"/>
                         <IconCheckMenuItem fx:id="changeDisplayQos" mnemonicParsing="false" onAction="#changeQosDisplay"
-                                       styleClass="menuItem" text="%qosMenuItem"/>
+                                           styleClass="menuItem" text="%qosMenuItem"/>
                         <IconCheckMenuItem fx:id="changeDisplayTimestamp" mnemonicParsing="false"
-                                  onAction="#changeTimestampDisplay" styleClass="menuItem"
-                                  text="%timestampMenuItem"/>
+                                           onAction="#changeTimestampDisplay" styleClass="menuItem"
+                                           text="%timestampMenuItem"/>
                     </items>
                     <HBox.margin>
                         <Insets left="5.0"/>
@@ -73,6 +74,15 @@
                                   onAction="#toggleDetailView" icon="correo-columns-solid-without-toolbar">
                     <tooltip>
                         <Tooltip text="%messageListViewMessageSplitButton"/>
+                    </tooltip>
+                    <HBox.margin>
+                        <Insets left="5.0"/>
+                    </HBox.margin>
+                </IconToggleButton>
+                <IconToggleButton fx:id="automaticScrollButton" minHeight="25.0" minWidth="30.0" mnemonicParsing="false"
+                                  onAction="#toggleAutomaticScrolling" icon="mdi-mouse-scroll-wheel">
+                    <tooltip>
+                        <Tooltip text="%automaticScrollingTooltip"/>
                     </tooltip>
                     <HBox.margin>
                         <Insets left="5.0"/>
