@@ -45,16 +45,16 @@ jobs:
           mvn -B clean install -DskipTests=true
         shell: bash
       # Store already-built plugin as an artifact for downloading
-      - name: Upload core artifactt
+      - name: Upload core artifact
         uses: actions/upload-artifact@v4
         with:
-          name: core-1.0-SNAPSHOT.jar
-          path: ./core/target/
-      - name: Upload d artifactt
+          name: core-1.0-SNAPSHOT
+          path: ./core/target/*.jar
+      - name: Upload di artifact
         uses: actions/upload-artifact@v4
         with:
-          name: di-1.0-SNAPSHOT.jar
-          path: ./di/target/
+          name: di-1.0-SNAPSHOT
+          path: ./di/target/*.jar
   # Prepare environment and build the plugin
   build:
     name: Build
