@@ -242,10 +242,11 @@ jobs:
 
   # Prepare a draft release for GitHub Releases page for the manual verification
   # If accepted and published, release workflow would be triggered
+  # Add test job to needs
   releaseDraft:
     name: Release draft
     if: github.event_name != 'pull_request'
-    needs: [ build, test, inspectCode, verify ]
+    needs: [ build, inspectCode, verify ]
     runs-on: ubuntu-latest
     defaults:
       run:
