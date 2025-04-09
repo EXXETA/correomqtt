@@ -1,0 +1,21 @@
+{
+  "name": "correo-landingpage",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build && npm run build-css",
+    "build-css": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.3.3",
+    "astro": "^4.0.6",
+    "typescript": "^5.3.3"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}
