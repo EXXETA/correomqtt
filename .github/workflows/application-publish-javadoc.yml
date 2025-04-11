@@ -1,0 +1,23 @@
+name: Application Deploy Javadoc
+
+on:
+  push:
+    paths: ["application/**"]
+    branches:
+      - develop
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+     run:
+       working-directory: ./application
+    steps:
+      - name: Deploy JavaDoc
+        uses: MathieuSoysal/Javadoc-publisher.yml@v2.4.0
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          javadoc-branch: javadoc
+          java-version: 17
+          target-folder: javadoc
+          project: maven
