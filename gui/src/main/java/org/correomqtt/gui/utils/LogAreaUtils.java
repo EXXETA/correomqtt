@@ -1,17 +1,34 @@
 package org.correomqtt.gui.utils;
 
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.correomqtt.core.importexport.log.ExportLogTaskFactory;
+import org.correomqtt.core.settings.SettingsManager;
+import org.correomqtt.di.DefaultBean;
+import org.correomqtt.di.Inject;
 import org.fxmisc.richtext.StyleClassedTextArea;
 
+import java.io.File;
+import java.util.ResourceBundle;
+
+@DefaultBean
 public class LogAreaUtils {
 
-    private LogAreaUtils() {
-        // private constructor
+    private final ExportLogTaskFactory exportLogTaskFactory;
+
+    private final SettingsManager settingsManager;
+
+    @Inject
+    public LogAreaUtils(ExportLogTaskFactory exportLogTaskFactory, SettingsManager settingsManager) {
+        this.exportLogTaskFactory = exportLogTaskFactory;
+        this.settingsManager = settingsManager;
     }
 
     public static void appendColorful(StyleClassedTextArea area, String msg) {
 
-        if (msg == null)
+        if (msg == null) {
             return;
+        }
 
         String[] matches = msg.split("\u001B");
         String cssClass;
@@ -43,6 +60,20 @@ public class LogAreaUtils {
                 str = match;
             }
             area.append(str, cssClass);
+        }
+    }
+
+    public void saveLogs(String logs, Stage stage) {
+        ResourceBundle resources = ResourceBundle.getBundle("org.correomqtt.i18n", settingsManager.getSettings().getCurrentLocale());
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(resources.getString("logExportTile"));
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter(resources.getString("logExportDescription"), "*.log");
+        fileChooser.getExtensionFilters().add(extFilter);
+
+        File file = fileChooser.showSaveDialog(stage);
+        if (file != null) {
+            exportLogTaskFactory.create(file, logs).run();
         }
     }
 }
