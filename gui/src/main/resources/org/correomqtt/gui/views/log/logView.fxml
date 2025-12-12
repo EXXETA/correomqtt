@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
@@ -19,10 +20,21 @@
                   AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
                   AnchorPane.topAnchor="0.0">
                 <Pane HBox.hgrow="ALWAYS"/>
+                <IconButton fx:id="logFileExportButton" minHeight="25.0" mnemonicParsing="false" icon="mdi-content-save">
+                    <tooltip>
+                        <Tooltip text="%logViewSaveLogTooltip"/>
+                    </tooltip>
+                    <HBox.margin>
+                        <Insets left="5.0"/>
+                    </HBox.margin>
+                </IconButton>
                 <IconButton fx:id="trashButton" minHeight="25.0" mnemonicParsing="false" icon="mdi-trash-can">
                     <tooltip>
                         <Tooltip text="%logViewClearLogTooltip"/>
                     </tooltip>
+                    <HBox.margin>
+                        <Insets left="5.0"/>
+                    </HBox.margin>
                 </IconButton>
             </HBox>
             <styleClass>
