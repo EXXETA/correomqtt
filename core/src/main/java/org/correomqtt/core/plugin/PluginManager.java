@@ -25,6 +25,7 @@ import org.pf4j.ExtensionFactory;
 import org.pf4j.JarPluginManager;
 import org.pf4j.PluginState;
 import org.pf4j.PluginWrapper;
+import org.pf4j.VersionManager;
 import org.pf4j.update.UpdateManager;
 import org.pf4j.update.UpdateRepository;
 import org.slf4j.Logger;
@@ -343,4 +344,10 @@ public class PluginManager extends JarPluginManager {
     public void setExtensionFactory(ExtensionFactory extensionFactory) {
         this.extensionFactory = extensionFactory;
     }
+
+    @Override
+    public VersionManager getVersionManager() {
+        return new NoSemverVersionManager();
+    }
+
 }
