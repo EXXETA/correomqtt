@@ -1,34 +1,26 @@
 package org.correomqtt.gui.views.connections;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.control.*;
+import javafx.scene.input.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import org.controlsfx.control.textfield.TextFields;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.core.model.ControllerType;
-import org.correomqtt.core.model.LabelType;
-import org.correomqtt.core.model.MessageListViewConfig;
-import org.correomqtt.core.model.MessageType;
-import org.correomqtt.core.model.PublishStatus;
+import org.correomqtt.core.model.*;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
@@ -46,6 +38,7 @@ import org.correomqtt.gui.views.LoaderResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import static org.correomqtt.core.connection.ConnectionState.CONNECTED;
@@ -87,11 +80,14 @@ public class MessageListViewController extends BaseConnectionController implemen
     Button showDetailsButton;
     @FXML
     private VBox messagesVBox;
+    @FXML
+    protected ToggleButton automaticScrollButton;
     private ObservableList<MessagePropertiesDTO> messages;
     private FilteredList<MessagePropertiesDTO> filteredMessages;
     private DetailViewController detailViewController;
 
-
+    private final PauseTransition pause = new PauseTransition(Duration.millis(200));
+    private boolean isUserScrolling = false;
 
     @Inject
     public MessageListViewController(CoreManager coreManager,
@@ -153,7 +149,11 @@ public class MessageListViewController extends BaseConnectionController implemen
         listView.setItems(filteredMessages);
         listView.setCellFactory(this::createCell);
 
+        addCustomScrollingListeners();
+
         splitPane.widthProperty().addListener((observable, oldValue, newValue) -> Platform.runLater(() -> calculateDetailView(newValue)));
+
+        automaticScrollButton.setSelected(true);
 
         messageSearchTextField.textProperty().addListener((observable, oldValue, newValue) -> searchInMessages(newValue));
     }
@@ -163,6 +163,7 @@ public class MessageListViewController extends BaseConnectionController implemen
         MessageListContextMenu contextMenu = messageListContextMenuFactory.create(this);
         cell.setContextMenu(contextMenu);
         cell.itemProperty().addListener((observable, oldValue, newValue) -> contextMenu.setObject(newValue));
+        cell.setOnMousePressed(event -> onCellPressed(cell));
         cell.setOnMouseClicked(event -> onCellClicked(event, cell.getItem()));
         cell.selectedProperty().addListener((observable, oldValue, newValue) -> {
             if (Boolean.TRUE.equals(newValue)) {
@@ -174,6 +175,11 @@ public class MessageListViewController extends BaseConnectionController implemen
             }
         });
         return cell;
+    }
+
+    private void onCellPressed(MessageViewCell cell) {
+        listView.getFocusModel().focus(cell.getIndex());
+        disableAutomaticScrolling();
     }
 
     public void calculateDetailView(Number newValue) {
@@ -349,6 +355,9 @@ public class MessageListViewController extends BaseConnectionController implemen
         if (messageDTO.getMessageType().equals(MessageType.INCOMING)) {
             addMessage(messageDTO);
         }
+        if (listView.getFocusModel().getFocusedIndex() > 0 && !automaticScrollButton.isSelected()) {
+            listView.scrollTo(listView.getFocusModel().getFocusedIndex() + 1);
+        }
     }
 
     private void addMessage(MessagePropertiesDTO messageDTO) {
@@ -423,6 +432,25 @@ public class MessageListViewController extends BaseConnectionController implemen
         detailViewControllerFactory.create(getSelectedMessage(), getConnectionId(), this, false).showAsDialog();
     }
 
+    @FXML
+    private void toggleAutomaticScrolling() {
+        if (automaticScrollButton.isSelected()) {
+            enableAutomaticScrolling();
+        } else {
+            disableAutomaticScrolling();
+        }
+    }
+
+    private void enableAutomaticScrolling() {
+        automaticScrollButton.setSelected(true);
+        listView.getFocusModel().focus(-1);
+        listView.scrollTo(0);
+    }
+
+    private void disableAutomaticScrolling() {
+        automaticScrollButton.setSelected(false);
+    }
+
     public void cleanUp() {
         if (this.detailViewController != null) {
             detailViewController.cleanUp();
@@ -437,5 +465,75 @@ public class MessageListViewController extends BaseConnectionController implemen
     @Override
     public void setUpToForm(MessagePropertiesDTO messageDTO) {
         delegate.setUpToForm(messageDTO);
+    }
+
+    /**
+     Listeners to register scroll events in general that {@link #disableAutomaticScrolling()}.
+     Listeners to register scroll events to the top of the list that {@link #enableAutomaticScrolling()}.
+     */
+    private void addCustomScrollingListeners() {
+        pause.setOnFinished(event -> isUserScrolling = false);
+        listView.skinProperty().addListener((observable, oldValue, newValue) -> {
+            Optional<ScrollBar> vScrollBar = findVerticalScrollBar(listView);
+            vScrollBar.ifPresent(scrollBar -> {
+                scrollBar.valueProperty().addListener((obs, oldVal, newVal) -> {
+                    if (newVal.doubleValue() == scrollBar.getMin()) {
+                        enableAutomaticScrolling();
+                    }
+                });
+            });
+        });
+        listView.addEventFilter(ScrollEvent.SCROLL, event -> {
+            if (event.getDeltaY() > 0) { // Mouse wheel scrolling up
+                Optional<ScrollBar> vScrollBar = findVerticalScrollBar(listView);
+                vScrollBar.ifPresent(scrollBar -> {
+                    if (scrollBar.getValue() == scrollBar.getMin()) {
+                        enableAutomaticScrolling();
+                    }
+                });
+            }
+        });
+
+        listView.addEventFilter(ScrollEvent.SCROLL, event -> {
+
+            if (!isUserScrolling) {
+                isUserScrolling = true;
+                // Reset the scrolling state after a delay
+                pause.playFromStart();
+                disableAutomaticScrolling();
+            }
+        });
+
+        listView.skinProperty().addListener((observable, oldValue, newValue) -> {
+            Optional<ScrollBar> vScrollBar = findVerticalScrollBar(listView);
+            vScrollBar.ifPresent(scrollBar -> {
+                scrollBar.valueProperty().addListener(new ScrollbarChangeListener());
+            });
+        });
+    }
+
+    private Optional<ScrollBar> findVerticalScrollBar(ListView<?> listView) {
+        for (var node : listView.lookupAll(".scroll-bar")) {
+            if (node instanceof ScrollBar) {
+                ScrollBar scrollBar = (ScrollBar) node;
+                if (scrollBar.getOrientation() == Orientation.VERTICAL) {
+                    return Optional.of(scrollBar);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private class ScrollbarChangeListener implements ChangeListener<Number> {
+        private boolean isScrolling = false;
+
+        @Override
+        public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+            if (!isUserScrolling) {
+                isUserScrolling = true;
+                pause.playFromStart();
+                disableAutomaticScrolling();
+            }
+        }
     }
 }

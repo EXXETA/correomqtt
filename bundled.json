@@ -11,6 +11,30 @@
         "systopic-plugin"
       ],
       "uninstall": []
+    },
+    "1.0.0": {
+      "install": [
+        "advanced-validator",
+        "base64",
+        "contains-string-validator",
+        "json-format",
+        "save-manipulator",
+        "systopic",
+        "xml-format",
+        "xml-xsd-validator",
+        "zip-manipulator"
+      ],
+      "uninstall": [
+        "advanced-validator-plugin",
+        "base64-plugin",
+        "contains-string-validator-plugin",
+        "json-format-plugin",
+        "save-manipulator-plugin",
+        "systopic-plugin",
+        "xml-format-plugin",
+        "xml-xsd-validator-plugin",
+        "zip-manipulator-plugin"
+      ]
     }
   }
 }

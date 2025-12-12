@@ -41,7 +41,7 @@ public class Launcher {
 
     private static void setLoggerFilePath() {
         // Set the path for file logging to user directory.
-        System.setProperty("correomqtt-logfile", DirectoryUtils.getLogDirectory());
+        System.setProperty("correo.logfile", DirectoryUtils.getLogDirectory());
         System.out.println(DirectoryUtils.getLogDirectory());
 
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();

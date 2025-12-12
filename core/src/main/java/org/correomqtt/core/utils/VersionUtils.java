@@ -28,6 +28,8 @@ public class VersionUtils {
 
     private static final Pattern MAJOR_MINOR_PATTERN = Pattern.compile("^([0-9]+).([0-9]+)");
 
+    private static final Pattern MAJOR_MINOR_PATCH_PATTERN = Pattern.compile("^([0-9]+).([0-9]+).([0-9]+)");
+
     private VersionUtils() {
         // private constructor
     }
@@ -85,6 +87,15 @@ public class VersionUtils {
 
     public static String getMajorMinor(String version) {
         Matcher matcher = MAJOR_MINOR_PATTERN.matcher(version);
+        if (matcher.find() && matcher.groupCount() > 1) {
+            return matcher.group(0);
+        }
+        return "invalid";
+    }
+
+
+    public static String getMajorMinorPatch(String version) {
+        Matcher matcher = MAJOR_MINOR_PATCH_PATTERN.matcher(version);
         if (matcher.find() && matcher.groupCount() > 1) {
             return matcher.group(0);
         }

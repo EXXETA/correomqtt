@@ -40,7 +40,7 @@ public class RepoBuild {
     public static final String BUNDLED_FILENAME = "bundled.json";
     public static final String PLUGINS_FOLDER = "plugins";
 
-    public static void main(String[] args)
+    public static void main(String[] args7bef6fdc4f086589ee9d53ba0e3f59a5688f2a94)
             throws ParserConfigurationException, IOException, SAXException {
         Properties properties = System.getProperties();
         String repoBaseUrl = properties.getProperty("repoBaseUrl");

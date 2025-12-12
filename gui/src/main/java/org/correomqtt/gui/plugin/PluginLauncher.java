@@ -70,6 +70,9 @@ public class PluginLauncher {
                                       PluginManager pluginManager,
                                       BundledPluginList.BundledPlugins bundledPlugins) {
         int installedPlugins = 0;
+        if(bundledPlugins == null){
+            return installedPlugins;
+        }
         for (String pluginId : bundledPlugins.getInstall()) {
             // Already installed?
             if (pluginManager.getPlugin(pluginId) != null) {

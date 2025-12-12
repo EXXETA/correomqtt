@@ -11,9 +11,15 @@ import org.pf4j.update.verifier.CompoundVerifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,7 +73,23 @@ public class CorreoUpdateRepository implements UpdateRepository {
         RepoPluginInfoDTO[] items;
         try {
             log.info("Read plugins of '{}' repository from '{}'", id, originalUrl);
-            items = new ObjectMapper().readValue(url, RepoPluginInfoDTO[].class);
+            switch (url.getProtocol()) {
+                case "file" -> {
+                    byte[] content = Files.readAllBytes(Path.of(url.getPath()));
+                    items = new ObjectMapper().readValue(content, RepoPluginInfoDTO[].class);
+                }
+                case "http", "https" -> {
+                    HttpURLConnection huc = (HttpURLConnection) url.openConnection();
+                    huc.setRequestMethod("GET");
+                    huc.setInstanceFollowRedirects(true);
+                    huc.setConnectTimeout(2000);
+                    huc.setReadTimeout(2000);
+                    try (BufferedReader in = new BufferedReader(new InputStreamReader(huc.getInputStream()))) {
+                        items = new ObjectMapper().readValue(in, RepoPluginInfoDTO[].class);
+                    }
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + url.getProtocol());
+            }
         } catch (IOException e) {
             //TODO event for UI
             log.error("Unable to read plugin repository '{}'", originalUrl, e);

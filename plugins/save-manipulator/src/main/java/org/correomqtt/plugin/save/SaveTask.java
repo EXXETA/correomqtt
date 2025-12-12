@@ -3,6 +3,7 @@ package org.correomqtt.plugin.save;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import org.correomqtt.core.plugin.spi.ExtensionId;
 import org.correomqtt.gui.plugin.spi.DetailViewManipulatorHook;
 import org.pf4j.Extension;
 
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 @Extension
+@ExtensionId("save-manipulator.manipulate")
 public class SaveTask implements DetailViewManipulatorHook {
 
     @Override
