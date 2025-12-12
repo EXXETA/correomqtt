@@ -112,65 +112,6 @@ jobs:
           draft: false
           file: dist/*.msi
           tags: true
-  macbuild:
-    runs-on: macos-12
-    steps:    
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Java Zulu 17
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-      - name: Extract Version
-        uses: nowsprinting/check-version-format-action@v3
-        id: version
-        with:
-          prefix: 'v'
-      - name: Set Version Release
-        run: |
-          mvn -B versions:set -DnewVersion="${{steps.version.outputs.full_without_prefix}}"
-          echo -n "${{steps.version.outputs.full_without_prefix}}" > ./core/src/main/resources/org/correomqtt/core/utils/version.txt
-        if: steps.version.outputs.is_valid == 'true'
-        shell: bash
-      - name: Build
-        run: |
-          mvn -B clean install -DskipTests=true
-        shell: bash
-      - name: Package DMG
-        run: |
-          jpackage \
-            --type app-image \
-            -d dist \
-            -i target \
-            -n CorreoMQTT \
-            --main-jar correomqtt-${{steps.version.outputs.full_without_prefix}}.jar \
-            --app-version 1.${{steps.version.outputs.minor}}.${{steps.version.outputs.patch}} \
-            --icon ./gui/src/main/deploy/package/Icon.icns
-
-          openssl req -subj '/CN=correomqtt.org' -config .github/osx.correo.certconfig -x509 -newkey rsa:4096 -keyout correokey.pem -out correocert.pem -days 365 -nodes
-          openssl pkcs12 -passout pass:1234 -export -out correomqtt.p12 -inkey correokey.pem -in correocert.pem
-          security create-keychain -p 1234 /tmp/correomqtt-db
-          security import correomqtt.p12 -k /tmp/correomqtt-db -P 1234 -T /usr/bin/codesign
-          security default-keychain -d user -s /tmp/correomqtt-db
-          security unlock-keychain -p 1234 /tmp/correomqtt-db
-          security list-keychains -s /tmp/correomqtt-db
-          codesign -h -fs correomqtt.org --keychain /tmp/correomqtt-db --force dist/CorreoMQTT.app
-
-          jpackage \
-            --type dmg \
-            -d dist_mac \
-            -n CorreoMQTT_amd64 \
-            --app-version ${{steps.version.outputs.full_without_prefix}} \
-            --app-image dist/CorreoMQTT.app
-      - name: Release 
-        uses: xresloader/upload-to-github-release@v1.3.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          draft: false
-          file: dist_mac/*.dmg
-          tags: true
   macbuildarm:
     runs-on: macos-14
     steps:    
