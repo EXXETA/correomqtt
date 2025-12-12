@@ -9,13 +9,18 @@ import org.correomqtt.di.SingletonBean;
 import org.correomqtt.di.SoyDi;
 import org.correomqtt.preloader.PreloaderNotification;
 import org.pf4j.PluginState;
+import org.pf4j.PluginWrapper;
 import org.pf4j.update.PluginInfo;
 import org.pf4j.update.UpdateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
+
+import static java.nio.file.Files.delete;
 
 @SingletonBean
 public class PluginLauncher {
@@ -110,17 +115,41 @@ public class PluginLauncher {
             if (pluginManager.getPlugin(pluginId) == null) {
                 continue;
             }
-            boolean uninstalled = pluginManager.deletePlugin(pluginId);
+            LOGGER.info("Uninstalling deprecated plugin '{}'", pluginId);
+            boolean uninstalled = deletePluginFilesDirectly(pluginManager, pluginId);
             if (uninstalled) {
                 LOGGER.info("Uninstalled deprecated plugin '{}'", pluginId);
                 notifyPreloader.accept(new PreloaderNotification(resources.getString("pluginUpdateManagerUninstalled") + " " + pluginId));
-                return 1;
             } else {
                 LOGGER.error("Cannot uninstall plugin '{}'", pluginId);
             }
             uninstalledPlugins++;
         }
         return uninstalledPlugins;
+    }
+
+    /**
+     * Deletes plugin files directly from the filesystem.
+     * This method tries to find and remove the plugin JAR file and any associated files.
+     */
+    private boolean deletePluginFilesDirectly(PluginManager pluginManager, String pluginId) {
+        try {
+            PluginWrapper pluginWrapper = pluginManager.getPlugin(pluginId);
+            if (pluginWrapper == null) {
+                return true; // Consider it as successfully deleted if not found
+            }
+
+            Path pluginPath = pluginWrapper.getPluginPath();
+            if (pluginPath == null || !Files.exists(pluginPath)) {
+                return true;
+            }
+
+            delete(pluginPath);
+            return true;
+
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private int updateExisitingPlugins(UpdateManager updateManager, PluginManager pluginManager) {

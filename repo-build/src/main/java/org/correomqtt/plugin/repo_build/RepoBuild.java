@@ -97,7 +97,7 @@ public class RepoBuild {
                 continue;
             }
             RepoPluginInfoDTO repoPluginInfoDTO = getRepoPluginInfoDto(moduleId,
-                    version,
+                    version.equals("1.0-SNAPSHOT") ? "1.0.0" : version,
                     repoBaseUrl,
                     oldPluginInfo.get(moduleId));
             repoPluginInfoDTOList.add(repoPluginInfoDTO);
