@@ -349,5 +349,4 @@ public class PluginManager extends JarPluginManager {
     public VersionManager getVersionManager() {
         return new NoSemverVersionManager();
     }
-
 }
