@@ -1455,7 +1455,7 @@ Caused by: org.correomqtt.di.SoyDiException: Can not inject class org.correomqtt
 2024-02-09T13:07:07.485+0100	ClassGraph	-------------- Scanning Path: /opt/repos/correo/correomqtt/gui/target/classes/org/correomqtt/gui/theme/dark (took 0.000306 sec)
 2024-02-09T13:07:07.485+0100	ClassGraph	---------------- Found classfile within subpackage of accepted package: org/correomqtt/gui/theme/dark/DarkThemeProvider.class
 2024-02-09T13:07:07.528+0100	ClassGraph	------------------ Parsing classfile (took 0.000464 sec)
-2024-02-09T13:07:07.528+0100	ClassGraph	-------------------- Found class org.correomqtt.gui.theme.dark.DarkThemeProvider
+2024-02-09T13:07:07.528+0100	ClassGraph	-------------------- Found class org.correomqtt.gui.theme.dark.DarkBreezeThemeProvider
 2024-02-09T13:07:07.528+0100	ClassGraph	---------------------- Superclass: org.correomqtt.gui.theme.BaseThemeProvider
 2024-02-09T13:07:07.528+0100	ClassGraph	---------------------- Interfaces: org.correomqtt.gui.theme.ThemeProvider, org.correomqtt.gui.plugin.spi.ThemeProviderHook
 2024-02-09T13:07:07.528+0100	ClassGraph	---------------------- Class annotations: @org.pf4j.Extension
@@ -5736,7 +5736,7 @@ Caused by: org.correomqtt.di.SoyDiException: Can not inject class org.correomqtt
 2024-02-09T13:08:53.518+0100	ClassGraph	-------------- Scanning Path: /opt/repos/correo/correomqtt/gui/target/classes/org/correomqtt/gui/theme/dark (took 0.000346 sec)
 2024-02-09T13:08:53.518+0100	ClassGraph	---------------- Found classfile within subpackage of accepted package: org/correomqtt/gui/theme/dark/DarkThemeProvider.class
 2024-02-09T13:08:53.562+0100	ClassGraph	------------------ Parsing classfile (took 0.000466 sec)
-2024-02-09T13:08:53.563+0100	ClassGraph	-------------------- Found class org.correomqtt.gui.theme.dark.DarkThemeProvider
+2024-02-09T13:08:53.563+0100	ClassGraph	-------------------- Found class org.correomqtt.gui.theme.dark.DarkBreezeThemeProvider
 2024-02-09T13:08:53.563+0100	ClassGraph	---------------------- Superclass: org.correomqtt.gui.theme.BaseThemeProvider
 2024-02-09T13:08:53.563+0100	ClassGraph	---------------------- Interfaces: org.correomqtt.gui.theme.ThemeProvider, org.correomqtt.gui.plugin.spi.ThemeProviderHook
 2024-02-09T13:08:53.563+0100	ClassGraph	---------------------- Class annotations: @org.pf4j.Extension

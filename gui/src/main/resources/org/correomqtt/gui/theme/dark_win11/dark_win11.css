@@ -1,0 +1,298 @@
+/* windows11-dark-theme.css */
+.root {
+    -fx-base: #1a1a1a; /* Dark Background */
+    -fx-background: #1a1a1a; /* Dark Background */
+    -fx-color: #1a1a1a; /* Dark Background */
+    -fx-control-inner-background: #1a1a1a; /* Dark Control Background */
+    -fx-control-inner-background-alt: derive(-fx-control-inner-background, 2.5%);
+
+    -fx-light-text-color: rgb(198, 198, 198); /* Light Text for dark background */
+    -fx-mid-text-color: rgb(220, 220, 220); /* Mid Gray for moderate visibility */
+    -fx-dark-text-color: rgb(50, 50, 50); /* Almost Black for certain components */
+
+    -fx-accent: rgb(57, 139, 228); /* Windows 11 Accent Color */
+
+    -fx-selection-bar-non-focused: rgb(80, 80, 80); /* Selection color for non-focused elements */
+}
+
+.root .ikonli-font-icon {
+    -fx-icon-color: white; /* Icons in White for contrast */
+}
+
+.successIcon .ikonli-font-icon {
+    -fx-icon-color: green; /* Green for success */
+}
+
+.exclamationCircleSolid .ikonli-font-icon,
+.failIcon .ikonli-font-icon {
+    -fx-icon-color: #d9534f; /* Red for errors */
+}
+
+.warnIcon .ikonli-font-icon {
+    -fx-icon-color: orange; /* Orange for warnings */
+}
+
+.ignoreIcon .ikonli-font-icon {
+    -fx-icon-color: gray; /* Gray for ignored elements */
+}
+
+/* Fix derived prompt color for text fields */
+.text-input {
+    -fx-background-color: #252525; /* Input box background */
+    -fx-prompt-text-fill: #b5b5b5; /* Prompt color */
+}
+
+/* Keep prompt invisible when focused (above color fix overrides it) */
+.text-input:focused {
+    -fx-prompt-text-fill: transparent; /* Invisible when focused */
+}
+
+.basicColors {
+    -fx-background-color: #333333; /* Slightly lighter gray */
+    -fx-text-fill: #FFFFFF; /* White text */
+}
+
+.styled-text-area {
+    -fx-background-color: #292929; /* Background for styled text area */
+}
+
+.connections {
+    -fx-background-color: #252525; /* Background color for connections view */
+}
+
+.errorOnSave {
+    -fx-background-color: #d9534f; /* Error background */
+}
+
+.inactive {
+    -fx-text-fill: #888888; /* Gray for inactive text */
+}
+
+.editMenu {
+    -fx-background-color: #252525;
+    -fx-border-color: #1a1a1a;
+}
+
+.codeAreaPayload {
+    -fx-background-color: #252525; /* Payload Background */
+    -fx-text-fill: #FFFFFF; /* Payload Text */
+}
+
+.code-area .text{
+    -fx-background-color: #252525;
+    -fx-fill: #FFFFFF;
+}
+
+.styled-text-area{
+    -fx-fill: #FFFFFF;
+    -fx-background-color: #252525;
+}
+
+.code-area .text .caret,
+.styled-text-area .caret {
+    -fx-stroke: #FFFFFF;
+}
+
+/* Control Bar View */
+.brokerInfo {
+    -fx-text-fill: #aaaaaa; /* Light Gray for Broker Info */
+}
+
+.brokerStatus {
+    -fx-text-fill: #666666; /* Darker Gray for Broker Status */
+}
+
+/* Detail View */
+.codeArea {
+    -fx-background-color: #252525; /* Dark Background for Code Area */
+    -fx-text-fill: #FFFFFF; /* White text */
+}
+
+.emptyPayloadLabel {
+    -fx-text-fill: #888888; /* Gray for Empty Payload Label */
+}
+
+/* Global Styles */
+.tag {
+    -fx-background-color: #125491; /* Default Tag Color */
+    -fx-text-fill: white; /* Tag Text Color */
+}
+
+.tag.special {
+    -fx-background-color: coral; /* Special Tag Color */
+}
+
+.tag.secure {
+    -fx-background-color: #1a611a; /* Secure Tag Color */
+}
+
+.tag.inactive {
+    -fx-background-color: #999999; /* Inactive Tag Color */
+}
+
+.tag.valid {
+    -fx-background-color: #59a950; /* Valid Tag Color */
+}
+
+.tag.invalid {
+    -fx-background-color: #a9423f; /* Invalid Tag Color */
+}
+
+.secondaryText {
+    -fx-text-fill: #aaaaaa; /* Secondary Text Color */
+}
+
+.list-view {
+    -fx-background-color: #212121; /* Dark list view background */
+    -fx-border-width: 1px;
+    -fx-border-color: #373737; /* Dark list view border */
+}
+
+.list-view:focused {
+    -fx-border-color: #5e5e5e; /* Focused Border Color */
+}
+
+.list-view .list-cell .topic {
+    -fx-text-fill: #ffffff; /* White text for topics */
+}
+
+.list-view .list-cell:odd {
+    -fx-background-color: #292929; /* Odd rows */
+}
+
+.list-view .list-cell:even {
+    -fx-background-color: #212121; /* Even rows */
+}
+
+.list-view .list-cell:filled:selected {
+    -fx-background-color: #2888ef; /* Selected Item Background */
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected {
+    -fx-background-color: #2180d7;
+}
+
+.list-view .list-cell:filled:selected .secondaryText {
+    -fx-text-fill: #cccccc; /* Light Gray for selected secondary text */
+}
+
+.list-view .list-cell:filled:selected .topic {
+    -fx-text-fill: #FFFFFF; /* White for selected topic */
+}
+
+.list-view .list-cell:filled:selected .secondaryText.dirty {
+    -fx-text-fill: #888888; /* Dirty state text */
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected:odd {
+    -fx-background-color: #2888ef;
+}
+
+.combo-box .list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected:even {
+    -fx-background-color: #2888ef;
+}
+
+/* Button Styles */
+.button {
+    -fx-background-color: #3d3d3d; /* Default button background */
+    -fx-text-fill: white; /* White text for buttons */
+    -fx-border-color: #4d4d4d; /* Dark border */
+}
+
+.button:hover {
+    -fx-background-color: #4b4b4b; /* Highlight on hover */
+}
+
+.button:pressed {
+    -fx-background-color: #5e9ece; /* Color on press */
+    -fx-border-color: #5e9ece; /* Change border color on press */
+}
+
+/* CheckBox Styles */
+.check-box > .box {
+    -fx-background-radius: 2;
+    -fx-border-radius: 2;
+    -fx-border-color: #4d4d4d; /* CheckBox Border */
+    -fx-background-color: transparent; /* Clear Background */
+}
+
+.check-box:focused > .box {
+    -fx-border-color: #9ba1a7; /* Focused CheckBox Border */
+}
+
+.check-box:hover > .box {
+    -fx-border-color: #3daee9; /* Hover Border */
+}
+
+.check-box:selected > .box,
+.check-box:indeterminate > .box {
+    -fx-background-color: #3daee9; /* Selected CheckBox Color */
+}
+
+.check-box:selected > .box > .mark,
+.check-box:indeterminate > .box > .mark {
+    visibility: hidden; /* Hide mark in selected/indeterminate state */
+}
+
+/* Table View Styles */
+.table-view {
+    -fx-background-color: transparent; /* Transparent background */
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #2d2d2d; /* Dark Header Background */
+}
+
+.table-view .column-header {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #4d4d4d; /* Dark table borders */
+}
+
+/* Menu Styles */
+.menu-bar {
+    -fx-background-color: #1d1d1d; /* Dark menu bar */
+}
+
+.menu-button:focused,
+.menu-button:hover,
+.menu-button:showing {
+    -fx-background-color: #3daee9; /* Menu button highlight */
+}
+
+.menu-item:focused,
+.menu-item:showing,
+.menu-item:hover {
+    -fx-background-color: #3daee9; /* Menu item highlight */
+}
+
+/* Scrollbar Styles */
+.scroll-bar .thumb {
+    -fx-background-color: #4a4a4a; /* Dark scrollbar thumb */
+}
+
+.scroll-bar .track {
+    -fx-background-color: #1d1d1d; /* Scrollbar track color */
+}
+
+.scroll-bar:horizontal .increment-button,
+.scroll-bar:horizontal .decrement-button,
+.scroll-bar:vertical .increment-button,
+.scroll-bar:vertical .decrement-button {
+    -fx-background-color: transparent; /* Transparent buttons for scrollbar */
+    -fx-background-radius: 0.0em;
+}
+
+/* Tab Pane Styles */
+.tab-pane .tab {
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-background-color: #373737; /* Default Tab Background */
+}
+
+.tab-pane .tab:hover {
+    -fx-background-color: #4b4b4b; /* Hover Tab Background */
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #5e5e5e; /* Selected Tab Background */
+}

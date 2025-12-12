@@ -1,4 +1,4 @@
-package org.correomqtt.gui.theme.light;
+package org.correomqtt.gui.theme.dark_breeze;
 
 import javafx.scene.paint.Color;
 import org.correomqtt.gui.theme.BaseThemeProvider;
@@ -8,25 +8,26 @@ import org.correomqtt.gui.plugin.spi.ThemeProviderHook;
 import org.pf4j.Extension;
 
 @Extension
-public class LightThemeProvider extends BaseThemeProvider implements ThemeProvider, ThemeProviderHook {
+public class DarkBreezeThemeProvider extends BaseThemeProvider implements ThemeProvider, ThemeProviderHook {
 
     @Override
     public String getName() {
-        return "Light";
+        return "Dark Breeze";
     }
 
     @Override
     public String getCss() {
-        return getCssFromInputStream(LightThemeProvider.class.getResourceAsStream("light.css"));
+        System.out.println("DTP");
+        return getCssFromInputStream(DarkBreezeThemeProvider.class.getResourceAsStream("dark_breeze.css"));
     }
 
     @Override
     public IconMode getIconMode() {
-        return IconMode.BLACK;
+        return IconMode.WHITE;
     }
 
     @Override
     public Color getBackgroundColor() {
-        return Color.web("#eff0f1");
+        return Color.web("#313131");
     }
 }
