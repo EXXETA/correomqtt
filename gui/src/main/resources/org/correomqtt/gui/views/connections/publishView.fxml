@@ -77,6 +77,38 @@
                             <Insets right="5.0"/>
                         </HBox.margin>
                     </IconToggleButton>
+                    <IconButton fx:id="minifyButton" mnemonicParsing="false" icon="mdi-compress" onAction="#onMinify">
+                        <tooltip>
+                            <Tooltip text="%publishViewMinifyTooltip"/>
+                        </tooltip>
+                        <HBox.margin>
+                            <Insets right="5.0"/>
+                        </HBox.margin>
+                    </IconButton>
+                    <IconButton fx:id="fixJsonButton" mnemonicParsing="false" icon="mdi-auto-fix" onAction="#onFixJson">
+                        <tooltip>
+                            <Tooltip text="%publishViewFixJsonTooltip"/>
+                        </tooltip>
+                        <HBox.margin>
+                            <Insets right="5.0"/>
+                        </HBox.margin>
+                    </IconButton>
+                    <IconButton fx:id="escapeButton" mnemonicParsing="false" icon="mdi-code-tags" onAction="#onEscape">
+                        <tooltip>
+                            <Tooltip text="%publishViewEscapeTooltip"/>
+                        </tooltip>
+                        <HBox.margin>
+                            <Insets right="5.0"/>
+                        </HBox.margin>
+                    </IconButton>
+                    <IconButton fx:id="unescapeButton" mnemonicParsing="false" icon="mdi-code-tags-check" onAction="#onUnescape">
+                        <tooltip>
+                            <Tooltip text="%publishViewUnescapeTooltip"/>
+                        </tooltip>
+                        <HBox.margin>
+                            <Insets right="5.0"/>
+                        </HBox.margin>
+                    </IconButton>
                     <Pane prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
                         <HBox.margin>
                             <Insets right="5.0"/>

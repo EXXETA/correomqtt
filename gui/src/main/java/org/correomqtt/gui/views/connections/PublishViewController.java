@@ -19,8 +19,6 @@ import javafx.stage.Stage;
 import org.correomqtt.core.CoreManager;
 import org.correomqtt.core.concurrent.SimpleTaskErrorResult;
 import org.correomqtt.core.connection.ConnectionStateChangedEvent;
-import org.correomqtt.di.SoyEvents;
-import org.correomqtt.di.Observes;
 import org.correomqtt.core.exception.CorreoMqttException;
 import org.correomqtt.core.importexport.messages.ImportMessageFailedEvent;
 import org.correomqtt.core.importexport.messages.ImportMessageStartedEvent;
@@ -40,6 +38,9 @@ import org.correomqtt.core.pubsub.PublishTaskFactory;
 import org.correomqtt.di.Assisted;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
+import org.correomqtt.di.Observes;
+import org.correomqtt.di.SoyEvents;
+import org.correomqtt.gui.formats.Format;
 import org.correomqtt.gui.model.MessagePropertiesDTO;
 import org.correomqtt.gui.plugin.spi.MessageContextMenuHook;
 import org.correomqtt.gui.plugin.spi.PublishMenuHook;
@@ -48,6 +49,7 @@ import org.correomqtt.gui.transformer.MessageTransformer;
 import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.AutoFormatPayload;
 import org.correomqtt.gui.utils.CheckTopicHelper;
+import org.correomqtt.gui.utils.CodeAreaAutoComplete;
 import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.LoadingViewController;
@@ -109,8 +111,21 @@ public class PublishViewController extends BaseMessageBasedViewController {
     @FXML
     private ToggleButton publishViewFormatToggleButton;
 
+    @FXML
+    private Button minifyButton;
+
+    @FXML
+    private Button escapeButton;
+
+    @FXML
+    private Button unescapeButton;
+
+    @FXML
+    private Button fixJsonButton;
+
     private LoadingViewController loadingViewController;
     private ChangeListener<String> payloadCodeAreaChangeListener;
+    private Format currentFormat;
 
 
 
@@ -167,10 +182,13 @@ public class PublishViewController extends BaseMessageBasedViewController {
         payloadCodeArea.prefWidthProperty().bind(codeAreaScrollPane.widthProperty());
         payloadCodeArea.prefHeightProperty().bind(codeAreaScrollPane.heightProperty());
 
+        // Enable auto-complete for brackets and quotes
+        CodeAreaAutoComplete.setupAutoComplete(payloadCodeArea);
+
         payloadCodeAreaChangeListener = (observableValue, s, t1) -> checkFormat();
 
         publishViewFormatToggleButton.setSelected(true);
-        publishViewFormatToggleButton.setOnMouseClicked(mouseEvent -> autoFormatPayload.autoFormatPayload(
+        publishViewFormatToggleButton.setOnMouseClicked(mouseEvent -> currentFormat = autoFormatPayload.autoFormatPayload(
                 payloadCodeArea.getText(),
                 publishViewFormatToggleButton.isSelected(),
                 getConnectionId(),
@@ -200,7 +218,81 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     private void checkFormat() {
-        autoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, payloadCodeAreaChangeListener);
+        currentFormat = autoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, payloadCodeAreaChangeListener);
+    }
+
+    @FXML
+    private void onMinify() {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Minify button clicked: {}", getConnectionId());
+        }
+
+        if (currentFormat != null) {
+            String minified = currentFormat.getMinifiedString();
+            payloadCodeArea.textProperty().removeListener(payloadCodeAreaChangeListener);
+            payloadCodeArea.replaceText(minified);
+            payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
+            publishViewFormatToggleButton.setSelected(false);
+        }
+    }
+
+    @FXML
+    private void onFixJson() {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Fix JSON button clicked: {}", getConnectionId());
+        }
+
+        if (currentFormat == null) {
+            publishViewFormatToggleButton.setSelected(true);
+            checkFormat();
+        }
+
+        if (currentFormat != null) {
+            String fixed = currentFormat.getAutoFixedString();
+            payloadCodeArea.textProperty().removeListener(payloadCodeAreaChangeListener);
+            payloadCodeArea.replaceText(fixed);
+            payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
+            publishViewFormatToggleButton.setSelected(true);
+            checkFormat();
+        }
+    }
+
+    @FXML
+    private void onEscape() {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Escape button clicked: {}", getConnectionId());
+        }
+
+        String escaped = currentFormat != null ? currentFormat.getEscapedString() : payloadCodeArea.getText()
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+
+        payloadCodeArea.textProperty().removeListener(payloadCodeAreaChangeListener);
+        payloadCodeArea.replaceText(escaped);
+        payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
+        publishViewFormatToggleButton.setSelected(false);
+    }
+
+    @FXML
+    private void onUnescape() {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Unescape button clicked: {}", getConnectionId());
+        }
+
+        String text = payloadCodeArea.getText();
+        String unescaped = text.replace("\\\\", "\\")
+                .replace("\\n", "\n")
+                .replace("\\r", "\r")
+                .replace("\\t", "\t")
+                .replace("\\\"", "\"");
+
+        payloadCodeArea.textProperty().removeListener(payloadCodeAreaChangeListener);
+        payloadCodeArea.replaceText(unescaped);
+        payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
+        checkFormat();
     }
 
     private void initTopicComboBox() {

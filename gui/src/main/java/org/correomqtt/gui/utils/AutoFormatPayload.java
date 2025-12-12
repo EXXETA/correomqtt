@@ -1,7 +1,7 @@
 package org.correomqtt.gui.utils;
 
-import java.util.Arrays;
 import javafx.beans.value.ChangeListener;
+import javafx.scene.control.Tooltip;
 import org.correomqtt.core.plugin.PluginManager;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.gui.formats.Format;
@@ -41,24 +41,48 @@ public class AutoFormatPayload {
             LOGGER.debug("Auto formatting payload: {}", connectionId);
         }
 
-        Format foundFormat;
-        // Find the first format that is valid.
+        Format foundFormat = null;
         ArrayList<Format> availableFormats = new ArrayList<>(pluginManager.getExtensions(DetailViewFormatHook.class));
-        availableFormats.add(new Plain());
-        foundFormat = availableFormats.stream()
-                .filter(Objects::nonNull)
-                .filter(format -> {
-                            try {
-                                format.setText(payload);
-                                return format.isValid();
-                            } catch (Exception e) {
-                                LOGGER.error("Formatting check failed. ", e);
-                                return false;
-                            }
-                        }
-                )
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Plain format did not match."));
+
+        // 1) Prefer valid (fully parseable) formats from plugins
+        for (Format format : availableFormats) {
+            if (format == null) {
+                continue;
+            }
+            try {
+                format.setText(payload);
+                if (format.isValid()) {
+                    foundFormat = format;
+                    break;
+                }
+            } catch (Exception e) {
+                LOGGER.error("Formatting check failed. ", e);
+            }
+        }
+
+        // 2) If none are valid, pick a candidate format (e.g. JSON while typing with errors)
+        if (foundFormat == null) {
+            for (Format format : availableFormats) {
+                if (format == null) {
+                    continue;
+                }
+                try {
+                    format.setText(payload);
+                    if (format.isCandidate()) {
+                        foundFormat = format;
+                        break;
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("Formatting check failed. ", e);
+                }
+            }
+        }
+
+        // 3) Fallback to plain text
+        if (foundFormat == null) {
+            foundFormat = new Plain();
+            foundFormat.setText(payload);
+        }
 
 
         // ChangeListener<String> listener is needed to disable it when the text of the PublishCodeArea changes. It is reenabled after the manipulation.
@@ -66,10 +90,33 @@ public class AutoFormatPayload {
             codeArea.textProperty().removeListener(listener);
         }
 
-        codeArea.clear();
         try {
-            codeArea.replaceText(0, 0, foundFormat.getPrettyString());
+            String prettyString = foundFormat.getPrettyString();
+            if (!Objects.equals(codeArea.getText(), prettyString)) {
+                int caretPosition = codeArea.getCaretPosition();
+                codeArea.replaceText(prettyString);
+                codeArea.moveTo(Math.min(caretPosition, prettyString.length()));
+            }
             codeArea.setStyleSpans(0, foundFormat.getFxSpans());
+
+            final String tooltipKey = "autoFormatPayload.tooltip";
+            Tooltip existingTooltip = (Tooltip) codeArea.getProperties().get(tooltipKey);
+            var error = foundFormat.getError();
+            if (error.isPresent()) {
+                var formatError = error.get();
+                String errorText = (formatError.line() > 0 && formatError.column() > 0)
+                        ? ("Line " + formatError.line() + ", Column " + formatError.column() + ": " + formatError.message())
+                        : formatError.message();
+                if (existingTooltip == null) {
+                    existingTooltip = new Tooltip();
+                    codeArea.getProperties().put(tooltipKey, existingTooltip);
+                    Tooltip.install(codeArea, existingTooltip);
+                }
+                existingTooltip.setText(errorText);
+            } else if (existingTooltip != null) {
+                Tooltip.uninstall(codeArea, existingTooltip);
+                codeArea.getProperties().remove(tooltipKey);
+            }
         } catch (Exception e) {
             LOGGER.error("Formatter failed. ", e);
         }
