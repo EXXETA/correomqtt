@@ -1,22 +1,23 @@
-package org.correomqtt.gui.theme.dark_win11;
+package org.correomqtt.gui.theme.dark;
 
 import javafx.scene.paint.Color;
-import org.correomqtt.gui.plugin.spi.ThemeProviderHook;
 import org.correomqtt.gui.theme.BaseThemeProvider;
 import org.correomqtt.gui.theme.IconMode;
 import org.correomqtt.gui.theme.ThemeProvider;
+import org.correomqtt.gui.plugin.spi.ThemeProviderHook;
 import org.pf4j.Extension;
 
 @Extension
-public class DarkWin11ThemeProvider extends BaseThemeProvider implements ThemeProvider, ThemeProviderHook {
+public class DarkThemeProvider extends BaseThemeProvider implements ThemeProvider, ThemeProviderHook {
+
     @Override
     public String getName() {
-        return "Dark Windows";
+        return "Dark";
     }
 
     @Override
     public String getCss() {
-        return getCssFromInputStream(DarkWin11ThemeProvider.class.getResourceAsStream("dark_win11.css"));
+        return getCssFromInputStream(DarkThemeProvider.class.getResourceAsStream("dark.css"));
     }
 
     @Override

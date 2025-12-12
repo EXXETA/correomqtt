@@ -1,0 +1,435 @@
+.root {
+    -fx-base: #1C1C1E; /* Dark background */
+    -fx-background: #1C1C1E;
+    -fx-color: #FFFFFF;
+    -fx-control-inner-background: #2C2C2E; /* Controls background */
+    -fx-control-inner-background-alt: derive(-fx-control-inner-background, 5%);
+    -fx-accent: #007AFF; /* Bright blue for accent */
+}
+
+/* Text colors */
+.faded-text {
+    -fx-text-fill: #8E8E93; /* Light gray */
+}
+
+.primary-text {
+    -fx-text-fill: #FFFFFF; /* White */
+}
+
+.secondary-text {
+    -fx-text-fill: #D1D1D6; /* Light gray for secondary elements */
+}
+
+/* Icons */
+.ikonli-font-icon {
+    -fx-icon-color: #FFFFFF; /* Default icon color */
+}
+
+.successIcon .ikonli-font-icon {
+    -fx-icon-color: #4CD964; /* Green for success */
+}
+
+.exclamationCircleSolid .ikonli-font-icon,
+.failIcon .ikonli-font-icon {
+    -fx-icon-color: #F53B20; /* Red for error */
+}
+
+.warnIcon .ikonli-font-icon {
+    -fx-icon-color: #FFA500; /* Orange for warnings */
+}
+
+.ignoreIcon .ikonli-font-icon {
+    -fx-icon-color: #AAB8C2; /* Gray for ignored elements */
+}
+
+/* Text input */
+.text-input {
+    -fx-background-color: #2C2C2E; /* Input background */
+    -fx-prompt-text-fill: #8E8E93; /* Placeholder text */
+}
+
+.text-input:focused {
+    -fx-prompt-text-fill: transparent; /* Hide prompt when focused */
+}
+
+/* Message Search Text Field */
+.messageSearchTextField {
+    -fx-padding: 5px 8px; /* Adjust padding */
+}
+
+/* Scroll bar */
+.scroll-bar > .increment-button > .increment-arrow,
+.scroll-bar > .decrement-button > .decrement-arrow {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar > .increment-button:hover > .increment-arrow,
+.scroll-bar > .decrement-button:hover > .decrement-arrow {
+    -fx-background-color: #007AFF; /* Highlight color */
+}
+
+.scroll-bar > .increment-button:pressed > .increment-arrow,
+.scroll-bar > .decrement-button:pressed > .decrement-arrow {
+    -fx-background-color: #0051A1; /* Darker on press */
+}
+
+.scroll-bar .thumb {
+    -fx-background-radius: 4;
+    -fx-background-color: #3A3A3C; /* Thumb color */
+}
+
+.scroll-bar .track {
+    -fx-background-color: #2C2C2E; /* Track color */
+}
+
+/* Basic Colors */
+.basicColors {
+    -fx-background-color: #2A2A2A;
+    -fx-text-fill: #FFFFFF; /* White */
+}
+
+/* Styled Text Area */
+.styled-text-area {
+    -fx-background-color: #2C2C2E; /* Background */
+    -fx-text-fill: #D1D1D6; /* Text color */
+}
+
+/* Inactive State */
+.inactive {
+    -fx-text-fill: #bdbdbd;
+}
+
+/* Controls */
+.editMenu {
+    -fx-background-color: #2C2C2E;
+    -fx-border-color: #3A3A3C; /* Border color */
+}
+
+/* Code Area */
+.codeAreaPayload {
+    -fx-background-color: #2C2C2E; /* Background */
+    -fx-text-fill: #D1D1D6; /* Text color */
+    -fx-padding: 0;
+}
+
+/* Global Tag Styles */
+.tag {
+    -fx-background-color: #007AFF;
+    -fx-text-fill: #FFFFFF;
+}
+
+.tag.special {
+    -fx-background-color: #FF6F40; /* Coral */
+}
+
+.tag.secure {
+    -fx-background-color: #3DBF3D; /* Green */
+}
+
+.tag.inactive {
+    -fx-background-color: #999999; /* Gray */
+}
+
+.tag.valid {
+    -fx-background-color: #59a950; /* Valid green */
+}
+
+.tag.invalid {
+    -fx-background-color: #D65047; /* Invalid red */
+}
+
+/* Toggle Button */
+.toggle-button {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-background-color: #3A3A3C; /* Default */
+}
+
+.toggle-button:hover {
+    -fx-border-color: #007AFF; /* On hover */
+}
+
+.toggle-button:pressed {
+    -fx-background-color: #0051A1; /* Darker when pressed */
+}
+
+/* List View */
+.list-view {
+    -fx-background-color: #2C2C2E;
+    -fx-border-color: transparent;
+}
+
+.list-view .list-cell {
+    -fx-background-color: #2C2C2E; /* Default cell background */
+    -fx-border-color: #3A3A3C; /* Border between cells */
+}
+
+.list-view .list-cell:odd {
+    -fx-background-color: #3A3A3C; /* Odd row background */
+}
+
+.list-view .list-cell:even {
+    -fx-background-color: #2C2C2E; /* Even row background */
+}
+
+.list-view .list-cell:filled:selected {
+    -fx-background-color: #007AFF; /* Selected color */
+}
+
+.list-view .list-cell:filled:selected .secondary-text {
+    -fx-text-fill: #FFFFFF; /* Selected secondary text */
+}
+
+/* ComboBox */
+.combo-box-base {
+    -fx-background-color: #2C2C2E; /* Background */
+    -fx-border-color: #3A3A3C; /* Border color */
+}
+
+.combo-box-base:hover {
+    -fx-border-color: #007AFF; /* On hover */
+}
+
+/* Toolbar */
+.toolbar.top {
+    -fx-background-color: #2C2C2E; /* Toolbars */
+    -fx-border-color: transparent;
+}
+
+/* Tab Pane */
+.tab-pane .tab {
+    -fx-background-color: #2C2C2E; /* Tab background */
+    -fx-text-fill: #D1D1D6; /* Tab text */
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #007AFF; /* Selected tab color */
+    -fx-text-fill: #FFFFFF; /* Selected tab text */
+}
+
+/* Menu Styles */
+.menu-bar {
+    -fx-background-color: #ffffff; /* Menu bar */
+}
+
+.menu-item {
+    -fx-text-fill: #D1D1D6; /* Text color for menu items */
+}
+
+.menu-item:focused, .menu-item:hover {
+    -fx-background-color: #007AFF; /* Highlight on hover */
+    -fx-text-fill: #FFFFFF; /* Text color on hover */
+}
+
+/* Scrollbar */
+.scroll-bar .track {
+    -fx-background-color: #2C2C2E; /* Track color */
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #3A3A3C; /* Thumb color */
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #007AFF; /* Highlight Color */
+}
+
+/* Error indications */
+.errorOnSave {
+    -fx-background-color: #F53B20; /* Error Red */
+}
+
+.emptyError {
+    -fx-background-color: #E8C1C1; /* Light error */
+}
+
+/* Special elements */
+.hello {
+    -fx-background-color: #007AFF; /* Hello background */
+}
+
+/* Code Area with specific styles */
+.code-area .text {
+    -fx-background-color: #2C2C2E; /* Background */
+    -fx-fill: #D1D1D6; /* Text color */
+}
+
+/* Custom states for various elements */
+.tab.dirty .tab-label {
+    -fx-text-fill: #EAB700; /* Changed text color for dirty tab */
+}
+
+.messageView .published {
+    -fx-text-fill: #8E8E93; /* Gray for published */
+}
+
+.messageView .succeeded {
+    -fx-text-fill: #4CD964; /* Green for succeeded messages */
+}
+
+.messageView .failed {
+    -fx-text-fill: #F53B20; /* Red for failed messages */
+}
+
+/* Specific styles for rich text and these components */
+.styled-text-area .commentXML {
+    -fx-fill: #60B1A6; /* Comment green */
+}
+
+.styled-text-area .tagmarkXML {
+    -fx-fill: #436DD5; /* Tag mark blue */
+}
+
+.styled-text-area .anytagXML {
+    -fx-fill: #4B79EC; /* Any tag blue */
+}
+
+.styled-text-area .attributeXML {
+    -fx-fill: #E33C42; /* Attribute red */
+}
+
+.styled-text-area .avalueXML {
+    -fx-fill: #3BDE3B; /* Value green */
+}
+
+.styled-text-area .braceJSON,
+.styled-text-area .bracketJSON {
+    -fx-fill: #4B7AEE; /* Brace color */
+}
+
+.styled-text-area .keyJSON {
+    -fx-fill: #4B7AEE; /* Key color */
+}
+
+.styled-text-area .valueJSON {
+    -fx-fill: #3BDF3B; /* JSON value green */
+}
+
+.styled-text-area .numberJSON {
+    -fx-fill: #DF3B41; /* Number red */
+}
+
+.styled-text-area .booleanJSON {
+    -fx-fill: #F09C00; /* Boolean orange */
+}
+
+.styled-text-area .nullJSON {
+    -fx-fill: #C6C6C6; /* Null gray */
+}
+
+/* General styles */
+.split-pane {
+    -fx-border-width: 0;
+    -fx-background-color: #3A3A3C; /* Background for split pane */
+}
+
+.split-pane:horizontal > .split-pane-divider,
+.split-pane:vertical > .split-pane-divider {
+    -fx-background-color: #5C5C5E; /* Divider color */
+}
+
+/* Custom buttons with menu button styles */
+.content-holder .menu-button {
+    -fx-background-color: #3A3A3C; /* Menu button background */
+    -fx-border-color:#3A3A3C; /* Border color */
+}
+
+.content-holder .menu-button:focused {
+    -fx-border-color: #007AFF; /* Focused border color */
+}
+
+.content-holder .menu-button:hover {
+    -fx-border-color: #007AFF; /* Hover effect */
+}
+
+.content-holder .menu-button:pressed {
+    -fx-background-color: #0051A1; /* Pressed effect */
+}
+
+/* General adjustments for input/button elements */
+.button {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-background-color: #3A3A3C; /* Default color */
+    -fx-border-color:#3A3A3C; /* Border color */
+}
+
+.button:hover {
+    -fx-border-color: #007AFF; /* On hover */
+}
+
+.button:pressed {
+    -fx-background-color: #0051A1; /* Darker on press */
+}
+
+/* General adjustments for input/button elements */
+.menu-button {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-background-color: #3A3A3C; /* Default color */
+    -fx-border-color:#3A3A3C; /* Border color */
+}
+
+.menu-button:hover {
+    -fx-border-color: #007AFF; /* On hover */
+}
+
+.menu-button:pressed {
+    -fx-background-color: #0051A1; /* Darker on press */
+}
+
+/* General adjustments for input/button elements */
+.toggle-button {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-background-color: #3A3A3C; /* Default color */
+    -fx-border-color:#3A3A3C; /* Border color */
+}
+
+.toggle-button:hover {
+    -fx-border-color: #007AFF; /* On hover */
+}
+
+.toggle-button:pressed {
+    -fx-background-color: #0051A1; /* Darker on press */
+}
+
+
+/* Check box */
+.check-box > .box {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: #3A3A3C;
+}
+
+.check-box:hover > .box {
+    -fx-border-color: #007AFF; /* Hover effect */
+}
+
+.check-box:selected > .box {
+    -fx-background-color: #007AFF; /* Selected color */
+}
+
+/* Default toggle button customization */
+.toggle-button {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-background-color: #3A3A3C; /* Default color */
+    -fx-border-color: #3A3A3C; /* Border */
+}
+
+/* Focused toggle customization */
+.toggle-button:focused {
+    -fx-border-color: #007AFF; /* On focus effects */
+}
+
+/* Customize selecting for toggle buttons */
+.toggle-button:hover {
+    -fx-border-color: #007AFF; /* On hover */
+}
+
+.toggle-button:selected {
+    -fx-background-color: #0051A1; /* Darker when selected */
+}
+
+/* End of dark theme styled for macOS */

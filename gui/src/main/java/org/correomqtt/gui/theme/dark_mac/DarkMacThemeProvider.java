@@ -1,4 +1,4 @@
-package org.correomqtt.gui.theme.light_gnome;
+package org.correomqtt.gui.theme.dark_mac;
 
 import javafx.scene.paint.Color;
 import org.correomqtt.gui.plugin.spi.ThemeProviderHook;
@@ -8,25 +8,25 @@ import org.correomqtt.gui.theme.ThemeProvider;
 import org.pf4j.Extension;
 
 @Extension
-public class LightGnomeThemeProvider extends BaseThemeProvider implements ThemeProvider, ThemeProviderHook {
+public class DarkMacThemeProvider extends BaseThemeProvider implements ThemeProvider, ThemeProviderHook {
 
     @Override
     public String getName() {
-        return "Light Gnome";
+        return "Dark MacOs";
     }
 
     @Override
     public String getCss() {
-        return getCssFromInputStream(LightGnomeThemeProvider.class.getResourceAsStream("light_gnome.css"));
+        return getCssFromInputStream(DarkMacThemeProvider.class.getResourceAsStream("dark_mac.css"));
     }
 
     @Override
     public IconMode getIconMode() {
-        return IconMode.BLACK;
+        return IconMode.WHITE;
     }
 
     @Override
     public Color getBackgroundColor() {
-        return Color.web("#eff0f1");
+        return Color.web("#313131");
     }
 }

@@ -1,24 +1,23 @@
-package org.correomqtt.gui.theme.dark_breeze;
+package org.correomqtt.gui.theme.dark_win;
 
 import javafx.scene.paint.Color;
+import org.correomqtt.gui.plugin.spi.ThemeProviderHook;
 import org.correomqtt.gui.theme.BaseThemeProvider;
 import org.correomqtt.gui.theme.IconMode;
 import org.correomqtt.gui.theme.ThemeProvider;
-import org.correomqtt.gui.plugin.spi.ThemeProviderHook;
 import org.pf4j.Extension;
 
 @Extension
-public class DarkBreezeThemeProvider extends BaseThemeProvider implements ThemeProvider, ThemeProviderHook {
+public class DarkWinThemeProvider extends BaseThemeProvider implements ThemeProvider, ThemeProviderHook {
 
     @Override
     public String getName() {
-        return "Dark Breeze";
+        return "Dark Windows";
     }
 
     @Override
     public String getCss() {
-        System.out.println("DTP");
-        return getCssFromInputStream(DarkBreezeThemeProvider.class.getResourceAsStream("dark_breeze.css"));
+        return getCssFromInputStream(DarkWinThemeProvider.class.getResourceAsStream("dark_win.css"));
     }
 
     @Override
