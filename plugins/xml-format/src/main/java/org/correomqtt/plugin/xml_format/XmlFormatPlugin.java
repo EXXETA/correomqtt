@@ -1,6 +1,5 @@
 package org.correomqtt.plugin.xml_format;
 
-import org.correomqtt.core.utils.SilentSaxErrorHandler;
 import org.correomqtt.gui.plugin.spi.DetailViewFormatHook;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;

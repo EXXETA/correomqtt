@@ -2,7 +2,6 @@ package org.correomqtt.plugin.xml_xsd_validator;
 
 import org.correomqtt.core.fileprovider.PluginConfigProvider;
 import org.correomqtt.core.plugin.spi.MessageValidatorHook;
-import org.correomqtt.core.utils.SilentSaxErrorHandler;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.pf4j.Extension;

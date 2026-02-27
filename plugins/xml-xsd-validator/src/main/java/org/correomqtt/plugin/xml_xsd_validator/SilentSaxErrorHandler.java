@@ -1,10 +1,10 @@
-package org.correomqtt.core.utils;
+package org.correomqtt.plugin.xml_xsd_validator;
 
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-public final class SilentSaxErrorHandler implements ErrorHandler {
+final class SilentSaxErrorHandler implements ErrorHandler {
 
     @Override
     public void warning(SAXParseException exception) {
