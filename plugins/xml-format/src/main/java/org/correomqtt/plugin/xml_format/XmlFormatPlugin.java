@@ -1,5 +1,6 @@
 package org.correomqtt.plugin.xml_format;
 
+import org.correomqtt.core.utils.SilentSaxErrorHandler;
 import org.correomqtt.gui.plugin.spi.DetailViewFormatHook;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
@@ -132,6 +133,19 @@ public class XmlFormatPlugin implements DetailViewFormatHook {
         return getXmlDocument() != null;
     }
 
+    @Override
+    public boolean isCandidate() {
+        return looksLikeXml();
+    }
+
+    private boolean looksLikeXml() {
+        if (text == null || text.isBlank()) {
+            return false;
+        }
+        String trimmedText = text.trim();
+        return trimmedText.startsWith("<");
+    }
+
     private Document getXmlDocument() {
         if (xmlDocument == null) {
             xmlDocument = createXmlDocument();
@@ -141,6 +155,10 @@ public class XmlFormatPlugin implements DetailViewFormatHook {
     }
 
     private Document createXmlDocument() {
+        if (!looksLikeXml()) {
+            return null;
+        }
+
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try {
             factory.setFeature(CustomXMLConstants.FEATURE_DISALLOW_DOCTYPE_DECL, true);
@@ -152,6 +170,7 @@ public class XmlFormatPlugin implements DetailViewFormatHook {
         DocumentBuilder builder;
         try {
             builder = factory.newDocumentBuilder();
+            builder.setErrorHandler(SilentSaxErrorHandler.INSTANCE);
             xmlDocument = builder.parse(new InputSource(new StringReader(text)));
         } catch (ParserConfigurationException | SAXException | IOException e) {
             LOGGER.debug("Could parse message as xml: {}", e.getMessage());

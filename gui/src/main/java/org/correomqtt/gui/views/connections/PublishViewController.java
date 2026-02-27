@@ -1,5 +1,6 @@
 package org.correomqtt.gui.views.connections;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
@@ -50,6 +51,7 @@ import org.correomqtt.gui.utils.AlertHelper;
 import org.correomqtt.gui.utils.AutoFormatPayload;
 import org.correomqtt.gui.utils.CheckTopicHelper;
 import org.correomqtt.gui.utils.CodeAreaAutoComplete;
+import org.correomqtt.gui.utils.FormatOptions;
 import org.correomqtt.gui.utils.FxThread;
 import org.correomqtt.gui.views.LoaderResult;
 import org.correomqtt.gui.views.LoadingViewController;
@@ -64,6 +66,7 @@ import java.io.File;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -74,6 +77,7 @@ import static org.correomqtt.core.connection.ConnectionState.CONNECTED;
 public class PublishViewController extends BaseMessageBasedViewController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishViewController.class);
+    private static final ObjectMapper JSON_OBJECT_MAPPER = new ObjectMapper();
     private final PublishTaskFactory publishTaskFactory;
     private final QosCellFactory qosCellFactory;
     private final AutoFormatPayload autoFormatPayload;
@@ -109,19 +113,22 @@ public class PublishViewController extends BaseMessageBasedViewController {
     private Pane codeAreaScrollPane;
 
     @FXML
-    private ToggleButton publishViewFormatToggleButton;
+    private ToggleButton highlightingToggleButton;
+
+    @FXML
+    private Button prettifyButton;
 
     @FXML
     private Button minifyButton;
+
+    @FXML
+    private Button fixJsonButton;
 
     @FXML
     private Button escapeButton;
 
     @FXML
     private Button unescapeButton;
-
-    @FXML
-    private Button fixJsonButton;
 
     private LoadingViewController loadingViewController;
     private ChangeListener<String> payloadCodeAreaChangeListener;
@@ -187,15 +194,13 @@ public class PublishViewController extends BaseMessageBasedViewController {
 
         payloadCodeAreaChangeListener = (observableValue, s, t1) -> checkFormat();
 
-        publishViewFormatToggleButton.setSelected(true);
-        publishViewFormatToggleButton.setOnMouseClicked(mouseEvent -> currentFormat = autoFormatPayload.autoFormatPayload(
-                payloadCodeArea.getText(),
-                publishViewFormatToggleButton.isSelected(),
-                getConnectionId(),
-                payloadCodeArea,
-                payloadCodeAreaChangeListener));
+        highlightingToggleButton.setSelected(true);
+        highlightingToggleButton.setOnMouseClicked(mouseEvent -> checkFormat());
 
         payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
+
+        // Initial highlighting
+        checkFormat();
 
         coreManager.getSettingsManager().getConnectionConfigs().stream()
                 .filter(c -> c.getId().equals(getConnectionId()))
@@ -218,7 +223,39 @@ public class PublishViewController extends BaseMessageBasedViewController {
     }
 
     private void checkFormat() {
-        currentFormat = autoFormatPayload.autoFormatPayload(payloadCodeArea.getText(), publishViewFormatToggleButton.isSelected(), getConnectionId(), payloadCodeArea, payloadCodeAreaChangeListener);
+        checkFormat(true);
+    }
+
+    private void checkFormat(boolean showFormatErrors) {
+        FormatOptions options = FormatOptions.builder()
+                .highlightOnly(true)
+                .applyHighlighting(highlightingToggleButton.isSelected())
+                .showFormatErrors(showFormatErrors)
+                .build();
+
+        currentFormat = autoFormatPayload.autoFormatPayload(
+                payloadCodeArea.getText(),
+                true,
+                getConnectionId(),
+                payloadCodeArea,
+                payloadCodeAreaChangeListener,
+                options
+        );
+    }
+
+    @FXML
+    private void onPrettify() {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Prettify button clicked: {}", getConnectionId());
+        }
+
+        applyCommonJsonFixes();
+
+        if (currentFormat != null) {
+            String prettifiedPayload = currentFormat.getPrettyString();
+            replacePayloadText(prettifiedPayload);
+            checkFormat();
+        }
     }
 
     @FXML
@@ -228,11 +265,9 @@ public class PublishViewController extends BaseMessageBasedViewController {
         }
 
         if (currentFormat != null) {
-            String minified = currentFormat.getMinifiedString();
-            payloadCodeArea.textProperty().removeListener(payloadCodeAreaChangeListener);
-            payloadCodeArea.replaceText(minified);
-            payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
-            publishViewFormatToggleButton.setSelected(false);
+            String minifiedPayload = currentFormat.getMinifiedString();
+            replacePayloadText(minifiedPayload);
+            checkFormat();
         }
     }
 
@@ -242,19 +277,70 @@ public class PublishViewController extends BaseMessageBasedViewController {
             LOGGER.debug("Fix JSON button clicked: {}", getConnectionId());
         }
 
+        applyCommonJsonFixes();
+    }
+
+    private void applyCommonJsonFixes() {
+        checkFormat();
+
         if (currentFormat == null) {
-            publishViewFormatToggleButton.setSelected(true);
-            checkFormat();
+            return;
         }
 
-        if (currentFormat != null) {
-            String fixed = currentFormat.getAutoFixedString();
-            payloadCodeArea.textProperty().removeListener(payloadCodeAreaChangeListener);
-            payloadCodeArea.replaceText(fixed);
-            payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
-            publishViewFormatToggleButton.setSelected(true);
-            checkFormat();
+        String currentPayload = payloadCodeArea.getText();
+        String fixedPayload = currentFormat.getAutoFixedString();
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
+                    "Fix JSON: connectionId={}, formatClass={}, changed={}",
+                    getConnectionId(),
+                    currentFormat.getClass().getSimpleName(),
+                    !Objects.equals(fixedPayload, currentPayload)
+            );
         }
+
+        if (Objects.equals(fixedPayload, currentPayload)) {
+            if (!isValidJson(currentPayload)) {
+                showNoFixPossibleDialog();
+            }
+            return;
+        }
+
+        if (!isValidJson(fixedPayload)) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Fix JSON skipped: fixed payload is still invalid.");
+            }
+            showNoFixPossibleDialog();
+            return;
+        }
+
+        replacePayloadText(fixedPayload);
+        checkFormat();
+    }
+
+    private boolean isValidJson(String payload) {
+        try {
+            JSON_OBJECT_MAPPER.readTree(payload);
+            return true;
+        } catch (Exception exception) {
+            return false;
+        }
+    }
+
+    private void showNoFixPossibleDialog() {
+        if (alertHelper == null || resources == null) {
+            LOGGER.warn(
+                    "Fix JSON no-fix dialog skipped: dialog dependencies missing (alertHelperPresent={}, resourcesPresent={}).",
+                    alertHelper != null,
+                    resources != null
+            );
+            return;
+        }
+
+        alertHelper.warn(
+                resources.getString("publishViewFixJsonNoFixTitle"),
+                resources.getString("publishViewFixJsonNoFixContent")
+        );
     }
 
     @FXML
@@ -263,17 +349,15 @@ public class PublishViewController extends BaseMessageBasedViewController {
             LOGGER.debug("Escape button clicked: {}", getConnectionId());
         }
 
-        String escaped = currentFormat != null ? currentFormat.getEscapedString() : payloadCodeArea.getText()
+        String escapedPayload = payloadCodeArea.getText()
                 .replace("\\", "\\\\")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\t", "\\t");
 
-        payloadCodeArea.textProperty().removeListener(payloadCodeAreaChangeListener);
-        payloadCodeArea.replaceText(escaped);
-        payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
-        publishViewFormatToggleButton.setSelected(false);
+        replacePayloadText(escapedPayload);
+        checkFormat();
     }
 
     @FXML
@@ -282,17 +366,38 @@ public class PublishViewController extends BaseMessageBasedViewController {
             LOGGER.debug("Unescape button clicked: {}", getConnectionId());
         }
 
-        String text = payloadCodeArea.getText();
-        String unescaped = text.replace("\\\\", "\\")
-                .replace("\\n", "\n")
-                .replace("\\r", "\r")
-                .replace("\\t", "\t")
-                .replace("\\\"", "\"");
-
-        payloadCodeArea.textProperty().removeListener(payloadCodeAreaChangeListener);
-        payloadCodeArea.replaceText(unescaped);
-        payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
+        String unescapedPayload = unescapePayload(payloadCodeArea.getText());
+        replacePayloadText(unescapedPayload);
         checkFormat();
+    }
+
+    private String unescapePayload(String escapedPayload) {
+        StringBuilder result = new StringBuilder(escapedPayload.length());
+        int index = 0;
+        while (index < escapedPayload.length()) {
+            char currentCharacter = escapedPayload.charAt(index);
+            if (currentCharacter == '\\' && index + 1 < escapedPayload.length()) {
+                char nextCharacter = escapedPayload.charAt(index + 1);
+                switch (nextCharacter) {
+                    case '\\' -> { result.append('\\'); index += 2; }
+                    case 'n' -> { result.append('\n'); index += 2; }
+                    case 'r' -> { result.append('\r'); index += 2; }
+                    case 't' -> { result.append('\t'); index += 2; }
+                    case '"' -> { result.append('"'); index += 2; }
+                    default -> { result.append(currentCharacter); index++; }
+                }
+            } else {
+                result.append(currentCharacter);
+                index++;
+            }
+        }
+        return result.toString();
+    }
+
+    private void replacePayloadText(String newPayload) {
+        payloadCodeArea.textProperty().removeListener(payloadCodeAreaChangeListener);
+        payloadCodeArea.replaceText(newPayload);
+        payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
     }
 
     private void initTopicComboBox() {

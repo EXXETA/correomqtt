@@ -14,8 +14,11 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.correomqtt.gui.formats.Format;
 import org.correomqtt.gui.plugin.spi.DetailViewFormatHook;
 import org.fxmisc.richtext.model.StyleSpans;
@@ -32,6 +35,7 @@ import java.util.Collections;
 public class JsonFormat implements DetailViewFormatHook {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonFormat.class);
+    private static final int MAX_AUTO_FIX_PASSES = 8;
 
     private static final String KEY_CLASS = "keyJSON";
     private static final String STRING_CLASS = "valueJSON";
@@ -186,18 +190,70 @@ public class JsonFormat implements DetailViewFormatHook {
             return null;
         }
 
-        String fixed = fixUnquotedStrings(text);
-        if (fixed == null) {
-            return text;
+        String candidate = normalizeCommonArtifacts(text);
+        boolean normalizedChanged = !Objects.equals(candidate, text);
+        Set<String> seenCandidates = new HashSet<>();
+        seenCandidates.add(candidate);
+        int executedPasses = 0;
+
+        for (int pass = 1; pass <= MAX_AUTO_FIX_PASSES; pass++) {
+            executedPasses = pass;
+            String nextCandidate = applySingleFixPass(candidate);
+            if (nextCandidate == null) {
+                return text;
+            }
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(
+                        "JSON auto-fix pass {}: normalizedChanged={}, passChanged={}",
+                        pass,
+                        normalizedChanged,
+                        !Objects.equals(nextCandidate, candidate)
+                );
+            }
+
+            candidate = nextCandidate;
+
+            try {
+                Object parsed = getObjectMapper().readValue(candidate, Object.class);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("JSON auto-fix pass {}: parseSuccess=true, outputChanged={}", pass, !Objects.equals(candidate, text));
+                }
+                return getObjectMapper().writer(PRETTY_PRINTER).writeValueAsString(parsed);
+            } catch (Exception e) {
+                LOGGER.trace("Could not auto-fix JSON in pass {}. ", pass, e);
+            }
+
+            if (pass == MAX_AUTO_FIX_PASSES) {
+                break;
+            }
+
+            if (!seenCandidates.add(candidate)) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("JSON auto-fix stopped: detected repeated candidate after pass {}.", pass);
+                }
+                break;
+            }
         }
 
-        try {
-            Object parsed = getObjectMapper().readValue(fixed, Object.class);
-            return getObjectMapper().writer(PRETTY_PRINTER).writeValueAsString(parsed);
-        } catch (Exception e) {
-            LOGGER.trace("Could not auto-fix JSON. ", e);
-            return text;
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
+                    "JSON auto-fix pipeline: parseSuccess=false after {} pass(es), returning best-effort candidate (changed={}).",
+                    executedPasses,
+                    !Objects.equals(candidate, text)
+            );
         }
+        return !Objects.equals(candidate, text) ? candidate : text;
+    }
+
+    private String applySingleFixPass(String input) {
+        String fixed = fixUnquotedStrings(input);
+        if (fixed == null) {
+            return null;
+        }
+        fixed = removeTrailingCommas(fixed);
+        fixed = closeOpenContainers(fixed);
+        return fixed;
     }
 
     private enum Container {
@@ -230,6 +286,23 @@ public class JsonFormat implements DetailViewFormatHook {
                 continue;
             }
 
+            if (expect == Expect.COMMA_OR_END && c != ',' && c != '}' && c != ']') {
+                insertCommaBeforeTrailingWhitespace(out);
+                if (!stack.isEmpty() && stack.peek() == Container.OBJECT) {
+                    expect = Expect.KEY_OR_END;
+                } else {
+                    expect = Expect.VALUE_OR_END;
+                }
+                continue;
+            }
+
+            if ((c == '{' || c == '[') && expect == Expect.KEY_OR_END) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("JSON auto-fix: ambiguous object key before index {}, aborting token fix.", i);
+                }
+                return null;
+            }
+
             // structure
             if (c == '{') {
                 out.append(c);
@@ -246,10 +319,33 @@ public class JsonFormat implements DetailViewFormatHook {
                 continue;
             }
             if (c == '}' || c == ']') {
-                out.append(c);
-                if (!stack.isEmpty()) {
-                    stack.pop();
+                if (stack.isEmpty()) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("JSON auto-fix: dropped unmatched closer '{}' at index {}.", c, i);
+                    }
+                    i++;
+                    continue;
                 }
+
+                Container expectedContainer = stack.peek();
+                char expectedCloser = expectedContainer == Container.OBJECT ? '}' : ']';
+                if (c != expectedCloser) {
+                    out.append(expectedCloser);
+                    stack.pop();
+                    expect = Expect.COMMA_OR_END;
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(
+                                "JSON auto-fix: replaced mismatched closer '{}' with '{}' at index {}.",
+                                c,
+                                expectedCloser,
+                                i
+                        );
+                    }
+                    continue;
+                }
+
+                out.append(c);
+                stack.pop();
                 expect = Expect.COMMA_OR_END;
                 i++;
                 continue;
@@ -258,6 +354,20 @@ public class JsonFormat implements DetailViewFormatHook {
                 out.append(c);
                 expect = Expect.VALUE;
                 i++;
+                continue;
+            }
+            if (expect == Expect.COLON && c == '=') {
+                out.append(':');
+                expect = Expect.VALUE;
+                i++;
+                continue;
+            }
+            if (expect == Expect.COLON && c != ':' && c != ',' && c != '}' && c != ']') {
+                out.append(':');
+                expect = Expect.VALUE;
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("JSON auto-fix: inserted missing colon before index {}.", i);
+                }
                 continue;
             }
             if (c == ',') {
@@ -276,19 +386,60 @@ public class JsonFormat implements DetailViewFormatHook {
                 int start = i;
                 i++;
                 boolean escaped = false;
+                boolean isClosed = false;
+                boolean usedFallbackClosingQuote = false;
                 while (i < input.length()) {
-                    char cc = input.charAt(i);
+                    char currentCharacter = input.charAt(i);
                     if (escaped) {
                         escaped = false;
-                    } else if (cc == '\\') {
+                    } else if (currentCharacter == '\\') {
                         escaped = true;
-                    } else if (cc == '"') {
+                    } else if (currentCharacter == '"') {
                         i++;
+                        isClosed = true;
+                        break;
+                    } else if (currentCharacter == '\'' && isLikelyWrongClosingSingleQuote(input, i)) {
+                        out.append(input, start, i).append('"');
+                        i++;
+                        isClosed = true;
+                        usedFallbackClosingQuote = true;
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("JSON auto-fix: repaired mismatched single quote at index {}.", i - 1);
+                        }
+                        break;
+                    } else if ((currentCharacter == '\n' || currentCharacter == '\r') && isLikelyImplicitStringEndBeforeLineBreak(input, i)) {
+                        out.append(input, start, i).append('"');
+                        isClosed = true;
+                        usedFallbackClosingQuote = true;
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("JSON auto-fix: closed unterminated string before line break at index {}.", i);
+                        }
                         break;
                     }
                     i++;
                 }
-                out.append(input, start, i);
+
+                if (!isClosed) {
+                    if (i >= input.length() && !escaped) {
+                        out.append(input, start, i).append('"');
+                        isClosed = true;
+                        usedFallbackClosingQuote = true;
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("JSON auto-fix: closed unterminated string at end of input.");
+                        }
+                    }
+                }
+
+                if (!isClosed) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("JSON auto-fix: found unterminated string without unambiguous end, aborting token fix.");
+                    }
+                    return input;
+                }
+
+                if (!usedFallbackClosingQuote) {
+                    out.append(input, start, i);
+                }
                 expect = (expect == Expect.KEY_OR_END) ? Expect.COLON : Expect.COMMA_OR_END;
                 continue;
             }
@@ -358,6 +509,14 @@ public class JsonFormat implements DetailViewFormatHook {
         return out.toString();
     }
 
+    private void insertCommaBeforeTrailingWhitespace(StringBuilder output) {
+        int insertionIndex = output.length();
+        while (insertionIndex > 0 && Character.isWhitespace(output.charAt(insertionIndex - 1))) {
+            insertionIndex--;
+        }
+        output.insert(insertionIndex, ',');
+    }
+
     private boolean isNumberToken(String token) {
         try {
             Double.parseDouble(token);
@@ -369,6 +528,199 @@ public class JsonFormat implements DetailViewFormatHook {
 
     private String escapeJsonString(String s) {
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private boolean isLikelyWrongClosingSingleQuote(String input, int quoteIndex) {
+        int nextIndex = quoteIndex + 1;
+        while (nextIndex < input.length() && Character.isWhitespace(input.charAt(nextIndex))) {
+            nextIndex++;
+        }
+
+        if (nextIndex >= input.length()) {
+            return true;
+        }
+
+        char nextCharacter = input.charAt(nextIndex);
+        if (nextCharacter == ',' || nextCharacter == '}' || nextCharacter == ']') {
+            return true;
+        }
+
+        if (nextCharacter == '"') {
+            return looksLikeNextJsonKey(input, nextIndex);
+        }
+
+        return false;
+    }
+
+    private boolean isLikelyImplicitStringEndBeforeLineBreak(String input, int lineBreakIndex) {
+        int nextIndex = lineBreakIndex;
+        while (nextIndex < input.length() && Character.isWhitespace(input.charAt(nextIndex))) {
+            nextIndex++;
+        }
+
+        if (nextIndex >= input.length()) {
+            return true;
+        }
+
+        char nextCharacter = input.charAt(nextIndex);
+        if (nextCharacter == ',' || nextCharacter == '}' || nextCharacter == ']') {
+            return true;
+        }
+
+        if (nextCharacter == '"') {
+            return looksLikeNextJsonKey(input, nextIndex);
+        }
+
+        return false;
+    }
+
+    private boolean looksLikeNextJsonKey(String input, int keyQuoteIndex) {
+        int index = keyQuoteIndex + 1;
+        boolean escaped = false;
+        while (index < input.length()) {
+            char currentCharacter = input.charAt(index);
+            if (escaped) {
+                escaped = false;
+            } else if (currentCharacter == '\\') {
+                escaped = true;
+            } else if (currentCharacter == '"') {
+                index++;
+                while (index < input.length() && Character.isWhitespace(input.charAt(index))) {
+                    index++;
+                }
+                if (index >= input.length()) {
+                    return false;
+                }
+                char separator = input.charAt(index);
+                return separator == ':' || separator == '=';
+            }
+            index++;
+        }
+        return false;
+    }
+
+    private String normalizeCommonArtifacts(String input) {
+        String normalized = input;
+        if (!normalized.isEmpty() && normalized.charAt(0) == '\uFEFF') {
+            normalized = normalized.substring(1);
+        }
+
+        normalized = normalized
+                .replace('\u201C', '"')
+                .replace('\u201D', '"')
+                .replace('\u2018', '\'')
+                .replace('\u2019', '\'');
+
+        StringBuilder cleaned = new StringBuilder(normalized.length());
+        for (int index = 0; index < normalized.length(); index++) {
+            char currentCharacter = normalized.charAt(index);
+            boolean allowedControlCharacter = currentCharacter == '\n'
+                    || currentCharacter == '\r'
+                    || currentCharacter == '\t';
+            if (Character.isISOControl(currentCharacter) && !allowedControlCharacter) {
+                continue;
+            }
+            cleaned.append(currentCharacter);
+        }
+        return cleaned.toString();
+    }
+
+    private String removeTrailingCommas(String input) {
+        StringBuilder output = new StringBuilder(input.length());
+        int index = 0;
+        boolean inString = false;
+        boolean escaped = false;
+
+        while (index < input.length()) {
+            char currentCharacter = input.charAt(index);
+            if (inString) {
+                output.append(currentCharacter);
+                if (escaped) {
+                    escaped = false;
+                } else if (currentCharacter == '\\') {
+                    escaped = true;
+                } else if (currentCharacter == '"') {
+                    inString = false;
+                }
+                index++;
+                continue;
+            }
+
+            if (currentCharacter == '"') {
+                inString = true;
+                output.append(currentCharacter);
+                index++;
+                continue;
+            }
+
+            if (currentCharacter == ',') {
+                int lookAheadIndex = index + 1;
+                while (lookAheadIndex < input.length() && Character.isWhitespace(input.charAt(lookAheadIndex))) {
+                    lookAheadIndex++;
+                }
+                if (lookAheadIndex < input.length()) {
+                    char lookAheadCharacter = input.charAt(lookAheadIndex);
+                    if (lookAheadCharacter == '}' || lookAheadCharacter == ']') {
+                        index++;
+                        continue;
+                    }
+                }
+            }
+
+            output.append(currentCharacter);
+            index++;
+        }
+
+        return output.toString();
+    }
+
+    private String closeOpenContainers(String input) {
+        Deque<Character> closers = new ArrayDeque<>();
+        boolean inString = false;
+        boolean escaped = false;
+
+        for (int index = 0; index < input.length(); index++) {
+            char currentCharacter = input.charAt(index);
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (currentCharacter == '\\') {
+                    escaped = true;
+                } else if (currentCharacter == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (currentCharacter == '"') {
+                inString = true;
+                continue;
+            }
+
+            if (currentCharacter == '{') {
+                closers.push('}');
+                continue;
+            }
+            if (currentCharacter == '[') {
+                closers.push(']');
+                continue;
+            }
+
+            if ((currentCharacter == '}' || currentCharacter == ']') && !closers.isEmpty() && closers.peek() == currentCharacter) {
+                closers.pop();
+            }
+        }
+
+        if (closers.isEmpty()) {
+            return input;
+        }
+
+        StringBuilder output = new StringBuilder(input.length() + closers.size());
+        output.append(input);
+        while (!closers.isEmpty()) {
+            output.append(closers.pop());
+        }
+        return output.toString();
     }
 
     public static String mapJsonToStyle(JsonToken jsonToken) {

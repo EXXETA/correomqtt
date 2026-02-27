@@ -2,6 +2,7 @@ package org.correomqtt.plugin.xml_xsd_validator;
 
 import org.correomqtt.core.fileprovider.PluginConfigProvider;
 import org.correomqtt.core.plugin.spi.MessageValidatorHook;
+import org.correomqtt.core.utils.SilentSaxErrorHandler;
 import org.correomqtt.di.DefaultBean;
 import org.correomqtt.di.Inject;
 import org.pf4j.Extension;
@@ -41,12 +42,17 @@ public class XmlXsdValidator implements MessageValidatorHook<XmlXsdValidatorConf
 
     @Override
     public Validation isMessageValid(String payload) {
+        if (!looksLikeXml(payload)) {
+            return new Validation(false, "Payload is not XML");
+        }
+
         try {
             SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
             factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
             factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             Schema schema = factory.newSchema(new File(pluginConfigProvider.getPluginPath(), schemaFile));
             Validator validator = schema.newValidator();
+            validator.setErrorHandler(SilentSaxErrorHandler.INSTANCE);
             validator.validate(new StreamSource(new StringReader(payload)));
         } catch (IOException | SAXException e) {
             LOGGER.error(e.getMessage());
@@ -56,5 +62,13 @@ public class XmlXsdValidator implements MessageValidatorHook<XmlXsdValidatorConf
             return new Validation(false, "XSD file not found");
         }
         return new Validation(true, schemaFile);
+    }
+
+    private boolean looksLikeXml(String payload) {
+        if (payload == null) {
+            return false;
+        }
+        String trimmedPayload = payload.trim();
+        return trimmedPayload.startsWith("<");
     }
 }

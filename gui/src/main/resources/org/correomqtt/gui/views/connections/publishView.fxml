@@ -68,16 +68,24 @@
                     </styleClass>
                 </HBox>
                 <HBox alignment="CENTER_RIGHT" maxHeight="40.0" minHeight="40.0">
-                    <IconToggleButton fx:id="publishViewFormatToggleButton" mnemonicParsing="false"
+                    <IconToggleButton fx:id="highlightingToggleButton" mnemonicParsing="false"
                                       icon="mdi-marker">
                         <tooltip>
-                            <Tooltip text="%detailViewAutoFormatToggleButtonTooltip"/>
+                            <Tooltip text="%publishViewHighlightingTooltip"/>
                         </tooltip>
                         <HBox.margin>
                             <Insets right="5.0"/>
                         </HBox.margin>
                     </IconToggleButton>
-                    <IconButton fx:id="minifyButton" mnemonicParsing="false" icon="mdi-compress" onAction="#onMinify">
+                    <IconButton fx:id="prettifyButton" mnemonicParsing="false" icon="mdi-code-json" onAction="#onPrettify">
+                        <tooltip>
+                            <Tooltip text="%publishViewPrettifyTooltip"/>
+                        </tooltip>
+                        <HBox.margin>
+                            <Insets right="5.0"/>
+                        </HBox.margin>
+                    </IconButton>
+                    <IconButton fx:id="minifyButton" mnemonicParsing="false" icon="mdi-arrow-collapse-all" onAction="#onMinify">
                         <tooltip>
                             <Tooltip text="%publishViewMinifyTooltip"/>
                         </tooltip>
