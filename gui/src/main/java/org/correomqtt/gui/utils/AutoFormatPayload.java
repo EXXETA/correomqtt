@@ -19,6 +19,7 @@ import org.fxmisc.richtext.model.StyleSpansBuilder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 @DefaultBean
@@ -49,78 +50,16 @@ public class AutoFormatPayload {
             return null;
         }
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Auto formatting payload: {}", connectionId);
-        }
+        LOGGER.debug("Auto formatting payload: {}", connectionId);
 
-        Format foundFormat = null;
-        ArrayList<Format> availableFormats = new ArrayList<>(pluginManager.getExtensions(DetailViewFormatHook.class));
+        Format foundFormat = detectFormat(payload);
 
-        // 1) Prefer valid (fully parseable) formats from plugins
-        for (Format format : availableFormats) {
-            if (format == null) {
-                continue;
-            }
-            try {
-                format.setText(payload);
-                if (format.isValid()) {
-                    foundFormat = format;
-                    break;
-                }
-            } catch (Exception e) {
-                LOGGER.error("Formatting check failed. ", e);
-            }
-        }
-
-        // 2) If none are valid, pick a candidate format (e.g. JSON while typing with errors)
-        if (foundFormat == null) {
-            for (Format format : availableFormats) {
-                if (format == null) {
-                    continue;
-                }
-                try {
-                    format.setText(payload);
-                    if (format.isCandidate()) {
-                        foundFormat = format;
-                        break;
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("Formatting check failed. ", e);
-                }
-            }
-        }
-
-        // 3) Fallback to plain text
-        if (foundFormat == null) {
-            foundFormat = new Plain();
-            foundFormat.setText(payload);
-        }
-
-
-        // ChangeListener<String> listener is needed to disable it when the text of the PublishCodeArea changes. It is reenabled after the manipulation.
         if (listener != null) {
             codeArea.textProperty().removeListener(listener);
         }
 
         try {
-            if (options.highlightOnly()) {
-                // Only apply syntax highlighting, don't replace text
-                if (options.applyHighlighting()) {
-                    applySyntaxHighlighting(foundFormat, codeArea, options.showFormatErrors());
-                } else {
-                    clearSyntaxHighlighting(codeArea);
-                }
-            } else {
-                // Full formatting: replace text and apply highlighting
-                String prettyString = foundFormat.getPrettyString();
-                if (!Objects.equals(codeArea.getText(), prettyString)) {
-                    int caretPosition = codeArea.getCaretPosition();
-                    codeArea.replaceText(prettyString);
-                    codeArea.moveTo(Math.min(caretPosition, prettyString.length()));
-                }
-                applySyntaxHighlighting(foundFormat, codeArea, options.showFormatErrors());
-            }
-
+            applyFormatting(foundFormat, codeArea, options);
             removeLegacyFormatErrorTooltip(codeArea);
         } catch (Exception e) {
             LOGGER.error("Formatter failed. ", e);
@@ -130,7 +69,63 @@ public class AutoFormatPayload {
             codeArea.textProperty().addListener(listener);
         }
         return foundFormat;
+    }
 
+    private Format detectFormat(String payload) {
+        List<Format> availableFormats = new ArrayList<>(pluginManager.getExtensions(DetailViewFormatHook.class));
+
+        Format validFormat = findFormat(payload, availableFormats, Format::isValid);
+        if (validFormat != null) {
+            return validFormat;
+        }
+
+        Format candidateFormat = findFormat(payload, availableFormats, Format::isCandidate);
+        if (candidateFormat != null) {
+            return candidateFormat;
+        }
+
+        Plain plain = new Plain();
+        plain.setText(payload);
+        return plain;
+    }
+
+    private Format findFormat(String payload, List<Format> formats, FormatPredicate predicate) {
+        for (Format format : formats) {
+            if (format == null) {
+                continue;
+            }
+            try {
+                format.setText(payload);
+                if (predicate.test(format)) {
+                    return format;
+                }
+            } catch (Exception e) {
+                LOGGER.error("Formatting check failed. ", e);
+            }
+        }
+        return null;
+    }
+
+    private void applyFormatting(Format format, CodeArea codeArea, FormatOptions options) {
+        if (options.highlightOnly()) {
+            if (options.applyHighlighting()) {
+                applySyntaxHighlighting(format, codeArea, options.showFormatErrors());
+            } else {
+                clearSyntaxHighlighting(codeArea);
+            }
+        } else {
+            applyFullFormatting(format, codeArea, options);
+        }
+    }
+
+    private void applyFullFormatting(Format format, CodeArea codeArea, FormatOptions options) {
+        String prettyString = format.getPrettyString();
+        if (!Objects.equals(codeArea.getText(), prettyString)) {
+            int caretPosition = codeArea.getCaretPosition();
+            codeArea.replaceText(prettyString);
+            codeArea.moveTo(Math.min(caretPosition, prettyString.length()));
+        }
+        applySyntaxHighlighting(format, codeArea, options.showFormatErrors());
     }
 
     private void applySyntaxHighlighting(Format foundFormat, CodeArea codeArea, boolean showFormatErrors) {
@@ -174,5 +169,10 @@ public class AutoFormatPayload {
             Tooltip.uninstall(codeArea, existingTooltip);
             codeArea.getProperties().remove(LEGACY_TOOLTIP_KEY);
         }
+    }
+
+    @FunctionalInterface
+    private interface FormatPredicate {
+        boolean test(Format format);
     }
 }

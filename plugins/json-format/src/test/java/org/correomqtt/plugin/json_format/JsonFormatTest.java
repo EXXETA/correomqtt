@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JsonFormatTest {
 
@@ -15,13 +14,14 @@ class JsonFormatTest {
     @Test
     void shouldAutoFixMismatchedClosingQuoteInStringValue() throws Exception {
         // Arrange
-        String malformedJson = "{\n"
-                + "  \"part\" : {\n"
-                + "    \"persId\" : \"6DB2C0B7A68B32FEE81CB12DD1822818'\n"
-                + "  },\n"
-                + "  \"reason\" : \"NOT_FOUND\",\n"
-                + "  \"fbsType\" : \"FBS5\"\n"
-                + "}";
+        String malformedJson = """
+                {
+                  "part" : {
+                    "persId" : "6DB2C0B7A68B32FEE81CB12DD1822818'
+                  },
+                  "reason" : "NOT_FOUND",
+                  "fbsType" : "FBS5"
+                }""";
         JsonFormat jsonFormat = new JsonFormat();
         jsonFormat.setText(malformedJson);
 
@@ -119,13 +119,14 @@ class JsonFormatTest {
     @Test
     void shouldFixMismatchedSingleQuoteBeforeNextKey() throws Exception {
         // Arrange
-        String malformedJson = "{\n"
-                + "  \"part\" : {\n"
-                + "    \"persId\" : \"6DB2C0B7A68B32FEE81CB12DD1822818\"\n"
-                + "  },\n"
-                + "  \"reason\" : \"NOT_FOUND'\n"
-                + "  \"fbsType\" : \"FBS5\"\n"
-                + "}";
+        String malformedJson = """
+                {
+                  "part" : {
+                    "persId" : "6DB2C0B7A68B32FEE81CB12DD1822818"
+                  },
+                  "reason" : "NOT_FOUND'
+                  "fbsType" : "FBS5"
+                }""";
         JsonFormat jsonFormat = new JsonFormat();
         jsonFormat.setText(malformedJson);
 
@@ -141,10 +142,11 @@ class JsonFormatTest {
     @Test
     void shouldFixUnterminatedStringBeforeClosingBrace() throws Exception {
         // Arrange
-        String malformedJson = "{\n"
-                + "  \"a\": \"OK\",\n"
-                + "  \"b\": \"unterminated\n"
-                + "}";
+        String malformedJson = """
+                {
+                  "a": "OK",
+                  "b": "unterminated
+                }""";
         JsonFormat jsonFormat = new JsonFormat();
         jsonFormat.setText(malformedJson);
 
@@ -160,11 +162,12 @@ class JsonFormatTest {
     @Test
     void shouldInsertMissingCommaBeforeLineBreakInsteadOfLeadingNextLine() throws Exception {
         // Arrange
-        String malformedJson = "{\n"
-                + "  \"a\": \"OK\"\n"
-                + "  \"b\": \"value\",\n"
-                + "  \"c\" \"missingColon\"\n"
-                + "}";
+        String malformedJson = """
+                {
+                  "a": "OK"
+                  "b": "value",
+                  "c" "missingColon"
+                }""";
         JsonFormat jsonFormat = new JsonFormat();
         jsonFormat.setText(malformedJson);
 
@@ -197,11 +200,12 @@ class JsonFormatTest {
     @Test
     void shouldAutoFixCombinedQuoteCommaAndColonIssuesToValidJson() throws Exception {
         // Arrange
-        String malformedJson = "{\n"
-                + "  \"a\": \"OK'\n"
-                + "  \"b\": \"value\",\n"
-                + "  \"c\" \"missingColon\"\n"
-                + "}";
+        String malformedJson = """
+                {
+                  "a": "OK'
+                  "b": "value",
+                  "c" "missingColon"
+                }""";
         JsonFormat jsonFormat = new JsonFormat();
         jsonFormat.setText(malformedJson);
 
@@ -233,11 +237,12 @@ class JsonFormatTest {
     @Test
     void shouldLeaveAmbiguousNestedStructureUnchanged() {
         // Arrange
-        String malformedJson = "{\n"
-                + "  a: b: {[\n"
-                + "\t\n"
-                + "}\n"
-                + "]}";
+        String malformedJson = """
+                {
+                  a: b: {[
+                \t
+                }
+                ]}""";
         JsonFormat jsonFormat = new JsonFormat();
         jsonFormat.setText(malformedJson);
 

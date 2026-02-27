@@ -13,6 +13,7 @@ public final class SilentSaxErrorHandler implements ErrorHandler {
 
     @Override
     public void warning(SAXParseException exception) {
+        // Intentionally empty: warnings are non-fatal and safely ignored during XML validation
     }
 
     @Override

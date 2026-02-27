@@ -214,6 +214,7 @@ class PublishViewControllerFormattingTest extends ApplicationTest {
 
         @Override
         public void setText(String text) {
+            // Intentionally empty: test stub that ignores setText calls
         }
 
         @Override
