@@ -170,7 +170,7 @@ public class XmlFormatPlugin implements DetailViewFormatHook {
         DocumentBuilder builder;
         try {
             builder = factory.newDocumentBuilder();
-            builder.setErrorHandler(SilentSaxErrorHandler.INSTANCE);
+            builder.setErrorHandler(new SilentSaxErrorHandler());
             xmlDocument = builder.parse(new InputSource(new StringReader(text)));
         } catch (ParserConfigurationException | SAXException | IOException e) {
             LOGGER.debug("Could parse message as xml: {}", e.getMessage());

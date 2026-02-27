@@ -52,7 +52,7 @@ public class XmlXsdValidator implements MessageValidatorHook<XmlXsdValidatorConf
             factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             Schema schema = factory.newSchema(new File(pluginConfigProvider.getPluginPath(), schemaFile));
             Validator validator = schema.newValidator();
-            validator.setErrorHandler(SilentSaxErrorHandler.INSTANCE);
+            validator.setErrorHandler(new SilentSaxErrorHandler());
             validator.validate(new StreamSource(new StringReader(payload)));
         } catch (IOException | SAXException e) {
             LOGGER.error(e.getMessage());

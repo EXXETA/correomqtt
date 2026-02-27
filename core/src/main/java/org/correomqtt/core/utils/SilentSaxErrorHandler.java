@@ -6,11 +6,6 @@ import org.xml.sax.SAXParseException;
 
 public final class SilentSaxErrorHandler implements ErrorHandler {
 
-    public static final SilentSaxErrorHandler INSTANCE = new SilentSaxErrorHandler();
-
-    private SilentSaxErrorHandler() {
-    }
-
     @Override
     public void warning(SAXParseException exception) {
         // Intentionally empty: warnings are non-fatal and safely ignored during XML validation

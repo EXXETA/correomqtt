@@ -361,28 +361,21 @@ public class JsonFormat implements DetailViewFormatHook {
         private boolean handleDoubleQuotedString() {
             int start = position;
             position++;
-            QuotedStringResult result = scanDoubleQuotedString(start);
-            if (result == null) {
-                return true;
-            }
+            boolean closed = scanDoubleQuotedString(start);
 
-            if (!result.closed) {
+            if (!closed) {
                 LOGGER.debug("JSON auto-fix: found unterminated string without unambiguous end, aborting token fix.");
                 out.setLength(0);
                 out.append(input);
                 return true;
             }
 
-            if (!result.usedFallback) {
-                out.append(input, start, position);
-            }
             expect = (expect == Expect.KEY_OR_END) ? Expect.COLON : Expect.COMMA_OR_END;
             return true;
         }
 
-        private QuotedStringResult scanDoubleQuotedString(int start) {
+        private boolean scanDoubleQuotedString(int start) {
             boolean escaped = false;
-            boolean usedFallback = false;
 
             while (position < input.length()) {
                 char currentCharacter = input.charAt(position);
@@ -393,15 +386,15 @@ public class JsonFormat implements DetailViewFormatHook {
                     escaped = true;
                     position++;
                 } else if (currentCharacter == '"') {
-                    position++;
-                    return new QuotedStringResult(true, false);
+                    out.append(input, start, ++position);
+                    return true;
                 } else if (currentCharacter == '\'' && isLikelyWrongClosingSingleQuote(input, position)) {
                     out.append(input, start, position).append('"');
                     position++;
-                    return new QuotedStringResult(true, true);
+                    return true;
                 } else if (isLineBreak(currentCharacter) && isLikelyImplicitStringEndBeforeLineBreak(input, position)) {
                     out.append(input, start, position).append('"');
-                    return new QuotedStringResult(true, true);
+                    return true;
                 } else {
                     position++;
                 }
@@ -409,10 +402,10 @@ public class JsonFormat implements DetailViewFormatHook {
 
             if (!escaped) {
                 out.append(input, start, position).append('"');
-                return new QuotedStringResult(true, true);
+                return true;
             }
 
-            return new QuotedStringResult(false, false);
+            return false;
         }
 
         private boolean handleSingleQuotedString() {
@@ -481,59 +474,83 @@ public class JsonFormat implements DetailViewFormatHook {
             return Expect.VALUE_OR_END;
         }
 
-        private record QuotedStringResult(boolean closed, boolean usedFallback) {}
-    }
-
-    // ── Shared helpers ─────────────────────────────────────────────────
-
-    private static void insertCommaBeforeTrailingWhitespace(StringBuilder output) {
-        int insertionIndex = output.length();
-        while (insertionIndex > 0 && Character.isWhitespace(output.charAt(insertionIndex - 1))) {
-            insertionIndex--;
+        private static void insertCommaBeforeTrailingWhitespace(StringBuilder output) {
+            int insertionIndex = output.length();
+            while (insertionIndex > 0 && Character.isWhitespace(output.charAt(insertionIndex - 1))) {
+                insertionIndex--;
+            }
+            output.insert(insertionIndex, ',');
         }
-        output.insert(insertionIndex, ',');
-    }
 
-    private static boolean isNumberToken(String token) {
-        try {
-            Double.parseDouble(token);
-            return true;
-        } catch (Exception e) {
+        private static boolean isNumberToken(String token) {
+            try {
+                Double.parseDouble(token);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        private static String escapeJsonString(String s) {
+            return s.replace("\\", "\\\\").replace("\"", "\\\"");
+        }
+
+        private static boolean isLineBreak(char character) {
+            return character == '\n' || character == '\r';
+        }
+
+        private static boolean isTokenDelimiter(char character) {
+            return Character.isWhitespace(character)
+                    || character == '{' || character == '}'
+                    || character == '[' || character == ']'
+                    || character == ':' || character == ','
+                    || character == '"' || character == '\'';
+        }
+
+        private static boolean isLikelyWrongClosingSingleQuote(String input, int quoteIndex) {
+            char nextNonWs = nextNonWhitespace(input, quoteIndex + 1);
+            return isStructuralEndChar(nextNonWs)
+                    || (nextNonWs == '"' && looksLikeNextJsonKey(input, skipWhitespace(input, quoteIndex + 1)));
+        }
+
+        private static boolean isLikelyImplicitStringEndBeforeLineBreak(String input, int lineBreakIndex) {
+            char nextNonWs = nextNonWhitespace(input, lineBreakIndex);
+            return isStructuralEndChar(nextNonWs)
+                    || (nextNonWs == '"' && looksLikeNextJsonKey(input, skipWhitespace(input, lineBreakIndex)));
+        }
+
+        private static boolean isStructuralEndChar(char character) {
+            return character == ',' || character == '}' || character == ']' || character == '\0';
+        }
+
+        private static int skipWhitespace(String input, int startIndex) {
+            int index = startIndex;
+            while (index < input.length() && Character.isWhitespace(input.charAt(index))) {
+                index++;
+            }
+            return index;
+        }
+
+        private static boolean looksLikeNextJsonKey(String input, int keyQuoteIndex) {
+            int index = keyQuoteIndex + 1;
+            boolean escaped = false;
+            while (index < input.length()) {
+                char currentCharacter = input.charAt(index);
+                if (escaped) {
+                    escaped = false;
+                } else if (currentCharacter == '\\') {
+                    escaped = true;
+                } else if (currentCharacter == '"') {
+                    char separator = nextNonWhitespace(input, index + 1);
+                    return separator == ':' || separator == '=';
+                }
+                index++;
+            }
             return false;
         }
     }
 
-    private static String escapeJsonString(String s) {
-        return s.replace("\\", "\\\\").replace("\"", "\\\"");
-    }
-
-    private static boolean isLineBreak(char character) {
-        return character == '\n' || character == '\r';
-    }
-
-    private static boolean isTokenDelimiter(char character) {
-        return Character.isWhitespace(character)
-                || character == '{' || character == '}'
-                || character == '[' || character == ']'
-                || character == ':' || character == ','
-                || character == '"' || character == '\'';
-    }
-
-    private static boolean isLikelyWrongClosingSingleQuote(String input, int quoteIndex) {
-        char nextNonWhitespace = nextNonWhitespace(input, quoteIndex + 1);
-        return isStructuralEndChar(nextNonWhitespace)
-                || (nextNonWhitespace == '"' && looksLikeNextJsonKey(input, skipWhitespace(input, quoteIndex + 1)));
-    }
-
-    private static boolean isLikelyImplicitStringEndBeforeLineBreak(String input, int lineBreakIndex) {
-        char nextNonWhitespace = nextNonWhitespace(input, lineBreakIndex);
-        return isStructuralEndChar(nextNonWhitespace)
-                || (nextNonWhitespace == '"' && looksLikeNextJsonKey(input, skipWhitespace(input, lineBreakIndex)));
-    }
-
-    private static boolean isStructuralEndChar(char character) {
-        return character == ',' || character == '}' || character == ']' || character == '\0';
-    }
+    // ── Shared helpers ─────────────────────────────────────────────────
 
     private static char nextNonWhitespace(String input, int startIndex) {
         int index = startIndex;
@@ -541,32 +558,6 @@ public class JsonFormat implements DetailViewFormatHook {
             index++;
         }
         return index < input.length() ? input.charAt(index) : '\0';
-    }
-
-    private static int skipWhitespace(String input, int startIndex) {
-        int index = startIndex;
-        while (index < input.length() && Character.isWhitespace(input.charAt(index))) {
-            index++;
-        }
-        return index;
-    }
-
-    private static boolean looksLikeNextJsonKey(String input, int keyQuoteIndex) {
-        int index = keyQuoteIndex + 1;
-        boolean escaped = false;
-        while (index < input.length()) {
-            char currentCharacter = input.charAt(index);
-            if (escaped) {
-                escaped = false;
-            } else if (currentCharacter == '\\') {
-                escaped = true;
-            } else if (currentCharacter == '"') {
-                char separator = nextNonWhitespace(input, index + 1);
-                return separator == ':' || separator == '=';
-            }
-            index++;
-        }
-        return false;
     }
 
     // ── Trailing comma removal ─────────────────────────────────────────
@@ -789,7 +780,7 @@ public class JsonFormat implements DetailViewFormatHook {
         List<JsonMatch> matches = getMatches(prettyString);
         int errorOffset = resolveErrorOffset();
 
-        int lastPos = buildMatchSpans(spansBuilder, matches, prettyString, errorOffset);
+        int lastPos = buildMatchSpans(spansBuilder, matches, errorOffset);
         buildTrailingSpans(spansBuilder, lastPos, prettyString, errorOffset);
 
         return spansBuilder.create();
@@ -803,7 +794,7 @@ public class JsonFormat implements DetailViewFormatHook {
     }
 
     private int buildMatchSpans(StyleSpansBuilder<Collection<String>> spansBuilder,
-                                List<JsonMatch> matches, String prettyString, int errorOffset) {
+                                List<JsonMatch> matches, int errorOffset) {
         int lastPos = 0;
         for (JsonMatch match : matches) {
             if (match.getStart() > lastPos) {
