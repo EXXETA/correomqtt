@@ -1,6 +1,5 @@
 package org.correomqtt.gui.views.connections;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
@@ -66,7 +65,7 @@ import java.io.File;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
+
 import java.util.ResourceBundle;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -77,7 +76,8 @@ import static org.correomqtt.core.connection.ConnectionState.CONNECTED;
 public class PublishViewController extends BaseMessageBasedViewController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishViewController.class);
-    private static final ObjectMapper JSON_OBJECT_MAPPER = new ObjectMapper();
+    // TODO: Move into plugin UI contributions
+    // private static final ObjectMapper JSON_OBJECT_MAPPER = new ObjectMapper();
     private final PublishTaskFactory publishTaskFactory;
     private final QosCellFactory qosCellFactory;
     private final AutoFormatPayload autoFormatPayload;
@@ -115,20 +115,21 @@ public class PublishViewController extends BaseMessageBasedViewController {
     @FXML
     private ToggleButton highlightingToggleButton;
 
-    @FXML
-    private Button prettifyButton;
-
-    @FXML
-    private Button minifyButton;
-
-    @FXML
-    private Button fixJsonButton;
-
-    @FXML
-    private Button escapeButton;
-
-    @FXML
-    private Button unescapeButton;
+    // TODO: Move into plugin UI contributions
+    // @FXML
+    // private Button prettifyButton;
+    //
+    // @FXML
+    // private Button minifyButton;
+    //
+    // @FXML
+    // private Button fixJsonButton;
+    //
+    // @FXML
+    // private Button escapeButton;
+    //
+    // @FXML
+    // private Button unescapeButton;
 
     private LoadingViewController loadingViewController;
     private ChangeListener<String> payloadCodeAreaChangeListener;
@@ -243,6 +244,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
         );
     }
 
+    /* TODO: Move into plugin UI contributions
     @FXML
     private void onPrettify() {
         if (LOGGER.isDebugEnabled()) {
@@ -399,6 +401,7 @@ public class PublishViewController extends BaseMessageBasedViewController {
         payloadCodeArea.replaceText(newPayload);
         payloadCodeArea.textProperty().addListener(payloadCodeAreaChangeListener);
     }
+    */ // END TODO: Move into plugin UI contributions
 
     private void initTopicComboBox() {
         List<String> topics = coreManager.getHistoryManager().activatePublishHistory(getConnectionId()).getTopics(getConnectionId());

@@ -77,6 +77,7 @@
                             <Insets right="5.0"/>
                         </HBox.margin>
                     </IconToggleButton>
+                    <!-- TODO: Move into plugin UI contributions
                     <IconButton fx:id="prettifyButton" mnemonicParsing="false" icon="mdi-code-json" onAction="#onPrettify">
                         <tooltip>
                             <Tooltip text="%publishViewPrettifyTooltip"/>
@@ -117,6 +118,7 @@
                             <Insets right="5.0"/>
                         </HBox.margin>
                     </IconButton>
+                    -->
                     <Pane prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
                         <HBox.margin>
                             <Insets right="5.0"/>
