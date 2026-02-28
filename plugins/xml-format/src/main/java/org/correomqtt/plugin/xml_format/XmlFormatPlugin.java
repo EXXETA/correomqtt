@@ -79,9 +79,7 @@ public class XmlFormatPlugin implements DetailViewFormatHook {
     @Override
     public StyleSpans<Collection<String>> getFxSpans() {
 
-        String prettyText = getPrettyString();
-
-        Matcher matcher = XML_TAG.matcher(prettyText);
+        Matcher matcher = XML_TAG.matcher(text);
         int lastKwEnd = 0;
         StyleSpansBuilder<Collection<String>> spansBuilder = new StyleSpansBuilder<>();
         while (matcher.find()) {
@@ -117,7 +115,7 @@ public class XmlFormatPlugin implements DetailViewFormatHook {
             }
             lastKwEnd = matcher.end();
         }
-        spansBuilder.add(Collections.emptyList(), prettyText.length() - lastKwEnd);
+        spansBuilder.add(Collections.emptyList(), text.length() - lastKwEnd);
         return spansBuilder.create();
     }
 

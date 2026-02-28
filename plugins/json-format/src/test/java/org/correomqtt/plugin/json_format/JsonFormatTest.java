@@ -2,10 +2,15 @@ package org.correomqtt.plugin.json_format;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.fxmisc.richtext.model.StyleSpan;
+import org.fxmisc.richtext.model.StyleSpans;
 import org.junit.jupiter.api.Test;
+
+import java.util.Collection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JsonFormatTest {
 
@@ -232,6 +237,94 @@ class JsonFormatTest {
 
         // Assert
         assertEquals("text", parsedJson.path("a").asText());
+    }
+
+    @Test
+    void shouldProduceSpansMatchingInputLengthForEmptyArray() {
+        // Arrange
+        String input = "[]";
+        JsonFormat jsonFormat = new JsonFormat();
+        jsonFormat.setText(input);
+
+        // Act
+        StyleSpans<Collection<String>> spans = jsonFormat.getFxSpans();
+
+        // Assert
+        assertEquals(input.length(), spans.length());
+    }
+
+    @Test
+    void shouldProduceSpansMatchingInputLengthForValidJson() {
+        // Arrange
+        String input = "{\"key\": \"value\"}";
+        JsonFormat jsonFormat = new JsonFormat();
+        jsonFormat.setText(input);
+
+        // Act
+        StyleSpans<Collection<String>> spans = jsonFormat.getFxSpans();
+
+        // Assert
+        assertEquals(input.length(), spans.length());
+    }
+
+    @Test
+    void shouldProduceSpansMatchingInputLengthForJsonWithTrailingComma() {
+        // Arrange
+        String input = "{\"key\": \"value\",}";
+        JsonFormat jsonFormat = new JsonFormat();
+        jsonFormat.setText(input);
+
+        // Act
+        StyleSpans<Collection<String>> spans = jsonFormat.getFxSpans();
+
+        // Assert
+        assertEquals(input.length(), spans.length());
+    }
+
+    @Test
+    void shouldProduceSpansMatchingInputLengthForUserReportedValidJson() {
+        // Arrange
+        String input = """
+                {
+                  "part" : {
+                    "persId" : "6DB2C0B7A68B32FEE81CB12DD1822818"
+                  },
+                  "reason" : "NOT_FOUND",
+                  "fbsType" : "FBS5",
+                "hallo": "hallo"
+                }""";
+        JsonFormat jsonFormat = new JsonFormat();
+        jsonFormat.setText(input);
+
+        // Act
+        StyleSpans<Collection<String>> spans = jsonFormat.getFxSpans();
+
+        // Assert
+        assertEquals(input.length(), spans.length(),
+                "Span length " + spans.length() + " != text length " + input.length());
+
+        boolean hasStyledSpans = false;
+        for (StyleSpan<Collection<String>> span : spans) {
+            if (!span.getStyle().isEmpty()) {
+                hasStyledSpans = true;
+                break;
+            }
+        }
+        assertTrue(hasStyledSpans, "Expected at least one styled span for valid JSON");
+    }
+
+    @Test
+    void shouldProduceSpansMatchingInputLengthForNestedEmptyArrays() {
+        // Arrange
+        String input = "{\"items\":[],\"nested\":{\"arr\":[]}}";
+        JsonFormat jsonFormat = new JsonFormat();
+        jsonFormat.setText(input);
+
+        // Act
+        StyleSpans<Collection<String>> spans = jsonFormat.getFxSpans();
+
+        // Assert
+        assertEquals(input.length(), spans.length());
     }
 
     @Test

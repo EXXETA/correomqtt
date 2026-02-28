@@ -1,12 +1,16 @@
 package org.correomqtt.plugin.json_format;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+record JsonMatch(String type, int start, int end) {
 
-@Data
-@AllArgsConstructor
-public class JsonMatch {
-    String type;
-    int start;
-    int end;
+    String getType() {
+        return type;
+    }
+
+    int getStart() {
+        return start;
+    }
+
+    int getEnd() {
+        return end;
+    }
 }

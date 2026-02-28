@@ -755,6 +755,9 @@ public class JsonFormat implements DetailViewFormatHook {
         try (JsonParser parser = new JsonFactory().createParser(json)) {
             while (!parser.isClosed()) {
                 JsonToken token = parser.nextToken();
+                if (token == null) {
+                    break;
+                }
                 int start = (int) parser.getTokenLocation().getCharOffset();
                 int end = start + parser.getTextLength();
                 if (token == JsonToken.VALUE_STRING || token == JsonToken.FIELD_NAME) {
@@ -776,12 +779,11 @@ public class JsonFormat implements DetailViewFormatHook {
     @Override
     public StyleSpans<Collection<String>> getFxSpans() {
         StyleSpansBuilder<Collection<String>> spansBuilder = new StyleSpansBuilder<>();
-        String prettyString = getPrettyString();
-        List<JsonMatch> matches = getMatches(prettyString);
+        List<JsonMatch> matches = getMatches(text);
         int errorOffset = resolveErrorOffset();
 
         int lastPos = buildMatchSpans(spansBuilder, matches, errorOffset);
-        buildTrailingSpans(spansBuilder, lastPos, prettyString, errorOffset);
+        buildTrailingSpans(spansBuilder, lastPos, text, errorOffset);
 
         return spansBuilder.create();
     }
