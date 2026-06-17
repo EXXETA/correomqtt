@@ -5,7 +5,7 @@ use egui_phosphor::regular;
 
 use crate::{
     command_bar, connection_launcher, i18n::I18n, icons, migration_recovery, motion, nav,
-    responsive, toasts, transfer_wizard, widgets, workspace,
+    responsive, toasts, transfer_wizard, widgets, workspace, PayloadHighlighter,
 };
 
 pub const THEME_KEY: &str = "correo.theme-mode";
@@ -16,6 +16,7 @@ pub struct CorreoUi {
     i18n: I18n,
     icons_installed: bool,
     transfer_wizard: transfer_wizard::State,
+    payload_highlighter: Option<PayloadHighlighter>,
 }
 
 impl CorreoUi {
@@ -31,6 +32,7 @@ impl CorreoUi {
             snapshot,
             icons_installed: true,
             transfer_wizard: transfer_wizard::State::default(),
+            payload_highlighter: None,
         }
     }
 
@@ -41,6 +43,7 @@ impl CorreoUi {
             snapshot,
             icons_installed: false,
             transfer_wizard: transfer_wizard::State::default(),
+            payload_highlighter: None,
         }
     }
 
@@ -54,6 +57,7 @@ impl CorreoUi {
             snapshot,
             icons_installed: false,
             transfer_wizard: transfer_wizard::State::default(),
+            payload_highlighter: None,
         }
     }
 
@@ -61,6 +65,7 @@ impl CorreoUi {
         creation_context: &eframe::CreationContext<'_>,
         snapshot: AppSnapshot,
         command_sender: AppCommandSender,
+        payload_highlighter: Option<PayloadHighlighter>,
     ) -> Self {
         apply_theme(&creation_context.egui_ctx, &snapshot.theme_mode);
         egui_extras::install_image_loaders(&creation_context.egui_ctx);
@@ -71,6 +76,7 @@ impl CorreoUi {
             snapshot,
             icons_installed: true,
             transfer_wizard: transfer_wizard::State::default(),
+            payload_highlighter,
         }
     }
 
@@ -174,7 +180,14 @@ impl CorreoUi {
         CentralPanel::default()
             .frame(central_frame(tokens))
             .show(context, |ui| {
-                workspace::show(ui, &snapshot, tokens, commands, i18n);
+                workspace::show(
+                    ui,
+                    &snapshot,
+                    tokens,
+                    commands,
+                    i18n,
+                    self.payload_highlighter.as_ref(),
+                );
             });
         if compact_connections_context {
             connection_flyout(context, &snapshot, tokens, commands, i18n);

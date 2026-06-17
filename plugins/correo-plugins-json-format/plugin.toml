@@ -8,7 +8,7 @@ license = "GPL-3.0-or-later"
 compatible_correomqtt = ">=0.1.0, <1.0.0"
 
 [capabilities]
-hooks = ["detail_formatter"]
+hooks = ["detail_formatter", "payload_highlighter"]
 
 [capabilities.host]
 filesystem = false
@@ -19,6 +19,10 @@ mqtt = false
 [[entrypoints]]
 hook = "detail_formatter"
 export = "correo_detail_formatter"
+
+[[entrypoints]]
+hook = "payload_highlighter"
+export = "correo_payload_highlighter"
 
 [config_schema]
 schema_version = 1

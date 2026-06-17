@@ -3,18 +3,21 @@ use std::collections::HashMap;
 
 use correo_mqtt::ConnectionId;
 use correo_storage::current::{
-    AppConfig, Auth, ConnectionConfig, ConnectionHistorySnapshot, HistoryPersistenceSnapshot, Lwt,
-    MqttVersion, Proxy, Qos as StorageQos, ScriptPersistenceSnapshot, Settings, ThemeSettings,
-    TlsSsl,
+    AppConfig, Auth, ConnectionConfig, ConnectionHistorySnapshot,
+    ConnectionPluginDirection as StorageConnectionPluginDirection, ConnectionPluginWorkflowConfig,
+    ConnectionPluginWorkflowKind as StorageConnectionPluginWorkflowKind,
+    HistoryPersistenceSnapshot, Lwt, MqttVersion, Proxy, Qos as StorageQos,
+    ScriptPersistenceSnapshot, Settings, ThemeSettings, TlsSsl,
 };
 use correo_storage::migration::MigrationPreview;
 
 use crate::{
     normalize_keyring_backend, AppSnapshot, ConnectDisabledReason, ConnectionBadge,
-    ConnectionSettingsSnapshot, ConnectionState, ConnectionSummary, Diagnostic,
-    GlobalSettingsSnapshot, KeyringState, LegacyMigrationStatus, MigrationRecoverySnapshot,
-    PluginRepositoryRow, PublishHistoryRow, QosLevel, SubscribePaneSnapshot, SubscriptionRow,
-    ThemeMode, WorkbenchSnapshot,
+    ConnectionPluginDirection, ConnectionPluginWorkflow, ConnectionPluginWorkflowKind,
+    ConnectionPluginWorkflowStatus, ConnectionSettingsSnapshot, ConnectionState, ConnectionSummary,
+    Diagnostic, GlobalSettingsSnapshot, KeyringState, LegacyMigrationStatus,
+    MigrationRecoverySnapshot, PluginRepositoryRow, PluginStateSnapshot, PublishHistoryRow,
+    QosLevel, SubscribePaneSnapshot, SubscriptionRow, ThemeMode, WorkbenchSnapshot,
 };
 
 #[path = "bootstrap_scripts.rs"]
@@ -159,6 +162,7 @@ pub fn startup_state_from_current_with_plugins(
         &bundled_plugin_ids,
         &installed_plugin_ids,
         &installed_plugin_paths,
+        &config.settings.plugin_states,
     );
     snapshot.scripts = script_surface(&scripts);
     snapshot.diagnostics = warnings
@@ -272,7 +276,42 @@ fn settings_snapshot(
         save_disabled_reason: "No changes to save".to_owned(),
         keyring_state: KeyringState::Available,
         validation_errors: warnings.to_vec(),
+        plugin_workflows: connection
+            .plugin_workflows
+            .iter()
+            .map(connection_plugin_workflow)
+            .collect(),
         ..ConnectionSettingsSnapshot::default()
+    }
+}
+
+fn connection_plugin_workflow(config: &ConnectionPluginWorkflowConfig) -> ConnectionPluginWorkflow {
+    ConnectionPluginWorkflow {
+        plugin_id: config.plugin_id.clone(),
+        plugin_name: config.plugin_id.clone(),
+        enabled: config.enabled,
+        kind: match config.kind {
+            StorageConnectionPluginWorkflowKind::Validator => {
+                ConnectionPluginWorkflowKind::Validator
+            }
+            StorageConnectionPluginWorkflowKind::Manipulator => {
+                ConnectionPluginWorkflowKind::Manipulator
+            }
+        },
+        direction: match config.direction {
+            StorageConnectionPluginDirection::Incoming => ConnectionPluginDirection::Incoming,
+            StorageConnectionPluginDirection::Outgoing => ConnectionPluginDirection::Outgoing,
+            StorageConnectionPluginDirection::Both => ConnectionPluginDirection::Both,
+        },
+        topic_filter: config.topic_filter.clone(),
+        config: config.config.clone(),
+        available: false,
+        status: if config.enabled {
+            ConnectionPluginWorkflowStatus::MissingPlugin
+        } else {
+            ConnectionPluginWorkflowStatus::Disabled
+        },
+        message: String::new(),
     }
 }
 
@@ -351,6 +390,18 @@ fn global_settings(settings: &Settings) -> GlobalSettingsSnapshot {
             .map(|(id, url)| PluginRepositoryRow {
                 id: id.clone(),
                 url: url.clone(),
+            })
+            .collect(),
+        plugin_states: settings
+            .plugin_states
+            .iter()
+            .map(|(plugin_id, state)| {
+                (
+                    plugin_id.clone(),
+                    PluginStateSnapshot {
+                        enabled: state.enabled,
+                    },
+                )
             })
             .collect(),
         first_start: settings.first_start,

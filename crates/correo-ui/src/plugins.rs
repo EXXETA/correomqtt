@@ -1,6 +1,6 @@
 use correo_core::{
-    AppCommand, AppCommandSender, AppSnapshot, PluginDisableConfirmation, PluginFeedbackSeverity,
-    PluginLoadState, PluginRow, PluginStatus, PluginSurfaceSnapshot, PluginSurfaceTab,
+    AppCommand, AppCommandSender, AppSnapshot, PluginDisableConfirmation, PluginLoadState,
+    PluginRow, PluginStatus, PluginSurfaceSnapshot, PluginSurfaceTab,
 };
 use egui::{Button, RichText, Sense, Stroke, Ui, UiBuilder, Window};
 use egui_extras::{Size, StripBuilder};
@@ -80,9 +80,6 @@ fn toolbar(
         ui.add_space(8.0);
         ui.label(RichText::new(plugin_counts(plugins, i18n)).color(tokens.text_secondary));
     });
-    if let Some(feedback) = &plugins.feedback {
-        ui.label(RichText::new(&feedback.message).color(feedback_color(feedback.severity, tokens)));
-    }
 }
 
 fn empty_state(ui: &mut Ui, plugins: &PluginSurfaceSnapshot, tokens: ThemeTokens, i18n: &I18n) {
@@ -566,14 +563,6 @@ pub(super) fn status_color(status: PluginStatus, tokens: ThemeTokens) -> egui::C
         | PluginStatus::CapabilityDenied
         | PluginStatus::UnsupportedLegacy => tokens.warning,
         PluginStatus::LoadError | PluginStatus::HookFailed => tokens.danger,
-    }
-}
-
-fn feedback_color(severity: PluginFeedbackSeverity, tokens: ThemeTokens) -> egui::Color32 {
-    match severity {
-        PluginFeedbackSeverity::Info => tokens.success,
-        PluginFeedbackSeverity::Warning => tokens.warning,
-        PluginFeedbackSeverity::Error => tokens.danger,
     }
 }
 

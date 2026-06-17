@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 const ABI_VERSION: u16 = 1;
+pub const CONFIGURATION_DESCRIPTION: &str = "Writes matching payloads to files in the selected folder without changing the message contents.";
 const SUGGESTED_FILE_NAME: &str = "correomqtt-payload.txt";
 const DEFAULT_CONTENT_TYPE: &str = "text/plain";
 

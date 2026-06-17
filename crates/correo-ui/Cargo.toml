@@ -15,6 +15,7 @@ egui-phosphor.workspace = true
 egui_extras.workspace = true
 fluent-bundle.workspace = true
 rfd.workspace = true
+serde_json.workspace = true
 time.workspace = true
 unic-langid.workspace = true
 

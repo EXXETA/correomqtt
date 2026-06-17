@@ -151,6 +151,23 @@ keyring-available = Schlüsselbund verfügbar
 keyring-locked = Schlüsselbund gesperrt
 keyring-unavailable = Schlüsselbund nicht verfügbar
 
+validators-title = Validatoren/Manipulatoren
+validators-detail = Validatoren/Manipulatoren laufen nur für diese Verbindung und in der angezeigten Reihenfolge.
+validators-add = Hinzufügen
+validators-none-available = Keine aktivierten Validatoren oder Manipulatoren verfügbar.
+validators-empty-config = Füge einen Validator/Manipulator hinzu, um ihn zu konfigurieren.
+validators-plugin-unavailable = Plugin ist nicht aktiviert oder nicht installiert; die gespeicherte Konfiguration bleibt erhalten, wird aber nicht verwendet.
+validators-topic-filter = Topic-Filter
+validators-direction = Richtung
+validators-direction-incoming = Eingehend
+validators-direction-outgoing = Ausgehend
+validators-direction-both = Beide
+validators-xsd-file = XSD-Datei
+validators-strings-regex = Strings / Regex, eine Regel pro Zeile
+validators-save-folder = Speicherordner
+validators-choose = Auswählen...
+validators-no-config = Für dieses Plugin ist keine typisierte Konfiguration verfügbar.
+
 state-disconnected = Getrennt.
 state-connecting = Verbinden ...
 state-connected = Verbunden.

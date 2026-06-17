@@ -97,6 +97,7 @@ fn migrate_connection(
         connection_ui_settings: None,
         publish_list_view_config: None,
         subscribe_list_view_config: None,
+        plugin_workflows: Vec::new(),
     })
 }
 

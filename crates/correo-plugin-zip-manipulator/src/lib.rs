@@ -9,6 +9,7 @@ use std::io::{Read, Write};
 
 #[cfg(target_arch = "wasm32")]
 const ABI_VERSION: u16 = 1;
+pub const CONFIGURATION_DESCRIPTION: &str = "Gzip-compresses outgoing payloads and decompresses incoming gzip payloads for matching topics.";
 const GZIP_CONTENT_TYPE: &str = "application/gzip";
 const GZIP_MAGIC: [u8; 2] = [0x1f, 0x8b];
 pub const DEFAULT_MAX_INPUT_BYTES: usize = 1024 * 1024;

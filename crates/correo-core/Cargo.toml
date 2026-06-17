@@ -6,13 +6,16 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+base64.workspace = true
 correo-diagnostics = { path = "../correo-diagnostics" }
 correo-mqtt = { path = "../correo-mqtt" }
 correo-scripting = { path = "../correo-scripting" }
 correo-storage = { path = "../correo-storage" }
 correo-style = { path = "../correo-style" }
 flume.workspace = true
+flate2.workspace = true
 futures.workspace = true
+regex.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

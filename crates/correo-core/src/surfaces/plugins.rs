@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::{PluginConnectionHeaderAction, PluginWindowRow};
+
 #[path = "plugins/repository.rs"]
 mod repository;
 pub use repository::*;
@@ -20,6 +22,8 @@ pub struct PluginSurfaceSnapshot {
     pub feedback: Option<PluginFeedback>,
     pub disable_confirmation: Option<PluginDisableConfirmation>,
     pub hook_editor: Option<PluginHookEditor>,
+    #[serde(default)]
+    pub open_windows: Vec<PluginWindowRow>,
 }
 
 impl PluginSurfaceSnapshot {
@@ -123,6 +127,37 @@ impl PluginSurfaceSnapshot {
             .flat_map(|plugin| plugin.diagnostics.iter())
             .find(|diagnostic| &diagnostic.id == selected)
     }
+
+    pub fn connection_header_actions(&self) -> Vec<&PluginConnectionHeaderAction> {
+        self.plugins
+            .iter()
+            .filter(|plugin| plugin.enabled && plugin.status == PluginStatus::Active)
+            .flat_map(|plugin| plugin.connection_header_actions.iter())
+            .collect()
+    }
+
+    pub fn active_plugin_ids(&self) -> Vec<String> {
+        self.plugins
+            .iter()
+            .filter(|plugin| plugin.enabled && plugin.status == PluginStatus::Active)
+            .map(|plugin| plugin.id.clone())
+            .collect()
+    }
+
+    pub fn has_connection_workflow_plugins(&self) -> bool {
+        self.plugins.iter().any(|plugin| {
+            plugin.enabled
+                && plugin.status == PluginStatus::Active
+                && matches!(
+                    plugin.id.as_str(),
+                    "org.correomqtt.plugins.contains-string-validator"
+                        | "org.correomqtt.plugins.xml-xsd-validator"
+                        | "org.correomqtt.plugins.base64"
+                        | "org.correomqtt.plugins.save-manipulator"
+                        | "org.correomqtt.plugins.zip-manipulator"
+                )
+        })
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -167,6 +202,8 @@ pub struct PluginRow {
     pub capabilities: Vec<PluginCapabilityRow>,
     pub config_fields: Vec<PluginConfigField>,
     pub hooks: Vec<PluginHookAssignment>,
+    #[serde(default)]
+    pub connection_header_actions: Vec<PluginConnectionHeaderAction>,
     pub diagnostics: Vec<PluginDiagnosticRow>,
     pub legacy_note: Option<String>,
 }
@@ -190,6 +227,8 @@ pub struct PluginMarketplaceRow {
     #[serde(default)]
     pub location: String,
     pub capabilities: Vec<PluginCapabilityRow>,
+    #[serde(default)]
+    pub connection_header_actions: Vec<PluginConnectionHeaderAction>,
     #[serde(default)]
     pub install_source: PluginMarketplaceSource,
     pub installed_plugin_id: Option<String>,
@@ -293,6 +332,7 @@ impl PluginMarketplaceRow {
             capabilities: self.capabilities.clone(),
             config_fields: Vec::new(),
             hooks: Vec::new(),
+            connection_header_actions: self.connection_header_actions.clone(),
             diagnostics: Vec::new(),
             legacy_note: None,
         }

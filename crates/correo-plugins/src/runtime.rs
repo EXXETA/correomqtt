@@ -217,6 +217,7 @@ fn validate_manifest(
         crate::HostSurface::Network,
         crate::HostSurface::Secrets,
         crate::HostSurface::Mqtt,
+        crate::HostSurface::Ui,
     ] {
         if manifest.capabilities.grants_host_surface(surface) {
             return Err(RuntimeLoadError::UnsupportedHostCapability {

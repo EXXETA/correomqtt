@@ -1,7 +1,8 @@
 use correo_core::{
     AppRuntime, Diagnostic, HistoryPersistenceWorker, MigrationPersistenceWorker, MqttService,
-    RumqttSessionFactory, ScriptingWorker, SettingsPersistenceWorker,
+    PluginHookExecutor, RumqttSessionFactory, ScriptingWorker, SettingsPersistenceWorker,
 };
+use std::sync::Arc;
 
 use crate::plugins::{InstalledPluginExecutor, PluginFileInstaller};
 use crate::startup::{history_root, load_startup_state};
@@ -60,7 +61,7 @@ impl CorreoDesktopApp {
         let mut runtime = AppRuntime::with_startup_state(loaded.state);
         let storage_root = history_root();
         runtime.attach_plugin_installer(PluginFileInstaller::new(storage_root.clone()));
-        attach_plugin_executor(
+        let plugin_executor = attach_plugin_executor(
             &mut runtime,
             storage_root.clone(),
             &loaded.plugins.installed_package_dirs,
@@ -77,6 +78,11 @@ impl CorreoDesktopApp {
             creation_context,
             runtime.snapshot().clone(),
             runtime.command_sender(),
+            plugin_executor.map(|executor| {
+                Arc::new(move |text: &str, active_plugin_ids: &[String]| {
+                    executor.highlight_payload(text, active_plugin_ids)
+                }) as correo_ui::PayloadHighlighter
+            }),
         );
         Self {
             runtime,
@@ -101,13 +107,20 @@ fn attach_plugin_executor(
     runtime: &mut AppRuntime,
     config_root: std::path::PathBuf,
     package_dirs: &[std::path::PathBuf],
-) {
+) -> Option<Arc<dyn PluginHookExecutor>> {
     match InstalledPluginExecutor::load(config_root, package_dirs) {
-        Ok(executor) => runtime.attach_plugin_hook_executor(executor),
-        Err(error) => record_startup_diagnostic(
-            runtime,
-            format!("Plugin runtime could not load installed plugins: {error}"),
-        ),
+        Ok(executor) => {
+            let executor: Arc<dyn PluginHookExecutor> = Arc::new(executor);
+            runtime.attach_plugin_hook_executor(executor.clone());
+            Some(executor)
+        }
+        Err(error) => {
+            record_startup_diagnostic(
+                runtime,
+                format!("Plugin runtime could not load installed plugins: {error}"),
+            );
+            None
+        }
     }
 }
 

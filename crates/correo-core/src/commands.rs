@@ -4,7 +4,8 @@ use correo_mqtt::ConnectionId;
 use thiserror::Error;
 
 use crate::{
-    ConnectDisabledReason, ConnectionSecretField, ConnectionSettingField, ConnectionSettingFlag,
+    ConnectDisabledReason, ConnectionPluginDirection, ConnectionPluginWorkflowField,
+    ConnectionSecretField, ConnectionSettingField, ConnectionSettingFlag,
     ConnectionSettingsSnapshot, ConnectionSettingsTab, ConnectionState, ConnectionSummary,
     Diagnostic, GlobalSettingField, GlobalSettingFlag, GlobalSettingsSnapshot, MessageInspectorTab,
     MigrationApplyStage, MigrationRecoveryCompletion, MigrationRecoveryCounts,
@@ -57,6 +58,14 @@ pub enum AppCommand {
     ExportMessages,
     ExportPublishHistoryMessage(u32),
     ExportIncomingMessage(u32),
+    ExportPublishHistoryMessageToPath {
+        message_id: u32,
+        path: PathBuf,
+    },
+    ExportIncomingMessageToPath {
+        message_id: u32,
+        path: PathBuf,
+    },
     CopyPublishHistoryMessageToPublishForm(u32),
     CopyIncomingMessageToPublishForm(u32),
     RemovePublishHistoryMessage(u32),
@@ -112,6 +121,34 @@ pub enum AppCommand {
     SetLwtEnabled(bool),
     SaveConnectionSettings,
     DiscardConnectionSettings,
+    OpenConnectionPlugins(ConnectionId),
+    SaveConnectionPlugins,
+    CloseConnectionPlugins,
+    SelectConnectionPluginWorkflow(usize),
+    AddConnectionPluginWorkflow {
+        plugin_id: String,
+    },
+    RemoveConnectionPluginWorkflow {
+        index: usize,
+    },
+    SetConnectionPluginWorkflowEnabled {
+        index: usize,
+        enabled: bool,
+    },
+    MoveConnectionPluginWorkflow {
+        index: usize,
+        target_index: usize,
+        after: bool,
+    },
+    SetConnectionPluginWorkflowDirection {
+        index: usize,
+        direction: ConnectionPluginDirection,
+    },
+    UpdateConnectionPluginWorkflowField {
+        index: usize,
+        field: ConnectionPluginWorkflowField,
+        value: String,
+    },
     RequestDeleteConnection,
     CancelDeleteConnection,
     ConfirmDeleteConnection,
@@ -210,6 +247,16 @@ pub enum AppCommand {
     SearchPluginDiagnostics(String),
     SelectPluginDiagnostic(String),
     ClearPluginDiagnostics,
+    InvokeConnectionPluginAction {
+        plugin_id: String,
+        action_id: String,
+        connection_id: ConnectionId,
+    },
+    ClosePluginWindow {
+        plugin_id: String,
+        action_id: String,
+        connection_id: ConnectionId,
+    },
     Mqtt(MqttCommand),
     Shutdown,
 }

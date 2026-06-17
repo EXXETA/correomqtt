@@ -75,7 +75,7 @@ impl AppModel {
         }
     }
 
-    pub(super) fn storage_connection_id(&self, connection_id: ConnectionId) -> String {
+    pub(crate) fn storage_connection_id(&self, connection_id: ConnectionId) -> String {
         self.storage_connection_ids
             .get(&connection_id)
             .cloned()

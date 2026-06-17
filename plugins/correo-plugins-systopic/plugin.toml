@@ -1,24 +1,27 @@
 manifest_version = 1
 id = "org.correomqtt.plugins.system-topic"
-name = "System Topic Formatter"
+name = "System Topics"
 version = "0.1.0"
-description = "Labels known $SYS broker metrics for the message detail view."
+description = "Adds a connection header action that opens live $SYS broker metrics."
 provider = "CorreoMQTT"
 license = "GPL-3.0-or-later"
 compatible_correomqtt = ">=0.1.0, <1.0.0"
 
 [capabilities]
-hooks = ["detail_formatter"]
+hooks = []
 
 [capabilities.host]
 filesystem = false
 network = false
 secrets = false
-mqtt = false
+mqtt = true
+ui = true
 
-[[entrypoints]]
-hook = "detail_formatter"
-export = "correo_detail_formatter"
+[[connection_header_actions]]
+id = "system-topics"
+label = "$SYS"
+tooltip = "Open system topics"
+requires_connected = true
 
 [config_schema]
 schema_version = 1

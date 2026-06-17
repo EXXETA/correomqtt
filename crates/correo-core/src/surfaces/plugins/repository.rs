@@ -2,6 +2,7 @@ use serde::Deserialize;
 use thiserror::Error;
 
 use super::{PluginCapabilityRow, PluginMarketplaceRow, PluginMarketplaceSource};
+use crate::PluginConnectionHeaderAction;
 
 const SUPPORTED_REPOSITORY_FORMAT_VERSION: u16 = 1;
 
@@ -20,8 +21,9 @@ pub fn marketplace_rows_from_repository_json(
         .into_iter()
         .map(|entry| {
             let location = entry.install_source.location_label();
+            let plugin_id = entry.manifest.id;
             PluginMarketplaceRow {
-                id: entry.manifest.id,
+                id: plugin_id.clone(),
                 name: entry.manifest.name,
                 version: entry.manifest.version,
                 provider: entry.manifest.provider,
@@ -30,6 +32,10 @@ pub fn marketplace_rows_from_repository_json(
                 license: entry.manifest.license,
                 location,
                 capabilities: capability_rows(entry.manifest.capabilities),
+                connection_header_actions: connection_header_actions(
+                    &plugin_id,
+                    entry.manifest.connection_header_actions,
+                ),
                 install_source: entry.install_source,
                 installed_plugin_id: None,
             }
@@ -75,6 +81,18 @@ struct RepositoryManifestDto {
     #[serde(default)]
     license: String,
     capabilities: RepositoryCapabilitiesDto,
+    #[serde(default)]
+    connection_header_actions: Vec<RepositoryConnectionHeaderActionDto>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RepositoryConnectionHeaderActionDto {
+    id: String,
+    label: String,
+    #[serde(default)]
+    tooltip: String,
+    #[serde(default)]
+    requires_connected: bool,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -97,6 +115,24 @@ struct RepositoryHostCapabilitiesDto {
     secrets: bool,
     #[serde(default)]
     mqtt: bool,
+    #[serde(default)]
+    ui: bool,
+}
+
+fn connection_header_actions(
+    plugin_id: &str,
+    actions: Vec<RepositoryConnectionHeaderActionDto>,
+) -> Vec<PluginConnectionHeaderAction> {
+    actions
+        .into_iter()
+        .map(|action| PluginConnectionHeaderAction {
+            plugin_id: plugin_id.to_owned(),
+            action_id: action.id,
+            label: action.label,
+            tooltip: action.tooltip,
+            requires_connected: action.requires_connected,
+        })
+        .collect()
 }
 
 fn capability_rows(capabilities: RepositoryCapabilitiesDto) -> Vec<PluginCapabilityRow> {
@@ -116,6 +152,7 @@ fn capability_rows(capabilities: RepositoryCapabilitiesDto) -> Vec<PluginCapabil
         (capabilities.host.network, "Network"),
         (capabilities.host.secrets, "Secrets"),
         (capabilities.host.mqtt, "MQTT"),
+        (capabilities.host.ui, "UI"),
     ] {
         if enabled {
             rows.push(PluginCapabilityRow {

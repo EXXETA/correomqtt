@@ -92,7 +92,7 @@ pub fn overlay(
         }
     }
 
-    let overlay_rect = ui.ctx().screen_rect();
+    let overlay_rect = crate::overlay_bounds::get(ui);
     let modal_size = egui::vec2(
         (overlay_rect.width() * 0.95).min(MODAL_MAX_WIDTH),
         (overlay_rect.height() * MODAL_HEIGHT_SCALE).min(MODAL_MAX_HEIGHT),

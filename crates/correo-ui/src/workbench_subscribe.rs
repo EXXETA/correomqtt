@@ -221,19 +221,26 @@ fn subscription_table(
         .max_height(table_height)
         .scroll_bar_rect(tile_scroll_bar_rect_with_height(ui, table_height))
         .auto_shrink([false, false])
-        .show(ui, |ui| {
-            let subscriptions = &snapshot.workbench.subscribe.subscriptions;
-            for (index, subscription) in subscriptions.iter().enumerate() {
-                subscription_row(ui, index, subscription, tokens, commands);
-            }
-            fill_remaining_tile_rows(
-                ui,
-                subscriptions.len(),
-                layout::SUBSCRIPTION_ROW_HEIGHT,
-                table_height,
-                tokens,
-            );
-        });
+        .show_rows(
+            ui,
+            layout::SUBSCRIPTION_ROW_HEIGHT,
+            snapshot.workbench.subscribe.subscriptions.len(),
+            |ui, row_range| {
+                let subscriptions = &snapshot.workbench.subscribe.subscriptions;
+                for index in row_range {
+                    if let Some(subscription) = subscriptions.get(index) {
+                        subscription_row(ui, index, subscription, tokens, commands);
+                    }
+                }
+            },
+        );
+    fill_remaining_tile_rows(
+        ui,
+        snapshot.workbench.subscribe.subscriptions.len(),
+        layout::SUBSCRIPTION_ROW_HEIGHT,
+        table_height,
+        tokens,
+    );
 }
 
 fn subscription_row(

@@ -151,6 +151,23 @@ keyring-available = Keyring available
 keyring-locked = Keyring locked
 keyring-unavailable = Keyring unavailable
 
+validators-title = Validators/Manipulators
+validators-detail = Validators/manipulators run only for this connection, in the order shown.
+validators-add = Add
+validators-none-available = No enabled validators or manipulators available.
+validators-empty-config = Add a validator/manipulator to configure it.
+validators-plugin-unavailable = Plugin is not enabled or not installed; saved config is kept but not used.
+validators-topic-filter = Topic filter
+validators-direction = Direction
+validators-direction-incoming = Incoming
+validators-direction-outgoing = Outgoing
+validators-direction-both = Both
+validators-xsd-file = XSD file
+validators-strings-regex = Strings / regex, one per line
+validators-save-folder = Save folder
+validators-choose = Choose...
+validators-no-config = No typed config is available for this plugin.
+
 state-disconnected = Disconnected.
 state-connecting = Connecting ...
 state-connected = Connected.

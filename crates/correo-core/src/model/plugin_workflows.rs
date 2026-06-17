@@ -42,7 +42,54 @@ impl AppModel {
             PluginWorkflowEvent::MessageDetailCleared { message_id } => {
                 self.update_message_detail(message_id, None);
             }
+            PluginWorkflowEvent::PluginWindowOpened(window) => self.open_plugin_window(window),
+            PluginWorkflowEvent::PluginWindowRendered {
+                plugin_id,
+                action_id,
+                connection_id,
+                nodes,
+            } => self.update_plugin_window(&plugin_id, &action_id, connection_id, nodes),
+            PluginWorkflowEvent::PluginWindowClosed {
+                plugin_id,
+                action_id,
+                connection_id,
+            } => self.close_plugin_window(&plugin_id, &action_id, connection_id),
         }
+    }
+
+    fn open_plugin_window(&mut self, window: crate::PluginWindowRow) {
+        self.close_plugin_window(&window.plugin_id, &window.action_id, window.connection_id);
+        self.snapshot.plugins.open_windows.push(window);
+    }
+
+    fn update_plugin_window(
+        &mut self,
+        plugin_id: &str,
+        action_id: &str,
+        connection_id: correo_mqtt::ConnectionId,
+        nodes: Vec<crate::PluginUiNode>,
+    ) {
+        if let Some(window) = self
+            .snapshot
+            .plugins
+            .open_windows
+            .iter_mut()
+            .find(|window| window.matches(plugin_id, action_id, connection_id))
+        {
+            window.nodes = nodes;
+        }
+    }
+
+    fn close_plugin_window(
+        &mut self,
+        plugin_id: &str,
+        action_id: &str,
+        connection_id: correo_mqtt::ConnectionId,
+    ) {
+        self.snapshot
+            .plugins
+            .open_windows
+            .retain(|window| !window.matches(plugin_id, action_id, connection_id));
     }
 
     fn record_plugin_diagnostic(&mut self, event: PluginHookDiagnosticEvent) {

@@ -123,6 +123,7 @@ impl AppRuntime {
             self.append_incoming_diagnostics(incoming_diagnostics);
             if refresh_detail {
                 self.refresh_message_detail();
+                self.refresh_plugin_windows();
             }
             self.dispatch_dirty_workbenches();
             report.events_processed += 1;
@@ -155,12 +156,17 @@ impl AppRuntime {
 
         while let Ok(command) = self.command_receiver.try_recv() {
             let command_before = self.model.snapshot().clone();
-            let should_persist_settings = matches!(command, AppCommand::SaveGlobalSettings)
-                && self.model.snapshot().global_settings.dirty;
+            let should_persist_settings = (matches!(command, AppCommand::SaveGlobalSettings)
+                && self.model.snapshot().global_settings.dirty)
+                || matches!(
+                    command,
+                    AppCommand::SetPluginEnabled { .. } | AppCommand::ConfirmPluginDisable
+                );
             if matches!(command, AppCommand::Shutdown) {
                 self.shutdown_requested = true;
             }
             self.forward_mqtt_commands(&command);
+            self.apply_plugin_connection_command(&command);
             self.forward_migration_command(&command);
             let plugin_file_result = self.apply_plugin_file_command(&command);
             if !plugin_file_result.proceed {
@@ -178,6 +184,9 @@ impl AppRuntime {
             }
             if should_persist_settings {
                 self.dispatch_global_settings_save();
+            }
+            if matches!(command, AppCommand::SaveConnectionPlugins) {
+                self.dispatch_connection_plugin_workflows_save();
             }
             self.dispatch_scripting_command(&command, &command_before);
             self.dispatch_dirty_workbenches();
@@ -309,6 +318,38 @@ impl AppRuntime {
             theme_mode: self.model.snapshot().theme_mode.clone(),
             settings: self.model.snapshot().global_settings.clone(),
         }) {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    error.to_string(),
+                )));
+        }
+    }
+
+    fn dispatch_connection_plugin_workflows_save(&self) {
+        let Some(connection_id) = self.model.snapshot().selected_connection else {
+            return;
+        };
+        let Some(worker) = &self.settings_worker else {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    "Settings persistence worker is not running.",
+                )));
+            return;
+        };
+        let storage_connection_id = self.model.storage_connection_id(connection_id);
+        if let Err(error) =
+            worker.dispatch(SettingsPersistenceCommand::SaveConnectionPluginWorkflows {
+                connection_id: storage_connection_id,
+                workflows: self
+                    .model
+                    .snapshot()
+                    .connection_settings
+                    .plugin_workflows
+                    .clone(),
+            })
+        {
             let _ = self
                 .event_sender
                 .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(

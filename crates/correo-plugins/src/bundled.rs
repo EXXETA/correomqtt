@@ -1,8 +1,8 @@
 use crate::{
-    CapabilityGrants, ConfigSchemaMetadata, HookInvocation, HookKind, HookOutput,
-    IncomingMessageTransformResponse, IntoPluginDiagnostic, MessageTransformOutcomeDto,
-    MessageValidatorResponse, OutgoingMessageTransformResponse, PluginDiagnostic, PluginEntrypoint,
-    PluginManifest, ValidationResultDto, ABI_VERSION,
+    CapabilityGrants, ConfigSchemaMetadata, ConnectionHeaderActionContribution, HookInvocation,
+    HookKind, HookOutput, IncomingMessageTransformResponse, IntoPluginDiagnostic,
+    MessageTransformOutcomeDto, MessageValidatorResponse, OutgoingMessageTransformResponse,
+    PluginDiagnostic, PluginEntrypoint, PluginManifest, ValidationResultDto, ABI_VERSION,
 };
 use advanced_validator::{
     config_schema as advanced_validator_config_schema,
@@ -14,7 +14,8 @@ use correo_plugins_systopic::{LEGACY_PLUGIN_ID as SYSTOPIC_LEGACY_ID, PLUGIN_ID 
 use correo_plugins_xml_xsd_validator::{
     config_schema_document, validate_xml_xsd, XmlXsdValidation,
 };
-use formatting::{format_json, format_system_topic, format_xml};
+use formatting::{format_json, format_xml};
+pub use formatting::{highlight_json, highlight_xml, PayloadSyntaxKind, PayloadSyntaxSpan};
 use gzip::{gzip_config_schema, transform_gzip_detail, GzipTransformError};
 use semver::{Version, VersionReq};
 use serde::Deserialize;
@@ -26,8 +27,8 @@ mod formatting;
 mod gzip;
 
 const BASE64_ID: &str = "org.correomqtt.plugins.base64";
-const JSON_FORMAT_ID: &str = "org.correomqtt.plugins.json-format";
-const XML_FORMAT_ID: &str = "org.correomqtt.plugins.xml-format";
+pub const JSON_FORMAT_ID: &str = "org.correomqtt.plugins.json-format";
+pub const XML_FORMAT_ID: &str = "org.correomqtt.plugins.xml-format";
 const CONTAINS_STRING_ID: &str = "org.correomqtt.plugins.contains-string-validator";
 const ADVANCED_VALIDATOR_ID: &str = "org.correomqtt.plugins.advanced-validator";
 const XML_XSD_VALIDATOR_ID: &str = "org.correomqtt.plugins.xml-xsd-validator";
@@ -97,9 +98,6 @@ impl BundledPlugin {
             (BundledPluginKind::XmlFormatter, HookInvocation::DetailFormatter(request)) => {
                 format_xml(request, self.id()).map(HookOutput::DetailFormatter)
             }
-            (BundledPluginKind::SystemTopicFormatter, HookInvocation::DetailFormatter(request)) => {
-                Ok(HookOutput::DetailFormatter(format_system_topic(request)))
-            }
             (
                 BundledPluginKind::ContainsStringValidator,
                 HookInvocation::MessageValidator(request),
@@ -162,7 +160,7 @@ pub fn bundled_plugins() -> Vec<BundledPlugin> {
             JSON_FORMAT_ID,
             "JSON Formatter",
             "Formats valid JSON payloads for the message detail view.",
-            &[HookKind::DetailFormatter],
+            &[HookKind::DetailFormatter, HookKind::PayloadHighlighter],
             empty_config_schema(),
             BundledPluginKind::JsonFormatter,
         ),
@@ -170,7 +168,7 @@ pub fn bundled_plugins() -> Vec<BundledPlugin> {
             XML_FORMAT_ID,
             "XML Formatter",
             "Formats XML-like payloads for the message detail view.",
-            &[HookKind::DetailFormatter],
+            &[HookKind::DetailFormatter, HookKind::PayloadHighlighter],
             empty_config_schema(),
             BundledPluginKind::XmlFormatter,
         ),
@@ -190,14 +188,7 @@ pub fn bundled_plugins() -> Vec<BundledPlugin> {
             advanced_validator_config_schema(),
             BundledPluginKind::AdvancedValidator,
         ),
-        bundled_plugin(
-            SYSTOPIC_ID,
-            "System Topic Formatter",
-            "Labels known $SYS broker metrics for the message detail view.",
-            &[HookKind::DetailFormatter],
-            empty_config_schema(),
-            BundledPluginKind::SystemTopicFormatter,
-        ),
+        system_topic_plugin(),
         bundled_plugin(
             XML_XSD_VALIDATOR_ID,
             "XML/XSD Validator",
@@ -215,6 +206,45 @@ pub fn bundled_plugins() -> Vec<BundledPlugin> {
             BundledPluginKind::ZipManipulator,
         ),
     ]
+}
+
+fn system_topic_plugin() -> BundledPlugin {
+    let manifest = PluginManifest {
+        manifest_version: 1,
+        id: SYSTOPIC_ID.to_owned(),
+        name: "System Topics".to_owned(),
+        version: Version::new(0, 1, 0),
+        description: "Adds a connection header action that opens live $SYS broker metrics."
+            .to_owned(),
+        provider: "CorreoMQTT".to_owned(),
+        license: "GPL-3.0-or-later".to_owned(),
+        compatible_correomqtt: VersionReq::parse(">=0.1.0, <1.0.0")
+            .expect("bundled compatibility requirement is valid"),
+        capabilities: CapabilityGrants {
+            hooks: Vec::new(),
+            host: crate::HostCapabilityGrants {
+                mqtt: true,
+                ui: true,
+                ..Default::default()
+            },
+        },
+        entrypoints: Vec::new(),
+        connection_header_actions: vec![ConnectionHeaderActionContribution {
+            id: "system-topics".to_owned(),
+            label: "$SYS".to_owned(),
+            tooltip: "Open system topics".to_owned(),
+            requires_connected: true,
+        }],
+        themes: Vec::new(),
+        config_schema: Some(empty_config_schema()),
+    };
+    manifest
+        .validate()
+        .expect("bundled plugin manifest is valid");
+    BundledPlugin {
+        manifest,
+        kind: BundledPluginKind::SystemTopicFormatter,
+    }
 }
 
 pub fn bundled_plugin_manifests() -> Vec<PluginManifest> {
@@ -343,6 +373,7 @@ fn bundled_plugin(
                 export: bundled_export_name(*hook).to_owned(),
             })
             .collect(),
+        connection_header_actions: Vec::new(),
         themes: Vec::new(),
         config_schema: Some(config_schema),
     };
@@ -453,6 +484,7 @@ fn bundled_export_name(hook: HookKind) -> &'static str {
         HookKind::MessageValidator => "builtin_message_validator",
         HookKind::DetailByteTransform => "builtin_detail_byte_transform",
         HookKind::DetailFormatter => "builtin_detail_formatter",
+        HookKind::PayloadHighlighter => "builtin_payload_highlighter",
     }
 }
 

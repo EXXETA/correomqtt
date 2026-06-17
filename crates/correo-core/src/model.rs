@@ -84,6 +84,17 @@ impl AppModel {
         &self.snapshot
     }
 
+    pub(crate) fn connection_settings_for(
+        &self,
+        connection_id: ConnectionId,
+    ) -> Option<&ConnectionSettingsSnapshot> {
+        if self.snapshot.selected_connection == Some(connection_id) {
+            Some(&self.snapshot.connection_settings)
+        } else {
+            self.connection_settings.get(&connection_id)
+        }
+    }
+
     pub(crate) fn drain_workbench_persistence_commands(
         &mut self,
     ) -> Vec<crate::HistoryPersistenceCommand> {
@@ -213,6 +224,12 @@ impl AppModel {
                 self.export_publish_history_message(topic)
             }
             AppCommand::ExportIncomingMessage(id) => self.export_incoming_message(id),
+            AppCommand::ExportPublishHistoryMessageToPath { message_id, path } => {
+                self.export_publish_history_message_to_path(message_id, &path)
+            }
+            AppCommand::ExportIncomingMessageToPath { message_id, path } => {
+                self.export_incoming_message_to_path(message_id, &path)
+            }
             AppCommand::CopyPublishHistoryMessageToPublishForm(id) => {
                 self.copy_publish_history_message_to_publish_form(id);
             }
@@ -284,6 +301,36 @@ impl AppModel {
             }
             AppCommand::SaveConnectionSettings => self.save_connection_settings(),
             AppCommand::DiscardConnectionSettings => self.discard_connection_settings(),
+            AppCommand::OpenConnectionPlugins(connection_id) => {
+                self.open_connection_plugins(connection_id)
+            }
+            AppCommand::SaveConnectionPlugins => self.save_connection_plugins(),
+            AppCommand::CloseConnectionPlugins => self.close_connection_plugins(),
+            AppCommand::SelectConnectionPluginWorkflow(index) => {
+                self.snapshot.connection_settings.selected_plugin_workflow = Some(index)
+            }
+            AppCommand::AddConnectionPluginWorkflow { plugin_id } => {
+                self.add_connection_plugin_workflow(plugin_id)
+            }
+            AppCommand::RemoveConnectionPluginWorkflow { index } => {
+                self.remove_connection_plugin_workflow(index)
+            }
+            AppCommand::SetConnectionPluginWorkflowEnabled { index, enabled } => {
+                self.set_connection_plugin_workflow_enabled(index, enabled)
+            }
+            AppCommand::MoveConnectionPluginWorkflow {
+                index,
+                target_index,
+                after,
+            } => self.move_connection_plugin_workflow(index, target_index, after),
+            AppCommand::SetConnectionPluginWorkflowDirection { index, direction } => {
+                self.set_connection_plugin_workflow_direction(index, direction)
+            }
+            AppCommand::UpdateConnectionPluginWorkflowField {
+                index,
+                field,
+                value,
+            } => self.update_connection_plugin_workflow_field(index, field, value),
             AppCommand::RequestDeleteConnection => self.request_delete_connection(),
             AppCommand::CancelDeleteConnection => {
                 self.snapshot.connection_settings.delete_confirmation_open = false;
@@ -503,6 +550,8 @@ fn command_mutates_active_workbench(command: &AppCommand) -> bool {
             | AppCommand::ExportMessages
             | AppCommand::ExportPublishHistoryMessage(_)
             | AppCommand::ExportIncomingMessage(_)
+            | AppCommand::ExportPublishHistoryMessageToPath { .. }
+            | AppCommand::ExportIncomingMessageToPath { .. }
             | AppCommand::CopyPublishHistoryMessageToPublishForm(_)
             | AppCommand::CopyIncomingMessageToPublishForm(_)
             | AppCommand::RemovePublishHistoryMessage(_)

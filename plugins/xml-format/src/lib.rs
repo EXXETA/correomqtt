@@ -4,6 +4,25 @@ use std::string::FromUtf8Error;
 
 pub const ABI_VERSION: u16 = 1;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+#[cfg_attr(target_arch = "wasm32", serde(rename_all = "snake_case"))]
+pub enum XmlSyntaxKind {
+    String,
+    Punctuation,
+    Tag,
+    Attribute,
+    Comment,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(target_arch = "wasm32", derive(Serialize))]
+pub struct XmlSyntaxSpan {
+    pub start: usize,
+    pub end: usize,
+    pub kind: XmlSyntaxKind,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct XmlFormatOutput {
     pub format: XmlDetailFormat,
@@ -64,6 +83,84 @@ pub fn format_xml_bytes(bytes: Vec<u8>) -> Result<XmlFormatOutput, XmlFormatErro
     })
 }
 
+pub fn highlight_xml_syntax(text: &str) -> Option<Vec<XmlSyntaxSpan>> {
+    if !text.trim_start().starts_with('<') {
+        return None;
+    }
+
+    let mut spans = Vec::new();
+    let mut index = 0;
+    while index < text.len() {
+        if text[index..].starts_with("<!--") {
+            let end = text[index..]
+                .find("-->")
+                .map_or(text.len(), |offset| index + offset + 3);
+            spans.push(XmlSyntaxSpan {
+                start: index,
+                end,
+                kind: XmlSyntaxKind::Comment,
+            });
+            index = end;
+        } else if text[index..].starts_with('<') {
+            let end = text[index..]
+                .find('>')
+                .map_or(text.len(), |offset| index + offset + 1);
+            highlight_xml_tag(&mut spans, text, index, end);
+            index = end;
+        } else {
+            let end = text[index..]
+                .find('<')
+                .map_or(text.len(), |offset| index + offset);
+            index = end;
+        }
+    }
+    Some(spans)
+}
+
+fn highlight_xml_tag(spans: &mut Vec<XmlSyntaxSpan>, text: &str, start: usize, end: usize) {
+    let tag = &text[start..end];
+    let mut index = 0;
+    while index < tag.len() {
+        let ch = tag[index..].chars().next().unwrap_or_default();
+        if ch == '"' || ch == '\'' {
+            let span_end = quoted_end(tag, index, ch);
+            spans.push(XmlSyntaxSpan {
+                start: start + index,
+                end: start + span_end,
+                kind: XmlSyntaxKind::String,
+            });
+            index = span_end;
+        } else if ch.is_ascii_alphabetic() || matches!(ch, '_' | ':' | '-') {
+            let span_end = take_while(tag, index, |c| {
+                c.is_ascii_alphanumeric() || matches!(c, '_' | ':' | '-' | '.')
+            });
+            let kind = if previous_non_ws(tag.as_bytes(), index) == Some(b'<')
+                || previous_non_ws(tag.as_bytes(), index) == Some(b'/')
+            {
+                XmlSyntaxKind::Tag
+            } else {
+                XmlSyntaxKind::Attribute
+            };
+            spans.push(XmlSyntaxSpan {
+                start: start + index,
+                end: start + span_end,
+                kind,
+            });
+            index = span_end;
+        } else if matches!(ch, '<' | '>' | '/' | '=') {
+            let span_end = index + ch.len_utf8();
+            spans.push(XmlSyntaxSpan {
+                start: start + index,
+                end: start + span_end,
+                kind: XmlSyntaxKind::Punctuation,
+            });
+            index = span_end;
+        } else {
+            index += ch.len_utf8();
+        }
+    }
+}
+
 fn pretty_xml(input: &str) -> Option<String> {
     let text = input.trim();
     if !text.starts_with('<') || !text.ends_with('>') {
@@ -115,6 +212,33 @@ fn push_xml_line(out: &mut String, indent: usize, line: &str) {
     out.push('\n');
 }
 
+fn quoted_end(text: &str, start: usize, quote: char) -> usize {
+    for (offset, ch) in text[start + 1..].char_indices() {
+        if ch == quote {
+            return start + 1 + offset + ch.len_utf8();
+        }
+    }
+    text.len()
+}
+
+fn take_while(text: &str, start: usize, mut predicate: impl FnMut(char) -> bool) -> usize {
+    for (offset, ch) in text[start..].char_indices() {
+        if !predicate(ch) {
+            return start + offset;
+        }
+    }
+    text.len()
+}
+
+fn previous_non_ws(bytes: &[u8], start: usize) -> Option<u8> {
+    bytes
+        .get(..start)?
+        .iter()
+        .rev()
+        .copied()
+        .find(|byte| !byte.is_ascii_whitespace())
+}
+
 #[cfg(target_arch = "wasm32")]
 #[cfg_attr(target_arch = "wasm32", unsafe(no_mangle))]
 pub extern "C" fn correomqtt_alloc(len: i32) -> i32 {
@@ -163,6 +287,25 @@ pub extern "C" fn correo_detail_formatter(ptr: i32, len: i32) -> i64 {
 }
 
 #[cfg(target_arch = "wasm32")]
+#[cfg_attr(target_arch = "wasm32", unsafe(no_mangle))]
+pub extern "C" fn correo_payload_highlighter(ptr: i32, len: i32) -> i64 {
+    let request = read_request(ptr, len);
+    let response = match request
+        .and_then(|bytes| serde_json::from_slice::<PayloadHighlighterRequest>(bytes).ok())
+    {
+        Some(request) => PayloadHighlighterResponse {
+            abi_version: ABI_VERSION,
+            spans: highlight_xml_syntax(&request.text).unwrap_or_default(),
+        },
+        None => PayloadHighlighterResponse {
+            abi_version: ABI_VERSION,
+            spans: Vec::new(),
+        },
+    };
+    write_response(&response)
+}
+
+#[cfg(target_arch = "wasm32")]
 fn read_request<'a>(ptr: i32, len: i32) -> Option<&'a [u8]> {
     if ptr <= 0 || len < 0 {
         return None;
@@ -186,7 +329,7 @@ fn detail_response(bytes: Vec<u8>) -> DetailFormatterResponse {
 }
 
 #[cfg(target_arch = "wasm32")]
-fn write_response(response: &DetailFormatterResponse) -> i64 {
+fn write_response(response: &impl Serialize) -> i64 {
     let Ok(bytes) = serde_json::to_vec(response) else {
         return 0;
     };
@@ -267,6 +410,19 @@ struct DetailFormatterRequest {
 struct DetailFormatterResponse {
     abi_version: u16,
     output: FormattedDetailDto,
+}
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug, Deserialize)]
+struct PayloadHighlighterRequest {
+    text: String,
+}
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug, Serialize)]
+struct PayloadHighlighterResponse {
+    abi_version: u16,
+    spans: Vec<XmlSyntaxSpan>,
 }
 
 #[cfg(target_arch = "wasm32")]

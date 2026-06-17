@@ -431,6 +431,7 @@ fn export_name(hook: HookKind) -> &'static str {
         HookKind::MessageValidator => "correo_message_validator",
         HookKind::DetailByteTransform => "correo_detail_byte_transform",
         HookKind::DetailFormatter => "correo_detail_formatter",
+        HookKind::PayloadHighlighter => "correo_payload_highlighter",
     }
 }
 
@@ -441,6 +442,7 @@ fn hook_name(hook: HookKind) -> &'static str {
         HookKind::MessageValidator => "message_validator",
         HookKind::DetailByteTransform => "detail_byte_transform",
         HookKind::DetailFormatter => "detail_formatter",
+        HookKind::PayloadHighlighter => "payload_highlighter",
     }
 }
 

@@ -2,6 +2,8 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use uppsala::{parse, XsdValidator};
 
+pub const CONFIGURATION_DESCRIPTION: &str = "Validates XML payloads against the selected XSD schema and records validation errors on matching messages.";
+
 #[cfg(target_arch = "wasm32")]
 mod wasm_abi;
 

@@ -6,8 +6,8 @@ use egui_phosphor::regular;
 use crate::{
     theme::ThemeTokens,
     widgets::{
-        clearable_search_edit, square_icon_button_size, tile_scroll_bar_rect_with_height,
-        tile_table_fill, with_icon_button_padding,
+        clearable_search_edit, menu_item, set_menu_item_width, square_icon_button_size,
+        tile_scroll_bar_rect_with_height, tile_table_fill, with_icon_button_padding,
     },
     workbench_connection_messages_filters::{message_visible_for_subscriptions, row_matches},
     workbench_connection_messages_text::{
@@ -36,6 +36,7 @@ struct ConnectionMessageRow<'a> {
     qos: &'a str,
     retained: bool,
     payload_preview: &'a str,
+    plugin_diagnostic: Option<&'a correo_core::MessageDiagnosticRow>,
     byte_size: usize,
     selected: bool,
 }
@@ -207,6 +208,7 @@ fn outgoing_row<'a>(
         qos: row.qos.label(),
         retained: row.retained,
         payload_preview: &row.payload_preview,
+        plugin_diagnostic: None,
         byte_size: row.byte_size,
         selected: snapshot.workbench.publish.selected_history_id == Some(row.id),
     }
@@ -220,6 +222,10 @@ fn incoming_row<'a>(snapshot: &AppSnapshot, message: &'a MessageRow) -> Connecti
         qos: message.qos.label(),
         retained: message.retained,
         payload_preview: &message.payload_preview,
+        plugin_diagnostic: message
+            .diagnostics
+            .iter()
+            .find(|diagnostic| diagnostic.plugin_id.is_some()),
         byte_size: message.byte_size,
         selected: snapshot.workbench.selected_message_id == Some(message.id),
     }
@@ -248,13 +254,20 @@ fn message_table(
         .scroll_bar_rect(tile_scroll_bar_rect_with_height(ui, table_height))
         .stick_to_bottom(auto_scroll)
         .auto_shrink([false, false])
-        .show(ui, |ui| {
-            ui.set_width(ui.available_width());
-            for (index, row) in rows.iter().enumerate() {
-                message_row(ui, snapshot, origin, index, row, tokens, commands);
-            }
-            fill_remaining_table_space(ui, rows.len(), table_height, tokens);
-        });
+        .show_rows(
+            ui,
+            layout::MESSAGE_TABLE_ROW_HEIGHT,
+            rows.len(),
+            |ui, row_range| {
+                ui.set_width(ui.available_width());
+                for index in row_range {
+                    if let Some(row) = rows.get(index) {
+                        message_row(ui, snapshot, origin, index, row, tokens, commands);
+                    }
+                }
+            },
+        );
+    fill_remaining_table_space(ui, rows.len(), table_height, tokens);
 }
 
 fn fill_remaining_table_space(
@@ -342,14 +355,29 @@ fn message_row(
         topic_font,
         ui.visuals().text_color(),
     );
-    truncated_text(
-        ui,
-        egui::pos2(topic_left, preview_y),
-        preview_width,
-        row.payload_preview,
-        meta_font,
-        tokens.text_secondary,
-    );
+    if let Some(diagnostic) = row.plugin_diagnostic {
+        truncated_text(
+            ui,
+            egui::pos2(topic_left, preview_y),
+            preview_width,
+            &diagnostic.message,
+            meta_font,
+            match diagnostic.severity {
+                correo_core::PluginDiagnosticSeverity::Info => tokens.success,
+                correo_core::PluginDiagnosticSeverity::Warning => tokens.warning,
+                correo_core::PluginDiagnosticSeverity::Error => tokens.danger,
+            },
+        );
+    } else {
+        truncated_text(
+            ui,
+            egui::pos2(topic_left, preview_y),
+            preview_width,
+            row.payload_preview,
+            meta_font,
+            tokens.text_secondary,
+        );
+    }
     right_aligned_text(
         ui,
         meta_rect.right_top() + egui::vec2(0.0, 7.0),
@@ -392,10 +420,14 @@ fn clear_command(origin: MessageOrigin) -> AppCommand {
     }
 }
 
-fn export_command(key: MessageKey) -> AppCommand {
+fn export_command_to_path(key: MessageKey, path: std::path::PathBuf) -> AppCommand {
     match key {
-        MessageKey::Outgoing(id) => AppCommand::ExportPublishHistoryMessage(id),
-        MessageKey::Incoming(id) => AppCommand::ExportIncomingMessage(id),
+        MessageKey::Outgoing(message_id) => {
+            AppCommand::ExportPublishHistoryMessageToPath { message_id, path }
+        }
+        MessageKey::Incoming(message_id) => {
+            AppCommand::ExportIncomingMessageToPath { message_id, path }
+        }
     }
 }
 
@@ -413,70 +445,76 @@ fn message_context_menu(
     row: &ConnectionMessageRow<'_>,
     commands: &AppCommandSender,
 ) {
-    if ui
-        .button(menu_label(
-            regular::UPLOAD_SIMPLE,
+    set_menu_item_width(
+        ui,
+        &[
             "Put message into publish form",
-        ))
-        .clicked()
+            "Show in separate window",
+            "Remove message",
+            "Save message to cqm file",
+            "Copy Topic to Clipboard",
+            "Copy time to clipboard",
+            "Copy payload to clipboard",
+            "Clear list",
+        ],
+    );
+    if menu_item(
+        ui,
+        Some(regular::UPLOAD_SIMPLE),
+        "Put message into publish form",
+    )
+    .clicked()
     {
         send(commands, select_command(row.key));
         send(commands, copy_command(row.key));
         ui.close_menu();
     }
-    if ui
-        .button(menu_label(
-            regular::ARROW_SQUARE_OUT,
-            "Show in separate window",
-        ))
-        .clicked()
+    if menu_item(
+        ui,
+        Some(regular::ARROW_SQUARE_OUT),
+        "Show in separate window",
+    )
+    .clicked()
     {
         send(commands, select_command(row.key));
         open_message(ui, snapshot, row.key);
         ui.close_menu();
     }
-    if ui
-        .button(menu_label(regular::TRASH, "Remove message"))
-        .clicked()
-    {
+    if menu_item(ui, Some(regular::TRASH), "Remove message").clicked() {
         send(commands, select_command(row.key));
         send(commands, remove_command(row.key));
         ui.close_menu();
     }
-    if ui
-        .button(menu_label(
-            regular::DOWNLOAD_SIMPLE,
-            "Save message to cqm file",
-        ))
-        .clicked()
+    if menu_item(
+        ui,
+        Some(regular::DOWNLOAD_SIMPLE),
+        "Save message to cqm file",
+    )
+    .clicked()
     {
         send(commands, select_command(row.key));
-        send(commands, export_command(row.key));
+        if let Some(path) = save_message_path(row.topic) {
+            send(commands, export_command_to_path(row.key, path));
+        }
         ui.close_menu();
     }
     ui.separator();
-    if ui
-        .button(menu_label(regular::COPY, "Copy Topic to Clipboard"))
-        .clicked()
-    {
+    if menu_item(ui, Some(regular::COPY), "Copy Topic to Clipboard").clicked() {
         send(commands, select_command(row.key));
         ui.ctx().copy_text(row.topic.to_owned());
         ui.close_menu();
     }
-    if ui
-        .button(menu_label(regular::CLOCK, "Copy time to clipboard"))
-        .clicked()
-    {
+    if menu_item(ui, Some(regular::CLOCK), "Copy time to clipboard").clicked() {
         send(commands, select_command(row.key));
         ui.ctx().copy_text(row.timestamp.to_owned());
         ui.close_menu();
     }
-    if ui
-        .button(menu_label(
-            regular::CLIPBOARD_TEXT,
-            "Copy payload to clipboard",
-        ))
-        .clicked()
+    if menu_item(
+        ui,
+        Some(regular::CLIPBOARD_TEXT),
+        "Copy payload to clipboard",
+    )
+    .clicked()
     {
         send(commands, select_command(row.key));
         if let Some(payload) = payload_text(snapshot, row.key) {
@@ -485,17 +523,34 @@ fn message_context_menu(
         ui.close_menu();
     }
     ui.separator();
-    if ui
-        .button(menu_label(regular::BROOM, "Clear list"))
-        .clicked()
-    {
+    if menu_item(ui, Some(regular::BROOM), "Clear list").clicked() {
         send(commands, clear_command(origin));
         ui.close_menu();
     }
 }
 
-fn menu_label(icon: &str, label: &str) -> String {
-    format!("{icon}  {label}")
+fn save_message_path(topic: &str) -> Option<std::path::PathBuf> {
+    rfd::FileDialog::new()
+        .add_filter("CorreoMQTT message", &["cqm"])
+        .set_file_name(suggested_message_file_name(topic))
+        .save_file()
+}
+
+fn suggested_message_file_name(topic: &str) -> String {
+    let name = topic
+        .chars()
+        .map(|character| match character {
+            'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' => character,
+            '/' | '.' | ':' => '-',
+            _ => '_',
+        })
+        .collect::<String>();
+    let name = name.trim_matches(['-', '_']).trim();
+    if name.is_empty() {
+        "message.cqm".to_owned()
+    } else {
+        format!("{name}.cqm")
+    }
 }
 
 fn payload_text(snapshot: &AppSnapshot, key: MessageKey) -> Option<String> {

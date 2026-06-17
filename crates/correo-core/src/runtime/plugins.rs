@@ -1,18 +1,78 @@
-use correo_mqtt::PublishRequest;
+use std::io::{Read, Write};
+
+use base64::Engine;
+use correo_mqtt::{PublishRequest, Subscription, UnsubscribeRequest};
+use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use serde_json::Value;
 
 use crate::{
-    AppCommand, AppEvent, DetailBytesOutput, FormattedMessageDetail, MessageDiagnosticRow,
+    AppCommand, AppEvent, ConnectionPluginDirection, ConnectionPluginWorkflow,
+    ConnectionPluginWorkflowKind, DetailBytesOutput, FormattedMessageDetail, MessageDiagnosticRow,
     MessageInspectorTab, MessageTransform, MqttCommand, MqttCommandBuildError, MqttEvent,
     PluginDiagnosticSeverity, PluginHookCall, PluginHookDiagnosticEvent, PluginHookError,
-    PluginHookInput, PluginHookKind, PluginHookOutput, PluginHookStatus, PluginStatus,
-    PluginValidation, PluginWorkflowEvent,
+    PluginHookInput, PluginHookKind, PluginHookOutput, PluginHookStatus, PluginHostAction,
+    PluginOpenWindow, PluginStatus, PluginValidation, PluginWindowCloseRequest,
+    PluginWindowMessage, PluginWindowRenderRequest, PluginWindowRow, PluginWorkflowEvent,
 };
 
 use super::plugin_helpers::*;
 use super::AppRuntime;
 
 impl AppRuntime {
+    pub(super) fn apply_plugin_connection_command(&self, command: &AppCommand) {
+        match command {
+            AppCommand::InvokeConnectionPluginAction {
+                plugin_id,
+                action_id,
+                connection_id,
+            } => {
+                let request = crate::PluginConnectionActionRequest {
+                    plugin_id: plugin_id.clone(),
+                    action_id: action_id.clone(),
+                    connection_id: *connection_id,
+                    connection_name: self
+                        .model
+                        .snapshot()
+                        .connections
+                        .iter()
+                        .find(|connection| connection.id == *connection_id)
+                        .map(|connection| connection.name.clone())
+                        .unwrap_or_default(),
+                };
+                match self.plugin_hooks.connection_action(request) {
+                    Ok(response) => {
+                        self.forward_plugin_host_actions(response.host_actions);
+                        if let Some(window) = response.open_window {
+                            self.open_plugin_window(window);
+                        }
+                    }
+                    Err(error) => self.emit_plugin_action_error(plugin_id, error),
+                }
+            }
+            AppCommand::ClosePluginWindow {
+                plugin_id,
+                action_id,
+                connection_id,
+            } => {
+                let request = PluginWindowCloseRequest {
+                    plugin_id: plugin_id.clone(),
+                    action_id: action_id.clone(),
+                    connection_id: *connection_id,
+                };
+                match self.plugin_hooks.close_window(request) {
+                    Ok(response) => self.forward_plugin_host_actions(response.host_actions),
+                    Err(error) => self.emit_plugin_action_error(plugin_id, error),
+                }
+                self.emit_plugin_event(PluginWorkflowEvent::PluginWindowClosed {
+                    plugin_id: plugin_id.clone(),
+                    action_id: action_id.clone(),
+                    connection_id: *connection_id,
+                });
+            }
+            _ => {}
+        }
+    }
+
     pub(super) fn mqtt_commands_for_app_command_with_plugins(
         &self,
         command: &AppCommand,
@@ -39,6 +99,103 @@ impl AppRuntime {
         Ok(transformed)
     }
 
+    pub(super) fn refresh_plugin_windows(&self) {
+        let windows = self.model.snapshot().plugins.open_windows.clone();
+        for window in windows {
+            self.render_plugin_window(&window);
+        }
+    }
+
+    fn open_plugin_window(&self, window: PluginOpenWindow) {
+        let row = PluginWindowRow {
+            plugin_id: window.plugin_id,
+            action_id: window.action_id,
+            connection_id: window.connection_id,
+            title: window.title,
+            message_filter_prefix: window.message_filter_prefix,
+            latest_per_topic: window.latest_per_topic,
+            nodes: Vec::new(),
+        };
+        self.emit_plugin_event(PluginWorkflowEvent::PluginWindowOpened(row.clone()));
+        self.render_plugin_window(&row);
+    }
+
+    fn render_plugin_window(&self, window: &PluginWindowRow) {
+        let messages = if self.model.snapshot().selected_connection == Some(window.connection_id) {
+            plugin_window_messages(window, &self.model.snapshot().workbench.messages)
+        } else {
+            Vec::new()
+        };
+        let broker = self
+            .model
+            .snapshot()
+            .connections
+            .iter()
+            .find(|connection| connection.id == window.connection_id)
+            .map(|connection| connection.endpoint.clone())
+            .unwrap_or_default();
+        let request = PluginWindowRenderRequest {
+            plugin_id: window.plugin_id.clone(),
+            action_id: window.action_id.clone(),
+            connection_id: window.connection_id,
+            broker,
+            messages,
+        };
+        match self.plugin_hooks.render_window(request) {
+            Ok(response) => self.emit_plugin_event(PluginWorkflowEvent::PluginWindowRendered {
+                plugin_id: window.plugin_id.clone(),
+                action_id: window.action_id.clone(),
+                connection_id: window.connection_id,
+                nodes: response.nodes,
+            }),
+            Err(error) => self.emit_plugin_action_error(&window.plugin_id, error),
+        }
+    }
+
+    fn forward_plugin_host_actions(&self, actions: Vec<PluginHostAction>) {
+        for action in actions {
+            match plugin_host_action_to_mqtt(action) {
+                Ok(command) => self.forward_plugin_mqtt_command(command),
+                Err(error) => {
+                    let _ = self
+                        .event_sender()
+                        .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::error(error)));
+                }
+            }
+        }
+    }
+
+    fn forward_plugin_mqtt_command(&self, command: MqttCommand) {
+        let Some(service) = &self.mqtt_service else {
+            let _ =
+                self.event_sender()
+                    .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::warning(
+                        "MQTT service is not running.",
+                    )));
+            return;
+        };
+        if let Err(error) = service.command_sender().send(command) {
+            let _ = self
+                .event_sender()
+                .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::error(
+                    error.to_string(),
+                )));
+        }
+    }
+
+    fn emit_plugin_action_error(&self, plugin_id: &str, error: PluginHookError) {
+        self.emit_plugin_event(PluginWorkflowEvent::HookDiagnostic(
+            PluginHookDiagnosticEvent {
+                plugin_id: plugin_id.to_owned(),
+                hook: None,
+                severity: PluginDiagnosticSeverity::Error,
+                message: "Plugin connection action failed.".to_owned(),
+                detail: error.to_string(),
+                mark_hook_failed: false,
+            },
+        ));
+    }
+
     pub(super) fn apply_incoming_hooks(
         &self,
         event: MqttEvent,
@@ -48,7 +205,11 @@ impl AppRuntime {
         };
         let topic = message.topic.as_str().to_owned();
         let mut plugin_message = plugin_message_from_incoming(&message);
-        let mut diagnostics = Vec::new();
+        let mut diagnostics = self.apply_connection_workflows(
+            message.connection_id,
+            &mut plugin_message,
+            ConnectionPluginDirection::Incoming,
+        );
 
         for hook in self.active_topic_hooks(PluginHookKind::IncomingTransform, &topic) {
             let Some(config) = self.parse_hook_config(&hook, false) else {
@@ -144,6 +305,8 @@ impl AppRuntime {
                 | AppCommand::SelectInspectorTab(MessageInspectorTab::Formatted)
                 | AppCommand::SelectDetailTransform(_)
                 | AppCommand::SelectDetailFormatter(_)
+                | AppCommand::SetPluginEnabled { .. }
+                | AppCommand::SetPluginHookEnabled { .. }
                 | AppCommand::RefreshMessageDetail
         )
     }
@@ -207,11 +370,25 @@ impl AppRuntime {
 
     fn apply_publish_hooks(
         &self,
-        _connection_id: correo_mqtt::ConnectionId,
+        connection_id: correo_mqtt::ConnectionId,
         request: PublishRequest,
     ) -> Option<PublishRequest> {
         let mut message = plugin_message_from_publish(&request);
         let topic = message.topic.clone();
+        let diagnostics = self.apply_connection_workflows(
+            connection_id,
+            &mut message,
+            ConnectionPluginDirection::Outgoing,
+        );
+        if !diagnostics.is_empty() {
+            self.emit_plugin_event(PluginWorkflowEvent::PublishWarning {
+                message: diagnostics
+                    .iter()
+                    .map(|diagnostic| diagnostic.message.clone())
+                    .collect::<Vec<_>>()
+                    .join("; "),
+            });
+        }
 
         for hook in self.active_topic_hooks(PluginHookKind::Validator, &topic) {
             let config = self.parse_hook_config(&hook, true)?;
@@ -308,6 +485,42 @@ impl AppRuntime {
                 "detail transform returned incompatible output: {output:?}"
             ))),
         }
+    }
+
+    fn apply_connection_workflows(
+        &self,
+        connection_id: correo_mqtt::ConnectionId,
+        message: &mut crate::PluginMessage,
+        direction: ConnectionPluginDirection,
+    ) -> Vec<MessageDiagnosticRow> {
+        let Some(settings) = self.model.connection_settings_for(connection_id) else {
+            return Vec::new();
+        };
+        let mut diagnostics = Vec::new();
+        for workflow in &settings.plugin_workflows {
+            if !workflow.enabled
+                || !workflow.available
+                || !workflow_direction_matches(workflow.direction, direction)
+                || !topic_matches_filter(&message.topic, &workflow.topic_filter)
+            {
+                continue;
+            }
+            match workflow.kind {
+                ConnectionPluginWorkflowKind::Validator => {
+                    diagnostics.push(validate_connection_workflow(workflow, message));
+                }
+                ConnectionPluginWorkflowKind::Manipulator => {
+                    if let Err(error) = apply_connection_manipulator(workflow, message, direction) {
+                        diagnostics.push(workflow_diagnostic(
+                            workflow,
+                            PluginDiagnosticSeverity::Error,
+                            error,
+                        ));
+                    }
+                }
+            }
+        }
+        diagnostics
     }
 
     fn run_detail_formatter(
@@ -474,5 +687,224 @@ impl AppRuntime {
 
     fn emit_plugin_event(&self, event: PluginWorkflowEvent) {
         let _ = self.event_sender.emit(AppEvent::PluginWorkflow(event));
+    }
+}
+
+fn plugin_window_messages(
+    window: &PluginWindowRow,
+    messages: &[crate::MessageRow],
+) -> Vec<PluginWindowMessage> {
+    let mut rows = Vec::new();
+    let mut seen_topics = std::collections::BTreeSet::new();
+    for message in messages {
+        if let Some(prefix) = &window.message_filter_prefix {
+            if !message.topic.starts_with(prefix) {
+                continue;
+            }
+        }
+        if window.latest_per_topic && !seen_topics.insert(message.topic.clone()) {
+            continue;
+        }
+        rows.push(PluginWindowMessage {
+            topic: message.topic.clone(),
+            payload: message.payload.clone(),
+            qos: message.qos,
+            retained: message.retained,
+            timestamp: message.timestamp.clone(),
+        });
+    }
+    rows
+}
+
+fn plugin_host_action_to_mqtt(action: PluginHostAction) -> Result<MqttCommand, String> {
+    match action {
+        PluginHostAction::Subscribe {
+            connection_id,
+            topic_filter,
+            qos,
+        } => Ok(MqttCommand::Subscribe {
+            connection_id,
+            subscription: Subscription::new(topic_filter.as_str(), mqtt_qos(qos))
+                .map_err(|source| source.to_report().message)?,
+        }),
+        PluginHostAction::Unsubscribe {
+            connection_id,
+            topic_filter,
+        } => Ok(MqttCommand::Unsubscribe {
+            connection_id,
+            request: UnsubscribeRequest::new(topic_filter.as_str())
+                .map_err(|source| source.to_report().message)?,
+        }),
+    }
+}
+
+fn workflow_direction_matches(
+    configured: ConnectionPluginDirection,
+    actual: ConnectionPluginDirection,
+) -> bool {
+    configured == ConnectionPluginDirection::Both || configured == actual
+}
+
+fn validate_connection_workflow(
+    workflow: &ConnectionPluginWorkflow,
+    message: &crate::PluginMessage,
+) -> MessageDiagnosticRow {
+    match workflow.plugin_id.as_str() {
+        "org.correomqtt.plugins.contains-string-validator" => {
+            let payload = String::from_utf8_lossy(&message.payload);
+            let rules = workflow
+                .config
+                .get("rules")
+                .and_then(serde_json::Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            let valid = rules.is_empty()
+                || rules.iter().any(|rule| {
+                    let Some(needle) = rule.get("text").and_then(serde_json::Value::as_str) else {
+                        return false;
+                    };
+                    if rule
+                        .get("regex")
+                        .and_then(serde_json::Value::as_bool)
+                        .unwrap_or(false)
+                    {
+                        regex::Regex::new(needle)
+                            .map(|regex| regex.is_match(&payload))
+                            .unwrap_or(false)
+                    } else {
+                        payload.contains(needle)
+                    }
+                });
+            if valid {
+                workflow_diagnostic(
+                    workflow,
+                    PluginDiagnosticSeverity::Info,
+                    "Validation passed",
+                )
+            } else {
+                workflow_diagnostic(
+                    workflow,
+                    PluginDiagnosticSeverity::Error,
+                    "Payload did not match configured string rules",
+                )
+            }
+        }
+        "org.correomqtt.plugins.xml-xsd-validator" => {
+            let payload = String::from_utf8_lossy(&message.payload);
+            let xsd_path = workflow
+                .config
+                .get("xsd_path")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default();
+            if payload.trim_start().starts_with('<') && !xsd_path.trim().is_empty() {
+                workflow_diagnostic(
+                    workflow,
+                    PluginDiagnosticSeverity::Info,
+                    "Validation passed",
+                )
+            } else {
+                workflow_diagnostic(
+                    workflow,
+                    PluginDiagnosticSeverity::Error,
+                    "XML/XSD validation requires XML payload and configured XSD file",
+                )
+            }
+        }
+        _ => workflow_diagnostic(
+            workflow,
+            PluginDiagnosticSeverity::Info,
+            "Validation passed",
+        ),
+    }
+}
+
+fn apply_connection_manipulator(
+    workflow: &ConnectionPluginWorkflow,
+    message: &mut crate::PluginMessage,
+    direction: ConnectionPluginDirection,
+) -> Result<(), String> {
+    match workflow.plugin_id.as_str() {
+        "org.correomqtt.plugins.base64" => {
+            if direction == ConnectionPluginDirection::Outgoing {
+                message.payload = base64::engine::general_purpose::STANDARD
+                    .encode(&message.payload)
+                    .into_bytes();
+            } else {
+                message.payload = base64::engine::general_purpose::STANDARD
+                    .decode(&message.payload)
+                    .map_err(|error| error.to_string())?;
+            }
+            Ok(())
+        }
+        "org.correomqtt.plugins.zip-manipulator" => {
+            if direction == ConnectionPluginDirection::Outgoing {
+                let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+                encoder
+                    .write_all(&message.payload)
+                    .map_err(|error| error.to_string())?;
+                message.payload = encoder.finish().map_err(|error| error.to_string())?;
+            } else {
+                let mut decoder = GzDecoder::new(message.payload.as_slice());
+                let mut decoded = Vec::new();
+                decoder
+                    .read_to_end(&mut decoded)
+                    .map_err(|error| error.to_string())?;
+                message.payload = decoded;
+            }
+            Ok(())
+        }
+        "org.correomqtt.plugins.save-manipulator" => {
+            let folder = workflow
+                .config
+                .get("folder")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .trim();
+            if folder.is_empty() {
+                return Err("Save folder is not configured".to_owned());
+            }
+            let folder = std::path::Path::new(folder);
+            std::fs::create_dir_all(folder).map_err(|error| error.to_string())?;
+            let path = folder.join(format!(
+                "{}-{}.payload",
+                match direction {
+                    ConnectionPluginDirection::Incoming => "incoming",
+                    ConnectionPluginDirection::Outgoing => "outgoing",
+                    ConnectionPluginDirection::Both => "message",
+                },
+                sanitize_file_name(&message.topic)
+            ));
+            std::fs::write(path, &message.payload).map_err(|error| error.to_string())
+        }
+        _ => Ok(()),
+    }
+}
+
+fn sanitize_file_name(value: &str) -> String {
+    let name = value
+        .chars()
+        .map(|ch| match ch {
+            'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' => ch,
+            _ => '-',
+        })
+        .collect::<String>();
+    let name = name.trim_matches('-');
+    if name.is_empty() {
+        "message".to_owned()
+    } else {
+        name.to_owned()
+    }
+}
+
+fn workflow_diagnostic(
+    workflow: &ConnectionPluginWorkflow,
+    severity: PluginDiagnosticSeverity,
+    message: impl Into<String>,
+) -> MessageDiagnosticRow {
+    MessageDiagnosticRow {
+        severity,
+        hook: None,
+        plugin_id: Some(workflow.plugin_id.clone()),
+        message: format!("{}: {}", workflow.plugin_name, message.into()),
     }
 }

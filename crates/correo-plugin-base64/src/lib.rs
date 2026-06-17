@@ -4,6 +4,8 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 
 const ABI_VERSION: u16 = 1;
+pub const CONFIGURATION_DESCRIPTION: &str =
+    "Encodes outgoing payloads as Base64 and decodes incoming Base64 payloads for matching topics.";
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 struct MessageDto {

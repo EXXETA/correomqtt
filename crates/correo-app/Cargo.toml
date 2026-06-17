@@ -12,7 +12,9 @@ path = "src/main.rs"
 [dependencies]
 correo-core = { path = "../correo-core" }
 correo-diagnostics = { path = "../correo-diagnostics" }
+correo-mqtt = { path = "../correo-mqtt" }
 correo-plugins = { path = "../correo-plugins" }
+correo-plugins-systopic = { path = "../../plugins/correo-plugins-systopic" }
 correo-storage = { path = "../correo-storage" }
 correo-ui = { path = "../correo-ui" }
 directories.workspace = true

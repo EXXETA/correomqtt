@@ -1,6 +1,7 @@
 use std::fmt;
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde_json::Value;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ConnectionSettingsTab {
@@ -138,6 +139,92 @@ pub struct ConnectionSettingsSnapshot {
     pub delete_confirmation_open: bool,
     pub keyring_state: KeyringState,
     pub validation_errors: Vec<String>,
+    pub plugin_workflows: Vec<ConnectionPluginWorkflow>,
+    pub plugin_workflow_dialog_open: bool,
+    pub selected_plugin_workflow: Option<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConnectionPluginWorkflow {
+    pub plugin_id: String,
+    pub plugin_name: String,
+    pub enabled: bool,
+    pub kind: ConnectionPluginWorkflowKind,
+    pub direction: ConnectionPluginDirection,
+    pub topic_filter: String,
+    pub config: Value,
+    pub available: bool,
+    pub status: ConnectionPluginWorkflowStatus,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ConnectionPluginWorkflowKind {
+    #[default]
+    Validator,
+    Manipulator,
+}
+
+impl ConnectionPluginWorkflowKind {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Validator => "Validator",
+            Self::Manipulator => "Manipulator",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ConnectionPluginDirection {
+    #[default]
+    Incoming,
+    Outgoing,
+    Both,
+}
+
+impl ConnectionPluginDirection {
+    pub const ALL: [Self; 3] = [Self::Incoming, Self::Outgoing, Self::Both];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Incoming => "Incoming",
+            Self::Outgoing => "Outgoing",
+            Self::Both => "Both",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ConnectionPluginWorkflowStatus {
+    #[default]
+    Ready,
+    Disabled,
+    MissingPlugin,
+    Valid,
+    Invalid,
+    Failed,
+}
+
+impl ConnectionPluginWorkflowStatus {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Ready => "Enabled",
+            Self::Disabled => "Disabled",
+            Self::MissingPlugin => "Plugin missing",
+            Self::Valid => "Valid",
+            Self::Invalid => "Invalid",
+            Self::Failed => "Failed",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConnectionPluginWorkflowField {
+    TopicFilter,
+    ContainsStrings,
+    XsdPath,
+    SaveFolder,
+    FeatureEnabled,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

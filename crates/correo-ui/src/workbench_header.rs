@@ -6,9 +6,13 @@ use egui::{Button, RichText, Ui};
 use egui_phosphor::regular;
 
 use crate::{
+    i18n::I18n,
     responsive,
     theme::ThemeTokens,
-    widgets::{square_icon_button_size, with_icon_button_padding},
+    widgets::{
+        menu_item, menu_item_content_width, menu_item_enabled, set_menu_item_width,
+        square_icon_button_size, with_icon_button_padding,
+    },
 };
 
 pub fn connection_header(
@@ -16,12 +20,13 @@ pub fn connection_header(
     snapshot: &AppSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     let Some(connection) = snapshot.selected_connection() else {
         return;
     };
     if responsive::connections_context_is_compact(ui.ctx(), snapshot.active_workspace) {
-        compact_connection_header(ui, connection, tokens, commands);
+        compact_connection_header(ui, snapshot, connection, tokens, commands, i18n);
         return;
     }
 
@@ -30,9 +35,16 @@ pub fn connection_header(
         if header_icon_button(ui, regular::PENCIL_SIMPLE, "Edit connection").clicked() {
             send(commands, AppCommand::OpenConnectionSettings(connection.id));
         }
+        if snapshot.plugins.has_connection_workflow_plugins()
+            && header_icon_button(ui, regular::PUZZLE_PIECE, &i18n.text("validators-title"))
+                .clicked()
+        {
+            send(commands, AppCommand::OpenConnectionPlugins(connection.id));
+        }
         if header_icon_button(ui, regular::TRASH, "Delete connection").clicked() {
             send(commands, AppCommand::RequestDeleteConnection);
         }
+        plugin_connection_actions(ui, snapshot, connection, commands);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             connection_action(ui, connection, commands, false);
             connection_summary(ui, connection, tokens);
@@ -42,9 +54,11 @@ pub fn connection_header(
 
 fn compact_connection_header(
     ui: &mut Ui,
+    snapshot: &AppSnapshot,
     connection: &ConnectionSummary,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     ui.allocate_ui_with_layout(
         egui::vec2(ui.available_width(), square_icon_button_size()[1]),
@@ -67,7 +81,7 @@ fn compact_connection_header(
             }
             connection_title(ui, connection, tokens, center_width);
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                compact_overflow_menu(ui, connection, commands);
+                compact_overflow_menu(ui, snapshot, connection, commands, i18n);
                 connection_action(ui, connection, commands, icon_actions);
             });
         },
@@ -96,14 +110,18 @@ fn connection_title(ui: &mut Ui, connection: &ConnectionSummary, tokens: ThemeTo
     );
 }
 
-fn header_icon_button(ui: &mut Ui, icon: &'static str, hover_text: &'static str) -> egui::Response {
+fn header_icon_button(
+    ui: &mut Ui,
+    icon: &'static str,
+    hover_text: impl Into<String>,
+) -> egui::Response {
     with_icon_button_padding(ui, |ui| {
         ui.add_sized(
             square_icon_button_size(),
             Button::new(RichText::new(icon).size(16.0)),
         )
     })
-    .on_hover_text(hover_text)
+    .on_hover_text(hover_text.into())
 }
 
 fn connection_action(
@@ -140,34 +158,162 @@ fn connection_action(
     }
 }
 
-fn compact_overflow_menu(ui: &mut Ui, connection: &ConnectionSummary, commands: &AppCommandSender) {
+fn compact_overflow_menu(
+    ui: &mut Ui,
+    snapshot: &AppSnapshot,
+    connection: &ConnectionSummary,
+    commands: &AppCommandSender,
+    i18n: &I18n,
+) {
+    let mut label_storage = vec![
+        i18n.text("connection-edit-tooltip"),
+        i18n.text("validators-title"),
+        i18n.text("connection-delete-title"),
+    ];
+    label_storage.extend(
+        snapshot
+            .plugins
+            .connection_header_actions()
+            .into_iter()
+            .map(|action| action.label.clone()),
+    );
+    let labels: Vec<&str> = label_storage.iter().map(String::as_str).collect();
+    let menu_width = menu_item_content_width(ui, &labels);
     let response = with_icon_button_padding(ui, |ui| {
-        ui.menu_button(
-            RichText::new(regular::DOTS_THREE_VERTICAL).size(16.0),
-            |ui| {
-                if ui
-                    .button(menu_label(regular::PENCIL_SIMPLE, "Edit connection"))
-                    .clicked()
-                {
-                    send(commands, AppCommand::OpenConnectionSettings(connection.id));
-                    ui.close_menu();
-                }
-                if ui
-                    .button(menu_label(regular::TRASH, "Delete connection..."))
-                    .clicked()
-                {
-                    send(commands, AppCommand::RequestDeleteConnection);
-                    ui.close_menu();
-                }
-            },
+        ui.add_sized(
+            square_icon_button_size(),
+            Button::new(RichText::new(regular::DOTS_THREE_VERTICAL).size(16.0)),
         )
-        .response
     });
-    response.on_hover_text("Connection actions");
+    let response = response.on_hover_text("Connection actions");
+    right_aligned_overflow_menu(ui, response, menu_width, |ui| {
+        set_menu_item_width(ui, &labels);
+        if menu_item(
+            ui,
+            Some(regular::PENCIL_SIMPLE),
+            &i18n.text("connection-edit-tooltip"),
+        )
+        .clicked()
+        {
+            send(commands, AppCommand::OpenConnectionSettings(connection.id));
+            return true;
+        }
+        if snapshot.plugins.has_connection_workflow_plugins()
+            && menu_item(
+                ui,
+                Some(regular::PUZZLE_PIECE),
+                &i18n.text("validators-title"),
+            )
+            .clicked()
+        {
+            send(commands, AppCommand::OpenConnectionPlugins(connection.id));
+            return true;
+        }
+        if menu_item(
+            ui,
+            Some(regular::TRASH),
+            &i18n.text("connection-delete-title"),
+        )
+        .clicked()
+        {
+            send(commands, AppCommand::RequestDeleteConnection);
+            return true;
+        }
+        for action in snapshot.plugins.connection_header_actions() {
+            let enabled = plugin_action_enabled(action.requires_connected, connection.state);
+            if menu_item_enabled(ui, enabled, None, &action.label)
+                .on_hover_text(&action.tooltip)
+                .clicked()
+            {
+                send(
+                    commands,
+                    AppCommand::InvokeConnectionPluginAction {
+                        plugin_id: action.plugin_id.clone(),
+                        action_id: action.action_id.clone(),
+                        connection_id: connection.id,
+                    },
+                );
+                return true;
+            }
+        }
+        false
+    });
 }
 
-fn menu_label(icon: &str, label: &str) -> String {
-    format!("{icon}  {label}")
+fn right_aligned_overflow_menu(
+    ui: &mut Ui,
+    response: egui::Response,
+    content_width: f32,
+    add_contents: impl FnOnce(&mut Ui) -> bool,
+) {
+    let popup_id = response.id.with("right-aligned-menu");
+    if response.clicked() {
+        ui.ctx().data_mut(|data| {
+            let open = data.get_temp::<bool>(popup_id).unwrap_or(false);
+            data.insert_temp(popup_id, !open);
+        });
+    }
+    let open = ui
+        .ctx()
+        .data_mut(|data| data.get_temp::<bool>(popup_id).unwrap_or(false));
+    if !open {
+        return;
+    }
+
+    let frame = egui::Frame::menu(ui.style());
+    let menu_width = content_width + frame.total_margin().sum().x;
+    let mut pos = egui::pos2(response.rect.right() - menu_width, response.rect.bottom());
+    pos.y += ui.spacing().menu_spacing;
+    if let Some(to_global) = ui.ctx().layer_transform_to_global(response.layer_id) {
+        pos = to_global * pos;
+    }
+    let area_response = egui::Area::new(popup_id)
+        .kind(egui::UiKind::Menu)
+        .order(egui::Order::Foreground)
+        .fixed_pos(pos)
+        .show(ui.ctx(), |ui| frame.show(ui, add_contents).inner);
+
+    let should_close = ui.ctx().input(|input| input.key_pressed(egui::Key::Escape))
+        || (response.clicked_elsewhere() && area_response.response.clicked_elsewhere())
+        || area_response.inner;
+    if should_close {
+        ui.ctx().data_mut(|data| data.insert_temp(popup_id, false));
+    }
+}
+
+fn plugin_connection_actions(
+    ui: &mut Ui,
+    snapshot: &AppSnapshot,
+    connection: &ConnectionSummary,
+    commands: &AppCommandSender,
+) {
+    for action in snapshot.plugins.connection_header_actions() {
+        let enabled = plugin_action_enabled(action.requires_connected, connection.state);
+        let response = with_icon_button_padding(ui, |ui| {
+            ui.add_enabled_ui(enabled, |ui| {
+                ui.add_sized(
+                    [56.0, square_icon_button_size()[1]],
+                    Button::new(RichText::new(&action.label).size(13.0)),
+                )
+            })
+            .inner
+        })
+        .on_hover_text(&action.tooltip);
+        if response.clicked() {
+            send(
+                commands,
+                AppCommand::InvokeConnectionPluginAction {
+                    plugin_id: action.plugin_id.clone(),
+                    action_id: action.action_id.clone(),
+                    connection_id: connection.id,
+                },
+            );
+        }
+    }
+}
+
+fn plugin_action_enabled(requires_connected: bool, state: ConnectionState) -> bool {
+    !requires_connected || state == ConnectionState::Connected
 }
 
 fn connection_summary(ui: &mut Ui, connection: &ConnectionSummary, tokens: ThemeTokens) {

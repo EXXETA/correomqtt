@@ -1,8 +1,8 @@
 use crate::{
-    PluginCapabilityRow, PluginConfigField, PluginDiagnosticRow, PluginDiagnosticSeverity,
-    PluginHookAssignment, PluginHookKind, PluginHookStatus, PluginLoadState, PluginMarketplaceRow,
-    PluginMarketplaceSource, PluginRow, PluginSource, PluginStatus, PluginSurfaceSnapshot,
-    PluginSurfaceTab,
+    PluginCapabilityRow, PluginConfigField, PluginConnectionHeaderAction, PluginDiagnosticRow,
+    PluginDiagnosticSeverity, PluginHookAssignment, PluginHookKind, PluginHookStatus,
+    PluginLoadState, PluginMarketplaceRow, PluginMarketplaceSource, PluginRow, PluginSource,
+    PluginStatus, PluginSurfaceSnapshot, PluginSurfaceTab,
 };
 
 pub(super) fn sample_plugins() -> PluginSurfaceSnapshot {
@@ -30,6 +30,7 @@ pub(super) fn sample_plugins() -> PluginSurfaceSnapshot {
             user_load_error(),
             legacy_save_plugin(),
         ],
+        open_windows: Vec::new(),
     }
 }
 
@@ -86,6 +87,7 @@ fn json_formatter() -> PluginRow {
                 "Normalized UTF-8 bytes",
             ),
         ],
+        connection_header_actions: Vec::new(),
         diagnostics: vec![diag(
             "diag-json-ready",
             "org.correomqtt.plugins.json-format",
@@ -148,6 +150,7 @@ fn base64_transform() -> PluginRow {
                 "Assignment disabled",
             ),
         ],
+        connection_header_actions: Vec::new(),
         diagnostics: vec![
             diag(
                 "diag-base64-incoming-failed",
@@ -216,6 +219,7 @@ fn advanced_validator() -> PluginRow {
             "10:17:22",
             "Network capability denied",
         )],
+        connection_header_actions: Vec::new(),
         diagnostics: vec![diag(
             "diag-validator-denied",
             "user.advanced-validator",
@@ -240,9 +244,9 @@ fn advanced_validator() -> PluginRow {
 fn system_topic_formatter() -> PluginRow {
     PluginRow {
         id: "org.correomqtt.plugins.system-topic".to_owned(),
-        name: "System Topic Formatter".to_owned(),
+        name: "System Topics".to_owned(),
         version: "1.0.0".to_owned(),
-        description: "Plugin to show a window with systopic information".to_owned(),
+        description: "Adds a connection header action for live $SYS broker metrics.".to_owned(),
         provider: "CorreoMQTT".to_owned(),
         license: "GPL".to_owned(),
         location: "bundled://org.correomqtt.plugins.system-topic/plugin.toml".to_owned(),
@@ -251,37 +255,20 @@ fn system_topic_formatter() -> PluginRow {
             .to_owned(),
         source: PluginSource::Bundled,
         enabled: true,
-        status: PluginStatus::HookFailed,
-        capabilities: vec![cap(
-            "Detail formatter",
-            true,
-            "Formats $SYS broker metrics",
-        )],
-        config_fields: vec![field(
-            "unit",
-            "Metric unit",
-            "raw",
-            false,
-            false,
-            "raw | human",
-        )],
-        hooks: vec![hook(
-            PluginHookKind::DetailFormatter,
-            true,
-            "$SYS/#",
-            PluginHookStatus::Failed,
-            "10:12:03",
-            "Unexpected formatter result",
-        )],
-        diagnostics: vec![diag(
-            "diag-systopic-hook-failed",
+        status: PluginStatus::Active,
+        capabilities: vec![
+            cap("MQTT", true, "Subscribes and unsubscribes through the host"),
+            cap("UI", true, "Renders a plugin-owned $SYS window"),
+        ],
+        config_fields: Vec::new(),
+        hooks: Vec::new(),
+        connection_header_actions: vec![connection_action(
             "org.correomqtt.plugins.system-topic",
-            PluginDiagnosticSeverity::Error,
-            Some(PluginHookKind::DetailFormatter),
-            "Formatter fallback used",
-            "The formatter returned an invalid JSON DTO. The detail pane fell back to the original raw payload.",
-            "10:12:03",
+            "system-topics",
+            "$SYS",
+            "Open system topics",
         )],
+        diagnostics: Vec::new(),
         legacy_note: None,
     }
 }
@@ -315,6 +302,7 @@ fn user_load_error() -> PluginRow {
             "never",
             "WASM module failed to instantiate",
         )],
+        connection_header_actions: Vec::new(),
         diagnostics: vec![diag(
             "diag-wasm-load-error",
             "user.wasm-load-error",
@@ -345,6 +333,7 @@ fn legacy_save_plugin() -> PluginRow {
         capabilities: Vec::new(),
         config_fields: Vec::new(),
         hooks: Vec::new(),
+        connection_header_actions: Vec::new(),
         diagnostics: vec![diag(
             "diag-legacy-save-skipped",
             "legacy.save-manipulator",
@@ -379,6 +368,7 @@ fn marketplace_json_formatter() -> PluginMarketplaceRow {
                 "Normalizes JSON bytes before display",
             ),
         ],
+        connection_header_actions: Vec::new(),
         install_source: PluginMarketplaceSource::Bundled {
             plugin_id: "org.correomqtt.plugins.json-format".to_owned(),
         },
@@ -404,6 +394,7 @@ fn marketplace_base64_transform() -> PluginMarketplaceRow {
             ),
             cap("Outgoing transform", true, "Encodes outbound payloads"),
         ],
+        connection_header_actions: Vec::new(),
         install_source: PluginMarketplaceSource::Bundled {
             plugin_id: "org.correomqtt.plugins.base64".to_owned(),
         },
@@ -422,6 +413,7 @@ fn marketplace_validator_pack() -> PluginMarketplaceRow {
         license: "GPL-3.0-or-later".to_owned(),
         location: "Repository catalog".to_owned(),
         capabilities: vec![cap("Validator", true, "Validates message payloads")],
+        connection_header_actions: Vec::new(),
         install_source: PluginMarketplaceSource::Unknown,
         installed_plugin_id: None,
     }
@@ -432,6 +424,21 @@ fn cap(label: &str, granted: bool, detail: &str) -> PluginCapabilityRow {
         label: label.to_owned(),
         granted,
         detail: detail.to_owned(),
+    }
+}
+
+fn connection_action(
+    plugin_id: &str,
+    action_id: &str,
+    label: &str,
+    tooltip: &str,
+) -> PluginConnectionHeaderAction {
+    PluginConnectionHeaderAction {
+        plugin_id: plugin_id.to_owned(),
+        action_id: action_id.to_owned(),
+        label: label.to_owned(),
+        tooltip: tooltip.to_owned(),
+        requires_connected: true,
     }
 }
 

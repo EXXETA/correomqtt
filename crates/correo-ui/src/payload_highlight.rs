@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
+use correo_core::{PayloadSyntaxKind, PayloadSyntaxSpan};
 use egui::{text::LayoutJob, Color32, FontId, TextFormat, TextStyle, Ui};
+
+use crate::PayloadHighlighter;
 
 #[derive(Clone, Copy)]
 struct Palette {
@@ -17,9 +20,12 @@ struct Palette {
     class: Color32,
 }
 
-pub(crate) fn layouter() -> impl FnMut(&Ui, &str, f32) -> Arc<egui::Galley> {
+pub(crate) fn layouter(
+    highlighter: Option<PayloadHighlighter>,
+    active_plugin_ids: Vec<String>,
+) -> impl FnMut(&Ui, &str, f32) -> Arc<egui::Galley> {
     move |ui, text, wrap_width| {
-        let mut job = highlight_payload(ui, text);
+        let mut job = highlight_payload(ui, text, highlighter.as_ref(), &active_plugin_ids);
         job.wrap.max_width = wrap_width;
         ui.fonts(|fonts| fonts.layout_job(job))
     }
@@ -34,24 +40,19 @@ pub(crate) fn javascript_layouter() -> impl FnMut(&Ui, &str, f32) -> Arc<egui::G
     }
 }
 
-fn highlight_payload(ui: &Ui, text: &str) -> LayoutJob {
+fn highlight_payload(
+    ui: &Ui,
+    text: &str,
+    highlighter: Option<&PayloadHighlighter>,
+    active_plugin_ids: &[String],
+) -> LayoutJob {
     let font = TextStyle::Monospace.resolve(ui.style());
     let palette = palette(ui);
-    if looks_like_xml(text) {
-        highlight_xml(text, font, palette)
-    } else if looks_like_json(text) {
-        highlight_json(text, font, palette)
+    if let Some(spans) = highlighter.and_then(|highlight| highlight(text, active_plugin_ids)) {
+        highlight_spans(text, spans, font, palette)
     } else {
         plain_job(text, font, palette.plain)
     }
-}
-
-fn looks_like_json(text: &str) -> bool {
-    matches!(text.trim_start().chars().next(), Some('{') | Some('['))
-}
-
-fn looks_like_xml(text: &str) -> bool {
-    text.trim_start().starts_with('<')
 }
 
 fn palette(ui: &Ui) -> Palette {
@@ -93,120 +94,51 @@ fn plain_job(text: &str, font: FontId, color: Color32) -> LayoutJob {
     job
 }
 
-fn highlight_json(text: &str, font: FontId, palette: Palette) -> LayoutJob {
+fn highlight_spans(
+    text: &str,
+    mut spans: Vec<PayloadSyntaxSpan>,
+    font: FontId,
+    palette: Palette,
+) -> LayoutJob {
     let mut job = LayoutJob::default();
-    let bytes = text.as_bytes();
+    spans.sort_by_key(|span| span.start);
     let mut index = 0;
-    while index < text.len() {
-        let ch = text[index..].chars().next().unwrap_or_default();
-        if ch == '"' {
-            let end = string_end(text, index);
-            let color = if next_non_ws(bytes, end) == Some(b':') {
-                palette.key
-            } else {
-                palette.string
-            };
-            append(&mut job, &text[index..end], font.clone(), color);
-            index = end;
-        } else if ch.is_ascii_digit() || ch == '-' {
-            let end = take_while(text, index, |c| {
-                c.is_ascii_digit() || matches!(c, '-' | '+' | '.' | 'e' | 'E')
-            });
-            append(&mut job, &text[index..end], font.clone(), palette.number);
-            index = end;
-        } else if starts_keyword(text, index, "true")
-            || starts_keyword(text, index, "false")
-            || starts_keyword(text, index, "null")
-        {
-            let end = take_while(text, index, |c| c.is_ascii_alphabetic());
-            append(&mut job, &text[index..end], font.clone(), palette.keyword);
-            index = end;
-        } else if matches!(ch, '{' | '}' | '[' | ']' | ':' | ',') {
+    for span in spans {
+        if span.start < index || span.start >= span.end || span.end > text.len() {
+            continue;
+        }
+        if index < span.start {
             append(
                 &mut job,
-                &text[index..index + ch.len_utf8()],
-                font.clone(),
-                palette.punct,
-            );
-            index += ch.len_utf8();
-        } else {
-            append(
-                &mut job,
-                &text[index..index + ch.len_utf8()],
+                &text[index..span.start],
                 font.clone(),
                 palette.plain,
             );
-            index += ch.len_utf8();
         }
+        append(
+            &mut job,
+            &text[span.start..span.end],
+            font.clone(),
+            syntax_color(span.kind, palette),
+        );
+        index = span.end;
+    }
+    if index < text.len() {
+        append(&mut job, &text[index..], font, palette.plain);
     }
     job
 }
 
-fn highlight_xml(text: &str, font: FontId, palette: Palette) -> LayoutJob {
-    let mut job = LayoutJob::default();
-    let mut index = 0;
-    while index < text.len() {
-        if text[index..].starts_with("<!--") {
-            let end = text[index..]
-                .find("-->")
-                .map_or(text.len(), |offset| index + offset + 3);
-            append(&mut job, &text[index..end], font.clone(), palette.comment);
-            index = end;
-        } else if text[index..].starts_with('<') {
-            let end = text[index..]
-                .find('>')
-                .map_or(text.len(), |offset| index + offset + 1);
-            highlight_xml_tag(&mut job, &text[index..end], font.clone(), palette);
-            index = end;
-        } else {
-            let end = text[index..]
-                .find('<')
-                .map_or(text.len(), |offset| index + offset);
-            append(&mut job, &text[index..end], font.clone(), palette.plain);
-            index = end;
-        }
-    }
-    job
-}
-
-fn highlight_xml_tag(job: &mut LayoutJob, tag: &str, font: FontId, palette: Palette) {
-    let mut index = 0;
-    while index < tag.len() {
-        let ch = tag[index..].chars().next().unwrap_or_default();
-        if ch == '"' || ch == '\'' {
-            let end = quoted_end(tag, index, ch);
-            append(job, &tag[index..end], font.clone(), palette.string);
-            index = end;
-        } else if ch.is_ascii_alphabetic() || matches!(ch, '_' | ':' | '-') {
-            let end = take_while(tag, index, |c| {
-                c.is_ascii_alphanumeric() || matches!(c, '_' | ':' | '-' | '.')
-            });
-            let color = if previous_non_ws(tag.as_bytes(), index) == Some(b'<')
-                || previous_non_ws(tag.as_bytes(), index) == Some(b'/')
-            {
-                palette.tag
-            } else {
-                palette.attr
-            };
-            append(job, &tag[index..end], font.clone(), color);
-            index = end;
-        } else if matches!(ch, '<' | '>' | '/' | '=') {
-            append(
-                job,
-                &tag[index..index + ch.len_utf8()],
-                font.clone(),
-                palette.punct,
-            );
-            index += ch.len_utf8();
-        } else {
-            append(
-                job,
-                &tag[index..index + ch.len_utf8()],
-                font.clone(),
-                palette.plain,
-            );
-            index += ch.len_utf8();
-        }
+fn syntax_color(kind: PayloadSyntaxKind, palette: Palette) -> Color32 {
+    match kind {
+        PayloadSyntaxKind::Key => palette.key,
+        PayloadSyntaxKind::String => palette.string,
+        PayloadSyntaxKind::Number => palette.number,
+        PayloadSyntaxKind::Keyword => palette.keyword,
+        PayloadSyntaxKind::Punctuation => palette.punct,
+        PayloadSyntaxKind::Tag => palette.tag,
+        PayloadSyntaxKind::Attribute => palette.attr,
+        PayloadSyntaxKind::Comment => palette.comment,
     }
 }
 
@@ -278,29 +210,6 @@ fn append(job: &mut LayoutJob, text: &str, font: FontId, color: Color32) {
     job.append(text, 0.0, TextFormat::simple(font, color));
 }
 
-fn string_end(text: &str, start: usize) -> usize {
-    let mut escaped = false;
-    for (offset, ch) in text[start + 1..].char_indices() {
-        if escaped {
-            escaped = false;
-        } else if ch == '\\' {
-            escaped = true;
-        } else if ch == '"' {
-            return start + 1 + offset + ch.len_utf8();
-        }
-    }
-    text.len()
-}
-
-fn quoted_end(text: &str, start: usize, quote: char) -> usize {
-    for (offset, ch) in text[start + 1..].char_indices() {
-        if ch == quote {
-            return start + 1 + offset + ch.len_utf8();
-        }
-    }
-    text.len()
-}
-
 fn quoted_end_escaped(text: &str, start: usize, quote: char) -> usize {
     let mut escaped = false;
     for (offset, ch) in text[start + 1..].char_indices() {
@@ -339,14 +248,6 @@ fn previous_non_ws(bytes: &[u8], start: usize) -> Option<u8> {
         .rev()
         .copied()
         .find(|byte| !byte.is_ascii_whitespace())
-}
-
-fn starts_keyword(text: &str, index: usize, keyword: &str) -> bool {
-    text[index..].starts_with(keyword)
-        && text[index + keyword.len()..]
-            .chars()
-            .next()
-            .is_none_or(|ch| !ch.is_ascii_alphabetic())
 }
 
 fn is_js_ident_start(ch: char) -> bool {

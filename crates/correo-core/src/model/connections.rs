@@ -1,11 +1,18 @@
 use correo_mqtt::ConnectionId;
 
 use crate::{
-    AppModel, ConnectDisabledReason, ConnectionBadge, ConnectionSecretField,
-    ConnectionSettingField, ConnectionSettingFlag, ConnectionSettingsSnapshot,
-    ConnectionSettingsTab, ConnectionState, ConnectionSummary, Diagnostic, KeyringState,
-    SecretInput,
+    AppModel, ConnectDisabledReason, ConnectionBadge, ConnectionPluginDirection,
+    ConnectionPluginWorkflow, ConnectionPluginWorkflowField, ConnectionPluginWorkflowKind,
+    ConnectionPluginWorkflowStatus, ConnectionSecretField, ConnectionSettingField,
+    ConnectionSettingFlag, ConnectionSettingsSnapshot, ConnectionSettingsTab, ConnectionState,
+    ConnectionSummary, Diagnostic, KeyringState, PluginStatus, SecretInput,
 };
+
+const CONTAINS_STRING_ID: &str = "org.correomqtt.plugins.contains-string-validator";
+const XML_XSD_ID: &str = "org.correomqtt.plugins.xml-xsd-validator";
+const BASE64_ID: &str = "org.correomqtt.plugins.base64";
+const SAVE_ID: &str = "org.correomqtt.plugins.save-manipulator";
+const ZIP_ID: &str = "org.correomqtt.plugins.zip-manipulator";
 
 impl AppModel {
     pub(super) fn normalize_connection_surface(&mut self) {
@@ -26,6 +33,7 @@ impl AppModel {
         self.snapshot.selected_connection = None;
         self.snapshot.connection_surface = crate::ConnectionSurface::Settings;
         self.snapshot.connection_settings_overlay = None;
+        self.snapshot.connection_plugins_overlay = None;
         self.snapshot.connection_settings = new_connection_settings();
         self.push_diagnostic(Diagnostic::info("New connection draft opened."));
     }
@@ -121,6 +129,176 @@ impl AppModel {
         self.push_diagnostic(Diagnostic::info(
             "New connection profile added to the current session.",
         ));
+    }
+
+    pub(super) fn open_connection_plugins(&mut self, id: ConnectionId) {
+        self.snapshot.selected_connection = Some(id);
+        self.snapshot.connection_plugins_overlay = Some(id);
+        self.load_connection_settings(id);
+        self.ensure_connection_plugin_workflows();
+        self.snapshot
+            .connection_settings
+            .plugin_workflow_dialog_open = true;
+    }
+
+    pub(super) fn save_connection_plugins(&mut self) {
+        self.snapshot.connection_settings.dirty = true;
+        self.snapshot
+            .connection_settings
+            .plugin_workflow_dialog_open = false;
+        self.snapshot.connection_plugins_overlay = None;
+        self.save_connection_settings();
+    }
+
+    pub(super) fn close_connection_plugins(&mut self) {
+        if let Some(id) = self.snapshot.selected_connection {
+            if let Some(settings) = self.connection_settings.get(&id) {
+                self.snapshot.connection_settings.plugin_workflows =
+                    settings.plugin_workflows.clone();
+            }
+        }
+        self.snapshot
+            .connection_settings
+            .plugin_workflow_dialog_open = false;
+        self.snapshot.connection_plugins_overlay = None;
+    }
+
+    pub(super) fn set_connection_plugin_workflow_enabled(&mut self, index: usize, enabled: bool) {
+        if let Some(workflow) = self
+            .snapshot
+            .connection_settings
+            .plugin_workflows
+            .get_mut(index)
+        {
+            workflow.enabled = enabled;
+            workflow.status = if enabled {
+                if workflow.available {
+                    ConnectionPluginWorkflowStatus::Ready
+                } else {
+                    ConnectionPluginWorkflowStatus::MissingPlugin
+                }
+            } else {
+                ConnectionPluginWorkflowStatus::Disabled
+            };
+            self.snapshot.connection_settings.dirty = true;
+        }
+    }
+
+    pub(super) fn add_connection_plugin_workflow(&mut self, plugin_id: String) {
+        let Some((plugin_name, kind)) = self.connection_workflow_plugin(&plugin_id) else {
+            return;
+        };
+        self.snapshot.connection_settings.plugin_workflows.push(
+            default_connection_plugin_workflow(&plugin_id, plugin_name, kind),
+        );
+        self.snapshot.connection_settings.selected_plugin_workflow =
+            Some(self.snapshot.connection_settings.plugin_workflows.len() - 1);
+        self.snapshot.connection_settings.dirty = true;
+    }
+
+    pub(super) fn remove_connection_plugin_workflow(&mut self, index: usize) {
+        if index >= self.snapshot.connection_settings.plugin_workflows.len() {
+            return;
+        }
+        self.snapshot
+            .connection_settings
+            .plugin_workflows
+            .remove(index);
+        let len = self.snapshot.connection_settings.plugin_workflows.len();
+        self.snapshot.connection_settings.selected_plugin_workflow = if len == 0 {
+            None
+        } else {
+            Some(index.min(len - 1))
+        };
+        self.snapshot.connection_settings.dirty = true;
+    }
+
+    pub(super) fn move_connection_plugin_workflow(
+        &mut self,
+        index: usize,
+        target_index: usize,
+        after: bool,
+    ) {
+        let len = self.snapshot.connection_settings.plugin_workflows.len();
+        if index >= len || target_index >= len || index == target_index {
+            return;
+        }
+        let item = self
+            .snapshot
+            .connection_settings
+            .plugin_workflows
+            .remove(index);
+        let mut insert_at = target_index;
+        if index < target_index {
+            insert_at = insert_at.saturating_sub(1);
+        }
+        if after {
+            insert_at = insert_at.saturating_add(1);
+        }
+        insert_at = insert_at.min(self.snapshot.connection_settings.plugin_workflows.len());
+        self.snapshot
+            .connection_settings
+            .plugin_workflows
+            .insert(insert_at, item);
+        self.snapshot.connection_settings.selected_plugin_workflow = Some(insert_at);
+        self.snapshot.connection_settings.dirty = true;
+    }
+
+    pub(super) fn set_connection_plugin_workflow_direction(
+        &mut self,
+        index: usize,
+        direction: ConnectionPluginDirection,
+    ) {
+        if let Some(workflow) = self
+            .snapshot
+            .connection_settings
+            .plugin_workflows
+            .get_mut(index)
+        {
+            workflow.direction = direction;
+            self.snapshot.connection_settings.dirty = true;
+        }
+    }
+
+    pub(super) fn update_connection_plugin_workflow_field(
+        &mut self,
+        index: usize,
+        field: ConnectionPluginWorkflowField,
+        value: String,
+    ) {
+        let Some(workflow) = self
+            .snapshot
+            .connection_settings
+            .plugin_workflows
+            .get_mut(index)
+        else {
+            return;
+        };
+        match field {
+            ConnectionPluginWorkflowField::TopicFilter => workflow.topic_filter = value,
+            ConnectionPluginWorkflowField::ContainsStrings => {
+                workflow.config["rules"] = serde_json::Value::Array(
+                    value
+                        .lines()
+                        .filter(|line| !line.trim().is_empty())
+                        .map(|line| {
+                            let line = line.trim();
+                            if let Some(regex) = line.strip_prefix("regex:") {
+                                serde_json::json!({ "text": regex.trim(), "regex": true })
+                            } else {
+                                serde_json::json!({ "text": line, "regex": false })
+                            }
+                        })
+                        .collect(),
+                );
+            }
+            ConnectionPluginWorkflowField::XsdPath => workflow.config["xsd_path"] = value.into(),
+            ConnectionPluginWorkflowField::SaveFolder => workflow.config["folder"] = value.into(),
+            ConnectionPluginWorkflowField::FeatureEnabled => {
+                workflow.config["feature_enabled"] = serde_json::Value::Bool(value == "true")
+            }
+        }
+        self.snapshot.connection_settings.dirty = true;
     }
 
     pub(super) fn discard_connection_settings(&mut self) {
@@ -356,6 +534,43 @@ impl AppModel {
         }
     }
 
+    fn ensure_connection_plugin_workflows(&mut self) {
+        let available_ids = self
+            .snapshot
+            .plugins
+            .plugins
+            .iter()
+            .filter(|plugin| plugin.enabled && plugin.status == PluginStatus::Active)
+            .map(|plugin| (plugin.id.clone(), plugin.name.clone()))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        for workflow in &mut self.snapshot.connection_settings.plugin_workflows {
+            workflow.available = available_ids.contains_key(&workflow.plugin_id);
+            if let Some(name) = available_ids.get(&workflow.plugin_id) {
+                workflow.plugin_name = name.clone();
+            }
+            workflow.status = match (workflow.available, workflow.enabled) {
+                (true, true) => ConnectionPluginWorkflowStatus::Ready,
+                (_, false) => ConnectionPluginWorkflowStatus::Disabled,
+                (false, true) => ConnectionPluginWorkflowStatus::MissingPlugin,
+            };
+        }
+    }
+
+    fn connection_workflow_plugin(
+        &self,
+        plugin_id: &str,
+    ) -> Option<(String, ConnectionPluginWorkflowKind)> {
+        let kind = match plugin_id {
+            CONTAINS_STRING_ID | XML_XSD_ID => ConnectionPluginWorkflowKind::Validator,
+            BASE64_ID | SAVE_ID | ZIP_ID => ConnectionPluginWorkflowKind::Manipulator,
+            _ => return None,
+        };
+        let plugin = self.snapshot.plugins.plugins.iter().find(|plugin| {
+            plugin.id == plugin_id && plugin.enabled && plugin.status == PluginStatus::Active
+        })?;
+        Some((plugin.name.clone(), kind))
+    }
+
     fn update_connection_summary(
         &mut self,
         id: ConnectionId,
@@ -377,6 +592,32 @@ impl AppModel {
                 ..connection_summary(id, settings)
             };
         }
+    }
+}
+
+fn default_connection_plugin_workflow(
+    plugin_id: &str,
+    plugin_name: String,
+    kind: ConnectionPluginWorkflowKind,
+) -> ConnectionPluginWorkflow {
+    let config = match plugin_id {
+        CONTAINS_STRING_ID => serde_json::json!({ "rules": [] }),
+        XML_XSD_ID => serde_json::json!({ "xsd_path": "" }),
+        SAVE_ID => serde_json::json!({ "folder": "" }),
+        BASE64_ID | ZIP_ID => serde_json::json!({}),
+        _ => serde_json::json!({}),
+    };
+    ConnectionPluginWorkflow {
+        plugin_id: plugin_id.to_owned(),
+        plugin_name,
+        enabled: true,
+        kind,
+        direction: ConnectionPluginDirection::Incoming,
+        topic_filter: "#".to_owned(),
+        config,
+        available: true,
+        status: ConnectionPluginWorkflowStatus::Ready,
+        message: String::new(),
     }
 }
 

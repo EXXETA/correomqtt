@@ -15,12 +15,21 @@ fn xml_format_manifest_declares_only_detail_formatter_without_host_caps() {
             .unwrap();
 
     assert_eq!(manifest.id, "org.correomqtt.plugins.xml-format");
-    assert_eq!(manifest.capabilities.hooks, vec![HookKind::DetailFormatter]);
+    assert_eq!(
+        manifest.capabilities.hooks,
+        vec![HookKind::DetailFormatter, HookKind::PayloadHighlighter]
+    );
     assert_eq!(
         manifest
             .entrypoint_for(HookKind::DetailFormatter)
             .map(|entrypoint| entrypoint.export.as_str()),
         Some("correo_detail_formatter")
+    );
+    assert_eq!(
+        manifest
+            .entrypoint_for(HookKind::PayloadHighlighter)
+            .map(|entrypoint| entrypoint.export.as_str()),
+        Some("correo_payload_highlighter")
     );
     for surface in [
         HostSurface::Filesystem,

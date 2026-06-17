@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::slice;
 
 const ABI_VERSION: u16 = 1;
+pub const CONFIGURATION_DESCRIPTION: &str = "Checks text payloads for required literal or regex matches and marks messages that do not satisfy the rules.";
 
 #[cfg_attr(target_arch = "wasm32", unsafe(no_mangle))]
 pub extern "C" fn correo_message_validator(request_ptr: i32, request_len: i32) -> i64 {

@@ -72,6 +72,23 @@ impl ConfigStore {
         Ok(config)
     }
 
+    pub fn save_connection_plugin_workflows(
+        &self,
+        connection_id: &str,
+        plugin_workflows: Vec<ConnectionPluginWorkflowConfig>,
+    ) -> Result<AppConfig> {
+        let mut config = self.load_or_default()?;
+        if let Some(connection) = config
+            .connections
+            .iter_mut()
+            .find(|connection| connection.id == connection_id)
+        {
+            connection.plugin_workflows = plugin_workflows;
+        }
+        self.save(&config)?;
+        Ok(config)
+    }
+
     fn path(&self) -> PathBuf {
         self.root.join(CONFIG_FILE_NAME)
     }
@@ -116,6 +133,36 @@ pub struct ConnectionConfig {
     pub connection_ui_settings: Option<ConnectionUiSettings>,
     pub publish_list_view_config: Option<MessageListViewConfig>,
     pub subscribe_list_view_config: Option<MessageListViewConfig>,
+    #[serde(default)]
+    pub plugin_workflows: Vec<ConnectionPluginWorkflowConfig>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ConnectionPluginWorkflowConfig {
+    pub plugin_id: String,
+    pub enabled: bool,
+    pub kind: ConnectionPluginWorkflowKind,
+    pub direction: ConnectionPluginDirection,
+    pub topic_filter: String,
+    pub config: serde_json::Value,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConnectionPluginWorkflowKind {
+    #[default]
+    Validator,
+    Manipulator,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConnectionPluginDirection {
+    #[default]
+    Incoming,
+    Outgoing,
+    Both,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -131,6 +178,7 @@ pub struct Settings {
     pub install_bundled_plugins: bool,
     pub bundled_plugins_url: Option<String>,
     pub plugin_repositories: BTreeMap<String, String>,
+    pub plugin_states: BTreeMap<String, PluginStateSettings>,
     pub first_start: bool,
     pub keyring_identifier: Option<String>,
     pub global_ui_settings: Option<GlobalUiSettings>,
@@ -150,11 +198,24 @@ impl Default for Settings {
             install_bundled_plugins: true,
             bundled_plugins_url: None,
             plugin_repositories: BTreeMap::new(),
+            plugin_states: BTreeMap::new(),
             first_start: true,
             keyring_identifier: None,
             global_ui_settings: None,
             config_created_with_correo_version: None,
         }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct PluginStateSettings {
+    pub enabled: bool,
+}
+
+impl Default for PluginStateSettings {
+    fn default() -> Self {
+        Self { enabled: true }
     }
 }
 

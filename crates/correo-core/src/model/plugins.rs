@@ -1,6 +1,7 @@
 use crate::{
     AppCommand, Diagnostic, PluginDisableConfirmation, PluginFeedback, PluginHookDraft,
-    PluginHookEditor, PluginHookKind, PluginHookStatus, PluginStatus, PluginSurfaceTab,
+    PluginHookEditor, PluginHookKind, PluginHookStatus, PluginStateSnapshot, PluginStatus,
+    PluginSurfaceTab,
 };
 
 use super::AppModel;
@@ -71,6 +72,8 @@ impl AppModel {
             }
             AppCommand::SelectPluginDiagnostic(id) => self.select_plugin_diagnostic(id.clone()),
             AppCommand::ClearPluginDiagnostics => self.clear_plugin_diagnostics(),
+            AppCommand::InvokeConnectionPluginAction { .. }
+            | AppCommand::ClosePluginWindow { .. } => {}
             _ => return false,
         }
         true
@@ -148,10 +151,32 @@ impl AppModel {
             }
         } else {
             disable_plugin(plugin);
+            if self
+                .snapshot
+                .workbench
+                .detail
+                .selected_formatter_plugin_id
+                .as_deref()
+                == Some(plugin_id.as_str())
+            {
+                self.snapshot.workbench.detail.selected_formatter_plugin_id = None;
+            }
+            if self
+                .snapshot
+                .workbench
+                .detail
+                .selected_transform_plugin_id
+                .as_deref()
+                == Some(plugin_id.as_str())
+            {
+                self.snapshot.workbench.detail.selected_transform_plugin_id = None;
+            }
         }
+        let plugin_name = plugin.name.clone();
+        self.set_persisted_plugin_enabled(plugin_id, enabled);
         self.snapshot.plugins.feedback = Some(PluginFeedback::info(format!(
             "{} {} command queued.",
-            plugin.name,
+            plugin_name,
             if enabled { "enable" } else { "disable" }
         )));
     }
@@ -305,10 +330,19 @@ impl AppModel {
         };
         let plugin = &mut self.snapshot.plugins.plugins[index];
         disable_plugin(plugin);
+        let plugin_name = plugin.name.clone();
+        self.set_persisted_plugin_enabled(confirmation.plugin_id, false);
         self.snapshot.plugins.feedback = Some(PluginFeedback::info(format!(
             "{} disabled and active hooks turned off.",
-            plugin.name
+            plugin_name
         )));
+    }
+
+    fn set_persisted_plugin_enabled(&mut self, plugin_id: String, enabled: bool) {
+        self.snapshot
+            .global_settings
+            .plugin_states
+            .insert(plugin_id, PluginStateSnapshot { enabled });
     }
 
     pub(super) fn start_add_plugin_hook(&mut self, plugin_id: String) {

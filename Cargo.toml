@@ -53,6 +53,7 @@ keyring = "3"
 pbkdf2 = "0.12"
 rand = "0.8"
 rquickjs = "0.8.1"
+regex = "1"
 rfd = "0.15"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 rustls-native-certs = "0.8"

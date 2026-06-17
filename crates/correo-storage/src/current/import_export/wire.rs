@@ -181,6 +181,7 @@ fn connection_from_wire(
         connection_ui_settings: None,
         publish_list_view_config: None,
         subscribe_list_view_config: None,
+        plugin_workflows: Vec::new(),
     })
 }
 

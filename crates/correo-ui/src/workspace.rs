@@ -2,8 +2,8 @@ use correo_core::{AppCommand, AppCommandSender, AppSnapshot, ConnectionSurface, 
 use egui::{RichText, Ui, UiBuilder};
 
 use crate::{
-    about, connection_settings, diagnostics, i18n::I18n, plugins, scripts, settings,
-    theme::ThemeTokens, workbench,
+    about, connection_plugins, connection_settings, diagnostics, i18n::I18n, plugins, scripts,
+    settings, theme::ThemeTokens, workbench, PayloadHighlighter,
 };
 
 const VIEW_PADDING: f32 = 10.0;
@@ -36,10 +36,11 @@ pub fn show(
     tokens: ThemeTokens,
     commands: &AppCommandSender,
     i18n: &I18n,
+    payload_highlighter: Option<&PayloadHighlighter>,
 ) {
     match snapshot.active_workspace {
         Workspace::Connections => padded_view(ui, |ui| {
-            connections(ui, snapshot, tokens, commands, i18n);
+            connections(ui, snapshot, tokens, commands, i18n, payload_highlighter);
         }),
         Workspace::ImportExport => {
             padded_view(ui, |ui| {
@@ -71,6 +72,7 @@ pub fn show(
 
 fn padded_view(ui: &mut Ui, add_contents: impl FnOnce(&mut Ui)) {
     let available = ui.available_rect_before_wrap();
+    crate::overlay_bounds::set(ui, available);
     let rect = egui::Rect::from_min_max(
         egui::pos2(
             available.left() + VIEW_PADDING,
@@ -102,24 +104,28 @@ fn connections(
     tokens: ThemeTokens,
     commands: &AppCommandSender,
     i18n: &I18n,
+    payload_highlighter: Option<&PayloadHighlighter>,
 ) {
     match snapshot.connection_surface {
         ConnectionSurface::Launcher | ConnectionSurface::Workbench => {
-            connection_workbench(ui, snapshot, tokens, commands, i18n)
+            connection_workbench(ui, snapshot, tokens, commands, i18n, payload_highlighter)
         }
         ConnectionSurface::Settings if snapshot.selected_connection.is_none() => {
-            connection_workbench(ui, snapshot, tokens, commands, i18n)
+            connection_workbench(ui, snapshot, tokens, commands, i18n, payload_highlighter)
         }
         ConnectionSurface::Settings => {
             connection_settings::show(ui, snapshot, tokens, commands, i18n)
         }
-        ConnectionSurface::Transfer => connection_workbench(ui, snapshot, tokens, commands, i18n),
+        ConnectionSurface::Transfer => {
+            connection_workbench(ui, snapshot, tokens, commands, i18n, payload_highlighter)
+        }
     }
     if matches!(
         snapshot.connection_surface,
         ConnectionSurface::Launcher | ConnectionSurface::Workbench | ConnectionSurface::Settings
     ) {
         connection_settings::overlay(ui, snapshot, tokens, commands, i18n);
+        connection_plugins::overlay(ui, snapshot, tokens, commands, i18n);
     }
 }
 
@@ -147,9 +153,10 @@ fn connection_workbench(
     tokens: ThemeTokens,
     commands: &AppCommandSender,
     i18n: &I18n,
+    payload_highlighter: Option<&PayloadHighlighter>,
 ) {
     if snapshot.selected_connection().is_some() {
-        workbench::show(ui, snapshot, tokens, commands);
+        workbench::show(ui, snapshot, tokens, commands, i18n, payload_highlighter);
     } else {
         no_connection_available(ui, tokens, i18n);
     }

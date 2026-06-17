@@ -2,16 +2,28 @@ use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
 
-use correo_storage::current::{ConfigStore, Settings};
+use correo_storage::current::{
+    ConfigStore, ConnectionPluginDirection as StorageConnectionPluginDirection,
+    ConnectionPluginWorkflowConfig,
+    ConnectionPluginWorkflowKind as StorageConnectionPluginWorkflowKind, PluginStateSettings,
+    Settings,
+};
 use thiserror::Error;
 
-use crate::{normalize_keyring_backend, GlobalSettingsSnapshot, PluginRepositoryRow, ThemeMode};
+use crate::{
+    normalize_keyring_backend, ConnectionPluginDirection, ConnectionPluginWorkflow,
+    ConnectionPluginWorkflowKind, GlobalSettingsSnapshot, PluginRepositoryRow, ThemeMode,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SettingsPersistenceCommand {
     Save {
         theme_mode: ThemeMode,
         settings: GlobalSettingsSnapshot,
+    },
+    SaveConnectionPluginWorkflows {
+        connection_id: String,
+        workflows: Vec<ConnectionPluginWorkflow>,
     },
 }
 
@@ -79,6 +91,13 @@ fn apply_settings_command(
             theme_mode,
             settings,
         } => store.save_global_settings(theme_name(&theme_mode), storage_settings(settings)),
+        SettingsPersistenceCommand::SaveConnectionPluginWorkflows {
+            connection_id,
+            workflows,
+        } => store.save_connection_plugin_workflows(
+            &connection_id,
+            workflows.into_iter().map(storage_plugin_workflow).collect(),
+        ),
     };
 
     match result {
@@ -86,6 +105,28 @@ fn apply_settings_command(
         Err(error) => SettingsPersistenceEvent::Failed {
             error: error.to_string(),
         },
+    }
+}
+
+fn storage_plugin_workflow(workflow: ConnectionPluginWorkflow) -> ConnectionPluginWorkflowConfig {
+    ConnectionPluginWorkflowConfig {
+        plugin_id: workflow.plugin_id,
+        enabled: workflow.enabled,
+        kind: match workflow.kind {
+            ConnectionPluginWorkflowKind::Validator => {
+                StorageConnectionPluginWorkflowKind::Validator
+            }
+            ConnectionPluginWorkflowKind::Manipulator => {
+                StorageConnectionPluginWorkflowKind::Manipulator
+            }
+        },
+        direction: match workflow.direction {
+            ConnectionPluginDirection::Incoming => StorageConnectionPluginDirection::Incoming,
+            ConnectionPluginDirection::Outgoing => StorageConnectionPluginDirection::Outgoing,
+            ConnectionPluginDirection::Both => StorageConnectionPluginDirection::Both,
+        },
+        topic_filter: workflow.topic_filter,
+        config: workflow.config,
     }
 }
 
@@ -104,6 +145,18 @@ fn storage_settings(snapshot: GlobalSettingsSnapshot) -> Settings {
         .into_iter()
         .filter(|row| !row.url.trim().is_empty())
         .map(repository_entry)
+        .collect();
+    settings.plugin_states = snapshot
+        .plugin_states
+        .into_iter()
+        .map(|(plugin_id, state)| {
+            (
+                plugin_id,
+                PluginStateSettings {
+                    enabled: state.enabled,
+                },
+            )
+        })
         .collect();
     settings.first_start = snapshot.first_start;
     settings.keyring_identifier =

@@ -10,10 +10,10 @@ use crate::i18n::I18n;
 use crate::responsive;
 use crate::theme::{ThemeTokens, CONTROL_HEIGHT};
 use crate::widgets::{
-    clearable_search_edit, disable_tile_text_selection, fill_remaining_tile_rows,
-    tighten_tile_spacing, tile_inner_padding, tile_list_content_width,
-    tile_scroll_bar_rect_with_height, tile_table_fill, tile_table_hover_fill,
-    with_icon_button_padding, TILE_GAP,
+    clearable_search_edit, disable_tile_text_selection, fill_remaining_tile_rows, menu_item,
+    menu_item_enabled, set_menu_item_width, tighten_tile_spacing, tile_inner_padding,
+    tile_list_content_width, tile_scroll_bar_rect_with_height, tile_table_fill,
+    tile_table_hover_fill, with_icon_button_padding, TILE_GAP,
 };
 use correo_style::layout;
 
@@ -22,7 +22,8 @@ const STATUS_ICON_SIZE: f32 = 21.0;
 const FEATURE_ICON_WIDTH: f32 = 19.0;
 const FEATURE_ICON_SIZE: f32 = 17.0;
 const FEATURE_ICON_GAP: f32 = 4.0;
-const CONNECTION_TEXT_GAP: f32 = 8.0;
+const CONNECTION_ROW_TEXT_GAP: f32 = 8.0;
+const CONNECTION_TEXT_GAP: f32 = CONNECTION_ROW_TEXT_GAP - 1.0;
 
 pub fn panel(
     ui: &mut Ui,
@@ -104,7 +105,9 @@ pub fn panel(
 
 fn connection_row_height(ui: &Ui) -> f32 {
     let top_padding = tile_inner_padding().y;
-    (ui.text_style_height(&egui::TextStyle::Body) * 2.0) + CONNECTION_TEXT_GAP + (top_padding * 2.0)
+    (ui.text_style_height(&egui::TextStyle::Body) * 2.0)
+        + CONNECTION_ROW_TEXT_GAP
+        + (top_padding * 2.0)
 }
 
 fn header_add_button(ui: &mut Ui) -> Response {
@@ -217,7 +220,7 @@ fn connection_row(
         }
     }
 
-    response.context_menu(|ui| connection_context_menu(ui, connection, commands));
+    response.context_menu(|ui| connection_context_menu(ui, connection, snapshot, commands, i18n));
 
     if response.double_clicked() {
         if connection.can_connect() {
@@ -241,25 +244,26 @@ fn close_compact_flyout(ui: &Ui, snapshot: &AppSnapshot) {
 fn connection_context_menu(
     ui: &mut Ui,
     connection: &ConnectionSummary,
+    snapshot: &AppSnapshot,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
+    let connect = i18n.text("common-connect");
+    let disconnect = i18n.text("common-disconnect");
+    let edit = i18n.text("common-edit");
+    let validators = i18n.text("validators-title");
+    let delete = i18n.text("common-delete");
+    set_menu_item_width(ui, &[&disconnect, &connect, &edit, &validators, &delete]);
     match connection.state {
         ConnectionState::Connected => {
-            if ui
-                .button(menu_label(regular::PLUG_CHARGING, "Disconnect"))
-                .clicked()
-            {
+            if menu_item(ui, Some(regular::PLUG_CHARGING), &disconnect).clicked() {
                 send(commands, AppCommand::SelectConnection(connection.id));
                 send(commands, AppCommand::Disconnect(connection.id));
                 ui.close_menu();
             }
         }
         _ => {
-            if ui
-                .add_enabled(
-                    connection.can_connect(),
-                    Button::new(menu_label(regular::PLUG, "Connect")),
-                )
+            if menu_item_enabled(ui, connection.can_connect(), Some(regular::PLUG), &connect)
                 .clicked()
             {
                 send(commands, AppCommand::SelectConnection(connection.id));
@@ -268,22 +272,22 @@ fn connection_context_menu(
             }
         }
     }
-    if ui
-        .button(menu_label(regular::PENCIL_SIMPLE, "Edit"))
-        .clicked()
-    {
+    if menu_item(ui, Some(regular::PENCIL_SIMPLE), &edit).clicked() {
         send(commands, AppCommand::EditConnection(connection.id));
         ui.close_menu();
     }
-    if ui.button(menu_label(regular::TRASH, "Delete...")).clicked() {
+    if snapshot.plugins.has_connection_workflow_plugins()
+        && menu_item(ui, Some(regular::PUZZLE_PIECE), &validators).clicked()
+    {
+        send(commands, AppCommand::SelectConnection(connection.id));
+        send(commands, AppCommand::OpenConnectionPlugins(connection.id));
+        ui.close_menu();
+    }
+    if menu_item(ui, Some(regular::TRASH), &delete).clicked() {
         send(commands, AppCommand::SelectConnection(connection.id));
         send(commands, AppCommand::RequestDeleteConnection);
         ui.close_menu();
     }
-}
-
-fn menu_label(icon: &str, label: &str) -> String {
-    format!("{icon}  {label}")
 }
 
 fn row_contents(ui: &mut Ui, connection: &ConnectionSummary, tokens: ThemeTokens, row_height: f32) {

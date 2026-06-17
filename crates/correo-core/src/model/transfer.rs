@@ -1,8 +1,9 @@
 use std::path::Path;
 
 use correo_storage::current::{
-    decrypt_connection_export, read_connection_export, read_message_export, ConnectionConfig,
-    ConnectionExport, MqttVersion as StoredMqttVersion, Qos as StoredQos,
+    decrypt_connection_export, read_connection_export, read_message_export, write_message_export,
+    ConnectionConfig, ConnectionExport, Message as StoredMessage, MessageType,
+    MqttVersion as StoredMqttVersion, PublishStatus, Qos as StoredQos,
 };
 
 use crate::{
@@ -337,6 +338,48 @@ impl AppModel {
         self.push_diagnostic(Diagnostic::info("Outgoing message export command queued."));
     }
 
+    pub(super) fn export_publish_history_message_to_path(&mut self, message_id: u32, path: &Path) {
+        let Some(row) = self
+            .snapshot
+            .workbench
+            .publish
+            .history
+            .iter()
+            .find(|row| row.id == message_id)
+        else {
+            self.snapshot.workbench.publish.feedback = Some(WorkflowFeedback::error(
+                "Could not export outgoing message: message was not found.",
+            ));
+            return;
+        };
+        let message = StoredMessage {
+            topic: row.topic.clone(),
+            payload: Some(String::from_utf8_lossy(&row.payload).into_owned()),
+            retained: row.retained,
+            qos: Some(stored_qos_level(row.qos)),
+            date_time: Some(row.timestamp.clone()),
+            message_id: None,
+            message_type: Some(MessageType::Outgoing),
+            publish_status: Some(PublishStatus::Succeeded),
+        };
+        match write_message_export(path, &message) {
+            Ok(()) => {
+                self.snapshot.workbench.publish.feedback = Some(WorkflowFeedback::info(
+                    "Saved outgoing message to .cqm file.",
+                ));
+                self.push_diagnostic(Diagnostic::info("Outgoing message export completed."));
+            }
+            Err(error) => {
+                self.snapshot.workbench.publish.feedback = Some(WorkflowFeedback::error(format!(
+                    "Could not save outgoing message: {error}"
+                )));
+                self.push_diagnostic(Diagnostic::warning(
+                    "Outgoing message export failed for selected .cqm file.",
+                ));
+            }
+        }
+    }
+
     pub(super) fn export_incoming_message(&mut self, message_id: u32) {
         self.snapshot.active_workspace = Workspace::Connections;
         self.snapshot.connection_surface = ConnectionSurface::Workbench;
@@ -347,6 +390,48 @@ impl AppModel {
         ));
         self.push_diagnostic(Diagnostic::info("Incoming message export command queued."));
     }
+
+    pub(super) fn export_incoming_message_to_path(&mut self, message_id: u32, path: &Path) {
+        let Some(row) = self
+            .snapshot
+            .workbench
+            .messages
+            .iter()
+            .find(|row| row.id == message_id)
+        else {
+            self.snapshot.workbench.subscribe.feedback = Some(WorkflowFeedback::error(
+                "Could not export incoming message: message was not found.",
+            ));
+            return;
+        };
+        self.snapshot.workbench.selected_message_id = Some(message_id);
+        let message = StoredMessage {
+            topic: row.topic.clone(),
+            payload: Some(String::from_utf8_lossy(&row.payload).into_owned()),
+            retained: row.retained,
+            qos: Some(stored_qos_level(row.qos)),
+            date_time: Some(row.timestamp.clone()),
+            message_id: None,
+            message_type: Some(MessageType::Incoming),
+            publish_status: None,
+        };
+        match write_message_export(path, &message) {
+            Ok(()) => {
+                self.snapshot.workbench.subscribe.feedback = Some(WorkflowFeedback::info(
+                    "Saved incoming message to .cqm file.",
+                ));
+                self.push_diagnostic(Diagnostic::info("Incoming message export completed."));
+            }
+            Err(error) => {
+                self.snapshot.workbench.subscribe.feedback = Some(WorkflowFeedback::error(
+                    format!("Could not save incoming message: {error}"),
+                ));
+                self.push_diagnostic(Diagnostic::warning(
+                    "Incoming message export failed for selected .cqm file.",
+                ));
+            }
+        }
+    }
 }
 
 fn stored_qos(qos: StoredQos) -> QosLevel {
@@ -354,6 +439,14 @@ fn stored_qos(qos: StoredQos) -> QosLevel {
         StoredQos::AtMostOnce => QosLevel::Zero,
         StoredQos::AtLeastOnce => QosLevel::One,
         StoredQos::ExactlyOnce => QosLevel::Two,
+    }
+}
+
+fn stored_qos_level(qos: QosLevel) -> StoredQos {
+    match qos {
+        QosLevel::Zero => StoredQos::AtMostOnce,
+        QosLevel::One => StoredQos::AtLeastOnce,
+        QosLevel::Two => StoredQos::ExactlyOnce,
     }
 }
 

@@ -1,6 +1,10 @@
+use std::collections::BTreeMap;
+
+use correo_storage::current::PluginStateSettings;
+
 use crate::{
     marketplace_rows_from_repository_json, PluginFeedback, PluginLoadState, PluginSource,
-    PluginSurfaceSnapshot, PluginSurfaceTab,
+    PluginStatus, PluginSurfaceSnapshot, PluginSurfaceTab,
 };
 
 pub(super) fn plugin_surface(
@@ -9,6 +13,7 @@ pub(super) fn plugin_surface(
     bundled_plugin_ids: &[String],
     installed_plugin_ids: &[String],
     installed_plugin_paths: &[(String, String)],
+    plugin_states: &BTreeMap<String, PluginStateSettings>,
 ) -> PluginSurfaceSnapshot {
     let mut marketplace_plugins = Vec::new();
     let mut feedback = None;
@@ -38,6 +43,16 @@ pub(super) fn plugin_surface(
                 let mut plugin = marketplace_plugin.to_installed_plugin();
                 if bundled_plugin_ids.iter().any(|id| id == &plugin.id) {
                     plugin.source = PluginSource::Bundled;
+                }
+                if let Some(state) = plugin_states.get(&plugin.id) {
+                    plugin.enabled = state.enabled;
+                    if !state.enabled && plugin.status == PluginStatus::Active {
+                        plugin.status = PluginStatus::Disabled;
+                        for hook in &mut plugin.hooks {
+                            hook.enabled = false;
+                            hook.status = crate::PluginHookStatus::Disabled;
+                        }
+                    }
                 }
                 plugin.installed_path = installed_plugin_paths
                     .iter()

@@ -16,6 +16,7 @@ use crate::{
         toolbar_rect,
     },
     workbench_layout::{self, WorkbenchPaneSide},
+    PayloadHighlighter,
 };
 
 pub(crate) fn editor(
@@ -23,13 +24,17 @@ pub(crate) fn editor(
     snapshot: &AppSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    payload_highlighter: Option<&PayloadHighlighter>,
 ) {
     workbench_layout::pane_title(ui, "Publish", WorkbenchPaneSide::Publish);
     ui.add_space(4.0);
     topic_row(ui, snapshot, tokens, commands);
     let mut payload = snapshot.workbench.publish.payload.clone();
     let payload_height = ui.available_height().max(layout::TABLE_MIN_HEIGHT);
-    let mut layouter = payload_highlight::layouter();
+    let mut layouter = payload_highlight::layouter(
+        payload_highlighter.cloned(),
+        snapshot.plugins.active_plugin_ids(),
+    );
     let payload_response = ui.add_sized(
         [ui.available_width(), payload_height],
         padded_text_edit(TextEdit::multiline(&mut payload))

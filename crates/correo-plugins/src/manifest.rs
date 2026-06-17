@@ -19,7 +19,10 @@ pub struct PluginManifest {
     pub license: String,
     pub compatible_correomqtt: VersionReq,
     pub capabilities: CapabilityGrants,
+    #[serde(default)]
     pub entrypoints: Vec<PluginEntrypoint>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub connection_header_actions: Vec<ConnectionHeaderActionContribution>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub themes: Vec<ThemeDefinition>,
     #[serde(default)]
@@ -74,6 +77,17 @@ impl PluginManifest {
             ensure_non_empty("themes.name", &theme.name)?;
         }
 
+        let mut seen_actions = BTreeSet::new();
+        for action in &self.connection_header_actions {
+            ensure_non_empty("connection_header_actions.id", &action.id)?;
+            ensure_non_empty("connection_header_actions.label", &action.label)?;
+            if !seen_actions.insert(&action.id) {
+                return Err(ManifestError::DuplicateConnectionHeaderAction {
+                    action_id: action.id.clone(),
+                });
+            }
+        }
+
         Ok(())
     }
 
@@ -88,6 +102,16 @@ impl PluginManifest {
 pub struct PluginEntrypoint {
     pub hook: HookKind,
     pub export: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConnectionHeaderActionContribution {
+    pub id: String,
+    pub label: String,
+    #[serde(default)]
+    pub tooltip: String,
+    #[serde(default)]
+    pub requires_connected: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -109,6 +133,8 @@ pub enum ManifestError {
     EntrypointCapabilityMissing { hook: HookKind },
     #[error("duplicate entrypoint for hook {hook:?}")]
     DuplicateEntrypoint { hook: HookKind },
+    #[error("duplicate connection header action {action_id}")]
+    DuplicateConnectionHeaderAction { action_id: String },
     #[error("plugin theme id {theme_id} must be namespaced under plugin id {plugin_id}/")]
     InvalidThemeId { theme_id: String, plugin_id: String },
 }

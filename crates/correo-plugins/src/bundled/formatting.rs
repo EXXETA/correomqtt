@@ -4,17 +4,32 @@ use crate::{
     HookDiagnosticDto, HookDiagnosticSeverityDto, HookKind, ABI_VERSION,
 };
 use correo_plugin_xml_format::{
-    format_xml_bytes, XmlDetailFormat, XmlFormatDiagnostic, XmlFormatDiagnosticSeverity,
-    XmlFormatOutput,
+    format_xml_bytes, highlight_xml_syntax, XmlDetailFormat, XmlFormatDiagnostic,
+    XmlFormatDiagnosticSeverity, XmlFormatOutput, XmlSyntaxKind, XmlSyntaxSpan,
 };
 use correo_plugins_json_format::{
-    format_json_bytes, JsonDetailFormat, JsonFormatDiagnostic, JsonFormatDiagnosticSeverity,
-    JsonFormatOutput,
+    format_json_bytes, highlight_json_syntax, JsonDetailFormat, JsonFormatDiagnostic,
+    JsonFormatDiagnosticSeverity, JsonFormatOutput, JsonSyntaxKind, JsonSyntaxSpan,
 };
-use correo_plugins_systopic::{
-    format_sys_topic_detail, SysTopicDetailFormat, SysTopicFormatDiagnostic,
-    SysTopicFormatDiagnosticSeverity, SysTopicFormatOutput,
-};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PayloadSyntaxKind {
+    Key,
+    String,
+    Number,
+    Keyword,
+    Punctuation,
+    Tag,
+    Attribute,
+    Comment,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PayloadSyntaxSpan {
+    pub start: usize,
+    pub end: usize,
+    pub kind: PayloadSyntaxKind,
+}
 
 pub(super) fn format_json(
     request: DetailFormatterRequest,
@@ -42,9 +57,40 @@ pub(super) fn format_xml(
         })
 }
 
-pub(super) fn format_system_topic(request: DetailFormatterRequest) -> DetailFormatterResponse {
-    let topic = request.context.subscription_topic.as_deref();
-    sys_topic_output(format_sys_topic_detail(topic, request.bytes))
+pub fn highlight_json(text: &str) -> Option<Vec<PayloadSyntaxSpan>> {
+    highlight_json_syntax(text).map(|spans| spans.into_iter().map(json_span).collect())
+}
+
+pub fn highlight_xml(text: &str) -> Option<Vec<PayloadSyntaxSpan>> {
+    highlight_xml_syntax(text).map(|spans| spans.into_iter().map(xml_span).collect())
+}
+
+fn json_span(span: JsonSyntaxSpan) -> PayloadSyntaxSpan {
+    PayloadSyntaxSpan {
+        start: span.start,
+        end: span.end,
+        kind: match span.kind {
+            JsonSyntaxKind::Key => PayloadSyntaxKind::Key,
+            JsonSyntaxKind::String => PayloadSyntaxKind::String,
+            JsonSyntaxKind::Number => PayloadSyntaxKind::Number,
+            JsonSyntaxKind::Keyword => PayloadSyntaxKind::Keyword,
+            JsonSyntaxKind::Punctuation => PayloadSyntaxKind::Punctuation,
+        },
+    }
+}
+
+fn xml_span(span: XmlSyntaxSpan) -> PayloadSyntaxSpan {
+    PayloadSyntaxSpan {
+        start: span.start,
+        end: span.end,
+        kind: match span.kind {
+            XmlSyntaxKind::String => PayloadSyntaxKind::String,
+            XmlSyntaxKind::Punctuation => PayloadSyntaxKind::Punctuation,
+            XmlSyntaxKind::Tag => PayloadSyntaxKind::Tag,
+            XmlSyntaxKind::Attribute => PayloadSyntaxKind::Attribute,
+            XmlSyntaxKind::Comment => PayloadSyntaxKind::Comment,
+        },
+    }
 }
 
 fn formatted_detail(
@@ -109,34 +155,6 @@ fn xml_diagnostic(diagnostic: XmlFormatDiagnostic) -> HookDiagnosticDto {
     HookDiagnosticDto {
         severity: match diagnostic.severity {
             XmlFormatDiagnosticSeverity::Warning => HookDiagnosticSeverityDto::Warning,
-        },
-        message: diagnostic.message,
-    }
-}
-
-fn sys_topic_output(output: SysTopicFormatOutput) -> DetailFormatterResponse {
-    formatted_detail(
-        sys_topic_format(output.format),
-        output.text,
-        output
-            .diagnostics
-            .into_iter()
-            .map(sys_topic_diagnostic)
-            .collect(),
-    )
-}
-
-fn sys_topic_format(format: SysTopicDetailFormat) -> DetailFormatDto {
-    match format {
-        SysTopicDetailFormat::PlainText => DetailFormatDto::PlainText,
-    }
-}
-
-fn sys_topic_diagnostic(diagnostic: SysTopicFormatDiagnostic) -> HookDiagnosticDto {
-    HookDiagnosticDto {
-        severity: match diagnostic.severity {
-            SysTopicFormatDiagnosticSeverity::Info => HookDiagnosticSeverityDto::Info,
-            SysTopicFormatDiagnosticSeverity::Warning => HookDiagnosticSeverityDto::Warning,
         },
         message: diagnostic.message,
     }

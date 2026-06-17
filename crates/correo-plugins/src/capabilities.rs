@@ -9,15 +9,17 @@ pub enum HookKind {
     MessageValidator,
     DetailByteTransform,
     DetailFormatter,
+    PayloadHighlighter,
 }
 
 impl HookKind {
-    pub const ALL: [Self; 5] = [
+    pub const ALL: [Self; 6] = [
         Self::OutgoingMessageTransform,
         Self::IncomingMessageTransform,
         Self::MessageValidator,
         Self::DetailByteTransform,
         Self::DetailFormatter,
+        Self::PayloadHighlighter,
     ];
 
     pub fn fixture_file_name(self) -> &'static str {
@@ -27,6 +29,7 @@ impl HookKind {
             Self::MessageValidator => "message_validator.json",
             Self::DetailByteTransform => "detail_byte_transform.json",
             Self::DetailFormatter => "detail_formatter.json",
+            Self::PayloadHighlighter => "payload_highlighter.json",
         }
     }
 }
@@ -77,6 +80,8 @@ pub struct HostCapabilityGrants {
     pub secrets: bool,
     #[serde(default)]
     pub mqtt: bool,
+    #[serde(default)]
+    pub ui: bool,
 }
 
 impl HostCapabilityGrants {
@@ -87,6 +92,7 @@ impl HostCapabilityGrants {
             HostSurface::Network => self.network,
             HostSurface::Secrets => self.secrets,
             HostSurface::Mqtt => self.mqtt,
+            HostSurface::Ui => self.ui,
         }
     }
 }
@@ -99,6 +105,7 @@ pub enum HostSurface {
     Network,
     Secrets,
     Mqtt,
+    Ui,
 }
 
 #[derive(Debug, Error, PartialEq, Eq)]

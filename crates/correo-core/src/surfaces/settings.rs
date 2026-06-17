@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -117,6 +119,7 @@ pub struct GlobalSettingsSnapshot {
     pub install_bundled_plugins: bool,
     pub bundled_plugins_url: String,
     pub plugin_repositories: Vec<PluginRepositoryRow>,
+    pub plugin_states: BTreeMap<String, PluginStateSnapshot>,
     pub first_start: bool,
     pub config_version: String,
     pub window_geometry: String,
@@ -143,6 +146,7 @@ impl Default for GlobalSettingsSnapshot {
             install_bundled_plugins: true,
             bundled_plugins_url: String::new(),
             plugin_repositories: Vec::new(),
+            plugin_states: BTreeMap::new(),
             first_start: true,
             config_version: "unknown".to_owned(),
             window_geometry: "No saved window geometry".to_owned(),
@@ -152,6 +156,11 @@ impl Default for GlobalSettingsSnapshot {
             feedback: None,
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginStateSnapshot {
+    pub enabled: bool,
 }
 
 pub fn normalize_keyring_backend(value: impl AsRef<str>) -> String {

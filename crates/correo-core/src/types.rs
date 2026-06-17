@@ -4,6 +4,25 @@ use serde::{Deserialize, Serialize};
 
 pub type ThemeMode = ThemeSelection;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PayloadSyntaxKind {
+    Key,
+    String,
+    Number,
+    Keyword,
+    Punctuation,
+    Tag,
+    Attribute,
+    Comment,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PayloadSyntaxSpan {
+    pub start: usize,
+    pub end: usize,
+    pub kind: PayloadSyntaxKind,
+}
+
 #[path = "types/workflow.rs"]
 mod workflow;
 pub use workflow::*;
@@ -28,6 +47,8 @@ pub struct AppSnapshot {
     pub connection_settings: ConnectionSettingsSnapshot,
     #[serde(default)]
     pub connection_settings_overlay: Option<ConnectionId>,
+    #[serde(default)]
+    pub connection_plugins_overlay: Option<ConnectionId>,
     pub connection_surface: ConnectionSurface,
     pub connections: Vec<ConnectionSummary>,
     pub diagnostics: Vec<Diagnostic>,
@@ -50,6 +71,7 @@ impl AppSnapshot {
             connection_filter: String::new(),
             connection_settings: ConnectionSettingsSnapshot::default(),
             connection_settings_overlay: None,
+            connection_plugins_overlay: None,
             connection_surface: ConnectionSurface::Workbench,
             connections: Vec::new(),
             diagnostics: Vec::new(),

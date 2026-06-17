@@ -1228,7 +1228,9 @@ version = "0.1.0"
 dependencies = [
  "correo-core",
  "correo-diagnostics",
+ "correo-mqtt",
  "correo-plugins",
+ "correo-plugins-systopic",
  "correo-storage",
  "correo-ui",
  "directories",
@@ -1248,13 +1250,16 @@ name = "correo-core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "base64 0.22.1",
  "correo-diagnostics",
  "correo-mqtt",
  "correo-scripting",
  "correo-storage",
  "correo-style",
+ "flate2",
  "flume 0.11.1",
  "futures",
+ "regex",
  "serde",
  "serde_json",
  "tempfile",
@@ -1447,6 +1452,7 @@ dependencies = [
  "fluent-bundle",
  "image",
  "rfd",
+ "serde_json",
  "time",
  "unic-langid",
 ]
@@ -5257,6 +5263,18 @@ dependencies = [
  "log",
  "rustc-hash 2.1.2",
  "smallvec",
+]
+
+[[package]]
+name = "regex"
+version = "1.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1292b7759ae1cb9ec195452d1390a074f0cd8541ab7a5a8c31cd6db45d4a6ba"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-automata",
+ "regex-syntax",
 ]
 
 [[package]]

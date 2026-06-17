@@ -6,13 +6,17 @@ use std::sync::Mutex;
 
 use correo_core::{
     marketplace_rows_from_repository_json, DetailBytesOutput, FormattedMessageDetail,
-    MessageDetailFormat, MessageTransform, PluginHookCall, PluginHookError, PluginHookExecutor,
-    PluginHookInput, PluginHookKind, PluginHookOutput, PluginInstaller, PluginMarketplaceRow,
-    PluginMarketplaceSource, PluginMessage, PluginValidation, QosLevel,
+    MessageDetailFormat, MessageTransform, PayloadSyntaxKind, PayloadSyntaxSpan,
+    PluginConnectionActionRequest, PluginConnectionActionResponse, PluginHookCall, PluginHookError,
+    PluginHookExecutor, PluginHookInput, PluginHookKind, PluginHookOutput, PluginHostAction,
+    PluginHostActionResponse, PluginInstaller, PluginMarketplaceRow, PluginMarketplaceSource,
+    PluginMessage, PluginMetricListNode, PluginMetricRow, PluginOpenWindow, PluginUiNode,
+    PluginValidation, PluginWindowCloseRequest, PluginWindowMessage, PluginWindowRenderRequest,
+    PluginWindowRenderResponse, QosLevel,
 };
 use correo_plugins::{
-    DetailByteTransformRequest, DetailFormatDto, DetailFormatterRequest, HookContextDto,
-    HookInvocation, HookOutput, IncomingMessageTransformRequest, MessageDto,
+    bundled_plugin_by_id, DetailByteTransformRequest, DetailFormatDto, DetailFormatterRequest,
+    HookContextDto, HookInvocation, HookOutput, IncomingMessageTransformRequest, MessageDto,
     MessageTransformOutcomeDto, MessageValidatorRequest, OutgoingMessageTransformRequest,
     PluginManifest, PluginPackage, PluginRegistry, QosDto, ValidationResultDto,
 };
@@ -487,6 +491,163 @@ impl PluginHookExecutor for InstalledPluginExecutor {
             .map_err(|error| PluginHookError::failed(error.to_string()))
             .and_then(hook_output)
     }
+
+    fn highlight_payload(
+        &self,
+        text: &str,
+        active_plugin_ids: &[String],
+    ) -> Option<Vec<PayloadSyntaxSpan>> {
+        let xml_active = active_plugin_ids
+            .iter()
+            .any(|plugin_id| plugin_id == correo_plugins::XML_FORMAT_ID);
+        let json_active = active_plugin_ids
+            .iter()
+            .any(|plugin_id| plugin_id == correo_plugins::JSON_FORMAT_ID);
+
+        if xml_active {
+            if let Some(spans) = correo_plugins::highlight_xml(text) {
+                return Some(spans.into_iter().map(payload_syntax_span).collect());
+            }
+        }
+        if json_active {
+            correo_plugins::highlight_json(text)
+                .map(|spans| spans.into_iter().map(payload_syntax_span).collect())
+        } else {
+            None
+        }
+    }
+
+    fn connection_action(
+        &self,
+        request: PluginConnectionActionRequest,
+    ) -> Result<PluginConnectionActionResponse, PluginHookError> {
+        if request.plugin_id != correo_plugins_systopic::PLUGIN_ID {
+            return Err(PluginHookError::failed(format!(
+                "plugin {} does not provide connection actions",
+                request.plugin_id
+            )));
+        }
+        let response = correo_plugins_systopic::connection_action_clicked(
+            &request.action_id,
+            &request.connection_name,
+        )
+        .ok_or_else(|| PluginHookError::failed("unknown plugin connection action"))?;
+        Ok(PluginConnectionActionResponse {
+            host_actions: response
+                .host_actions
+                .into_iter()
+                .map(|action| sys_topic_host_action(request.connection_id, action))
+                .collect(),
+            open_window: Some(PluginOpenWindow {
+                plugin_id: request.plugin_id,
+                action_id: request.action_id,
+                connection_id: request.connection_id,
+                title: response.open_window.title,
+                message_filter_prefix: Some(response.open_window.message_filter_prefix),
+                latest_per_topic: response.open_window.latest_per_topic,
+            }),
+        })
+    }
+
+    fn close_window(
+        &self,
+        request: PluginWindowCloseRequest,
+    ) -> Result<PluginHostActionResponse, PluginHookError> {
+        if request.plugin_id != correo_plugins_systopic::PLUGIN_ID {
+            return Ok(PluginHostActionResponse::default());
+        }
+        let response = correo_plugins_systopic::connection_window_closed(&request.action_id)
+            .ok_or_else(|| PluginHookError::failed("unknown plugin window"))?;
+        Ok(PluginHostActionResponse {
+            host_actions: response
+                .host_actions
+                .into_iter()
+                .map(|action| sys_topic_host_action(request.connection_id, action))
+                .collect(),
+        })
+    }
+
+    fn render_window(
+        &self,
+        request: PluginWindowRenderRequest,
+    ) -> Result<PluginWindowRenderResponse, PluginHookError> {
+        if request.plugin_id != correo_plugins_systopic::PLUGIN_ID {
+            return Err(PluginHookError::failed(format!(
+                "plugin {} does not provide window rendering",
+                request.plugin_id
+            )));
+        }
+        let messages = request
+            .messages
+            .into_iter()
+            .map(sys_topic_message)
+            .collect::<Vec<_>>();
+        let nodes =
+            correo_plugins_systopic::render_window(&request.action_id, &request.broker, &messages)
+                .ok_or_else(|| PluginHookError::failed("unknown plugin window"))?
+                .into_iter()
+                .map(sys_topic_ui_node)
+                .collect();
+        Ok(PluginWindowRenderResponse { nodes })
+    }
+}
+
+fn sys_topic_host_action(
+    connection_id: correo_mqtt::ConnectionId,
+    action: correo_plugins_systopic::SysTopicHostAction,
+) -> PluginHostAction {
+    match action {
+        correo_plugins_systopic::SysTopicHostAction::Subscribe { topic_filter } => {
+            PluginHostAction::Subscribe {
+                connection_id,
+                topic_filter,
+                qos: QosLevel::Zero,
+            }
+        }
+        correo_plugins_systopic::SysTopicHostAction::Unsubscribe { topic_filter } => {
+            PluginHostAction::Unsubscribe {
+                connection_id,
+                topic_filter,
+            }
+        }
+    }
+}
+
+fn sys_topic_message(message: PluginWindowMessage) -> correo_plugins_systopic::SysTopicMessage {
+    correo_plugins_systopic::SysTopicMessage {
+        topic: message.topic,
+        payload: message.payload,
+        qos: message.qos.label().to_owned(),
+        retained: message.retained,
+        timestamp: message.timestamp,
+    }
+}
+
+fn sys_topic_ui_node(node: correo_plugins_systopic::SysTopicUiNode) -> PluginUiNode {
+    match node {
+        correo_plugins_systopic::SysTopicUiNode::Heading { text } => PluginUiNode::Heading { text },
+        correo_plugins_systopic::SysTopicUiNode::Label { text } => PluginUiNode::Label { text },
+        correo_plugins_systopic::SysTopicUiNode::Separator => PluginUiNode::Separator,
+        correo_plugins_systopic::SysTopicUiNode::Table { columns, rows } => {
+            PluginUiNode::Table { columns, rows }
+        }
+        correo_plugins_systopic::SysTopicUiNode::MetricList(list) => {
+            PluginUiNode::MetricList(PluginMetricListNode {
+                broker: list.broker,
+                latest_update: list.latest_update,
+                copy_text: list.copy_text,
+                rows: list
+                    .rows
+                    .into_iter()
+                    .map(|row| PluginMetricRow {
+                        name: row.name,
+                        description: row.description,
+                        value: row.value,
+                    })
+                    .collect(),
+            })
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -679,9 +840,32 @@ fn detail_format(format: DetailFormatDto) -> MessageDetailFormat {
     }
 }
 
+fn payload_syntax_span(span: correo_plugins::PayloadSyntaxSpan) -> PayloadSyntaxSpan {
+    PayloadSyntaxSpan {
+        start: span.start,
+        end: span.end,
+        kind: match span.kind {
+            correo_plugins::PayloadSyntaxKind::Key => PayloadSyntaxKind::Key,
+            correo_plugins::PayloadSyntaxKind::String => PayloadSyntaxKind::String,
+            correo_plugins::PayloadSyntaxKind::Number => PayloadSyntaxKind::Number,
+            correo_plugins::PayloadSyntaxKind::Keyword => PayloadSyntaxKind::Keyword,
+            correo_plugins::PayloadSyntaxKind::Punctuation => PayloadSyntaxKind::Punctuation,
+            correo_plugins::PayloadSyntaxKind::Tag => PayloadSyntaxKind::Tag,
+            correo_plugins::PayloadSyntaxKind::Attribute => PayloadSyntaxKind::Attribute,
+            correo_plugins::PayloadSyntaxKind::Comment => PayloadSyntaxKind::Comment,
+        },
+    }
+}
+
 fn read_package_manifest(path: &Path) -> Result<PluginManifest, String> {
     let text = fs::read_to_string(path.join("plugin.toml")).map_err(|error| error.to_string())?;
-    PluginManifest::from_toml_str(&text).map_err(|error| error.to_string())
+    let manifest = PluginManifest::from_toml_str(&text).map_err(|error| error.to_string())?;
+    if manifest.connection_header_actions.is_empty() {
+        if let Some(bundled) = bundled_plugin_by_id(&manifest.id) {
+            return Ok(bundled.manifest().clone());
+        }
+    }
+    Ok(manifest)
 }
 
 fn copy_package_dir(source: &Path, destination: &Path) -> Result<(), String> {

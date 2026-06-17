@@ -1,7 +1,7 @@
 use correo_core::{AppCommandSender, AppSnapshot};
 use egui::{CentralPanel, Context, Frame, Id, ViewportBuilder, ViewportClass, ViewportId, Window};
 
-use crate::{theme::ThemeTokens, workbench_detail};
+use crate::{theme::ThemeTokens, workbench_detail, PayloadHighlighter};
 
 pub(crate) fn open_incoming_message(ctx: &Context, message_id: u32) {
     let mut ids = incoming_ids(ctx);
@@ -30,9 +30,10 @@ pub(crate) fn show(
     snapshot: &AppSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    payload_highlighter: Option<&PayloadHighlighter>,
 ) {
-    show_outgoing(ctx, snapshot, tokens, commands);
-    show_incoming(ctx, snapshot, tokens, commands);
+    show_outgoing(ctx, snapshot, tokens, commands, payload_highlighter);
+    show_incoming(ctx, snapshot, tokens, commands, payload_highlighter);
 }
 
 fn show_incoming(
@@ -40,6 +41,7 @@ fn show_incoming(
     snapshot: &AppSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    payload_highlighter: Option<&PayloadHighlighter>,
 ) {
     let focused = ctx
         .data_mut(|data| data.get_temp::<Option<u32>>(focused_incoming_id()))
@@ -64,7 +66,14 @@ fn show_incoming(
             focused == Some(message_id),
             tokens,
             |ui| {
-                workbench_detail::message_window_content(ui, snapshot, message, tokens, commands);
+                workbench_detail::message_window_content(
+                    ui,
+                    snapshot,
+                    message,
+                    tokens,
+                    commands,
+                    payload_highlighter,
+                );
             },
         );
         if !close_requested {
@@ -82,6 +91,7 @@ fn show_outgoing(
     snapshot: &AppSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    payload_highlighter: Option<&PayloadHighlighter>,
 ) {
     let focused = ctx
         .data_mut(|data| data.get_temp::<Option<u32>>(focused_outgoing_id()))
@@ -107,7 +117,14 @@ fn show_outgoing(
             focused == Some(message_id),
             tokens,
             |ui| {
-                workbench_detail::outgoing_window_content(ui, row, tokens, commands);
+                workbench_detail::outgoing_window_content(
+                    ui,
+                    snapshot,
+                    row,
+                    tokens,
+                    commands,
+                    payload_highlighter,
+                );
             },
         );
         if !close_requested {

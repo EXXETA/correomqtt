@@ -2,6 +2,26 @@ use serde_json::Value;
 use std::string::FromUtf8Error;
 
 pub const ABI_VERSION: u16 = 1;
+pub const PLUGIN_ID: &str = "org.correomqtt.plugins.json-format";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(target_arch = "wasm32", derive(serde::Serialize))]
+#[cfg_attr(target_arch = "wasm32", serde(rename_all = "snake_case"))]
+pub enum JsonSyntaxKind {
+    Key,
+    String,
+    Number,
+    Keyword,
+    Punctuation,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(target_arch = "wasm32", derive(serde::Serialize))]
+pub struct JsonSyntaxSpan {
+    pub start: usize,
+    pub end: usize,
+    pub kind: JsonSyntaxKind,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct JsonFormatOutput {
@@ -63,6 +83,104 @@ pub fn format_json_bytes(bytes: Vec<u8>) -> Result<JsonFormatOutput, JsonFormatE
     })
 }
 
+pub fn highlight_json_syntax(text: &str) -> Option<Vec<JsonSyntaxSpan>> {
+    if !matches!(text.trim_start().chars().next(), Some('{') | Some('[')) {
+        return None;
+    }
+
+    let bytes = text.as_bytes();
+    let mut spans = Vec::new();
+    let mut index = 0;
+    while index < text.len() {
+        let ch = text[index..].chars().next().unwrap_or_default();
+        if ch == '"' {
+            let end = string_end(text, index);
+            let kind = if next_non_ws(bytes, end) == Some(b':') {
+                JsonSyntaxKind::Key
+            } else {
+                JsonSyntaxKind::String
+            };
+            spans.push(JsonSyntaxSpan {
+                start: index,
+                end,
+                kind,
+            });
+            index = end;
+        } else if ch.is_ascii_digit() || ch == '-' {
+            let end = take_while(text, index, |c| {
+                c.is_ascii_digit() || matches!(c, '-' | '+' | '.' | 'e' | 'E')
+            });
+            spans.push(JsonSyntaxSpan {
+                start: index,
+                end,
+                kind: JsonSyntaxKind::Number,
+            });
+            index = end;
+        } else if starts_keyword(text, index, "true")
+            || starts_keyword(text, index, "false")
+            || starts_keyword(text, index, "null")
+        {
+            let end = take_while(text, index, |c| c.is_ascii_alphabetic());
+            spans.push(JsonSyntaxSpan {
+                start: index,
+                end,
+                kind: JsonSyntaxKind::Keyword,
+            });
+            index = end;
+        } else if matches!(ch, '{' | '}' | '[' | ']' | ':' | ',') {
+            let end = index + ch.len_utf8();
+            spans.push(JsonSyntaxSpan {
+                start: index,
+                end,
+                kind: JsonSyntaxKind::Punctuation,
+            });
+            index = end;
+        } else {
+            index += ch.len_utf8();
+        }
+    }
+    Some(spans)
+}
+
+fn string_end(text: &str, start: usize) -> usize {
+    let mut escaped = false;
+    for (offset, ch) in text[start + 1..].char_indices() {
+        if escaped {
+            escaped = false;
+        } else if ch == '\\' {
+            escaped = true;
+        } else if ch == '"' {
+            return start + 1 + offset + ch.len_utf8();
+        }
+    }
+    text.len()
+}
+
+fn take_while(text: &str, start: usize, mut predicate: impl FnMut(char) -> bool) -> usize {
+    for (offset, ch) in text[start..].char_indices() {
+        if !predicate(ch) {
+            return start + offset;
+        }
+    }
+    text.len()
+}
+
+fn next_non_ws(bytes: &[u8], start: usize) -> Option<u8> {
+    bytes
+        .get(start..)?
+        .iter()
+        .copied()
+        .find(|byte| !byte.is_ascii_whitespace())
+}
+
+fn starts_keyword(text: &str, index: usize, keyword: &str) -> bool {
+    text[index..].starts_with(keyword)
+        && text[index + keyword.len()..]
+            .chars()
+            .next()
+            .is_none_or(|ch| !ch.is_ascii_alphabetic())
+}
+
 #[cfg(target_arch = "wasm32")]
 #[cfg_attr(target_arch = "wasm32", unsafe(no_mangle))]
 pub extern "C" fn correomqtt_alloc(len: i32) -> i32 {
@@ -111,6 +229,25 @@ pub extern "C" fn correo_detail_formatter(ptr: i32, len: i32) -> i64 {
 }
 
 #[cfg(target_arch = "wasm32")]
+#[cfg_attr(target_arch = "wasm32", unsafe(no_mangle))]
+pub extern "C" fn correo_payload_highlighter(ptr: i32, len: i32) -> i64 {
+    let request = read_request(ptr, len);
+    let response = match request
+        .and_then(|bytes| serde_json::from_slice::<PayloadHighlighterRequest>(bytes).ok())
+    {
+        Some(request) => PayloadHighlighterResponse {
+            abi_version: ABI_VERSION,
+            spans: highlight_json_syntax(&request.text).unwrap_or_default(),
+        },
+        None => PayloadHighlighterResponse {
+            abi_version: ABI_VERSION,
+            spans: Vec::new(),
+        },
+    };
+    write_response(&response)
+}
+
+#[cfg(target_arch = "wasm32")]
 fn read_request<'a>(ptr: i32, len: i32) -> Option<&'a [u8]> {
     if ptr <= 0 || len < 0 {
         return None;
@@ -134,7 +271,7 @@ fn detail_response(bytes: Vec<u8>) -> DetailFormatterResponse {
 }
 
 #[cfg(target_arch = "wasm32")]
-fn write_response(response: &DetailFormatterResponse) -> i64 {
+fn write_response(response: &impl serde::Serialize) -> i64 {
     let Ok(bytes) = serde_json::to_vec(response) else {
         return 0;
     };
@@ -215,6 +352,19 @@ struct DetailFormatterRequest {
 struct DetailFormatterResponse {
     abi_version: u16,
     output: FormattedDetailDto,
+}
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug, serde::Deserialize)]
+struct PayloadHighlighterRequest {
+    text: String,
+}
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug, serde::Serialize)]
+struct PayloadHighlighterResponse {
+    abi_version: u16,
+    spans: Vec<JsonSyntaxSpan>,
 }
 
 #[cfg(target_arch = "wasm32")]
