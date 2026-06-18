@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use egui::{Grid, Hyperlink, Image, RichText, ScrollArea, Ui};
 
 use crate::i18n::I18n;
@@ -6,6 +8,8 @@ use crate::theme::ThemeTokens;
 const WEBSITE_URL: &str = env!("CARGO_PKG_REPOSITORY");
 const EXXETA_URL: &str = "https://exxeta.com";
 const ABOUT_ICON_SIZE: f32 = 160.0;
+const LOGO_ROLL_OUT_SECONDS: f64 = 1.2;
+const LOGO_FADE_IN_SECONDS: f64 = 0.55;
 
 mod build_info {
     include!(concat!(env!("OUT_DIR"), "/about_metadata.rs"));
@@ -16,10 +20,7 @@ pub fn show(ui: &mut Ui, _tokens: ThemeTokens, i18n: &I18n) {
         .id_salt("about-content")
         .auto_shrink([false, false])
         .show(ui, |ui| {
-            ui.add(
-                Image::new(egui::include_image!("../../../assets/icon.svg"))
-                    .fit_to_exact_size(egui::Vec2::splat(ABOUT_ICON_SIZE)),
-            );
+            about_logo(ui);
             ui.add_space(18.0);
             value_row(
                 ui,
@@ -40,6 +41,63 @@ pub fn show(ui: &mut Ui, _tokens: ThemeTokens, i18n: &I18n) {
             ui.add_space(8.0);
             open_source_libraries(ui);
         });
+}
+
+fn about_logo(ui: &mut Ui) {
+    let size = egui::Vec2::splat(ABOUT_ICON_SIZE);
+    let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click());
+    let animation_id = ui.make_persistent_id("about-logo-easter-egg");
+
+    if response.double_clicked() && !reduce_motion(ui) {
+        let now = ui.input(|input| input.time);
+        ui.ctx()
+            .data_mut(|data| data.insert_temp(animation_id, now));
+    }
+
+    let now = ui.input(|input| input.time);
+    let started_at = ui.ctx().data_mut(|data| data.get_temp::<f64>(animation_id));
+    let Some(started_at) = started_at else {
+        paint_logo(ui, rect, 0.0, 1.0);
+        return;
+    };
+
+    let elapsed = now - started_at;
+    let total_seconds = LOGO_ROLL_OUT_SECONDS + LOGO_FADE_IN_SECONDS;
+    if elapsed >= total_seconds {
+        paint_logo(ui, rect, 0.0, 1.0);
+        return;
+    }
+
+    if elapsed < LOGO_ROLL_OUT_SECONDS {
+        let progress = ease_out_quart((elapsed / LOGO_ROLL_OUT_SECONDS) as f32);
+        let offset = (ui.clip_rect().right() - rect.left() + ABOUT_ICON_SIZE) * progress;
+        let rotation = offset / (ABOUT_ICON_SIZE * 0.5);
+        paint_logo(ui, rect.translate(egui::vec2(offset, 0.0)), rotation, 1.0);
+    } else {
+        let fade_elapsed = elapsed - LOGO_ROLL_OUT_SECONDS;
+        let alpha = ease_out_quart((fade_elapsed / LOGO_FADE_IN_SECONDS) as f32);
+        paint_logo(ui, rect, 0.0, alpha);
+    }
+
+    ui.ctx().request_repaint_after(Duration::from_millis(16));
+}
+
+fn paint_logo(ui: &Ui, rect: egui::Rect, rotation: f32, alpha: f32) {
+    Image::new(egui::include_image!("../../../assets/icon.svg"))
+        .fit_to_exact_size(egui::Vec2::splat(ABOUT_ICON_SIZE))
+        .rotate(rotation, egui::Vec2::splat(0.5))
+        .tint(egui::Color32::from_white_alpha(
+            (alpha.clamp(0.0, 1.0) * 255.0).round() as u8,
+        ))
+        .paint_at(ui, rect);
+}
+
+fn reduce_motion(ui: &Ui) -> bool {
+    ui.ctx().style().animation_time <= f32::EPSILON
+}
+
+fn ease_out_quart(t: f32) -> f32 {
+    1.0 - (1.0 - t.clamp(0.0, 1.0)).powi(4)
 }
 
 fn value_row(ui: &mut Ui, label: &str, value: &str) {

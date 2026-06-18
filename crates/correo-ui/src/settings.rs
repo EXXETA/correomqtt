@@ -8,7 +8,9 @@ use egui_phosphor::regular;
 
 use crate::i18n::I18n;
 use crate::theme::{ThemeTokens, CONTROL_HEIGHT};
-use crate::widgets::{checkbox, padded_text_edit};
+use crate::widgets::{
+    checkbox, padded_text_edit, square_icon_button_size, with_icon_button_padding,
+};
 
 pub fn show(
     ui: &mut Ui,
@@ -262,10 +264,12 @@ fn add_repository_button(ui: &mut Ui, commands: &AppCommandSender, i18n: &I18n) 
 }
 
 fn icon_button(ui: &mut Ui, icon: &str, hover_text: String) -> egui::Response {
-    ui.add_sized(
-        [CONTROL_HEIGHT, CONTROL_HEIGHT],
-        Button::new(RichText::new(icon).size(17.0)),
-    )
+    with_icon_button_padding(ui, |ui| {
+        ui.add_sized(
+            square_icon_button_size(),
+            Button::new(RichText::new(icon).size(16.0)),
+        )
+    })
     .on_hover_text(hover_text)
 }
 

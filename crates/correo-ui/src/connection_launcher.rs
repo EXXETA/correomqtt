@@ -11,9 +11,9 @@ use crate::responsive;
 use crate::theme::{ThemeTokens, CONTROL_HEIGHT};
 use crate::widgets::{
     clearable_search_edit, disable_tile_text_selection, fill_remaining_tile_rows, menu_item,
-    menu_item_enabled, set_menu_item_width, tighten_tile_spacing, tile_inner_padding,
-    tile_list_content_width, tile_scroll_bar_rect_with_height, tile_table_fill,
-    tile_table_hover_fill, with_icon_button_padding, TILE_GAP,
+    menu_item_enabled, menu_item_with_activity_dot, set_menu_item_width, tighten_tile_spacing,
+    tile_inner_padding, tile_list_content_width, tile_scroll_bar_rect_with_height,
+    tile_table_interactive_fill, with_icon_button_padding, TILE_GAP,
 };
 use correo_style::layout;
 
@@ -142,14 +142,15 @@ fn connection_row(
     let drop_target =
         response.contains_pointer() && egui::DragAndDrop::has_any_payload(ui.ctx()) && !dragged;
 
-    let fill = if selected {
-        tokens.accent_selected_bg
-    } else if dragged {
+    let fill = if dragged {
         tokens.panel_raised
-    } else if response.hovered() || response.contains_pointer() {
-        tile_table_hover_fill(tokens)
     } else {
-        tile_table_fill(index, tokens)
+        tile_table_interactive_fill(
+            index,
+            tokens,
+            response.hovered() || response.contains_pointer(),
+            selected,
+        )
     };
     ui.painter()
         .rect_filled(rect, egui::CornerRadius::ZERO, fill);
@@ -220,7 +221,9 @@ fn connection_row(
         }
     }
 
-    response.context_menu(|ui| connection_context_menu(ui, connection, snapshot, commands, i18n));
+    response.context_menu(|ui| {
+        connection_context_menu(ui, connection, snapshot, tokens, commands, i18n)
+    });
 
     if response.double_clicked() {
         if connection.can_connect() {
@@ -245,6 +248,7 @@ fn connection_context_menu(
     ui: &mut Ui,
     connection: &ConnectionSummary,
     snapshot: &AppSnapshot,
+    tokens: ThemeTokens,
     commands: &AppCommandSender,
     i18n: &I18n,
 ) {
@@ -277,7 +281,13 @@ fn connection_context_menu(
         ui.close_menu();
     }
     if snapshot.plugins.has_connection_workflow_plugins()
-        && menu_item(ui, Some(regular::PUZZLE_PIECE), &validators).clicked()
+        && connection_workflow_menu_item(
+            ui,
+            &validators,
+            connection.active_plugin_workflows,
+            tokens.accent,
+        )
+        .clicked()
     {
         send(commands, AppCommand::SelectConnection(connection.id));
         send(commands, AppCommand::OpenConnectionPlugins(connection.id));
@@ -287,6 +297,19 @@ fn connection_context_menu(
         send(commands, AppCommand::SelectConnection(connection.id));
         send(commands, AppCommand::RequestDeleteConnection);
         ui.close_menu();
+    }
+}
+
+fn connection_workflow_menu_item(
+    ui: &mut Ui,
+    label: &str,
+    active: bool,
+    dot_color: egui::Color32,
+) -> Response {
+    if active {
+        menu_item_with_activity_dot(ui, Some(regular::PUZZLE_PIECE), label, dot_color)
+    } else {
+        menu_item(ui, Some(regular::PUZZLE_PIECE), label)
     }
 }
 

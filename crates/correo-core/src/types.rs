@@ -243,6 +243,8 @@ pub struct ConnectionSummary {
     pub endpoint: String,
     pub mqtt_version: String,
     pub badges: Vec<ConnectionBadge>,
+    #[serde(default)]
+    pub active_plugin_workflows: bool,
     pub state: ConnectionState,
     pub disabled_reason: Option<ConnectDisabledReason>,
     pub recent_subscriptions: usize,

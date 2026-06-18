@@ -1,4 +1,5 @@
 use crate::layout;
+use crate::widgets::{highlight_fill, tile_table_selected_fill};
 use crate::{BuiltinTheme, ColorRgb, ThemeColors, ThemeId, ThemeRegistry, ThemeSelection};
 use egui::{Color32, CornerRadius, Stroke, Theme, ThemePreference, Visuals};
 use std::collections::BTreeMap;
@@ -51,15 +52,18 @@ pub fn apply_theme_with_registry(
     selection: &ThemeSelection,
     registry: &ThemeRegistry,
 ) {
-    ctx.set_visuals_of(
-        Theme::Dark,
-        visuals_for(tokens_for_id(registry, &ThemeId::DARK), true),
-    );
-    ctx.set_visuals_of(
-        Theme::Light,
-        visuals_for(tokens_for_id(registry, &ThemeId::LIGHT), false),
-    );
+    let dark_tokens = tokens_for_id(registry, &ThemeId::DARK);
+    let light_tokens = tokens_for_id(registry, &ThemeId::LIGHT);
+    ctx.set_visuals_of(Theme::Dark, visuals_for(dark_tokens, true));
+    ctx.set_visuals_of(Theme::Light, visuals_for(light_tokens, false));
     ctx.all_styles_mut(|style| {
+        let tokens = if style.visuals.dark_mode {
+            dark_tokens
+        } else {
+            light_tokens
+        };
+        let highlight = highlight_fill(tokens);
+        let selected = tile_table_selected_fill(tokens);
         style.text_styles = scaled_text_styles();
         style.spacing.item_spacing = egui::vec2(
             layout::CONTROL_PADDING as f32,
@@ -79,7 +83,17 @@ pub fn apply_theme_with_registry(
         ] {
             widget.corner_radius = CornerRadius::same(layout::CORNER_RADIUS);
             widget.bg_stroke = Stroke::NONE;
+            widget.expansion = 0.0;
         }
+        style.visuals.widgets.hovered.bg_fill = highlight;
+        style.visuals.widgets.hovered.weak_bg_fill = highlight;
+        style.visuals.widgets.active.bg_fill = highlight;
+        style.visuals.widgets.active.weak_bg_fill = highlight;
+        style.visuals.widgets.open.bg_fill = highlight;
+        style.visuals.widgets.open.weak_bg_fill = highlight;
+        style.visuals.selection.bg_fill = selected;
+        style.visuals.selection.stroke =
+            Stroke::new(0.0, selected_text_color(style.visuals.dark_mode));
     });
     ctx.set_theme(match selection {
         ThemeSelection::System => ThemePreference::System,
@@ -164,8 +178,8 @@ fn visuals_for(tokens: ThemeTokens, dark_mode: bool) -> Visuals {
     visuals.warn_fg_color = tokens.warning;
     visuals.error_fg_color = tokens.danger;
     visuals.hyperlink_color = tokens.accent;
-    visuals.selection.bg_fill = tokens.accent_selected_bg;
-    visuals.selection.stroke = Stroke::new(1.0, tokens.accent);
+    visuals.selection.bg_fill = tile_table_selected_fill(tokens);
+    visuals.selection.stroke = Stroke::new(0.0, selected_text_color(dark_mode));
     visuals.window_stroke = Stroke::NONE;
     visuals.widgets.noninteractive.bg_fill = tokens.panel_bg;
     visuals.widgets.noninteractive.weak_bg_fill = tokens.window_bg;
@@ -175,13 +189,26 @@ fn visuals_for(tokens: ThemeTokens, dark_mode: bool) -> Visuals {
     visuals.widgets.inactive.weak_bg_fill = tokens.panel_raised;
     visuals.widgets.inactive.bg_stroke = Stroke::NONE;
     visuals.widgets.inactive.fg_stroke = Stroke::new(1.0, tokens.text_primary);
-    visuals.widgets.hovered.bg_fill = tokens.accent_selected_bg;
+    let highlight = highlight_fill(tokens);
+    visuals.widgets.hovered.bg_fill = highlight;
+    visuals.widgets.hovered.weak_bg_fill = highlight;
     visuals.widgets.hovered.bg_stroke = Stroke::NONE;
     visuals.widgets.hovered.fg_stroke = Stroke::new(1.0, tokens.text_primary);
-    visuals.widgets.active.bg_fill = tokens.accent_selected_bg;
+    visuals.widgets.active.bg_fill = highlight;
+    visuals.widgets.active.weak_bg_fill = highlight;
     visuals.widgets.active.bg_stroke = Stroke::NONE;
-    visuals.widgets.open.bg_fill = tokens.panel_raised;
+    visuals.widgets.open.bg_fill = highlight;
+    visuals.widgets.open.weak_bg_fill = highlight;
     visuals.widgets.open.bg_stroke = Stroke::NONE;
+    for widget in [
+        &mut visuals.widgets.noninteractive,
+        &mut visuals.widgets.inactive,
+        &mut visuals.widgets.hovered,
+        &mut visuals.widgets.active,
+        &mut visuals.widgets.open,
+    ] {
+        widget.expansion = 0.0;
+    }
     visuals
 }
 
@@ -190,6 +217,14 @@ fn popup_fill(tokens: ThemeTokens, dark_mode: bool) -> Color32 {
         tokens.panel_raised.gamma_multiply(1.02)
     } else {
         Color32::from_rgb(0xE6, 0xEB, 0xF1)
+    }
+}
+
+fn selected_text_color(dark_mode: bool) -> Color32 {
+    if dark_mode {
+        Color32::WHITE
+    } else {
+        Color32::BLACK
     }
 }
 

@@ -219,6 +219,10 @@ fn summary(
         endpoint: format!("{}:{}", connection.url, connection.port),
         mqtt_version: mqtt_label(connection.mqtt_version).to_owned(),
         badges: badges(connection),
+        active_plugin_workflows: connection
+            .plugin_workflows
+            .iter()
+            .any(|workflow| workflow.enabled),
         state: ConnectionState::Disconnected,
         disabled_reason: connection
             .url

@@ -12,8 +12,8 @@ use crate::{
     theme::ThemeTokens,
     widgets::{
         checkbox, disable_tile_text_selection, fill_remaining_tile_rows, menu_item,
-        padded_text_edit, set_text_menu_item_width, square_icon_button_size, tile_table_fill,
-        tile_table_hover_fill, with_icon_button_padding,
+        padded_text_edit, set_text_menu_item_width, square_icon_button_size, tile_table_hover_fill,
+        tile_table_interactive_fill, with_icon_button_padding,
     },
 };
 
@@ -326,14 +326,10 @@ fn workflow_row(
             );
         }
     }
-    let fill = if selected {
-        tokens.accent_selected_bg
-    } else if dragged {
+    let fill = if dragged {
         tokens.panel_raised
-    } else if response.hovered() {
-        tile_table_hover_fill(tokens)
     } else {
-        tile_table_fill(index, tokens)
+        tile_table_interactive_fill(index, tokens, response.hovered(), selected)
     };
     ui.painter().rect_filled(rect, CornerRadius::ZERO, fill);
     if dragged {

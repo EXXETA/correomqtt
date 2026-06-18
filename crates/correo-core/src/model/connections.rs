@@ -714,6 +714,7 @@ fn connection_summary(
         endpoint: format!("{}:{}", settings.host.trim(), settings.port.trim()),
         mqtt_version: settings.mqtt_version.clone(),
         badges: connection_badges(settings),
+        active_plugin_workflows: active_plugin_workflows(settings),
         state: ConnectionState::Disconnected,
         disabled_reason: settings
             .host
@@ -724,6 +725,13 @@ fn connection_summary(
         recent_messages: 0,
         last_activity: "Ready".to_owned(),
     }
+}
+
+fn active_plugin_workflows(settings: &ConnectionSettingsSnapshot) -> bool {
+    settings
+        .plugin_workflows
+        .iter()
+        .any(|workflow| workflow.enabled)
 }
 
 fn connection_badges(settings: &ConnectionSettingsSnapshot) -> Vec<ConnectionBadge> {

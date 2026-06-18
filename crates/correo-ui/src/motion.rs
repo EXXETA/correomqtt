@@ -26,12 +26,7 @@ pub(crate) fn tile_fill(
     is_selected: bool,
 ) -> egui::Color32 {
     let id = ui.make_persistent_id(("tile-motion", id_source));
-    let hover_t = bool_progress(
-        ui.ctx(),
-        id.with("hover"),
-        hovered && !is_selected,
-        TILE_HOVER_SECONDS,
-    );
+    let hover_t = bool_progress(ui.ctx(), id.with("hover"), hovered, TILE_HOVER_SECONDS);
     let selected_t = bool_progress(
         ui.ctx(),
         id.with("selected"),
@@ -39,7 +34,7 @@ pub(crate) fn tile_fill(
         TILE_SELECT_SECONDS,
     );
 
-    lerp_color(lerp_color(base, hover, hover_t), selected, selected_t)
+    lerp_color(lerp_color(base, selected, selected_t), hover, hover_t)
 }
 
 pub(crate) fn flyout_progress(

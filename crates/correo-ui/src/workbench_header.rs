@@ -10,8 +10,9 @@ use crate::{
     responsive,
     theme::ThemeTokens,
     widgets::{
-        menu_item, menu_item_content_width, menu_item_enabled, set_menu_item_width,
-        square_icon_button_size, with_icon_button_padding,
+        menu_item, menu_item_content_width, menu_item_enabled, menu_item_with_activity_dot,
+        paint_icon_activity_dot, set_menu_item_width, square_icon_button_size,
+        with_icon_button_padding,
     },
 };
 
@@ -36,8 +37,14 @@ pub fn connection_header(
             send(commands, AppCommand::OpenConnectionSettings(connection.id));
         }
         if snapshot.plugins.has_connection_workflow_plugins()
-            && header_icon_button(ui, regular::PUZZLE_PIECE, &i18n.text("validators-title"))
-                .clicked()
+            && header_icon_button_with_activity_dot(
+                ui,
+                regular::PUZZLE_PIECE,
+                &i18n.text("validators-title"),
+                connection.active_plugin_workflows,
+                tokens.accent,
+            )
+            .clicked()
         {
             send(commands, AppCommand::OpenConnectionPlugins(connection.id));
         }
@@ -80,8 +87,8 @@ fn compact_connection_header(
                 responsive::open_connection_flyout(ui.ctx());
             }
             connection_title(ui, connection, tokens, center_width);
+            compact_overflow_menu(ui, snapshot, connection, tokens, commands, i18n);
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                compact_overflow_menu(ui, snapshot, connection, commands, i18n);
                 connection_action(ui, connection, commands, icon_actions);
             });
         },
@@ -124,6 +131,20 @@ fn header_icon_button(
     .on_hover_text(hover_text.into())
 }
 
+fn header_icon_button_with_activity_dot(
+    ui: &mut Ui,
+    icon: &'static str,
+    hover_text: impl Into<String>,
+    active: bool,
+    dot_color: egui::Color32,
+) -> egui::Response {
+    let response = header_icon_button(ui, icon, hover_text);
+    if active {
+        paint_icon_activity_dot(ui, response.rect.center(), 16.0, dot_color);
+    }
+    response
+}
+
 fn connection_action(
     ui: &mut Ui,
     connection: &ConnectionSummary,
@@ -162,6 +183,7 @@ fn compact_overflow_menu(
     ui: &mut Ui,
     snapshot: &AppSnapshot,
     connection: &ConnectionSummary,
+    tokens: ThemeTokens,
     commands: &AppCommandSender,
     i18n: &I18n,
 ) {
@@ -199,10 +221,11 @@ fn compact_overflow_menu(
             return true;
         }
         if snapshot.plugins.has_connection_workflow_plugins()
-            && menu_item(
+            && connection_workflow_menu_item(
                 ui,
-                Some(regular::PUZZLE_PIECE),
                 &i18n.text("validators-title"),
+                connection.active_plugin_workflows,
+                tokens.accent,
             )
             .clicked()
         {
@@ -238,6 +261,19 @@ fn compact_overflow_menu(
         }
         false
     });
+}
+
+fn connection_workflow_menu_item(
+    ui: &mut Ui,
+    label: &str,
+    active: bool,
+    dot_color: egui::Color32,
+) -> egui::Response {
+    if active {
+        menu_item_with_activity_dot(ui, Some(regular::PUZZLE_PIECE), label, dot_color)
+    } else {
+        menu_item(ui, Some(regular::PUZZLE_PIECE), label)
+    }
 }
 
 fn right_aligned_overflow_menu(

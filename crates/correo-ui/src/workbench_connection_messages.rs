@@ -6,8 +6,9 @@ use egui_phosphor::regular;
 use crate::{
     theme::ThemeTokens,
     widgets::{
-        clearable_search_edit, menu_item, set_menu_item_width, square_icon_button_size,
-        tile_scroll_bar_rect_with_height, tile_table_fill, with_icon_button_padding,
+        clearable_search_edit, fill_remaining_tile_rows, menu_item, set_menu_item_width,
+        square_icon_button_size, tile_scroll_bar_rect_with_height, tile_table_interactive_fill,
+        tile_table_selected_fill, with_icon_button_padding,
     },
     workbench_connection_messages_filters::{message_visible_for_subscriptions, row_matches},
     workbench_connection_messages_text::{
@@ -48,7 +49,7 @@ pub(crate) fn show(
     tokens: ThemeTokens,
     commands: &AppCommandSender,
 ) {
-    toolbar(ui, snapshot, origin, commands);
+    toolbar(ui, snapshot, origin, tokens, commands);
     ui.add_space(4.0);
 
     let rows = rows(snapshot, origin);
@@ -67,6 +68,7 @@ fn toolbar(
     ui: &mut Ui,
     snapshot: &AppSnapshot,
     origin: MessageOrigin,
+    tokens: ThemeTokens,
     commands: &AppCommandSender,
 ) {
     let selected = selected_key(snapshot, origin);
@@ -80,6 +82,7 @@ fn toolbar(
             "Copy selected message to publish form",
             selected.is_some(),
             false,
+            tokens,
         )
         .clicked()
         {
@@ -94,6 +97,7 @@ fn toolbar(
             "Show selected message in extra window",
             selected.is_some(),
             false,
+            tokens,
         )
         .clicked()
         {
@@ -117,6 +121,7 @@ fn toolbar(
             "Clear messages",
             source_has_messages(snapshot, origin),
             false,
+            tokens,
         )
         .clicked()
         {
@@ -130,6 +135,7 @@ fn toolbar(
             "Toggle automatic scrolling",
             true,
             auto_scroll,
+            tokens,
         )
         .clicked()
         {
@@ -144,8 +150,14 @@ fn icon_button(
     hover_text: &str,
     enabled: bool,
     active: bool,
+    tokens: ThemeTokens,
 ) -> egui::Response {
-    let button = Button::new(RichText::new(icon).size(16.0)).selected(active);
+    let mut button = Button::new(RichText::new(icon).size(16.0));
+    if active {
+        button = button
+            .fill(tile_table_selected_fill(tokens))
+            .stroke(egui::Stroke::NONE);
+    }
     let response = ui
         .add_enabled_ui(enabled, |ui| {
             with_icon_button_padding(ui, |ui| ui.add_sized(square_icon_button_size(), button))
@@ -265,32 +277,15 @@ fn message_table(
                         message_row(ui, snapshot, origin, index, row, tokens, commands);
                     }
                 }
+                fill_remaining_tile_rows(
+                    ui,
+                    rows.len(),
+                    layout::MESSAGE_TABLE_ROW_HEIGHT,
+                    table_height,
+                    tokens,
+                );
             },
         );
-    fill_remaining_table_space(ui, rows.len(), table_height, tokens);
-}
-
-fn fill_remaining_table_space(
-    ui: &mut Ui,
-    row_count: usize,
-    table_height: f32,
-    tokens: ThemeTokens,
-) {
-    let used_height = row_count as f32 * layout::MESSAGE_TABLE_ROW_HEIGHT;
-    let mut remaining = (table_height - used_height).max(0.0);
-    let mut index = row_count;
-    while remaining > 0.0 {
-        let height = remaining.min(layout::MESSAGE_TABLE_ROW_HEIGHT);
-        let (rect, _) =
-            ui.allocate_exact_size(egui::vec2(ui.available_width(), height), Sense::hover());
-        ui.painter().rect_filled(
-            rect,
-            egui::CornerRadius::ZERO,
-            tile_table_fill(index, tokens),
-        );
-        remaining -= height;
-        index += 1;
-    }
 }
 
 fn message_row(
@@ -307,13 +302,7 @@ fn message_row(
         egui::vec2(row_width, layout::MESSAGE_TABLE_ROW_HEIGHT),
         Sense::click(),
     );
-    let fill = if row.selected {
-        ui.visuals().selection.bg_fill
-    } else if response.hovered() {
-        ui.visuals().widgets.hovered.bg_fill
-    } else {
-        tile_table_fill(index, tokens)
-    };
+    let fill = tile_table_interactive_fill(index, tokens, response.hovered(), row.selected);
     ui.painter()
         .rect_filled(rect, egui::CornerRadius::ZERO, fill);
 

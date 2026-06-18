@@ -198,7 +198,7 @@ impl Widget for FocusTextEdit<'_> {
             ui.painter().rect_filled(
                 bar,
                 ui.visuals().widgets.inactive.corner_radius,
-                ui.visuals().selection.stroke.color,
+                ui.visuals().widgets.hovered.bg_fill,
             );
         }
         response
@@ -306,7 +306,62 @@ pub fn tile_table_fill(index: usize, tokens: ThemeTokens) -> egui::Color32 {
 }
 
 pub fn tile_table_hover_fill(tokens: ThemeTokens) -> egui::Color32 {
-    tokens.panel_raised.gamma_multiply(1.18)
+    highlight_fill(tokens)
+}
+
+pub fn tile_table_selected_fill(tokens: ThemeTokens) -> egui::Color32 {
+    let selected = tokens.accent_selected_bg;
+    if color_luminance(selected) < 128.0 {
+        selected.gamma_multiply(0.82)
+    } else {
+        selected_light_blue(selected)
+    }
+}
+
+pub fn highlight_fill(tokens: ThemeTokens) -> egui::Color32 {
+    let highlight = tokens.accent_selected_bg;
+    if color_luminance(highlight) < 128.0 {
+        highlight
+    } else {
+        darker_light_blue(highlight)
+    }
+}
+
+fn color_luminance(color: egui::Color32) -> f32 {
+    0.2126 * color.r() as f32 + 0.7152 * color.g() as f32 + 0.0722 * color.b() as f32
+}
+
+fn darker_light_blue(color: egui::Color32) -> egui::Color32 {
+    egui::Color32::from_rgba_unmultiplied(
+        (color.r() as f32 * 0.78).round() as u8,
+        (color.g() as f32 * 0.88).round() as u8,
+        color.b(),
+        color.a(),
+    )
+}
+
+fn selected_light_blue(color: egui::Color32) -> egui::Color32 {
+    egui::Color32::from_rgba_unmultiplied(
+        (color.r() as f32 * 0.9).round() as u8,
+        (color.g() as f32 * 0.96).round() as u8,
+        color.b(),
+        color.a(),
+    )
+}
+
+pub fn tile_table_interactive_fill(
+    index: usize,
+    tokens: ThemeTokens,
+    hovered: bool,
+    selected: bool,
+) -> egui::Color32 {
+    if hovered {
+        tile_table_hover_fill(tokens)
+    } else if selected {
+        tile_table_selected_fill(tokens)
+    } else {
+        tile_table_fill(index, tokens)
+    }
 }
 
 fn checkbox_icon_font(mut font: FontId) -> FontId {

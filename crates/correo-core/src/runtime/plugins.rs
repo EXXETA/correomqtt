@@ -265,6 +265,65 @@ impl AppRuntime {
             }
         }
 
+        for hook in self.active_topic_hooks(PluginHookKind::Validator, &plugin_message.topic) {
+            let Some(config) = self.parse_hook_config(&hook, false) else {
+                continue;
+            };
+            let call = PluginHookCall {
+                plugin_id: hook.plugin_id.clone(),
+                hook: hook.hook,
+                target: hook.target.clone(),
+                config,
+                input: PluginHookInput::Message(plugin_message.clone()),
+            };
+            match self.plugin_hooks.execute(call) {
+                Ok(PluginHookOutput::Validation(PluginValidation::Valid)) => {
+                    diagnostics.push(message_diagnostic(
+                        &hook,
+                        PluginDiagnosticSeverity::Info,
+                        "Validation passed",
+                    ));
+                }
+                Ok(PluginHookOutput::Validation(PluginValidation::Warning { message })) => {
+                    diagnostics.push(message_diagnostic(
+                        &hook,
+                        PluginDiagnosticSeverity::Warning,
+                        &message,
+                    ));
+                }
+                Ok(PluginHookOutput::Validation(PluginValidation::Block { message })) => {
+                    diagnostics.push(message_diagnostic(
+                        &hook,
+                        PluginDiagnosticSeverity::Error,
+                        &message,
+                    ));
+                }
+                Ok(output) => {
+                    let detail = format!("Unexpected plugin output: {output:?}");
+                    diagnostics.push(message_diagnostic(
+                        &hook,
+                        PluginDiagnosticSeverity::Error,
+                        &detail,
+                    ));
+                    self.emit_hook_diagnostic(
+                        &hook,
+                        PluginDiagnosticSeverity::Error,
+                        "Incoming validator returned an incompatible result.",
+                        detail,
+                        true,
+                    );
+                }
+                Err(error) => {
+                    diagnostics.push(message_diagnostic(
+                        &hook,
+                        PluginDiagnosticSeverity::Error,
+                        &error.to_string(),
+                    ));
+                    self.emit_hook_error(&hook, "Incoming validator failed.", error, true);
+                }
+            }
+        }
+
         match incoming_from_plugin_message(message, plugin_message) {
             Ok(message) => Some((MqttEvent::IncomingMessage(message), diagnostics)),
             Err(error) => {

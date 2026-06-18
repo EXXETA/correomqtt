@@ -10,7 +10,7 @@ use crate::i18n::I18n;
 use crate::widgets::{
     clearable_search_edit, disable_tile_text_selection, square_icon_button_size,
     tighten_tile_spacing, tile_inner_padding, tile_list_content_width, tile_table_fill,
-    tile_table_hover_fill, with_icon_button_padding, TILE_GAP,
+    tile_table_hover_fill, tile_table_selected_fill, with_icon_button_padding, TILE_GAP,
 };
 use crate::{modal_style, motion, responsive, theme::ThemeTokens};
 use correo_style::layout;
@@ -281,7 +281,7 @@ pub(super) fn plugin_tile(
         id_source,
         tile_table_fill(index, tokens),
         tile_table_hover_fill(tokens),
-        tokens.accent_selected_bg,
+        tile_table_selected_fill(tokens),
         response.hovered() || response.contains_pointer(),
         selected,
     );

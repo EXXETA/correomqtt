@@ -213,6 +213,65 @@ async fn incoming_transform_error_keeps_payload_and_records_diagnostic() {
     assert!(!diagnostics.contains("incoming-secret"));
 }
 
+#[tokio::test]
+async fn incoming_validator_result_is_recorded_on_message() {
+    let mut snapshot = sample_snapshot(ThemeMode::System);
+    enable_hook(
+        &mut snapshot,
+        "user.advanced-validator",
+        PluginHookKind::Validator,
+        "bridge/#",
+    );
+    let mut runtime = AppRuntime::with_snapshot(snapshot);
+    runtime.attach_plugin_hook_executor(MockHooks::new(
+        MockBehavior::ValidatorBlock("payload missing required text".to_owned()),
+        Arc::default(),
+    ));
+    runtime.attach_mqtt_service(
+        crate::MqttService::spawn(FakeFactory::new(Arc::default(), None)).unwrap(),
+    );
+    let connection_id = runtime.snapshot().connections[2].id;
+    runtime
+        .command_sender()
+        .send(AppCommand::SelectConnection(connection_id))
+        .unwrap();
+    runtime.pump();
+
+    runtime
+        .command_sender()
+        .send(AppCommand::Mqtt(MqttCommand::Connect {
+            options: connection_options(connection_id),
+        }))
+        .unwrap();
+    pump_until(&mut runtime, |runtime| {
+        connection_state(runtime, connection_id) == ConnectionState::Connected
+    })
+    .await;
+
+    runtime
+        .command_sender()
+        .send(AppCommand::Mqtt(MqttCommand::Publish {
+            connection_id,
+            request: PublishRequest::new("bridge/raw", b"online".to_vec(), Qos::AtMostOnce, false)
+                .unwrap(),
+        }))
+        .unwrap();
+    pump_until(&mut runtime, |runtime| {
+        runtime
+            .snapshot()
+            .workbench
+            .messages
+            .first()
+            .is_some_and(|message| {
+                message.diagnostics.iter().any(|diagnostic| {
+                    diagnostic.message == "payload missing required text"
+                        && diagnostic.severity == crate::PluginDiagnosticSeverity::Error
+                })
+            })
+    })
+    .await;
+}
+
 #[test]
 fn detail_formatter_selection_renders_and_cancellation_falls_back() {
     let calls = Arc::new(Mutex::new(Vec::new()));

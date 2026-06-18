@@ -9,6 +9,7 @@ const MENU_ITEM_PADDING_X: f32 = 12.0;
 const MENU_ITEM_ICON_WIDTH: f32 = 16.0;
 const MENU_ITEM_ICON_GAP: f32 = 9.0;
 const MENU_ITEM_ICON_SIZE: f32 = 14.0;
+const ICON_ACTIVITY_DOT_RADIUS: f32 = 3.8;
 const MENU_ITEM_WIDTH_ID: &str = "correo-menu-item-width";
 const MENU_ITEM_ICON_COLUMN_ID: &str = "correo-menu-item-icon-column";
 
@@ -73,11 +74,30 @@ pub(crate) fn menu_item(ui: &mut Ui, icon: Option<&str>, label: &str) -> Respons
     menu_item_enabled(ui, true, icon, label)
 }
 
+pub(crate) fn menu_item_with_activity_dot(
+    ui: &mut Ui,
+    icon: Option<&str>,
+    label: &str,
+    dot_color: Color32,
+) -> Response {
+    menu_item_enabled_inner(ui, true, icon, label, Some(dot_color))
+}
+
 pub(crate) fn menu_item_enabled(
     ui: &mut Ui,
     enabled: bool,
     icon: Option<&str>,
     label: &str,
+) -> Response {
+    menu_item_enabled_inner(ui, enabled, icon, label, None)
+}
+
+fn menu_item_enabled_inner(
+    ui: &mut Ui,
+    enabled: bool,
+    icon: Option<&str>,
+    label: &str,
+    activity_dot: Option<Color32>,
 ) -> Response {
     let text_font = FontId::proportional(ui.text_style_height(&egui::TextStyle::Button) * 0.82);
     let content_width = menu_item_width_with_font(ui, label, text_font.clone());
@@ -113,13 +133,17 @@ pub(crate) fn menu_item_enabled(
     };
     if let (true, Some(icon)) = (icon_column, icon) {
         let icon_left = rect.left() + MENU_ITEM_PADDING_X;
+        let icon_center = egui::pos2(icon_left + MENU_ITEM_ICON_WIDTH * 0.5, rect.center().y);
         ui.painter().text(
-            egui::pos2(icon_left + MENU_ITEM_ICON_WIDTH * 0.5, rect.center().y),
+            icon_center,
             Align2::CENTER_CENTER,
             icon,
             FontId::proportional(MENU_ITEM_ICON_SIZE),
             color,
         );
+        if let Some(dot_color) = activity_dot {
+            paint_icon_activity_dot(ui, icon_center, MENU_ITEM_ICON_SIZE, dot_color);
+        }
     }
     ui.painter().text(
         egui::pos2(text_left, rect.center().y),
@@ -130,6 +154,19 @@ pub(crate) fn menu_item_enabled(
     );
 
     response
+}
+
+pub(crate) fn paint_icon_activity_dot(
+    ui: &Ui,
+    icon_center: egui::Pos2,
+    icon_size: f32,
+    color: Color32,
+) {
+    ui.painter().circle_filled(
+        icon_center + egui::vec2(icon_size * 0.42, icon_size * -0.42),
+        ICON_ACTIVITY_DOT_RADIUS,
+        color,
+    );
 }
 
 pub(crate) fn set_menu_item_width(ui: &mut Ui, labels: &[&str]) {

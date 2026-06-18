@@ -101,7 +101,7 @@ fn tabbed_layout(
     let tab_height = layout::CONTROL_HEIGHT + 8.0;
     let tab_bottom = (rect.top() + tab_height).min(rect.bottom());
     let tab_rect = Rect::from_min_max(rect.left_top(), pos2(rect.right(), tab_bottom));
-    tab_bar(ui, tab_rect, active_tab, commands, natural_tabs);
+    tab_bar(ui, tab_rect, active_tab, commands, natural_tabs, tokens);
     let content = Rect::from_min_max(pos2(rect.left(), tab_bottom), rect.right_bottom());
     match active_tab {
         WorkbenchTab::Publish => stack_split(
@@ -129,6 +129,7 @@ fn tab_bar(
     active_tab: WorkbenchTab,
     commands: &AppCommandSender,
     natural_tabs: bool,
+    _tokens: ThemeTokens,
 ) {
     let mut child = ui.new_child(
         UiBuilder::new()
@@ -141,10 +142,21 @@ fn tab_bar(
     let tab_width =
         ((rect.width() - mode_button_width - (layout::TOOLBAR_GAP * 2.0)) * 0.5).max(0.0);
     for tab in [WorkbenchTab::Publish, WorkbenchTab::Subscribe] {
+        let selected = active_tab == tab;
+        let label = if selected {
+            let color = if child.visuals().dark_mode {
+                Color32::WHITE
+            } else {
+                Color32::BLACK
+            };
+            RichText::new(tab.label()).color(color)
+        } else {
+            RichText::new(tab.label())
+        };
         let response = child.allocate_ui_with_layout(
             egui::vec2(tab_width, layout::CONTROL_HEIGHT),
             Layout::centered_and_justified(egui::Direction::LeftToRight),
-            |ui| ui.selectable_label(active_tab == tab, tab.label()),
+            |ui| ui.selectable_label(selected, label),
         );
         if response.inner.clicked() {
             let _ = commands.send(AppCommand::SelectWorkbenchTab(tab));

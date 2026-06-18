@@ -34,6 +34,7 @@ pub fn command_bar(
                 commands,
                 i18n,
             );
+            running_scripts_label(ui, &snapshot.scripts);
         });
     });
 }
@@ -57,6 +58,24 @@ fn header_icon(ui: &mut Ui) {
             .tint(ui.visuals().text_color())
             .paint_at(ui, rect);
     }
+}
+
+fn running_scripts_label(ui: &mut Ui, scripts: &correo_core::ScriptSurfaceSnapshot) {
+    let running = scripts
+        .executions
+        .iter()
+        .filter(|execution| !execution.status.is_terminal())
+        .count();
+    if running == 0 {
+        return;
+    }
+
+    let label = if running == 1 {
+        "1 script running".to_owned()
+    } else {
+        format!("{running} scripts running")
+    };
+    ui.label(RichText::new(label).size(12.0).weak());
 }
 
 fn theme_selector(ui: &mut Ui, current: &ThemeMode, commands: &AppCommandSender, i18n: &I18n) {

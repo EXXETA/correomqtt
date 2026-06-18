@@ -15,7 +15,8 @@ use crate::theme::{ThemeTokens, CONTROL_HEIGHT};
 use crate::widgets::{
     clearable_search_edit, fill_remaining_tile_rows, padded_text_edit, square_icon_button_size,
     tile_list_content_width, tile_scroll_bar_rect_with_height, tile_table_fill,
-    tile_table_hover_fill, with_icon_button_padding, TILE_GAP, TWO_LINE_TILE_HEIGHT,
+    tile_table_hover_fill, tile_table_selected_fill, with_icon_button_padding, TILE_GAP,
+    TWO_LINE_TILE_HEIGHT,
 };
 
 #[path = "scripts/dialogs.rs"]
@@ -120,7 +121,6 @@ fn script_browser(
             }
             ui.heading(i18n.workspace_label(correo_core::Workspace::Scripts));
             ui.add_space(8.0);
-            footer::execution_summary(ui, scripts, tokens);
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if header_add_button(ui).on_hover_text("New Script").clicked() {
                     send(commands, AppCommand::RequestCreateScript);
@@ -274,7 +274,7 @@ fn tile_fill(
         id_source,
         tile_table_fill(index, tokens),
         tile_table_hover_fill(tokens),
-        tokens.accent_selected_bg,
+        tile_table_selected_fill(tokens),
         hovered,
         selected,
     )
