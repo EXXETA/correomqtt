@@ -7,6 +7,10 @@ use egui::{
 };
 use egui_phosphor::regular;
 
+mod top_tabs;
+
+pub use top_tabs::{paint_top_tab_strip_underline, TopUnderlineTab};
+
 pub use crate::layout::{TILE_GAP, TWO_LINE_TILE_HEIGHT};
 
 pub fn padded_text_edit<'a>(text_edit: TextEdit<'a>) -> FocusTextEdit<'a> {

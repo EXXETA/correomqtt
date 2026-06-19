@@ -1,7 +1,7 @@
 use correo_core::{AppCommand, AppCommandSender, WorkbenchTab};
 use correo_style::layout;
 use egui::{
-    pos2, vec2, Align, Button, Color32, CursorIcon, Id, Layout, Rect, RichText, Sense, Stroke, Ui,
+    pos2, vec2, Align, Color32, CursorIcon, Id, Layout, Rect, RichText, Sense, Stroke, Ui,
     UiBuilder,
 };
 use egui_phosphor::regular;
@@ -9,13 +9,17 @@ use egui_phosphor::regular;
 use crate::{
     responsive,
     theme::ThemeTokens,
-    widgets::{compact_mode_button_size, compact_mode_icon_button, paint_focus_outline},
+    widgets::{
+        compact_mode_button_size, compact_mode_icon_button, dotted_focus_outline,
+        paint_top_tab_strip_underline, TopUnderlineTab,
+    },
 };
 
 const PANE_TITLE_SIZE: f32 = 18.0;
 const TITLE_TAB_CONTROLS_MAX_WIDTH: f32 = 420.0;
 const TITLE_TAB_CONTROLS_MIN_WIDTH: f32 = 220.0;
 const TITLE_TAB_SHORT_LABEL_WIDTH: f32 = 130.0;
+const TITLE_TAB_GAP: f32 = 4.0;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum WorkbenchPaneSide {
@@ -110,6 +114,7 @@ fn tabbed_layout(
 pub(crate) fn title_bar_tab_controls(
     ui: &mut Ui,
     rect: Rect,
+    tokens: ThemeTokens,
     active_tab: WorkbenchTab,
     commands: &AppCommandSender,
     natural_tabs: bool,
@@ -120,7 +125,7 @@ pub(crate) fn title_bar_tab_controls(
             .layout(Layout::left_to_right(Align::Center)),
     );
     child.set_clip_rect(rect);
-    child.spacing_mut().item_spacing.x = layout::TOOLBAR_GAP;
+    child.spacing_mut().item_spacing.x = 0.0;
     let mode_button_width = if natural_tabs {
         0.0
     } else {
@@ -132,36 +137,53 @@ pub(crate) fn title_bar_tab_controls(
         layout::TOOLBAR_GAP
     };
     let tab_width =
-        ((rect.width() - mode_button_width - layout::TOOLBAR_GAP - mode_button_gap) * 0.5).max(0.0);
-    for tab in [WorkbenchTab::Publish, WorkbenchTab::Subscribe] {
+        ((rect.width() - mode_button_width - mode_button_gap - TITLE_TAB_GAP) * 0.5).max(0.0);
+    let mut active_rect = None;
+    let mut focused_rect = None;
+    for (index, tab) in [WorkbenchTab::Publish, WorkbenchTab::Subscribe]
+        .into_iter()
+        .enumerate()
+    {
         let selected = active_tab == tab;
         let tab_label = if tab_width < TITLE_TAB_SHORT_LABEL_WIDTH {
             short_tab_label(tab)
         } else {
             tab.label()
         };
-        let label = if selected {
-            let color = if child.visuals().dark_mode {
-                Color32::WHITE
-            } else {
-                Color32::BLACK
-            };
-            RichText::new(tab_label).color(color)
+        let tab_label = if selected {
+            RichText::new(tab_label).strong()
         } else {
             RichText::new(tab_label)
         };
-        let response = child.add_sized(
-            egui::vec2(tab_width, layout::CONTROL_HEIGHT),
-            Button::new(label)
-                .selected(selected)
-                .corner_radius(child.visuals().widgets.inactive.corner_radius),
+        let response = child.add(
+            TopUnderlineTab::new(tab_label, selected, tokens)
+                .size(vec2(tab_width, layout::CONTROL_HEIGHT)),
         );
-        paint_focus_outline(&child, &response);
+        if selected {
+            active_rect = Some(response.rect);
+        }
+        if response.has_focus() {
+            focused_rect = Some(response.rect);
+        }
         if response.clicked() {
             let _ = commands.send(AppCommand::SelectWorkbenchTab(tab));
         }
+        if index == 0 {
+            child.add_space(TITLE_TAB_GAP);
+        }
+    }
+    if let Some(active_rect) = active_rect {
+        let strip_rect = Rect::from_min_size(
+            rect.min,
+            vec2(tab_width * 2.0 + TITLE_TAB_GAP, layout::CONTROL_HEIGHT),
+        );
+        paint_top_tab_strip_underline(&child, strip_rect, active_rect, tokens);
+    }
+    if let Some(focused_rect) = focused_rect {
+        dotted_focus_outline(&child, focused_rect);
     }
     if !natural_tabs {
+        child.add_space(mode_button_gap);
         tab_mode_button(&mut child);
     }
 }

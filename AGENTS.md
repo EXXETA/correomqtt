@@ -2,13 +2,6 @@
 
 This repository is being ported from Java/JavaFX to Rust. Follow `architecture.md` for the technical direction.
 
-## Repository Remote Rules
-
-- Push and fetch active Rust-port work only through `https://github.com/farion/correomqtt-rust`.
-- Do not add or keep a git remote that points to `https://github.com/EXXETA/correomqtt` in this Rust worktree.
-- If old Java source needs review, keep it outside the active Rust remote path. This checkout preserves the old remote refs under `refs/legacy/exxeta-correomqtt/*`; inspect them with commands such as `git show refs/legacy/exxeta-correomqtt/develop:<path>` or use a separate external clone.
-- Before handoff on future tickets, verify `git remote -v` and the active branch push target resolve to `https://github.com/farion/correomqtt-rust`.
-
 ## Required Decisions
 
 - Use `egui` through `eframe` for the desktop app.
@@ -120,8 +113,6 @@ When delegating work, include:
 - Acceptance criteria.
 - Risks and assumptions.
 - Smallest verification that proves success.
-
-Implementation tasks should go to RustDesktopEngineer agents. UX-facing flow and visual quality tasks should go to UXDesigner. Regression and release validation should go to QA.
 
 ## Security Notes
 

@@ -2,12 +2,17 @@ use correo_core::{
     AppCommand, AppCommandSender, AppSnapshot, ConnectionSecretField, ConnectionSettingField,
     ConnectionSettingFlag, ConnectionSettingsSnapshot, ConnectionSettingsTab,
 };
+use correo_style::layout;
 use egui::{
-    Button, Color32, CornerRadius, Rect, RichText, ScrollArea, Sense, TextEdit, Ui, UiBuilder,
+    Button, Color32, CornerRadius, Layout, Rect, RichText, ScrollArea, Sense, TextEdit, Ui,
+    UiBuilder,
 };
 use egui_phosphor::regular;
 
-use crate::widgets::{square_icon_button_size, with_icon_button_padding};
+use crate::widgets::{
+    dotted_focus_outline, paint_top_tab_strip_underline, square_icon_button_size,
+    with_icon_button_padding, TopUnderlineTab,
+};
 use crate::{i18n::I18n, theme::ThemeTokens};
 
 #[path = "connection_settings_actions.rs"]
@@ -26,6 +31,7 @@ const MODAL_MAX_HEIGHT: f32 = 720.0;
 const SCRIM_ALPHA: u8 = 176;
 const MODAL_RADIUS: u8 = 4;
 const MODAL_PADDING: i8 = 12;
+const TAB_GAP: f32 = 4.0;
 
 pub fn show(
     ui: &mut Ui,
@@ -186,8 +192,8 @@ fn settings_content(
     commands: &AppCommandSender,
     i18n: &I18n,
 ) {
-    tab_bar(ui, settings.selected_tab, commands, i18n);
-    ui.separator();
+    tab_bar(ui, settings.selected_tab, tokens, commands, i18n);
+    ui.add_space(8.0);
     match settings.selected_tab {
         ConnectionSettingsTab::Mqtt => mqtt_tab(ui, settings, tokens, commands, i18n),
         ConnectionSettingsTab::Tls => tls_tab(ui, settings, tokens, commands, i18n),
@@ -197,17 +203,63 @@ fn settings_content(
     ui.add_space(8.0);
 }
 
-fn tab_bar(ui: &mut Ui, selected: ConnectionSettingsTab, commands: &AppCommandSender, i18n: &I18n) {
-    ui.horizontal_wrapped(|ui| {
-        for tab in ConnectionSettingsTab::ALL {
-            if ui
-                .selectable_label(selected == tab, i18n.connection_settings_tab_label(tab))
-                .clicked()
-            {
-                send(commands, AppCommand::SelectConnectionSettingsTab(tab));
-            }
+fn tab_bar(
+    ui: &mut Ui,
+    selected: ConnectionSettingsTab,
+    tokens: ThemeTokens,
+    commands: &AppCommandSender,
+    i18n: &I18n,
+) {
+    let tab_count = ConnectionSettingsTab::ALL.len() as f32;
+    let strip_width = ui.available_width().min(controls::FORM_MAX_WIDTH).max(0.0);
+    let strip_rect = Rect::from_min_size(
+        ui.available_rect_before_wrap().min,
+        egui::vec2(strip_width, layout::CONTROL_HEIGHT),
+    );
+    ui.allocate_rect(strip_rect, Sense::hover());
+
+    let mut child = ui.new_child(
+        UiBuilder::new()
+            .max_rect(strip_rect)
+            .layout(Layout::left_to_right(egui::Align::Center)),
+    );
+    child.set_clip_rect(strip_rect);
+    child.spacing_mut().item_spacing.x = 0.0;
+
+    let tab_width = ((strip_width - (TAB_GAP * (tab_count - 1.0))) / tab_count).max(0.0);
+    let mut active_rect = None;
+    let mut focused_rect = None;
+    for (index, tab) in ConnectionSettingsTab::ALL.into_iter().enumerate() {
+        let is_selected = selected == tab;
+        let label = i18n.connection_settings_tab_label(tab);
+        let label = if is_selected {
+            RichText::new(label).strong()
+        } else {
+            RichText::new(label)
+        };
+        let response = child.add(
+            TopUnderlineTab::new(label, is_selected, tokens)
+                .size(egui::vec2(tab_width, layout::CONTROL_HEIGHT)),
+        );
+        if is_selected {
+            active_rect = Some(response.rect);
         }
-    });
+        if response.has_focus() {
+            focused_rect = Some(response.rect);
+        }
+        if response.clicked() {
+            send(commands, AppCommand::SelectConnectionSettingsTab(tab));
+        }
+        if index + 1 < ConnectionSettingsTab::ALL.len() {
+            child.add_space(TAB_GAP);
+        }
+    }
+    if let Some(active_rect) = active_rect {
+        paint_top_tab_strip_underline(&child, strip_rect, active_rect, tokens);
+    }
+    if let Some(focused_rect) = focused_rect {
+        dotted_focus_outline(&child, focused_rect);
+    }
 }
 
 fn mqtt_tab(

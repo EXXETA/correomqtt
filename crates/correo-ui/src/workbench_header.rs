@@ -82,7 +82,7 @@ pub fn connection_header(
     }
     plugin_connection_actions(&mut left, snapshot, connection, commands);
 
-    title_tab_controls_if_visible(ui, rect, snapshot, commands);
+    title_tab_controls_if_visible(ui, rect, snapshot, tokens, commands);
 
     let mut right = ui.new_child(
         UiBuilder::new()
@@ -126,7 +126,7 @@ fn compact_connection_header(
             });
         },
     );
-    title_tab_controls_if_visible(ui, response.response.rect, snapshot, commands);
+    title_tab_controls_if_visible(ui, response.response.rect, snapshot, tokens, commands);
 }
 
 fn tabbed_header_needs_compact_actions(ui: &Ui) -> bool {
@@ -139,6 +139,7 @@ fn title_tab_controls_if_visible(
     ui: &mut Ui,
     rect: Rect,
     snapshot: &AppSnapshot,
+    tokens: ThemeTokens,
     commands: &AppCommandSender,
 ) {
     if !workbench_layout::tabs_visible_for_width(ui, rect.width()) {
@@ -150,6 +151,7 @@ fn title_tab_controls_if_visible(
     workbench_layout::title_bar_tab_controls(
         ui,
         tab_rect,
+        tokens,
         snapshot.workbench.narrow_tab,
         commands,
         workbench_layout::natural_tabs_for_width(rect.width()),
