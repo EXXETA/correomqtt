@@ -3,6 +3,8 @@ use correo_mqtt::{
     PublishRequest, Qos, SessionState, Subscription, TopicName, UnsubscribeRequest,
 };
 
+use crate::MessageDiagnosticRow;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MqttCommand {
     Connect {
@@ -17,6 +19,7 @@ pub enum MqttCommand {
     Publish {
         connection_id: ConnectionId,
         request: PublishRequest,
+        diagnostics: Vec<MessageDiagnosticRow>,
     },
     Subscribe {
         connection_id: ConnectionId,
@@ -81,6 +84,7 @@ pub enum MqttEvent {
         payload: Vec<u8>,
         qos: Qos,
         retain: bool,
+        diagnostics: Vec<MessageDiagnosticRow>,
     },
     Subscribed {
         connection_id: ConnectionId,
@@ -119,6 +123,7 @@ impl MqttEvent {
                 payload,
                 qos,
                 retain,
+                diagnostics: Vec::new(),
             },
             MqttSessionEvent::Subscribed(subscription) => Self::Subscribed {
                 connection_id,

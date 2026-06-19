@@ -210,6 +210,8 @@ validators-strings-regex = Strings / regex, line HochDaq wa'
 validators-save-folder = folder pol
 validators-choose = wIv...
 validators-no-config = pluginvamvaD typed config tu'lu'be'.
+message-validation-validated = Validated
+message-validation-invalid = Invalid
 
 state-disconnected = rarHa'pu'.
 state-connecting = rar ...

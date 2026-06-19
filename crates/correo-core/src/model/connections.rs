@@ -17,6 +17,9 @@ const ZIP_ID: &str = "org.correomqtt.plugins.zip-manipulator";
 impl AppModel {
     pub(super) fn normalize_connection_surface(&mut self) {
         self.ensure_selected_connection();
+        if let Some(id) = self.snapshot.selected_connection {
+            self.load_connection_settings(id);
+        }
         if self.snapshot.connection_surface == crate::ConnectionSurface::Launcher {
             self.snapshot.connection_surface = crate::ConnectionSurface::Workbench;
         }
@@ -60,6 +63,7 @@ impl AppModel {
             "connect command queued".to_owned(),
         );
         self.snapshot.selected_connection = Some(id);
+        self.load_connection_settings(id);
         self.snapshot.connection_surface = crate::ConnectionSurface::Workbench;
         self.push_diagnostic(Diagnostic::info(format!("Connect requested for {name}.")));
     }
@@ -511,6 +515,9 @@ impl AppModel {
             .connections
             .first()
             .map(|connection| connection.id);
+        if let Some(id) = self.snapshot.selected_connection {
+            self.load_connection_settings(id);
+        }
     }
 
     pub(super) fn update_connection_state(

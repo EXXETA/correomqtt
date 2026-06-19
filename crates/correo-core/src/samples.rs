@@ -408,6 +408,7 @@ fn history(
         payload_preview: payload_preview.to_owned(),
         byte_size,
         badges,
+        diagnostics: Vec::new(),
     }
 }
 

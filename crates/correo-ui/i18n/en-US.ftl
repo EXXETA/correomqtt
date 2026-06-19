@@ -210,6 +210,8 @@ validators-strings-regex = Strings / regex, one per line
 validators-save-folder = Save folder
 validators-choose = Choose...
 validators-no-config = No typed config is available for this plugin.
+message-validation-validated = Validated
+message-validation-invalid = Invalid
 
 state-disconnected = Disconnected.
 state-connecting = Connecting ...

@@ -18,7 +18,7 @@ pub(crate) fn message_visible_for_subscriptions(
         })
 }
 
-fn topic_matches_filter(topic: &str, filter: &str) -> bool {
+pub(crate) fn topic_matches_filter(topic: &str, filter: &str) -> bool {
     let mut topic_segments = topic.split('/').peekable();
     let mut filter_segments = filter.split('/').peekable();
     while let Some(filter_segment) = filter_segments.next() {

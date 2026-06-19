@@ -210,6 +210,8 @@ validators-strings-regex = სტრიქონები / regex, თითო 
 validators-save-folder = შენახვის საქაღალდე
 validators-choose = არჩევა...
 validators-no-config = ამ პლაგინისთვის ტიპიზებული კონფიგურაცია ხელმისაწვდომი არ არის.
+message-validation-validated = დამოწმებულია
+message-validation-invalid = არასწორია
 
 state-disconnected = კავშირი გაწყვეტილია.
 state-connecting = დაკავშირება ...

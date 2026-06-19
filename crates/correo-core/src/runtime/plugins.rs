@@ -85,11 +85,15 @@ impl AppRuntime {
                 MqttCommand::Publish {
                     connection_id,
                     request,
+                    diagnostics,
                 } => {
-                    if let Some(request) = self.apply_publish_hooks(connection_id, request) {
+                    if let Some((request, diagnostics)) =
+                        self.apply_publish_hooks(connection_id, request, diagnostics)
+                    {
                         transformed.push(MqttCommand::Publish {
                             connection_id,
                             request,
+                            diagnostics,
                         });
                     }
                 }
@@ -431,14 +435,15 @@ impl AppRuntime {
         &self,
         connection_id: correo_mqtt::ConnectionId,
         request: PublishRequest,
-    ) -> Option<PublishRequest> {
+        mut diagnostics: Vec<MessageDiagnosticRow>,
+    ) -> Option<(PublishRequest, Vec<MessageDiagnosticRow>)> {
         let mut message = plugin_message_from_publish(&request);
         let topic = message.topic.clone();
-        let diagnostics = self.apply_connection_workflows(
+        diagnostics.extend(self.apply_connection_workflows(
             connection_id,
             &mut message,
             ConnectionPluginDirection::Outgoing,
-        );
+        ));
         if !diagnostics.is_empty() {
             self.emit_plugin_event(PluginWorkflowEvent::PublishWarning {
                 message: diagnostics
@@ -459,8 +464,19 @@ impl AppRuntime {
                 input: PluginHookInput::Message(message.clone()),
             };
             match self.plugin_hooks.execute(call) {
-                Ok(PluginHookOutput::Validation(PluginValidation::Valid)) => {}
+                Ok(PluginHookOutput::Validation(PluginValidation::Valid)) => {
+                    diagnostics.push(message_diagnostic(
+                        &hook,
+                        PluginDiagnosticSeverity::Info,
+                        "Validation passed",
+                    ));
+                }
                 Ok(PluginHookOutput::Validation(PluginValidation::Warning { message })) => {
+                    diagnostics.push(message_diagnostic(
+                        &hook,
+                        PluginDiagnosticSeverity::Warning,
+                        &message,
+                    ));
                     self.emit_plugin_event(PluginWorkflowEvent::PublishWarning { message });
                 }
                 Ok(PluginHookOutput::Validation(PluginValidation::Block { message })) => {
@@ -474,8 +490,14 @@ impl AppRuntime {
                     self.emit_plugin_event(PluginWorkflowEvent::PublishBlocked { message });
                     return None;
                 }
-                Ok(output) => return self.block_publish_for_output(&hook, output),
-                Err(error) => return self.block_publish_for_error(&hook, error),
+                Ok(output) => {
+                    self.block_publish_for_output(&hook, output);
+                    return None;
+                }
+                Err(error) => {
+                    self.block_publish_for_error(&hook, error);
+                    return None;
+                }
             }
         }
 
@@ -499,8 +521,14 @@ impl AppRuntime {
                     self.emit_plugin_event(PluginWorkflowEvent::PublishBlocked { message });
                     return None;
                 }
-                Ok(output) => return self.block_publish_for_output(&hook, output),
-                Err(error) => return self.block_publish_for_error(&hook, error),
+                Ok(output) => {
+                    self.block_publish_for_output(&hook, output);
+                    return None;
+                }
+                Err(error) => {
+                    self.block_publish_for_error(&hook, error);
+                    return None;
+                }
             }
         }
 
@@ -515,6 +543,7 @@ impl AppRuntime {
             self.emit_plugin_event(PluginWorkflowEvent::PublishBlocked { message });
         })
         .ok()
+        .map(|request| (request, diagnostics))
     }
 
     fn run_detail_transform(
@@ -835,13 +864,13 @@ fn validate_connection_workflow(
                     }
                 });
             if valid {
-                workflow_diagnostic(
+                validator_workflow_diagnostic(
                     workflow,
                     PluginDiagnosticSeverity::Info,
                     "Validation passed",
                 )
             } else {
-                workflow_diagnostic(
+                validator_workflow_diagnostic(
                     workflow,
                     PluginDiagnosticSeverity::Error,
                     "Payload did not match configured string rules",
@@ -856,20 +885,20 @@ fn validate_connection_workflow(
                 .and_then(serde_json::Value::as_str)
                 .unwrap_or_default();
             if payload.trim_start().starts_with('<') && !xsd_path.trim().is_empty() {
-                workflow_diagnostic(
+                validator_workflow_diagnostic(
                     workflow,
                     PluginDiagnosticSeverity::Info,
                     "Validation passed",
                 )
             } else {
-                workflow_diagnostic(
+                validator_workflow_diagnostic(
                     workflow,
                     PluginDiagnosticSeverity::Error,
                     "XML/XSD validation requires XML payload and configured XSD file",
                 )
             }
         }
-        _ => workflow_diagnostic(
+        _ => validator_workflow_diagnostic(
             workflow,
             PluginDiagnosticSeverity::Info,
             "Validation passed",
@@ -966,4 +995,14 @@ fn workflow_diagnostic(
         plugin_id: Some(workflow.plugin_id.clone()),
         message: format!("{}: {}", workflow.plugin_name, message.into()),
     }
+}
+
+fn validator_workflow_diagnostic(
+    workflow: &ConnectionPluginWorkflow,
+    severity: PluginDiagnosticSeverity,
+    message: impl Into<String>,
+) -> MessageDiagnosticRow {
+    let mut diagnostic = workflow_diagnostic(workflow, severity, message);
+    diagnostic.hook = Some(PluginHookKind::Validator);
+    diagnostic
 }

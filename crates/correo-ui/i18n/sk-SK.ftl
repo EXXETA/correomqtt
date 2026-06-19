@@ -210,6 +210,8 @@ validators-strings-regex = Reťazce / regex, jeden na riadok
 validators-save-folder = Priečinok na uloženie
 validators-choose = Vybrať...
 validators-no-config = Pre tento plugin nie je dostupná žiadna typovaná konfigurácia.
+message-validation-validated = Overené
+message-validation-invalid = Neplatné
 
 state-disconnected = Odpojené.
 state-connecting = Pripája sa...

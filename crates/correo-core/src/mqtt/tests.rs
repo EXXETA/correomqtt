@@ -107,6 +107,7 @@ async fn runtime_applies_pub_sub_and_incoming_events() {
                 false,
             )
             .unwrap(),
+            diagnostics: Vec::new(),
         }))
         .unwrap();
     pump_until(&mut runtime, |runtime| {
@@ -358,6 +359,7 @@ async fn disconnect_cleans_up_service_session() {
                 false,
             )
             .unwrap(),
+            diagnostics: Vec::new(),
         }))
         .unwrap();
     pump_until(&mut runtime, |runtime| {

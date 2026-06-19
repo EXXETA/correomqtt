@@ -18,6 +18,7 @@ impl AppModel {
                 payload,
                 qos,
                 retain,
+                ..
             } => vec![HistoryPersistenceCommand::RecordPublish {
                 connection_id: self.storage_connection_id(*connection_id),
                 message: Message {

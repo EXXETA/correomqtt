@@ -159,6 +159,7 @@ fn worker_script_mqtt_bridge_queues_commands_and_runs_callbacks() {
             MqttCommand::Publish {
                 connection_id: publish_connection_id,
                 request,
+                ..
             },
             MqttCommand::Subscribe {
                 connection_id: subscribe_connection_id,

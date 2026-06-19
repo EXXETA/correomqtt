@@ -125,6 +125,7 @@ impl AppModel {
             self.mark_workbench_dirty(current);
         }
         self.snapshot.selected_connection = Some(id);
+        self.load_connection_settings(id);
         self.snapshot.connection_surface = crate::ConnectionSurface::Workbench;
         self.snapshot.workbench = self.workbenches.get(&id).cloned().unwrap_or_default();
     }

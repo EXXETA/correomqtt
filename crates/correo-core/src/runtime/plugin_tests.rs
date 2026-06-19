@@ -194,6 +194,7 @@ async fn incoming_transform_error_keeps_payload_and_records_diagnostic() {
             connection_id,
             request: PublishRequest::new("bridge/raw", b"online".to_vec(), Qos::AtMostOnce, false)
                 .unwrap(),
+            diagnostics: Vec::new(),
         }))
         .unwrap();
     pump_until(&mut runtime, |runtime| {
@@ -254,6 +255,7 @@ async fn incoming_validator_result_is_recorded_on_message() {
             connection_id,
             request: PublishRequest::new("bridge/raw", b"online".to_vec(), Qos::AtMostOnce, false)
                 .unwrap(),
+            diagnostics: Vec::new(),
         }))
         .unwrap();
     pump_until(&mut runtime, |runtime| {

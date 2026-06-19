@@ -346,6 +346,7 @@ fn workbench_from_history(history: &ConnectionHistorySnapshot) -> WorkbenchSnaps
                 byte_size: payload.len(),
                 payload,
                 badges,
+                diagnostics: Vec::new(),
             }
         })
         .collect();

@@ -130,6 +130,7 @@ fn publish_command(snapshot: &AppSnapshot) -> Result<Vec<MqttCommand>, MqttComma
     Ok(vec![MqttCommand::Publish {
         connection_id,
         request,
+        diagnostics: Vec::new(),
     }])
 }
 

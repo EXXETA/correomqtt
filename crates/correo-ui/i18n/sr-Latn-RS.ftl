@@ -210,6 +210,8 @@ validators-strings-regex = Stringovi / regex, jedan po redu
 validators-save-folder = Fascikla za čuvanje
 validators-choose = Izaberi...
 validators-no-config = Za ovaj dodatak nije dostupna tipizirana konfiguracija.
+message-validation-validated = Validirano
+message-validation-invalid = Neispravno
 
 state-disconnected = Veza je prekinuta.
 state-connecting = Povezivanje ...

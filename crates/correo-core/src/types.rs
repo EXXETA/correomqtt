@@ -371,6 +371,8 @@ pub struct PublishHistoryRow {
     pub byte_size: usize,
     #[serde(default)]
     pub badges: Vec<String>,
+    #[serde(default)]
+    pub diagnostics: Vec<MessageDiagnosticRow>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]

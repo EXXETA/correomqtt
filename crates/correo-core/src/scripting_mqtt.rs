@@ -69,6 +69,7 @@ impl ScriptMqttClient for ScriptMqttBridge {
         self.send(MqttCommand::Publish {
             connection_id: self.connection_id()?,
             request: request.into_publish_request()?,
+            diagnostics: Vec::new(),
         })
     }
 

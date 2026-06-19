@@ -4,6 +4,7 @@ use egui::{Button, Id, Rect, RichText, Sense, Ui};
 use egui_phosphor::regular;
 
 use crate::{
+    i18n::I18n,
     responsive,
     theme::{ThemeTokens, CONTROL_HEIGHT},
     widgets::{
@@ -38,8 +39,16 @@ pub(crate) fn incoming_messages(
     snapshot: &AppSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
-    workbench_connection_messages::show(ui, snapshot, MessageOrigin::Incoming, tokens, commands);
+    workbench_connection_messages::show(
+        ui,
+        snapshot,
+        MessageOrigin::Incoming,
+        tokens,
+        commands,
+        i18n,
+    );
 }
 
 fn topic_row(
