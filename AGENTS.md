@@ -86,6 +86,7 @@ Do not create a single large application crate unless the task explicitly asks f
 ## UI Rules
 
 - This is a dense desktop tool, not a marketing surface.
+- Add new user-visible text to every bundled locale in `crates/correo-ui/i18n` in the same change that introduces it.
 - Prioritize predictable panes, lists, tabs, dialogs, keyboard-friendly controls, and clear status.
 - Use native-feeling egui widgets and stable layout dimensions.
 - Icon-only buttons must be square and use the shared square icon button sizing.
