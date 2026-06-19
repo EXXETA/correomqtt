@@ -2,41 +2,60 @@ use correo_core::{
     AppCommand, AppCommandSender, AppSnapshot, GlobalSettingField, SettingsOption, ThemeMode,
 };
 use correo_style::layout;
-use egui::{load::TexturePoll, Align, ComboBox, Image, Layout, RichText, Sense, Ui};
+use egui::{load::TexturePoll, ComboBox, Image, RichText, Sense, Ui};
 
-use crate::i18n::I18n;
-use crate::theme::ThemeTokens;
+use crate::{
+    i18n::{language_option_visible, I18n},
+    widgets::dotted_focus_outline,
+};
 
 const HEADER_LOGO_SIZE: f32 = 34.0;
 const HEADER_LOGO_RASTER_SCALE: f32 = 2.0;
+const HEADER_CONTROLS_RIGHT_MARGIN: f32 = layout::CONTROL_PADDING as f32 * 2.0 + 6.0;
 
-pub fn command_bar(
-    ui: &mut Ui,
-    snapshot: &AppSnapshot,
-    _tokens: ThemeTokens,
-    commands: &AppCommandSender,
-    i18n: &I18n,
-) {
+pub fn command_bar_title(ui: &mut Ui, i18n: &I18n) {
     ui.horizontal_centered(|ui| {
         header_icon(ui);
         ui.label(
-            RichText::new("CorreoMQTT")
+            RichText::new(i18n.product_name())
                 .strong()
                 .size(layout::APP_TITLE_SIZE),
         );
-
-        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            theme_selector(ui, &snapshot.theme_mode, commands, i18n);
-            language_selector(
-                ui,
-                &snapshot.global_settings.language,
-                &snapshot.global_settings.language_options,
-                commands,
-                i18n,
-            );
-            running_scripts_label(ui, &snapshot.scripts);
-        });
     });
+}
+
+pub fn command_bar_controls(
+    context: &egui::Context,
+    header_rect: egui::Rect,
+    snapshot: &AppSnapshot,
+    commands: &AppCommandSender,
+    i18n: &I18n,
+    klingon_unlocked: bool,
+) {
+    let width = layout::HEADER_LANGUAGE_SELECTOR_WIDTH
+        + layout::HEADER_THEME_SELECTOR_WIDTH
+        + layout::CONTROL_PADDING as f32;
+    let pos = egui::pos2(
+        header_rect.right() - width - HEADER_CONTROLS_RIGHT_MARGIN,
+        header_rect.center().y - layout::CONTROL_HEIGHT * 0.5,
+    );
+    egui::Area::new("correo-header-controls".into())
+        .order(egui::Order::Foreground)
+        .fixed_pos(pos)
+        .show(context, |ui| {
+            ui.horizontal(|ui| {
+                running_scripts_label(ui, &snapshot.scripts);
+                language_selector(
+                    ui,
+                    &snapshot.global_settings.language,
+                    &snapshot.global_settings.language_options,
+                    commands,
+                    i18n,
+                    klingon_unlocked,
+                );
+                theme_selector(ui, &snapshot.theme_mode, commands, i18n);
+            });
+        });
 }
 
 fn header_icon(ui: &mut Ui) {
@@ -80,14 +99,18 @@ fn running_scripts_label(ui: &mut Ui, scripts: &correo_core::ScriptSurfaceSnapsh
 
 fn theme_selector(ui: &mut Ui, current: &ThemeMode, commands: &AppCommandSender, i18n: &I18n) {
     let mut selected = current.clone();
-    ComboBox::from_id_salt("theme-mode")
+    let response = ComboBox::from_id_salt("theme-mode")
         .selected_text(i18n.theme_label(current))
         .width(layout::HEADER_THEME_SELECTOR_WIDTH)
         .show_ui(ui, |ui| {
             for mode in ThemeMode::ALL {
                 ui.selectable_value(&mut selected, mode.clone(), i18n.theme_label(&mode));
             }
-        });
+        })
+        .response;
+    if response.has_focus() {
+        dotted_focus_outline(ui, response.rect);
+    }
     if selected != *current {
         let _ = commands.send(AppCommand::SetThemeMode(selected));
         let _ = commands.send(AppCommand::SaveGlobalSettings);
@@ -100,17 +123,25 @@ fn language_selector(
     options: &[SettingsOption],
     commands: &AppCommandSender,
     i18n: &I18n,
+    klingon_unlocked: bool,
 ) {
     let mut selected = current.to_owned();
-    ComboBox::from_id_salt("header-language")
+    let response = ComboBox::from_id_salt("header-language")
         .selected_text(language_label(current, options, i18n))
         .width(layout::HEADER_LANGUAGE_SELECTOR_WIDTH)
         .show_ui(ui, |ui| {
             for option in options {
-                let label = i18n.language_option_label(&option.id, &option.label);
+                if !language_option_visible(&option.id, current, klingon_unlocked) {
+                    continue;
+                }
+                let label = i18n.language_menu_option_label(&option.id, &option.label, current);
                 ui.selectable_value(&mut selected, option.id.clone(), label);
             }
-        });
+        })
+        .response;
+    if response.has_focus() {
+        dotted_focus_outline(ui, response.rect);
+    }
     if selected != current {
         let _ = commands.send(AppCommand::UpdateGlobalSetting {
             field: GlobalSettingField::Language,
@@ -124,7 +155,7 @@ fn language_label(current: &str, options: &[SettingsOption], i18n: &I18n) -> Str
     options
         .iter()
         .find(|option| option.id == current)
-        .map(|option| i18n.language_option_label(&option.id, &option.label))
+        .map(|option| i18n.language_menu_option_label(&option.id, &option.label, current))
         .unwrap_or_else(|| current.to_owned())
 }
 

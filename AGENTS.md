@@ -96,6 +96,8 @@ Do not create a single large application crate unless the task explicitly asks f
 - Prioritize predictable panes, lists, tabs, dialogs, keyboard-friendly controls, and clear status.
 - Use native-feeling egui widgets and stable layout dimensions.
 - Icon-only buttons must be square and use the shared square icon button sizing.
+- Keyboard focus must be visible with a dotted outline: white in dark mode, black in light mode. Tab order should start with the main menu, continue through the active use-case view from top-left to bottom-right including toolbars and tables, and end with right-aligned header controls such as language and theme. Tables must be reachable by Tab, and focused tables or rows must support arrow-key row focus movement for keyboard selection.
+- Menu popups opened from left-aligned buttons must align their left edge to the button and grow right. Menu popups opened from right-aligned buttons must align their right edge to the button and grow left.
 - Keep connection state, errors, and script/plugin failures visible without blocking normal work.
 - Do not mix service logic into egui widgets.
 

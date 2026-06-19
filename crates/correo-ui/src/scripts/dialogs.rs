@@ -1,13 +1,16 @@
 use correo_core::{AppCommand, AppCommandSender, ScriptSurfaceSnapshot};
 use egui::{Id, Modal, TextEdit, Ui};
 
-use crate::{modal_style, theme::ThemeTokens, theme::CONTROL_HEIGHT, widgets::padded_text_edit};
+use crate::{
+    i18n::I18n, modal_style, theme::ThemeTokens, theme::CONTROL_HEIGHT, widgets::padded_text_edit,
+};
 
 pub(super) fn create_dialog(
     ui: &mut Ui,
     scripts: &ScriptSurfaceSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     if !scripts.create_dialog_open {
         return;
@@ -16,7 +19,7 @@ pub(super) fn create_dialog(
         ui.ctx(),
         |ui| {
             ui.set_width(360.0);
-            ui.heading("New Script");
+            ui.heading(i18n.text("script-new"));
             let mut name = scripts.new_script_name.clone();
             if ui
                 .add_sized(
@@ -31,10 +34,10 @@ pub(super) fn create_dialog(
                 egui::vec2(ui.available_width(), CONTROL_HEIGHT),
                 egui::Layout::right_to_left(egui::Align::Center),
                 |ui| {
-                    if ui.button("Save").clicked() {
+                    if ui.button(i18n.text("common-save")).clicked() {
                         send(commands, AppCommand::CreateScript);
                     }
-                    if ui.button("Cancel").clicked() {
+                    if ui.button(i18n.text("common-cancel")).clicked() {
                         send(commands, AppCommand::CancelCreateScript);
                     }
                 },

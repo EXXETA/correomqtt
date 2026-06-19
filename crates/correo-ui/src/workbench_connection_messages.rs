@@ -6,9 +6,10 @@ use egui_phosphor::regular;
 use crate::{
     theme::ThemeTokens,
     widgets::{
-        clearable_search_edit, fill_remaining_tile_rows, menu_item, set_menu_item_width,
-        square_icon_button_size, tile_scroll_bar_rect_with_height, tile_table_interactive_fill,
-        tile_table_selected_fill, with_icon_button_padding,
+        clearable_search_edit, dotted_focus_outline, fill_remaining_tile_rows, menu_item,
+        paint_focus_outline, set_menu_item_width, square_icon_button_size,
+        tile_scroll_bar_rect_with_height, tile_table_interactive_fill, tile_table_selected_fill,
+        with_icon_button_padding,
     },
     workbench_connection_messages_filters::{message_visible_for_subscriptions, row_matches},
     workbench_connection_messages_text::{
@@ -163,6 +164,7 @@ fn icon_button(
             with_icon_button_padding(ui, |ui| ui.add_sized(square_icon_button_size(), button))
         })
         .inner;
+    paint_focus_outline(ui, &response);
     response.on_hover_text(hover_text)
 }
 
@@ -257,6 +259,28 @@ fn message_table(
         .available_rect_before_wrap()
         .height()
         .max(layout::TABLE_MIN_HEIGHT);
+    let table_id = message_table_focus_id(origin);
+    let table_rect = egui::Rect::from_min_size(
+        ui.available_rect_before_wrap().min,
+        egui::vec2(ui.available_width(), table_height),
+    );
+    let table_response = ui.interact(table_rect, table_id, Sense::focusable_noninteractive());
+    if table_response.has_focus() {
+        ui.memory_mut(|memory| {
+            memory.set_focus_lock_filter(
+                table_id,
+                egui::EventFilter {
+                    vertical_arrows: true,
+                    ..Default::default()
+                },
+            );
+        });
+        handle_message_table_keyboard(ui, snapshot, origin, rows, commands);
+    }
+    if table_response.gained_focus() {
+        store_message_focus_index(ui, origin, selected_message_index(rows).unwrap_or(0));
+    }
+    let focused_index = message_focus_index(ui, origin, rows);
     ScrollArea::vertical()
         .id_salt(match origin {
             MessageOrigin::Outgoing => "outgoing-messages-table",
@@ -274,7 +298,17 @@ fn message_table(
                 ui.set_width(ui.available_width());
                 for index in row_range {
                     if let Some(row) = rows.get(index) {
-                        message_row(ui, snapshot, origin, index, row, tokens, commands);
+                        message_row(
+                            ui,
+                            snapshot,
+                            origin,
+                            index,
+                            row,
+                            tokens,
+                            commands,
+                            table_response.has_focus(),
+                            focused_index,
+                        );
                     }
                 }
                 fill_remaining_tile_rows(
@@ -296,18 +330,31 @@ fn message_row(
     row: &ConnectionMessageRow<'_>,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    table_focused: bool,
+    focused_index: usize,
 ) {
     let row_width = ui.available_width();
     let (rect, response) = ui.allocate_exact_size(
         egui::vec2(row_width, layout::MESSAGE_TABLE_ROW_HEIGHT),
-        Sense::click(),
+        Sense::CLICK,
     );
-    let fill = tile_table_interactive_fill(index, tokens, response.hovered(), row.selected);
+    let row_focused = table_focused && index == focused_index;
+    let fill = tile_table_interactive_fill(
+        index,
+        tokens,
+        response.hovered() || row_focused,
+        row.selected,
+    );
     ui.painter()
         .rect_filled(rect, egui::CornerRadius::ZERO, fill);
+    if row_focused {
+        dotted_focus_outline(ui, rect);
+    }
 
     response.context_menu(|ui| message_context_menu(ui, snapshot, origin, row, commands));
     if response.clicked() {
+        ui.memory_mut(|memory| memory.request_focus(message_table_focus_id(origin)));
+        store_message_focus_index(ui, origin, index);
         send(commands, select_command(row.key));
     }
     if response.double_clicked() {
@@ -379,6 +426,74 @@ fn message_row(
         &qos_and_size,
         tokens.text_secondary,
     );
+}
+
+fn handle_message_table_keyboard(
+    ui: &Ui,
+    snapshot: &AppSnapshot,
+    origin: MessageOrigin,
+    rows: &[ConnectionMessageRow<'_>],
+    commands: &AppCommandSender,
+) {
+    if rows.is_empty() {
+        return;
+    }
+    let current = message_focus_index(ui, origin, rows);
+    let next = ui.input(|input| {
+        if input.key_pressed(egui::Key::ArrowDown) {
+            Some((current + 1).min(rows.len() - 1))
+        } else if input.key_pressed(egui::Key::ArrowUp) {
+            Some(current.saturating_sub(1))
+        } else {
+            None
+        }
+    });
+    if let Some(next) = next {
+        store_message_focus_index(ui, origin, next);
+        return;
+    }
+    if ui.input(|input| input.key_pressed(egui::Key::Enter)) {
+        if let Some(row) = rows.get(current) {
+            send(commands, select_command(row.key));
+            open_message(ui, snapshot, row.key);
+        }
+    } else if ui.input(|input| input.key_pressed(egui::Key::Space)) {
+        if let Some(row) = rows.get(current) {
+            send(commands, select_command(row.key));
+        }
+    }
+}
+
+fn message_focus_index(ui: &Ui, origin: MessageOrigin, rows: &[ConnectionMessageRow<'_>]) -> usize {
+    let selected = selected_message_index(rows).unwrap_or(0);
+    ui.ctx().data_mut(|data| {
+        data.get_temp::<usize>(message_focus_index_id(origin))
+            .unwrap_or(selected)
+            .min(rows.len().saturating_sub(1))
+    })
+}
+
+fn store_message_focus_index(ui: &Ui, origin: MessageOrigin, index: usize) {
+    ui.ctx()
+        .data_mut(|data| data.insert_temp(message_focus_index_id(origin), index));
+}
+
+fn selected_message_index(rows: &[ConnectionMessageRow<'_>]) -> Option<usize> {
+    rows.iter().position(|row| row.selected)
+}
+
+fn message_table_focus_id(origin: MessageOrigin) -> Id {
+    match origin {
+        MessageOrigin::Outgoing => Id::new("outgoing-messages-table-focus"),
+        MessageOrigin::Incoming => Id::new("incoming-messages-table-focus"),
+    }
+}
+
+fn message_focus_index_id(origin: MessageOrigin) -> Id {
+    match origin {
+        MessageOrigin::Outgoing => Id::new("outgoing-messages-table-focused-row"),
+        MessageOrigin::Incoming => Id::new("incoming-messages-table-focused-row"),
+    }
 }
 
 fn right_rect(row: Rect, right: f32, width: f32) -> Rect {

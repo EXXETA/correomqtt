@@ -16,7 +16,7 @@ pub fn show(
     payload_highlighter: Option<&PayloadHighlighter>,
 ) {
     if snapshot.selected_connection().is_none() {
-        ui.label("No connection available");
+        ui.label(i18n.text("connection-none-available"));
         return;
     }
 
@@ -26,7 +26,6 @@ pub fn show(
         ui,
         tokens,
         snapshot.workbench.narrow_tab,
-        commands,
         |ui| workbench_publish::editor(ui, snapshot, tokens, commands, payload_highlighter),
         |ui| workbench_subscribe::editor(ui, snapshot, tokens, commands),
         |ui| workbench_publish::outgoing_messages(ui, snapshot, tokens, commands),

@@ -9,10 +9,13 @@ use egui_phosphor::regular;
 use crate::{
     responsive,
     theme::ThemeTokens,
-    widgets::{square_icon_button_size, with_icon_button_padding},
+    widgets::{compact_mode_button_size, compact_mode_icon_button, paint_focus_outline},
 };
 
 const PANE_TITLE_SIZE: f32 = 18.0;
+const TITLE_TAB_CONTROLS_MAX_WIDTH: f32 = 420.0;
+const TITLE_TAB_CONTROLS_MIN_WIDTH: f32 = 220.0;
+const TITLE_TAB_SHORT_LABEL_WIDTH: f32 = 130.0;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum WorkbenchPaneSide {
@@ -24,7 +27,6 @@ pub(crate) fn show(
     ui: &mut Ui,
     tokens: ThemeTokens,
     active_tab: WorkbenchTab,
-    commands: &AppCommandSender,
     publish: impl FnOnce(&mut Ui),
     subscribe: impl FnOnce(&mut Ui),
     outgoing: impl FnOnce(&mut Ui),
@@ -32,22 +34,11 @@ pub(crate) fn show(
 ) {
     let rect = ui.available_rect_before_wrap();
     ui.allocate_rect(rect, Sense::hover());
-    let natural_tabs = rect.width() < layout::WORKBENCH_NARROW_WIDTH;
-    let forced_tabs = forced_tab_mode(ui);
-    let tabs_visible = natural_tabs || forced_tabs;
+    let tabs_visible = tabs_visible_for_width(ui, rect.width());
     responsive::set_workbench_tabs_visible(ui.ctx(), tabs_visible);
     if tabs_visible {
         tabbed_layout(
-            ui,
-            rect,
-            tokens,
-            active_tab,
-            commands,
-            natural_tabs,
-            publish,
-            subscribe,
-            outgoing,
-            incoming,
+            ui, rect, tokens, active_tab, publish, subscribe, outgoing, incoming,
         );
         return;
     }
@@ -91,23 +82,16 @@ fn tabbed_layout(
     rect: Rect,
     tokens: ThemeTokens,
     active_tab: WorkbenchTab,
-    commands: &AppCommandSender,
-    natural_tabs: bool,
     publish: impl FnOnce(&mut Ui),
     subscribe: impl FnOnce(&mut Ui),
     outgoing: impl FnOnce(&mut Ui),
     incoming: impl FnOnce(&mut Ui),
 ) {
-    let tab_height = layout::CONTROL_HEIGHT + 8.0;
-    let tab_bottom = (rect.top() + tab_height).min(rect.bottom());
-    let tab_rect = Rect::from_min_max(rect.left_top(), pos2(rect.right(), tab_bottom));
-    tab_bar(ui, tab_rect, active_tab, commands, natural_tabs, tokens);
-    let content = Rect::from_min_max(pos2(rect.left(), tab_bottom), rect.right_bottom());
     match active_tab {
         WorkbenchTab::Publish => stack_split(
             ui,
             Id::new("workbench-narrow-publish-stack-ratio"),
-            content,
+            rect,
             tokens,
             publish,
             outgoing,
@@ -115,7 +99,7 @@ fn tabbed_layout(
         WorkbenchTab::Subscribe => stack_split(
             ui,
             Id::new("workbench-narrow-subscribe-stack-ratio"),
-            content,
+            rect,
             tokens,
             subscribe,
             incoming,
@@ -123,13 +107,12 @@ fn tabbed_layout(
     }
 }
 
-fn tab_bar(
+pub(crate) fn title_bar_tab_controls(
     ui: &mut Ui,
     rect: Rect,
     active_tab: WorkbenchTab,
     commands: &AppCommandSender,
     natural_tabs: bool,
-    _tokens: ThemeTokens,
 ) {
     let mut child = ui.new_child(
         UiBuilder::new()
@@ -138,31 +121,70 @@ fn tab_bar(
     );
     child.set_clip_rect(rect);
     child.spacing_mut().item_spacing.x = layout::TOOLBAR_GAP;
-    let mode_button_width = square_icon_button_size()[0];
+    let mode_button_width = if natural_tabs {
+        0.0
+    } else {
+        compact_mode_button_size()[0]
+    };
+    let mode_button_gap = if natural_tabs {
+        0.0
+    } else {
+        layout::TOOLBAR_GAP
+    };
     let tab_width =
-        ((rect.width() - mode_button_width - (layout::TOOLBAR_GAP * 2.0)) * 0.5).max(0.0);
+        ((rect.width() - mode_button_width - layout::TOOLBAR_GAP - mode_button_gap) * 0.5).max(0.0);
     for tab in [WorkbenchTab::Publish, WorkbenchTab::Subscribe] {
         let selected = active_tab == tab;
+        let tab_label = if tab_width < TITLE_TAB_SHORT_LABEL_WIDTH {
+            short_tab_label(tab)
+        } else {
+            tab.label()
+        };
         let label = if selected {
             let color = if child.visuals().dark_mode {
                 Color32::WHITE
             } else {
                 Color32::BLACK
             };
-            RichText::new(tab.label()).color(color)
+            RichText::new(tab_label).color(color)
         } else {
-            RichText::new(tab.label())
+            RichText::new(tab_label)
         };
-        let response = child.allocate_ui_with_layout(
+        let response = child.add_sized(
             egui::vec2(tab_width, layout::CONTROL_HEIGHT),
-            Layout::centered_and_justified(egui::Direction::LeftToRight),
-            |ui| ui.selectable_label(selected, label),
+            Button::new(label)
+                .selected(selected)
+                .corner_radius(child.visuals().widgets.inactive.corner_radius),
         );
-        if response.inner.clicked() {
+        paint_focus_outline(&child, &response);
+        if response.clicked() {
             let _ = commands.send(AppCommand::SelectWorkbenchTab(tab));
         }
     }
-    tab_mode_button(&mut child, natural_tabs);
+    if !natural_tabs {
+        tab_mode_button(&mut child);
+    }
+}
+
+pub(crate) fn title_tab_controls_width(available_width: f32) -> f32 {
+    (available_width * 0.34)
+        .clamp(TITLE_TAB_CONTROLS_MIN_WIDTH, TITLE_TAB_CONTROLS_MAX_WIDTH)
+        .min(available_width.max(0.0))
+}
+
+fn short_tab_label(tab: WorkbenchTab) -> &'static str {
+    match tab {
+        WorkbenchTab::Publish => "Pub",
+        WorkbenchTab::Subscribe => "Sub",
+    }
+}
+
+pub(crate) fn natural_tabs_for_width(width: f32) -> bool {
+    width < layout::WORKBENCH_NARROW_WIDTH
+}
+
+pub(crate) fn tabs_visible_for_width(ui: &Ui, width: f32) -> bool {
+    natural_tabs_for_width(width) || forced_tab_mode(ui)
 }
 
 fn center_split(ui: &mut Ui, rect: Rect, tokens: ThemeTokens) -> (Rect, Rect, Rect) {
@@ -205,7 +227,7 @@ fn center_split(ui: &mut Ui, rect: Rect, tokens: ThemeTokens) -> (Rect, Rect, Re
 }
 
 fn divider_mode_button(ui: &mut Ui, divider: Rect) {
-    let size = egui::Vec2::from(square_icon_button_size());
+    let size = egui::Vec2::from(compact_mode_button_size());
     let rect = Rect::from_center_size(
         pos2(
             divider.center().x,
@@ -224,26 +246,14 @@ fn divider_mode_button(ui: &mut Ui, divider: Rect) {
     }
 }
 
-fn tab_mode_button(ui: &mut Ui, natural_tabs: bool) {
-    let tooltip = if natural_tabs {
-        "Split mode is unavailable at this width"
-    } else {
-        "Use split mode"
-    };
-    if mode_button(ui, regular::COLUMNS, !natural_tabs, tooltip).clicked() {
+fn tab_mode_button(ui: &mut Ui) {
+    if mode_button(ui, regular::COLUMNS, true, "Use split mode").clicked() {
         set_forced_tab_mode(ui, false);
     }
 }
 
 fn mode_button(ui: &mut Ui, icon: &str, enabled: bool, tooltip: &str) -> egui::Response {
-    with_icon_button_padding(ui, |ui| {
-        ui.add_enabled(
-            enabled,
-            Button::new(RichText::new(icon).size(16.0))
-                .min_size(egui::Vec2::from(square_icon_button_size())),
-        )
-    })
-    .on_hover_text(tooltip)
+    compact_mode_icon_button(ui, icon, enabled, tooltip)
 }
 
 fn stack_split(

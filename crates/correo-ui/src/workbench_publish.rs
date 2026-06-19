@@ -1,13 +1,13 @@
 use correo_core::{AppCommand, AppCommandSender, AppSnapshot};
 use correo_style::layout;
-use egui::{Button, Rect, RichText, TextEdit, Ui};
+use egui::{Button, Rect, RichText, Sense, TextEdit, Ui, UiBuilder};
 use egui_phosphor::regular;
 
 use crate::{
     payload_highlight, responsive,
     theme::{ThemeTokens, CONTROL_HEIGHT},
     widgets::{
-        checkbox, edit_pulldown, padded_text_edit, square_icon_button_size,
+        checkbox, edit_pulldown, padded_text_edit, paint_focus_outline, square_icon_button_size,
         with_icon_button_padding,
     },
     workbench_connection_messages::{self, MessageOrigin},
@@ -30,13 +30,32 @@ pub(crate) fn editor(
     ui.add_space(4.0);
     topic_row(ui, snapshot, tokens, commands);
     let mut payload = snapshot.workbench.publish.payload.clone();
-    let payload_height = ui.available_height().max(layout::TABLE_MIN_HEIGHT);
+    let remaining_rect = ui.available_rect_before_wrap();
+    ui.allocate_rect(remaining_rect, Sense::hover());
+
+    let retained_gap = 2.0;
+    let retained_top = (remaining_rect.bottom() - CONTROL_HEIGHT).max(remaining_rect.top());
+    let retained_row_rect = Rect::from_min_max(
+        egui::pos2(remaining_rect.left(), retained_top),
+        remaining_rect.right_bottom(),
+    );
+    let payload_bottom = (retained_row_rect.top() - retained_gap).max(remaining_rect.top());
+    let payload_rect = Rect::from_min_max(
+        remaining_rect.left_top(),
+        egui::pos2(remaining_rect.right(), payload_bottom),
+    );
     let mut layouter = payload_highlight::layouter(
         payload_highlighter.cloned(),
         snapshot.plugins.active_plugin_ids(),
     );
-    let payload_response = ui.add_sized(
-        [ui.available_width(), payload_height],
+    let mut payload_ui = ui.new_child(
+        UiBuilder::new()
+            .max_rect(payload_rect)
+            .layout(egui::Layout::top_down(egui::Align::Min)),
+    );
+    payload_ui.set_clip_rect(payload_rect);
+    let payload_response = payload_ui.add_sized(
+        [payload_rect.width(), payload_rect.height()],
         padded_text_edit(TextEdit::multiline(&mut payload))
             .font(egui::TextStyle::Monospace)
             .desired_width(f32::INFINITY)
@@ -45,6 +64,7 @@ pub(crate) fn editor(
     if payload_response.changed() {
         send(commands, AppCommand::UpdatePublishPayload(payload));
     }
+    retained_row(ui, retained_row_rect, snapshot, commands);
 }
 
 pub(crate) fn outgoing_messages(
@@ -85,15 +105,15 @@ fn topic_row(
     );
 
     child_ui(ui, folder_rect, |ui| {
-        if with_icon_button_padding(ui, |ui| {
+        let open_file = with_icon_button_padding(ui, |ui| {
             ui.add_sized(
                 square_icon_button_size(),
                 Button::new(RichText::new(regular::FOLDER_OPEN).size(15.0)),
             )
         })
-        .on_hover_text("Load a message file into the publish editor")
-        .clicked()
-        {
+        .on_hover_text("Load a message file into the publish editor");
+        paint_focus_outline(ui, &open_file);
+        if open_file.clicked() {
             if let Some(path) = rfd::FileDialog::new()
                 .add_filter("CorreoMQTT message", &["cqm"])
                 .pick_file()
@@ -142,6 +162,7 @@ fn topic_row(
             ui.add_sized([publish_rect.width(), CONTROL_HEIGHT], Button::new(&label))
         });
         let publish = publish.inner;
+        paint_focus_outline(ui, &publish);
         if publish.clicked() {
             send(commands, AppCommand::Publish);
         }
@@ -151,14 +172,25 @@ fn topic_row(
             publish.on_hover_text("Publish");
         }
     });
+}
 
-    let retained_rect = right_rect(toolbar_rect(ui), layout::RETAINED_WIDTH, 0.0);
-    child_ui(ui, retained_rect, |ui| {
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let mut retained = snapshot.workbench.publish.retained;
-            if checkbox(ui, &mut retained, "Retained").changed() {
-                send(commands, AppCommand::SetPublishRetained(retained));
-            }
-        });
+fn retained_row(
+    ui: &mut Ui,
+    retained_row_rect: Rect,
+    snapshot: &AppSnapshot,
+    commands: &AppCommandSender,
+) {
+    let retained_rect = right_rect(retained_row_rect, layout::RETAINED_WIDTH, 0.0);
+    let mut retained_ui = ui.new_child(
+        UiBuilder::new()
+            .max_rect(retained_rect)
+            .layout(egui::Layout::left_to_right(egui::Align::Center)),
+    );
+    retained_ui.set_clip_rect(retained_rect);
+    retained_ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+        let mut retained = snapshot.workbench.publish.retained;
+        if checkbox(ui, &mut retained, "Retained").changed() {
+            send(commands, AppCommand::SetPublishRetained(retained));
+        }
     });
 }

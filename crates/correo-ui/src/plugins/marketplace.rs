@@ -1,5 +1,5 @@
 use correo_core::{AppCommand, AppCommandSender, PluginMarketplaceRow, PluginSurfaceSnapshot};
-use egui::{Button, RichText, ScrollArea, Ui};
+use egui::{Button, Label, RichText, ScrollArea, Ui};
 use egui_phosphor::regular;
 
 use crate::i18n::I18n;
@@ -12,8 +12,8 @@ use crate::widgets::{
 };
 
 use super::{
-    install_button, marketplace_capability_chips, metadata_row, plugin_split, plugin_tile,
-    search_field, send, TILE_HEIGHT,
+    install_button, marketplace_capability_chips, metadata_row, plugin_metadata_line, plugin_split,
+    plugin_tile, search_field, send, TILE_HEIGHT,
 };
 
 pub(super) fn tab(
@@ -82,14 +82,15 @@ fn marketplace_row(
         tokens,
         |ui| {
             ui.label(RichText::new(&plugin.name).strong());
-            ui.label(RichText::new(&plugin.description).color(tokens.text_secondary));
-            ui.horizontal_wrapped(|ui| {
-                ui.label(RichText::new(&plugin.version).color(tokens.text_secondary));
-                ui.label(RichText::new(&plugin.provider).color(tokens.text_secondary));
-                if plugin.installed_plugin_id.is_some() {
-                    ui.label(RichText::new(i18n.text("plugin-installed")).color(tokens.success));
-                }
-            });
+            ui.add(
+                Label::new(RichText::new(&plugin.description).color(tokens.text_secondary))
+                    .truncate(),
+            );
+            let mut metadata = vec![plugin.version.clone(), plugin.provider.clone()];
+            if plugin.installed_plugin_id.is_some() {
+                metadata.push(i18n.text("plugin-installed"));
+            }
+            plugin_metadata_line(ui, &metadata, tokens);
             if !plugin.capabilities.is_empty() {
                 marketplace_capability_chips(ui, &plugin.capabilities, tokens);
             }

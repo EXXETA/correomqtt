@@ -232,6 +232,13 @@ fn default_language_options() -> Vec<SettingsOption> {
         ("system", "System"),
         ("en_US", "English"),
         ("de_DE", "Deutsch"),
+        ("es_ES", "Español"),
+        ("sr_RS", "Srpski"),
+        ("fr_FR", "Français"),
+        ("it_IT", "Italiano"),
+        ("sk_SK", "Slovenčina"),
+        ("ka_GE", "ქართული"),
+        ("tlh", "tlhIngan Hol"),
     ])
 }
 

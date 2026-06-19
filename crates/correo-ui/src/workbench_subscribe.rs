@@ -1,15 +1,15 @@
 use correo_core::{AppCommand, AppCommandSender, AppSnapshot, SubscriptionRow};
 use correo_style::layout;
-use egui::{Button, Rect, RichText, Sense, Ui, UiBuilder};
+use egui::{Button, Id, Rect, RichText, Sense, Ui};
 use egui_phosphor::regular;
 
 use crate::{
     responsive,
     theme::{ThemeTokens, CONTROL_HEIGHT},
     widgets::{
-        checkbox, edit_pulldown, fill_remaining_tile_rows, square_icon_button_size,
-        tile_scroll_bar_rect_with_height, tile_table_hover_fill, tile_table_interactive_fill,
-        with_icon_button_padding,
+        dotted_focus_outline, edit_pulldown, fill_remaining_tile_rows, paint_focus_outline,
+        square_icon_button_size, tile_scroll_bar_rect_with_height, tile_table_hover_fill,
+        tile_table_interactive_fill, with_icon_button_padding,
     },
     workbench_connection_messages::{self, MessageOrigin},
     workbench_helpers::{
@@ -117,6 +117,7 @@ fn topic_row(
             )
         });
         let subscribe = subscribe.inner;
+        paint_focus_outline(ui, &subscribe);
         if subscribe.clicked() {
             send(commands, AppCommand::Subscribe);
         }
@@ -140,13 +141,12 @@ fn subscriptions(
 
 fn subscription_toolbar(ui: &mut Ui, snapshot: &AppSnapshot, commands: &AppCommandSender) {
     ui.horizontal(|ui| {
-        if ui
-            .add_enabled(
-                selected_subscription_count(snapshot) > 0,
-                Button::new("Unsubscribe"),
-            )
-            .clicked()
-        {
+        let unsubscribe = ui.add_enabled(
+            selected_subscription_count(snapshot) > 0,
+            Button::new("Unsubscribe"),
+        );
+        paint_focus_outline(ui, &unsubscribe);
+        if unsubscribe.clicked() {
             for subscription in snapshot
                 .workbench
                 .subscribe
@@ -160,17 +160,16 @@ fn subscription_toolbar(ui: &mut Ui, snapshot: &AppSnapshot, commands: &AppComma
                 );
             }
         }
-        if ui
-            .add_enabled(
-                snapshot.workbench.subscribe.subscriptions.len() > 1,
-                Button::new("Unsubscribe All"),
-            )
-            .clicked()
-        {
+        let unsubscribe_all = ui.add_enabled(
+            snapshot.workbench.subscribe.subscriptions.len() > 1,
+            Button::new("Unsubscribe All"),
+        );
+        paint_focus_outline(ui, &unsubscribe_all);
+        if unsubscribe_all.clicked() {
             send(commands, AppCommand::UnsubscribeAll);
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui
+            let select_none = ui
                 .add_enabled_ui(true, |ui| {
                     with_icon_button_padding(ui, |ui| {
                         ui.add_sized(
@@ -180,15 +179,15 @@ fn subscription_toolbar(ui: &mut Ui, snapshot: &AppSnapshot, commands: &AppComma
                     })
                 })
                 .inner
-                .on_hover_text("Select none")
-                .clicked()
-            {
+                .on_hover_text("Select none");
+            paint_focus_outline(ui, &select_none);
+            if select_none.clicked() {
                 send(
                     commands,
                     AppCommand::SetAllSubscriptionMessagesVisible(false),
                 );
             }
-            if ui
+            let select_all = ui
                 .add_enabled_ui(true, |ui| {
                     with_icon_button_padding(ui, |ui| {
                         ui.add_sized(
@@ -198,9 +197,9 @@ fn subscription_toolbar(ui: &mut Ui, snapshot: &AppSnapshot, commands: &AppComma
                     })
                 })
                 .inner
-                .on_hover_text("Select all")
-                .clicked()
-            {
+                .on_hover_text("Select all");
+            paint_focus_outline(ui, &select_all);
+            if select_all.clicked() {
                 send(
                     commands,
                     AppCommand::SetAllSubscriptionMessagesVisible(true),
@@ -221,6 +220,29 @@ fn subscription_table(
     let table_height = (ui.available_height() - layout::TABLE_SCROLL_BOTTOM_GAP
         + SUBSCRIPTION_TABLE_HEIGHT_ADJUST)
         .max(layout::TABLE_MIN_HEIGHT);
+    let subscriptions = &snapshot.workbench.subscribe.subscriptions;
+    let table_id = subscription_table_focus_id();
+    let table_rect = egui::Rect::from_min_size(
+        ui.available_rect_before_wrap().min,
+        egui::vec2(ui.available_width(), table_height),
+    );
+    let table_response = ui.interact(table_rect, table_id, Sense::focusable_noninteractive());
+    if table_response.has_focus() {
+        ui.memory_mut(|memory| {
+            memory.set_focus_lock_filter(
+                table_id,
+                egui::EventFilter {
+                    vertical_arrows: true,
+                    ..Default::default()
+                },
+            );
+        });
+        handle_subscription_table_keyboard(ui, subscriptions, commands);
+    }
+    if table_response.gained_focus() {
+        store_subscription_focus_index(ui, selected_subscription_index(subscriptions).unwrap_or(0));
+    }
+    let focused_index = subscription_focus_index(ui, subscriptions);
     egui::ScrollArea::vertical()
         .id_salt("subscriptions-table")
         .max_height(table_height)
@@ -229,12 +251,19 @@ fn subscription_table(
         .show_rows(
             ui,
             layout::SUBSCRIPTION_ROW_HEIGHT,
-            snapshot.workbench.subscribe.subscriptions.len(),
+            subscriptions.len(),
             |ui, row_range| {
-                let subscriptions = &snapshot.workbench.subscribe.subscriptions;
                 for index in row_range {
                     if let Some(subscription) = subscriptions.get(index) {
-                        subscription_row(ui, index, subscription, tokens, commands);
+                        subscription_row(
+                            ui,
+                            index,
+                            subscription,
+                            tokens,
+                            commands,
+                            table_response.has_focus(),
+                            focused_index,
+                        );
                     }
                 }
                 fill_remaining_tile_rows(
@@ -254,18 +283,28 @@ fn subscription_row(
     subscription: &SubscriptionRow,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    table_focused: bool,
+    focused_index: usize,
 ) {
     let rect = ui.available_rect_before_wrap();
     let (rect, response) = ui.allocate_exact_size(
         egui::vec2(rect.width(), layout::SUBSCRIPTION_ROW_HEIGHT),
-        Sense::click(),
+        Sense::CLICK,
     );
     let paint_rect = rect;
+    let row_focused = table_focused && index == focused_index;
 
-    let fill =
-        tile_table_interactive_fill(index, tokens, response.hovered(), subscription.selected);
+    let fill = tile_table_interactive_fill(
+        index,
+        tokens,
+        response.hovered() || row_focused,
+        subscription.selected,
+    );
     ui.painter()
         .rect_filled(paint_rect, egui::CornerRadius::ZERO, fill);
+    if row_focused {
+        dotted_focus_outline(ui, paint_rect);
+    }
 
     let pill_width = layout::SUBSCRIPTION_QOS_SLOT_WIDTH;
     let checkbox_side = layout::square_icon_button_side();
@@ -330,26 +369,47 @@ fn subscription_row(
         pill_text,
     );
 
-    let checkbox_clicked;
-    let mut checkbox_ui = ui.new_child(UiBuilder::new().max_rect(checkbox_rect));
-    checkbox_ui.set_clip_rect(ui.clip_rect().intersect(paint_rect));
-    {
-        let mut visible = subscription.messages_visible;
-        let checkbox_response = checkbox(&mut checkbox_ui, &mut visible, "")
-            .on_hover_text("Show messages for this subscription");
-        checkbox_clicked = checkbox_response.clicked();
-        if checkbox_response.changed() {
-            send(
-                commands,
-                AppCommand::SetSubscriptionMessagesVisible {
-                    topic_filter: subscription.topic_filter.clone(),
-                    visible,
-                },
-            );
-        }
+    let checkbox_response = ui
+        .interact(
+            checkbox_rect,
+            ui.make_persistent_id(("subscription-visible", &subscription.topic_filter)),
+            Sense::CLICK,
+        )
+        .on_hover_text("Show messages for this subscription");
+    if checkbox_response.hovered() || checkbox_response.is_pointer_button_down_on() {
+        let visuals = ui.style().interact(&checkbox_response);
+        ui.painter().rect(
+            checkbox_rect,
+            visuals.corner_radius,
+            visuals.bg_fill,
+            visuals.bg_stroke,
+            egui::StrokeKind::Inside,
+        );
+    }
+    ui.painter().text(
+        checkbox_rect.center(),
+        egui::Align2::CENTER_CENTER,
+        if subscription.messages_visible {
+            regular::CHECK_SQUARE
+        } else {
+            regular::SQUARE
+        },
+        egui::TextStyle::Button.resolve(ui.style()),
+        ui.visuals().weak_text_color(),
+    );
+    if checkbox_response.clicked() {
+        send(
+            commands,
+            AppCommand::SetSubscriptionMessagesVisible {
+                topic_filter: subscription.topic_filter.clone(),
+                visible: !subscription.messages_visible,
+            },
+        );
     }
 
-    if response.clicked() && !checkbox_clicked {
+    if response.clicked() && !checkbox_response.clicked() {
+        ui.memory_mut(|memory| memory.request_focus(subscription_table_focus_id()));
+        store_subscription_focus_index(ui, index);
         let modifiers = ui.input(|input| input.modifiers);
         send(
             commands,
@@ -360,6 +420,81 @@ fn subscription_row(
             },
         );
     }
+}
+
+fn handle_subscription_table_keyboard(
+    ui: &Ui,
+    subscriptions: &[SubscriptionRow],
+    commands: &AppCommandSender,
+) {
+    if subscriptions.is_empty() {
+        return;
+    }
+    let current = subscription_focus_index(ui, subscriptions);
+    let next = ui.input(|input| {
+        if input.key_pressed(egui::Key::ArrowDown) {
+            Some((current + 1).min(subscriptions.len() - 1))
+        } else if input.key_pressed(egui::Key::ArrowUp) {
+            Some(current.saturating_sub(1))
+        } else {
+            None
+        }
+    });
+    if let Some(next) = next {
+        store_subscription_focus_index(ui, next);
+        return;
+    }
+    if ui.input(|input| input.key_pressed(egui::Key::Enter)) {
+        if let Some(subscription) = subscriptions.get(current) {
+            send(
+                commands,
+                AppCommand::SelectSubscription {
+                    topic_filter: subscription.topic_filter.clone(),
+                    extend: false,
+                    toggle: false,
+                },
+            );
+        }
+    } else if ui.input(|input| input.key_pressed(egui::Key::Space)) {
+        if let Some(subscription) = subscriptions.get(current) {
+            send(
+                commands,
+                AppCommand::SelectSubscription {
+                    topic_filter: subscription.topic_filter.clone(),
+                    extend: false,
+                    toggle: true,
+                },
+            );
+        }
+    }
+}
+
+fn subscription_focus_index(ui: &Ui, subscriptions: &[SubscriptionRow]) -> usize {
+    let selected = selected_subscription_index(subscriptions).unwrap_or(0);
+    ui.ctx().data_mut(|data| {
+        data.get_temp::<usize>(subscription_focus_index_id())
+            .unwrap_or(selected)
+            .min(subscriptions.len().saturating_sub(1))
+    })
+}
+
+fn store_subscription_focus_index(ui: &Ui, index: usize) {
+    ui.ctx()
+        .data_mut(|data| data.insert_temp(subscription_focus_index_id(), index));
+}
+
+fn selected_subscription_index(subscriptions: &[SubscriptionRow]) -> Option<usize> {
+    subscriptions
+        .iter()
+        .position(|subscription| subscription.selected)
+}
+
+fn subscription_table_focus_id() -> Id {
+    Id::new("subscriptions-table-focus")
+}
+
+fn subscription_focus_index_id() -> Id {
+    Id::new("subscriptions-table-focused-row")
 }
 
 fn selected_subscription_count(snapshot: &AppSnapshot) -> usize {

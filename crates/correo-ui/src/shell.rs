@@ -1,6 +1,6 @@
 use correo_core::{sample_snapshot, AppCommandSender, AppSnapshot, ThemeMode, Workspace};
 use correo_style::{apply_theme, layout, tokens, ThemeTokens};
-use egui::{Button, CentralPanel, Frame, RichText, SidePanel, TopBottomPanel};
+use egui::{CentralPanel, Frame, SidePanel, TopBottomPanel};
 use egui_phosphor::regular;
 
 use crate::{
@@ -17,6 +17,7 @@ pub struct CorreoUi {
     icons_installed: bool,
     transfer_wizard: transfer_wizard::State,
     payload_highlighter: Option<PayloadHighlighter>,
+    klingon_easter_egg_clicks: u8,
 }
 
 impl CorreoUi {
@@ -33,6 +34,7 @@ impl CorreoUi {
             icons_installed: true,
             transfer_wizard: transfer_wizard::State::default(),
             payload_highlighter: None,
+            klingon_easter_egg_clicks: 0,
         }
     }
 
@@ -44,6 +46,7 @@ impl CorreoUi {
             icons_installed: false,
             transfer_wizard: transfer_wizard::State::default(),
             payload_highlighter: None,
+            klingon_easter_egg_clicks: 0,
         }
     }
 
@@ -58,6 +61,7 @@ impl CorreoUi {
             icons_installed: false,
             transfer_wizard: transfer_wizard::State::default(),
             payload_highlighter: None,
+            klingon_easter_egg_clicks: 0,
         }
     }
 
@@ -77,6 +81,7 @@ impl CorreoUi {
             icons_installed: true,
             transfer_wizard: transfer_wizard::State::default(),
             payload_highlighter,
+            klingon_easter_egg_clicks: 0,
         }
     }
 
@@ -129,12 +134,13 @@ impl CorreoUi {
             return;
         }
 
-        TopBottomPanel::top("correo-command")
+        let header = TopBottomPanel::top("correo-command")
             .exact_height(layout::HEADER_HEIGHT)
             .frame(top_frame(tokens))
             .show(context, |ui| {
-                command_bar::command_bar(ui, &snapshot, tokens, commands, i18n);
+                command_bar::command_bar_title(ui, i18n);
             });
+        let klingon_unlocked = self.klingon_language_visible(&snapshot);
 
         SidePanel::left("correo-rail")
             .exact_width(layout::RAIL_WIDTH)
@@ -157,7 +163,13 @@ impl CorreoUi {
                     .show(context, |ui| {
                         connection_launcher::panel(ui, &snapshot, tokens, commands, i18n);
                     });
-                connection_sidebar_resize_handle(context, response.response.rect, tokens);
+                connection_sidebar_resize_handle(
+                    context,
+                    response.response.rect,
+                    response.response.layer_id,
+                    tokens,
+                    i18n,
+                );
             } else {
                 SidePanel::left("correo-context")
                     .default_width(layout::SIDEBAR_DEFAULT_WIDTH)
@@ -177,6 +189,7 @@ impl CorreoUi {
             }
         }
 
+        let mut about_logo_triggered = false;
         CentralPanel::default()
             .frame(central_frame(tokens))
             .show(context, |ui| {
@@ -187,11 +200,25 @@ impl CorreoUi {
                     commands,
                     i18n,
                     self.payload_highlighter.as_ref(),
+                    klingon_unlocked,
+                    &mut about_logo_triggered,
                 );
             });
+        if about_logo_triggered {
+            self.klingon_easter_egg_clicks = self.klingon_easter_egg_clicks.saturating_add(1);
+        }
+        let klingon_unlocked = self.klingon_language_visible(&snapshot);
         if compact_connections_context {
             connection_flyout(context, &snapshot, tokens, commands, i18n);
         }
+        command_bar::command_bar_controls(
+            context,
+            header.response.rect,
+            &snapshot,
+            commands,
+            i18n,
+            klingon_unlocked,
+        );
         transfer_wizard::show(
             context,
             &snapshot,
@@ -208,6 +235,10 @@ impl CorreoUi {
             icons::install(context);
             self.icons_installed = true;
         }
+    }
+
+    fn klingon_language_visible(&self, snapshot: &AppSnapshot) -> bool {
+        self.klingon_easter_egg_clicks >= 2 || snapshot.global_settings.language == "tlh"
     }
 }
 
@@ -237,21 +268,45 @@ fn connection_sidebar_width(context: &egui::Context) -> f32 {
 fn connection_sidebar_resize_handle(
     context: &egui::Context,
     rect: egui::Rect,
+    layer_id: egui::LayerId,
     tokens: ThemeTokens,
+    i18n: &I18n,
 ) {
     let x = rect.right();
     let handle_width = layout::WORKBENCH_DIVIDER_SIZE;
+    let divider_top_inset = f32::from(layout::SIDEBAR_MARGIN_TOP);
+    let divider_bottom_inset =
+        f32::from(layout::SIDEBAR_MARGIN_BOTTOM) + f32::from(layout::CENTRAL_MARGIN);
+    let divider_rect = egui::Rect::from_min_max(
+        egui::pos2(x - handle_width * 0.5, rect.top() + divider_top_inset),
+        egui::pos2(x + handle_width * 0.5, rect.bottom() - divider_bottom_inset),
+    );
+    if widgets::flyout_mode_button_above_global_edge(
+        context,
+        "connections-flyout-mode-button",
+        divider_rect.center().x,
+        context.screen_rect().top() + layout::HEADER_HEIGHT,
+        &i18n.text("connection-use-flyout"),
+    )
+    .clicked()
+    {
+        responsive::set_forced_context_flyout_mode(context, true);
+        responsive::close_connection_flyout(context);
+        motion::finish_flyout_closed(context, "connections-context");
+    }
     egui::Area::new(egui::Id::new("connections-context-resize-handle"))
-        .order(egui::Order::Foreground)
-        .fixed_pos(egui::pos2(x - handle_width * 0.5, rect.top()))
+        .order(egui::Order::Middle)
+        .fixed_pos(divider_rect.min)
         .movable(false)
         .show(context, |ui| {
             let handle_rect = egui::Rect::from_min_size(
                 ui.min_rect().min,
-                egui::vec2(handle_width, rect.height()),
+                egui::vec2(handle_width, divider_rect.height()),
             );
+            let resize_rect =
+                egui::Rect::from_min_max(handle_rect.left_top(), handle_rect.right_bottom());
             let response = ui
-                .allocate_rect(handle_rect, egui::Sense::click_and_drag())
+                .allocate_rect(resize_rect, egui::Sense::click_and_drag())
                 .on_hover_cursor(egui::CursorIcon::ResizeHorizontal);
             if response.dragged() {
                 if let Some(pointer) = response.interact_pointer_pos() {
@@ -266,15 +321,13 @@ fn connection_sidebar_resize_handle(
             }
         });
 
-    context
-        .layer_painter(egui::LayerId::new(
-            egui::Order::Foreground,
-            egui::Id::new("connections-context-resize-line"),
-        ))
-        .line_segment(
-            [egui::pos2(x, rect.top()), egui::pos2(x, rect.bottom())],
-            egui::Stroke::new(1.0, tokens.border),
-        );
+    context.layer_painter(layer_id).line_segment(
+        [
+            egui::pos2(x, rect.top() + divider_top_inset),
+            egui::pos2(x, rect.bottom() - divider_bottom_inset),
+        ],
+        egui::Stroke::new(1.0, tokens.border),
+    );
 }
 
 fn connection_sidebar_width_id() -> egui::Id {
@@ -288,14 +341,6 @@ fn connection_flyout(
     commands: &AppCommandSender,
     i18n: &I18n,
 ) {
-    let open = responsive::connection_flyout_open(context);
-    let Some(progress) = motion::flyout_progress(context, "connections-context", open) else {
-        return;
-    };
-    if open && context.input(|input| input.key_pressed(egui::Key::Escape)) {
-        responsive::close_connection_flyout(context);
-    }
-
     let screen = context.screen_rect();
     let overlay_rect = egui::Rect::from_min_max(
         egui::pos2(
@@ -306,6 +351,17 @@ fn connection_flyout(
     );
     if overlay_rect.width() <= 0.0 || overlay_rect.height() <= 0.0 {
         return;
+    }
+
+    let open = responsive::connection_flyout_open(context);
+    if !open {
+        connection_flyout_collapsed_handle(context, overlay_rect, i18n);
+    }
+    let Some(progress) = motion::flyout_progress(context, "connections-context", open) else {
+        return;
+    };
+    if open && context.input(|input| input.key_pressed(egui::Key::Escape)) {
+        responsive::close_connection_flyout(context);
     }
 
     egui::Area::new(egui::Id::new("connections-context-flyout"))
@@ -320,8 +376,16 @@ fn connection_flyout(
                 motion::scrim_color(crate::modal_style::SCRIM_ALPHA, progress),
             );
 
-            let panel_width = layout::CONNECTION_FLYOUT_WIDTH.min(overlay_rect.width());
-            let panel_rect = motion::flyout_panel_rect(scrim_rect, panel_width, progress);
+            let handle_rect = egui::Rect::from_min_size(
+                scrim_rect.left_top(),
+                egui::vec2(widgets::FLYOUT_HANDLE_WIDTH, scrim_rect.height()),
+            );
+            let panel_area = egui::Rect::from_min_max(
+                egui::pos2(handle_rect.right(), scrim_rect.top()),
+                scrim_rect.right_bottom(),
+            );
+            let panel_width = layout::CONNECTION_FLYOUT_WIDTH.min(panel_area.width());
+            let panel_rect = motion::flyout_panel_rect(panel_area, panel_width, progress);
             ui.painter()
                 .rect_filled(panel_rect, egui::CornerRadius::ZERO, tokens.window_bg);
 
@@ -344,7 +408,7 @@ fn connection_flyout(
             panel_ui.multiply_opacity(motion::content_opacity(progress));
             panel_ui.set_clip_rect(content_rect);
             connection_launcher::panel(&mut panel_ui, snapshot, tokens, commands, i18n);
-            connection_flyout_restore_button(ui, panel_rect);
+            connection_flyout_expanded_controls(ui, handle_rect, panel_rect, i18n);
 
             let clicked_outside = open
                 && ui.ctx().input(|input| {
@@ -360,37 +424,68 @@ fn connection_flyout(
         });
 }
 
-fn connection_flyout_restore_button(ui: &mut egui::Ui, panel_rect: egui::Rect) {
+fn connection_flyout_collapsed_handle(
+    context: &egui::Context,
+    overlay_rect: egui::Rect,
+    i18n: &I18n,
+) {
+    egui::Area::new(egui::Id::new("connections-context-flyout-collapsed-handle"))
+        .order(egui::Order::Foreground)
+        .fixed_pos(overlay_rect.min)
+        .movable(false)
+        .show(context, |ui| {
+            let handle_rect = egui::Rect::from_min_size(
+                ui.min_rect().min,
+                egui::vec2(widgets::FLYOUT_HANDLE_WIDTH, overlay_rect.height()),
+            );
+            if widgets::flyout_handle(
+                ui,
+                handle_rect,
+                "connections-flyout-open-handle",
+                regular::CARET_RIGHT,
+                &i18n.text("connection-show-list"),
+            )
+            .clicked()
+            {
+                responsive::open_connection_flyout(ui.ctx());
+            }
+        });
+}
+
+fn connection_flyout_expanded_controls(
+    ui: &mut egui::Ui,
+    handle_rect: egui::Rect,
+    panel_rect: egui::Rect,
+    i18n: &I18n,
+) {
+    if widgets::flyout_handle(
+        ui,
+        handle_rect,
+        "connections-flyout-collapse-handle",
+        regular::CARET_LEFT,
+        &i18n.text("connection-collapse-flyout"),
+    )
+    .clicked()
+    {
+        responsive::close_connection_flyout(ui.ctx());
+    }
+
     if !(responsive::forced_connection_flyout_mode(ui.ctx())
         && !responsive::connections_context_requires_flyout(ui.ctx()))
     {
         return;
     }
 
-    let button_rect = egui::Rect::from_min_size(
-        egui::pos2(
-            panel_rect.right() + layout::TOOLBAR_GAP,
-            panel_rect.top() + f32::from(layout::SIDEBAR_MARGIN_TOP),
-        ),
-        egui::Vec2::from(layout::square_icon_button_size()),
-    );
-    let mut button_ui = ui.new_child(egui::UiBuilder::new().max_rect(button_rect).layout(
-        egui::Layout::centered_and_justified(egui::Direction::LeftToRight),
-    ));
-    if button_ui
-        .scope(|ui| {
-            widgets::with_icon_button_padding(ui, |ui| {
-                ui.add_sized(
-                    layout::square_icon_button_size(),
-                    Button::new(RichText::new(regular::SIDEBAR_SIMPLE).size(15.0)),
-                )
-            })
-        })
-        .inner
-        .on_hover_text("Use connections sidebar")
-        .clicked()
+    if widgets::flyout_restore_button_above_edge(
+        ui,
+        "connections-flyout-restore-button",
+        panel_rect.right(),
+        panel_rect.top(),
+        &i18n.text("connection-use-sidebar"),
+    )
+    .clicked()
     {
-        responsive::set_forced_connection_flyout_mode(ui.ctx(), false);
+        responsive::set_forced_context_flyout_mode(ui.ctx(), false);
         responsive::close_connection_flyout(ui.ctx());
     }
 }

@@ -15,8 +15,8 @@ use crate::theme::{ThemeTokens, CONTROL_HEIGHT};
 use crate::widgets::{
     clearable_search_edit, fill_remaining_tile_rows, padded_text_edit, square_icon_button_size,
     tile_list_content_width, tile_scroll_bar_rect_with_height, tile_table_fill,
-    tile_table_hover_fill, tile_table_selected_fill, with_icon_button_padding, TILE_GAP,
-    TWO_LINE_TILE_HEIGHT,
+    tile_table_hover_fill, tile_table_selected_fill, with_icon_button_padding, FLYOUT_HANDLE_WIDTH,
+    TILE_GAP, TWO_LINE_TILE_HEIGHT,
 };
 
 #[path = "scripts/dialogs.rs"]
@@ -28,18 +28,23 @@ mod layout;
 #[path = "scripts/log.rs"]
 mod log;
 
+const SCRIPT_CONNECTION_COMBO_MAX_WIDTH: f32 = 220.0;
+const SCRIPT_CONNECTION_COMBO_MIN_WIDTH: f32 = 96.0;
+const SCRIPT_RUN_BUTTON_WIDTH: f32 = 128.0;
+
 pub fn sidebar(
     ui: &mut Ui,
     scripts: &ScriptSurfaceSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     let mut filter = scripts.script_filter.clone();
     if clearable_search_edit(
         ui,
         None,
         &mut filter,
-        "Search scripts...",
+        i18n.text("script-search"),
         tile_list_content_width(ui),
     )
     .changed()
@@ -50,7 +55,7 @@ pub fn sidebar(
     if ui
         .add_sized(
             [ui.available_width(), CONTROL_HEIGHT],
-            Button::new("+ New Script"),
+            Button::new(format!("+ {}", i18n.text("script-new"))),
         )
         .clicked()
     {
@@ -58,7 +63,7 @@ pub fn sidebar(
     }
     ui.separator();
     let list_height = ui.available_height().max(style_layout::TABLE_MIN_HEIGHT);
-    script_list(ui, scripts, tokens, commands, list_height);
+    script_list(ui, scripts, tokens, commands, i18n, list_height);
 }
 
 pub fn show(
@@ -69,16 +74,7 @@ pub fn show(
     i18n: &I18n,
 ) {
     if responsive::scripting_context_is_compact(ui.ctx()) {
-        layout::right_panes(
-            ui,
-            tokens,
-            |ui| {
-                toolbar(ui, snapshot, commands);
-                ui.add_space(6.0);
-                editor(ui, &snapshot.scripts, commands);
-            },
-            |ui| log::log_view(ui, &snapshot.scripts, tokens, commands),
-        );
+        compact_right_panes(ui, snapshot, tokens, commands, i18n);
         scripting_flyout(ui.ctx(), snapshot, tokens, commands, i18n);
     } else {
         layout::four_pane(
@@ -86,17 +82,49 @@ pub fn show(
             tokens,
             |ui| script_browser(ui, &snapshot.scripts, tokens, commands, i18n),
             |ui| {
-                toolbar(ui, snapshot, commands);
+                toolbar(ui, snapshot, commands, i18n);
                 ui.add_space(6.0);
-                editor(ui, &snapshot.scripts, commands);
+                editor(ui, &snapshot.scripts, commands, i18n);
             },
-            |ui| executions(ui, &snapshot.scripts, tokens, commands),
-            |ui| log::log_view(ui, &snapshot.scripts, tokens, commands),
+            |ui| executions(ui, &snapshot.scripts, tokens, commands, i18n),
+            |ui| log::log_view(ui, &snapshot.scripts, tokens, commands, i18n),
+            |ui, divider| scripting_flyout_mode_button(ui, divider, i18n),
         );
     }
-    dialogs::create_dialog(ui, &snapshot.scripts, tokens, commands);
-    rename_dialog(ui, &snapshot.scripts, tokens, commands);
-    delete_dialog(ui, &snapshot.scripts, tokens, commands);
+    dialogs::create_dialog(ui, &snapshot.scripts, tokens, commands, i18n);
+    rename_dialog(ui, &snapshot.scripts, tokens, commands, i18n);
+    delete_dialog(ui, &snapshot.scripts, tokens, commands, i18n);
+}
+
+fn compact_right_panes(
+    ui: &mut Ui,
+    snapshot: &AppSnapshot,
+    tokens: ThemeTokens,
+    commands: &AppCommandSender,
+    i18n: &I18n,
+) {
+    let available = ui.available_rect_before_wrap();
+    ui.allocate_rect(available, Sense::hover());
+    let rect = egui::Rect::from_min_max(
+        egui::pos2(available.left() + FLYOUT_HANDLE_WIDTH, available.top()),
+        available.right_bottom(),
+    );
+    let mut child = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(rect)
+            .layout(egui::Layout::top_down(egui::Align::Min)),
+    );
+    child.set_clip_rect(rect);
+    layout::right_panes(
+        &mut child,
+        tokens,
+        |ui| {
+            toolbar(ui, snapshot, commands, i18n);
+            ui.add_space(6.0);
+            editor(ui, &snapshot.scripts, commands, i18n);
+        },
+        |ui| log::log_view(ui, &snapshot.scripts, tokens, commands, i18n),
+    );
 }
 
 fn script_browser(
@@ -110,19 +138,13 @@ fn script_browser(
         egui::vec2(tile_list_content_width(ui), CONTROL_HEIGHT),
         egui::Layout::left_to_right(egui::Align::Center),
         |ui| {
-            if !responsive::forced_scripting_flyout_mode(ui.ctx())
-                && !responsive::scripting_flyout_open(ui.ctx())
-                && header_icon_button(ui, regular::LIST)
-                    .on_hover_text("Use scripting flyout")
-                    .clicked()
-            {
-                responsive::set_forced_scripting_flyout_mode(ui.ctx(), true);
-                responsive::open_scripting_flyout(ui.ctx());
-            }
             ui.heading(i18n.workspace_label(correo_core::Workspace::Scripts));
             ui.add_space(8.0);
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if header_add_button(ui).on_hover_text("New Script").clicked() {
+                if header_add_button(ui)
+                    .on_hover_text(i18n.text("script-new"))
+                    .clicked()
+                {
                     send(commands, AppCommand::RequestCreateScript);
                 }
             });
@@ -133,7 +155,7 @@ fn script_browser(
         ui,
         None,
         &mut filter,
-        "Search scripts...",
+        i18n.text("script-search"),
         tile_list_content_width(ui),
     )
     .changed()
@@ -150,7 +172,7 @@ fn script_browser(
         .show(ui, |ui| {
             ui.spacing_mut().item_spacing.y = 0.0;
             ui.set_width(tile_list_content_width(ui));
-            script_list(ui, scripts, tokens, commands, list_height);
+            script_list(ui, scripts, tokens, commands, i18n, list_height);
         });
 }
 
@@ -172,6 +194,7 @@ fn script_list(
     scripts: &ScriptSurfaceSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
     list_height: f32,
 ) {
     let filtered_scripts = scripts.filtered_scripts();
@@ -210,11 +233,14 @@ fn script_list(
             rect,
             1,
             x,
-            &format!("{} runs", script.execution_count),
+            &i18n.text_with_args(
+                "script-runs",
+                &[("count", script.execution_count.to_string())],
+            ),
             tokens.text_secondary,
         );
         paint_segment(ui, rect, 1, x, &script.relative_path, tokens.text_secondary);
-        response.context_menu(|ui| script_context_menu(ui, scripts, script, commands));
+        response.context_menu(|ui| script_context_menu(ui, scripts, script, commands, i18n));
         if response.clicked() {
             send(commands, AppCommand::SelectScript(script.name.clone()));
             close_scripting_flyout_if_open(ui);
@@ -229,11 +255,12 @@ fn script_context_menu(
     scripts: &ScriptSurfaceSnapshot,
     script: &ScriptRow,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     if ui
         .add_enabled(
             !scripts.running,
-            Button::new(menu_label(regular::PLAY, "Run Script")),
+            Button::new(menu_label(regular::PLAY, &i18n.text("script-run"))),
         )
         .clicked()
     {
@@ -243,14 +270,23 @@ fn script_context_menu(
     }
     ui.separator();
     if ui
-        .button(menu_label(regular::PENCIL_SIMPLE, "Rename"))
+        .button(menu_label(
+            regular::PENCIL_SIMPLE,
+            &i18n.text("script-rename"),
+        ))
         .clicked()
     {
         send(commands, AppCommand::SelectScript(script.name.clone()));
         send(commands, AppCommand::RequestRenameScript);
         ui.close_menu();
     }
-    if ui.button(menu_label(regular::TRASH, "Delete...")).clicked() {
+    if ui
+        .button(menu_label(
+            regular::TRASH,
+            &format!("{}...", i18n.text("common-delete")),
+        ))
+        .clicked()
+    {
         send(commands, AppCommand::SelectScript(script.name.clone()));
         send(commands, AppCommand::RequestDeleteScript);
         ui.close_menu();
@@ -295,26 +331,32 @@ fn paint_segment(
     x + galley.size().x + 8.0
 }
 
-fn toolbar(ui: &mut Ui, snapshot: &AppSnapshot, commands: &AppCommandSender) {
+fn toolbar(ui: &mut Ui, snapshot: &AppSnapshot, commands: &AppCommandSender, i18n: &I18n) {
     let scripts = &snapshot.scripts;
     let has_script = scripts.selected_script().is_some();
     ui.allocate_ui_with_layout(
         egui::vec2(ui.available_width(), CONTROL_HEIGHT),
         egui::Layout::left_to_right(egui::Align::Center),
         |ui| {
-            if responsive::scripting_context_is_compact(ui.ctx())
-                && script_icon_button(ui, regular::LIST, true, "Show scripts and executions")
-                    .clicked()
-            {
-                responsive::open_scripting_flyout(ui.ctx());
-            }
-            ui.heading(script_title(scripts));
-            if script_icon_button(ui, regular::PENCIL_SIMPLE_LINE, has_script, "Rename script")
-                .clicked()
+            ui.heading(script_title(scripts, i18n));
+            if script_icon_button(
+                ui,
+                regular::PENCIL_SIMPLE_LINE,
+                has_script,
+                &i18n.text("script-rename-tooltip"),
+            )
+            .clicked()
             {
                 send(commands, AppCommand::RequestRenameScript);
             }
-            if script_icon_button(ui, regular::TRASH, has_script, "Delete script").clicked() {
+            if script_icon_button(
+                ui,
+                regular::TRASH,
+                has_script,
+                &i18n.text("script-delete-tooltip"),
+            )
+            .clicked()
+            {
                 send(commands, AppCommand::RequestDeleteScript);
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -324,7 +366,13 @@ fn toolbar(ui: &mut Ui, snapshot: &AppSnapshot, commands: &AppCommandSender) {
     );
     ui.add_space(2.0);
     ui.horizontal(|ui| {
-        if script_icon_button(ui, regular::FLOPPY_DISK, scripts.can_save(), "Save script").clicked()
+        if script_icon_button(
+            ui,
+            regular::FLOPPY_DISK,
+            scripts.can_save(),
+            &i18n.text("script-save"),
+        )
+        .clicked()
         {
             send(commands, AppCommand::SaveScript);
         }
@@ -332,26 +380,53 @@ fn toolbar(ui: &mut Ui, snapshot: &AppSnapshot, commands: &AppCommandSender) {
             ui,
             regular::ARROW_U_DOWN_LEFT,
             scripts.selected_script_is_dirty(),
-            "Discard script changes",
+            &i18n.text("script-discard"),
         )
         .clicked()
         {
             send(commands, AppCommand::DiscardScriptChanges);
         }
+        let run_toolbar_width = ui.available_width();
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            let gap = ui.spacing().item_spacing.x;
+            let run_icon_only = run_toolbar_width < 460.0;
+            let run_width = if run_icon_only {
+                square_icon_button_size()[0]
+            } else {
+                SCRIPT_RUN_BUTTON_WIDTH
+            };
+            let run_on_width = if run_toolbar_width < 330.0 {
+                0.0
+            } else {
+                text_width(ui, &i18n.text("script-run-on"))
+            };
+            let combo_width = (run_toolbar_width - run_width - run_on_width - gap * 3.0).clamp(
+                SCRIPT_CONNECTION_COMBO_MIN_WIDTH,
+                SCRIPT_CONNECTION_COMBO_MAX_WIDTH,
+            );
+            let selected_connection = ellipsize_to_width(
+                ui,
+                &scripts.selected_connection,
+                (combo_width - 28.0).max(24.0),
+            );
             if ui
                 .add_enabled(
                     scripts.can_run(),
-                    Button::new(format!("{}  Run Script", regular::PLAY)),
+                    Button::new(if run_icon_only {
+                        regular::PLAY.to_owned()
+                    } else {
+                        format!("{}  {}", regular::PLAY, i18n.text("script-run"))
+                    })
+                    .min_size(egui::vec2(run_width, CONTROL_HEIGHT)),
                 )
-                .on_hover_text("Queue script execution through core")
+                .on_hover_text(i18n.text("script-run-tooltip"))
                 .clicked()
             {
                 send(commands, AppCommand::RunScript);
             }
             ComboBox::from_id_salt("script-run-connection")
-                .selected_text(&scripts.selected_connection)
-                .width(220.0)
+                .selected_text(selected_connection)
+                .width(combo_width)
                 .show_ui(ui, |ui| {
                     for connection in &snapshot.connections {
                         let id = connection.id.to_string();
@@ -362,14 +437,45 @@ fn toolbar(ui: &mut Ui, snapshot: &AppSnapshot, commands: &AppCommandSender) {
                         }
                     }
                 });
-            ui.label("Run on");
+            if run_on_width > 0.0 {
+                ui.label(i18n.text("script-run-on"));
+            }
         });
     });
 }
 
-fn script_title(scripts: &ScriptSurfaceSnapshot) -> String {
+fn text_width(ui: &Ui, text: &str) -> f32 {
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    ui.painter()
+        .layout_no_wrap(text.to_owned(), font, ui.visuals().text_color())
+        .size()
+        .x
+}
+
+fn ellipsize_to_width(ui: &Ui, text: &str, max_width: f32) -> String {
+    if text_width(ui, text) <= max_width {
+        return text.to_owned();
+    }
+
+    let ellipsis = "...";
+    let mut output = String::new();
+    for ch in text.chars() {
+        let candidate = format!("{output}{ch}{ellipsis}");
+        if text_width(ui, &candidate) > max_width {
+            break;
+        }
+        output.push(ch);
+    }
+    if output.is_empty() {
+        ellipsis.to_owned()
+    } else {
+        format!("{output}{ellipsis}")
+    }
+}
+
+fn script_title(scripts: &ScriptSurfaceSnapshot, i18n: &I18n) -> String {
     if scripts.selected_script.is_empty() {
-        "No script selected".to_owned()
+        i18n.text("script-none-selected")
     } else {
         scripts.selected_script.clone()
     }
@@ -389,7 +495,7 @@ fn script_icon_button(ui: &mut Ui, icon: &str, enabled: bool, hover_text: &str) 
     response.on_hover_text(hover_text)
 }
 
-fn editor(ui: &mut Ui, scripts: &ScriptSurfaceSnapshot, commands: &AppCommandSender) {
+fn editor(ui: &mut Ui, scripts: &ScriptSurfaceSnapshot, commands: &AppCommandSender, i18n: &I18n) {
     if let Some(script) = scripts.selected_script() {
         let mut source = script.source.clone();
         let editor_height = ui.available_height().max(180.0);
@@ -407,7 +513,7 @@ fn editor(ui: &mut Ui, scripts: &ScriptSurfaceSnapshot, commands: &AppCommandSen
             send(commands, AppCommand::UpdateScriptSource(source));
         }
     } else {
-        ui.label("Select or create a script.");
+        ui.label(i18n.text("script-select-or-create"));
     }
 }
 
@@ -416,11 +522,12 @@ fn executions(
     scripts: &ScriptSurfaceSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     ui.horizontal(|ui| {
-        ui.heading("Executions");
+        ui.heading(i18n.text("script-executions"));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.button("Clear execution log").clicked() {
+            if ui.button(i18n.text("script-clear-execution-log")).clicked() {
                 send(commands, AppCommand::ClearFinishedScriptExecutions);
             }
         });
@@ -463,7 +570,7 @@ fn executions(
                 paint_segment(ui, rect, 0, x, &execution.duration, tokens.text_secondary);
                 let timestamp = crate::time_format::local_date_time(&execution.timestamp);
                 paint_line(ui, rect, 1, &timestamp, tokens.text_secondary);
-                response.context_menu(|ui| execution_context_menu(ui, execution, commands));
+                response.context_menu(|ui| execution_context_menu(ui, execution, commands, i18n));
                 if response.clicked() {
                     send(
                         commands,
@@ -487,11 +594,12 @@ fn execution_context_menu(
     ui: &mut Ui,
     execution: &ScriptExecutionRow,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     if ui
         .add_enabled(
             !execution.status.is_terminal(),
-            Button::new(menu_label(regular::STOP, "Stop")),
+            Button::new(menu_label(regular::STOP, &i18n.text("script-stop-short"))),
         )
         .clicked()
     {
@@ -502,7 +610,13 @@ fn execution_context_menu(
         send(commands, AppCommand::CancelScript);
         ui.close_menu();
     }
-    if ui.button(menu_label(regular::TRASH, "Remove")).clicked() {
+    if ui
+        .button(menu_label(
+            regular::TRASH,
+            &i18n.text("script-remove-execution"),
+        ))
+        .clicked()
+    {
         send(
             commands,
             AppCommand::SelectScriptExecution(execution.execution_id.clone()),
@@ -515,7 +629,10 @@ fn execution_context_menu(
     }
     ui.separator();
     if ui
-        .button(menu_label(regular::BROOM, "Clear execution log"))
+        .button(menu_label(
+            regular::BROOM,
+            &i18n.text("script-clear-execution-log"),
+        ))
         .clicked()
     {
         send(commands, AppCommand::ClearFinishedScriptExecutions);
@@ -530,14 +647,6 @@ fn scripting_flyout(
     commands: &AppCommandSender,
     i18n: &I18n,
 ) {
-    let open = responsive::scripting_flyout_open(ctx);
-    let Some(progress) = motion::flyout_progress(ctx, "scripting-context", open) else {
-        return;
-    };
-    if open && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
-        responsive::close_scripting_flyout(ctx);
-    }
-
     let screen = ctx.screen_rect();
     let overlay_rect = egui::Rect::from_min_max(
         egui::pos2(
@@ -548,6 +657,17 @@ fn scripting_flyout(
     );
     if overlay_rect.width() <= 0.0 || overlay_rect.height() <= 0.0 {
         return;
+    }
+
+    let open = responsive::scripting_flyout_open(ctx);
+    if !open {
+        scripting_flyout_collapsed_handle(ctx, overlay_rect, i18n);
+    }
+    let Some(progress) = motion::flyout_progress(ctx, "scripting-context", open) else {
+        return;
+    };
+    if open && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+        responsive::close_scripting_flyout(ctx);
     }
 
     egui::Area::new(egui::Id::new("scripting-context-flyout"))
@@ -562,8 +682,16 @@ fn scripting_flyout(
                 motion::scrim_color(modal_style::SCRIM_ALPHA, progress),
             );
 
-            let panel_width = style_layout::SCRIPTING_FLYOUT_WIDTH.min(overlay_rect.width());
-            let panel_rect = motion::flyout_panel_rect(scrim_rect, panel_width, progress);
+            let handle_rect = egui::Rect::from_min_size(
+                scrim_rect.left_top(),
+                egui::vec2(FLYOUT_HANDLE_WIDTH, scrim_rect.height()),
+            );
+            let panel_area = egui::Rect::from_min_max(
+                egui::pos2(handle_rect.right(), scrim_rect.top()),
+                scrim_rect.right_bottom(),
+            );
+            let panel_width = style_layout::SCRIPTING_FLYOUT_WIDTH.min(panel_area.width());
+            let panel_rect = motion::flyout_panel_rect(panel_area, panel_width, progress);
             ui.painter()
                 .rect_filled(panel_rect, egui::CornerRadius::ZERO, tokens.window_bg);
 
@@ -589,9 +717,9 @@ fn scripting_flyout(
                 &mut panel_ui,
                 tokens,
                 |ui| script_browser(ui, &snapshot.scripts, tokens, commands, i18n),
-                |ui| executions(ui, &snapshot.scripts, tokens, commands),
+                |ui| executions(ui, &snapshot.scripts, tokens, commands, i18n),
             );
-            scripting_flyout_restore_button(ui, panel_rect);
+            scripting_flyout_expanded_controls(ui, handle_rect, panel_rect, i18n);
 
             let clicked_outside = open
                 && ui.ctx().input(|input| {
@@ -607,37 +735,79 @@ fn scripting_flyout(
         });
 }
 
-fn scripting_flyout_restore_button(ui: &mut Ui, panel_rect: egui::Rect) {
+fn scripting_flyout_collapsed_handle(ctx: &egui::Context, overlay_rect: egui::Rect, i18n: &I18n) {
+    egui::Area::new(egui::Id::new("scripting-context-flyout-collapsed-handle"))
+        .order(egui::Order::Foreground)
+        .fixed_pos(overlay_rect.min)
+        .movable(false)
+        .show(ctx, |ui| {
+            let handle_rect = egui::Rect::from_min_size(
+                ui.min_rect().min,
+                egui::vec2(FLYOUT_HANDLE_WIDTH, overlay_rect.height()),
+            );
+            if crate::widgets::flyout_handle(
+                ui,
+                handle_rect,
+                "scripting-flyout-open-handle",
+                regular::CARET_RIGHT,
+                &i18n.text("script-show-list"),
+            )
+            .clicked()
+            {
+                responsive::open_scripting_flyout(ui.ctx());
+            }
+        });
+}
+
+fn scripting_flyout_mode_button(ui: &mut Ui, divider: egui::Rect, i18n: &I18n) {
+    if crate::widgets::flyout_mode_button_above_divider(
+        ui,
+        "scripting-flyout-mode-button",
+        divider,
+        &i18n.text("script-use-flyout"),
+    )
+    .clicked()
+    {
+        responsive::set_forced_context_flyout_mode(ui.ctx(), true);
+        responsive::close_scripting_flyout(ui.ctx());
+        motion::finish_flyout_closed(ui.ctx(), "scripting-context");
+    }
+}
+
+fn scripting_flyout_expanded_controls(
+    ui: &mut Ui,
+    handle_rect: egui::Rect,
+    panel_rect: egui::Rect,
+    i18n: &I18n,
+) {
+    if crate::widgets::flyout_handle(
+        ui,
+        handle_rect,
+        "scripting-flyout-collapse-handle",
+        regular::CARET_LEFT,
+        &i18n.text("script-collapse-flyout"),
+    )
+    .clicked()
+    {
+        responsive::close_scripting_flyout(ui.ctx());
+    }
+
     if !(responsive::forced_scripting_flyout_mode(ui.ctx())
         && !responsive::scripting_context_requires_flyout(ui.ctx()))
     {
         return;
     }
 
-    let button_rect = egui::Rect::from_min_size(
-        egui::pos2(
-            panel_rect.right() + style_layout::TOOLBAR_GAP,
-            panel_rect.top() + f32::from(style_layout::SIDEBAR_MARGIN_TOP),
-        ),
-        egui::Vec2::from(style_layout::square_icon_button_size()),
-    );
-    let mut button_ui = ui.new_child(egui::UiBuilder::new().max_rect(button_rect).layout(
-        egui::Layout::centered_and_justified(egui::Direction::LeftToRight),
-    ));
-    if button_ui
-        .scope(|ui| {
-            with_icon_button_padding(ui, |ui| {
-                ui.add_sized(
-                    style_layout::square_icon_button_size(),
-                    Button::new(RichText::new(regular::SIDEBAR_SIMPLE).size(15.0)),
-                )
-            })
-        })
-        .inner
-        .on_hover_text("Use scripting lists")
-        .clicked()
+    if crate::widgets::flyout_restore_button_above_edge(
+        ui,
+        "scripting-flyout-restore-button",
+        panel_rect.right(),
+        panel_rect.top(),
+        &i18n.text("script-use-lists"),
+    )
+    .clicked()
     {
-        responsive::set_forced_scripting_flyout_mode(ui.ctx(), false);
+        responsive::set_forced_context_flyout_mode(ui.ctx(), false);
         responsive::close_scripting_flyout(ui.ctx());
     }
 }
@@ -657,6 +827,7 @@ fn rename_dialog(
     scripts: &ScriptSurfaceSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     if !scripts.rename_dialog_open {
         return;
@@ -664,7 +835,7 @@ fn rename_dialog(
     let response = crate::modal_style::style(Modal::new(Id::new("rename-script-modal")), tokens)
         .show(ui.ctx(), |ui| {
             ui.set_width(360.0);
-            ui.heading("Rename Script");
+            ui.heading(i18n.text("script-rename-tooltip"));
             let mut name = scripts.rename_script_name.clone();
             if ui
                 .add_sized(
@@ -679,10 +850,10 @@ fn rename_dialog(
                 egui::vec2(ui.available_width(), CONTROL_HEIGHT),
                 egui::Layout::right_to_left(egui::Align::Center),
                 |ui| {
-                    if ui.button("Rename").clicked() {
+                    if ui.button(i18n.text("script-rename")).clicked() {
                         send(commands, AppCommand::ConfirmRenameScript);
                     }
-                    if ui.button("Cancel").clicked() {
+                    if ui.button(i18n.text("common-cancel")).clicked() {
                         send(commands, AppCommand::CancelRenameScript);
                     }
                 },
@@ -698,6 +869,7 @@ fn delete_dialog(
     scripts: &ScriptSurfaceSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     if !scripts.delete_confirmation_open {
         return;
@@ -705,13 +877,16 @@ fn delete_dialog(
     let response = crate::modal_style::style(Modal::new(Id::new("delete-script-modal")), tokens)
         .show(ui.ctx(), |ui| {
             ui.set_width(360.0);
-            ui.heading("Delete Script");
-            ui.label(format!("Delete {}?", scripts.selected_script));
+            ui.heading(i18n.text("script-delete"));
+            ui.label(i18n.text_with_args(
+                "script-delete-detail",
+                &[("name", scripts.selected_script.clone())],
+            ));
             ui.horizontal(|ui| {
-                if ui.button("Cancel").clicked() {
+                if ui.button(i18n.text("common-cancel")).clicked() {
                     send(commands, AppCommand::CancelDeleteScript);
                 }
-                if ui.button("Delete").clicked() {
+                if ui.button(i18n.text("common-delete")).clicked() {
                     send(commands, AppCommand::ConfirmDeleteScript);
                 }
             });

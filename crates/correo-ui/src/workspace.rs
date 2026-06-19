@@ -2,8 +2,9 @@ use correo_core::{AppCommand, AppCommandSender, AppSnapshot, ConnectionSurface, 
 use egui::{RichText, Ui, UiBuilder};
 
 use crate::{
-    about, connection_plugins, connection_settings, diagnostics, i18n::I18n, plugins, scripts,
-    settings, theme::ThemeTokens, workbench, PayloadHighlighter,
+    about, connection_plugins, connection_settings, diagnostics, i18n::I18n, plugins, responsive,
+    scripts, settings, theme::ThemeTokens, widgets, widgets::paint_focus_outline, workbench,
+    PayloadHighlighter,
 };
 
 const VIEW_PADDING: f32 = 10.0;
@@ -21,7 +22,7 @@ pub fn sidebar(
     ui.separator();
     match workspace {
         Workspace::ImportExport => transfer_sidebar(ui, snapshot, tokens, commands, i18n),
-        Workspace::Scripts => scripts::sidebar(ui, &snapshot.scripts, tokens, commands),
+        Workspace::Scripts => scripts::sidebar(ui, &snapshot.scripts, tokens, commands, i18n),
         Workspace::Plugins => {}
         Workspace::Diagnostics => {}
         Workspace::Settings => {}
@@ -37,11 +38,21 @@ pub fn show(
     commands: &AppCommandSender,
     i18n: &I18n,
     payload_highlighter: Option<&PayloadHighlighter>,
+    klingon_unlocked: bool,
+    about_logo_triggered: &mut bool,
 ) {
     match snapshot.active_workspace {
-        Workspace::Connections => padded_view(ui, |ui| {
-            connections(ui, snapshot, tokens, commands, i18n, payload_highlighter);
-        }),
+        Workspace::Connections => padded_view_with_left_inset(
+            ui,
+            if responsive::connections_context_is_compact(ui.ctx(), snapshot.active_workspace) {
+                widgets::FLYOUT_HANDLE_WIDTH
+            } else {
+                0.0
+            },
+            |ui| {
+                connections(ui, snapshot, tokens, commands, i18n, payload_highlighter);
+            },
+        ),
         Workspace::ImportExport => {
             padded_view(ui, |ui| {
                 workspace_title(ui, i18n.workspace_label(Workspace::ImportExport));
@@ -49,9 +60,17 @@ pub fn show(
             });
         }
         Workspace::Scripts => scripts::show(ui, snapshot, tokens, commands, i18n),
-        Workspace::Plugins => padded_view(ui, |ui| {
-            plugins::show(ui, snapshot, tokens, commands, i18n);
-        }),
+        Workspace::Plugins => padded_view_with_left_inset(
+            ui,
+            if responsive::plugin_context_is_compact(ui.ctx()) {
+                widgets::FLYOUT_HANDLE_WIDTH
+            } else {
+                0.0
+            },
+            |ui| {
+                plugins::show(ui, snapshot, tokens, commands, i18n);
+            },
+        ),
         Workspace::Diagnostics => {
             padded_view(ui, |ui| {
                 workspace_title(ui, i18n.workspace_label(Workspace::Diagnostics));
@@ -59,23 +78,31 @@ pub fn show(
             });
         }
         Workspace::Settings => padded_view(ui, |ui| {
-            settings::show(ui, snapshot, tokens, commands, i18n);
+            settings::show(ui, snapshot, tokens, commands, i18n, klingon_unlocked);
         }),
         Workspace::About => {
             padded_view(ui, |ui| {
                 workspace_title(ui, i18n.workspace_label(Workspace::About));
-                about::show(ui, tokens, i18n);
+                *about_logo_triggered |= about::show(ui, tokens, i18n);
             });
         }
     }
 }
 
 fn padded_view(ui: &mut Ui, add_contents: impl FnOnce(&mut Ui)) {
+    padded_view_with_left_inset(ui, 0.0, add_contents);
+}
+
+fn padded_view_with_left_inset(
+    ui: &mut Ui,
+    extra_left_inset: f32,
+    add_contents: impl FnOnce(&mut Ui),
+) {
     let available = ui.available_rect_before_wrap();
     crate::overlay_bounds::set(ui, available);
     let rect = egui::Rect::from_min_max(
         egui::pos2(
-            available.left() + VIEW_PADDING,
+            available.left() + VIEW_PADDING + extra_left_inset,
             available.top() + VIEW_PADDING_TOP,
         ),
         egui::pos2(
@@ -138,10 +165,14 @@ fn import_export_launcher(
     ui.label(RichText::new(i18n.text("transfer-launch-detail")).color(tokens.text_secondary));
     ui.add_space(12.0);
     ui.horizontal(|ui| {
-        if ui.button(i18n.text("transfer-import-title")).clicked() {
+        let import = ui.button(i18n.text("transfer-import-title"));
+        paint_focus_outline(ui, &import);
+        if import.clicked() {
             send(commands, AppCommand::ImportConnections);
         }
-        if ui.button(i18n.text("transfer-export-title")).clicked() {
+        let export = ui.button(i18n.text("transfer-export-title"));
+        paint_focus_outline(ui, &export);
+        if export.clicked() {
             send(commands, AppCommand::ExportConnections);
         }
     });
@@ -193,7 +224,9 @@ fn transfer_sidebar(
             correo_core::TransferSection::Export => i18n.text("transfer-export-title"),
             correo_core::TransferSection::Messages => section.label().to_owned(),
         };
-        if ui.selectable_label(selected, label).clicked() {
+        let response = ui.selectable_label(selected, label);
+        paint_focus_outline(ui, &response);
+        if response.clicked() {
             send(commands, AppCommand::SelectTransferSection(section));
         }
     }
@@ -207,10 +240,14 @@ fn transfer_sidebar(
         .color(tokens.text_secondary),
     );
     ui.separator();
-    if ui.button(i18n.text("common-import-cqc")).clicked() {
+    let import_cqc = ui.button(i18n.text("common-import-cqc"));
+    paint_focus_outline(ui, &import_cqc);
+    if import_cqc.clicked() {
         send(commands, AppCommand::ImportConnections);
     }
-    if ui.button(i18n.text("common-export-cqc")).clicked() {
+    let export_cqc = ui.button(i18n.text("common-export-cqc"));
+    paint_focus_outline(ui, &export_cqc);
+    if export_cqc.clicked() {
         send(commands, AppCommand::ExportConnections);
     }
 }

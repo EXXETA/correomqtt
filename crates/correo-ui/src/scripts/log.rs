@@ -1,6 +1,7 @@
 use correo_core::{AppCommand, AppCommandSender, ScriptLogLevel, ScriptSurfaceSnapshot};
 use egui::{text::LayoutJob, Button, FontId, ScrollArea, TextFormat, TextStyle, Ui};
 
+use crate::i18n::I18n;
 use crate::theme::ThemeTokens;
 
 pub(super) fn log_view(
@@ -8,15 +9,16 @@ pub(super) fn log_view(
     scripts: &ScriptSurfaceSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     let selected_execution_id = scripts.selected_execution_id();
     ui.horizontal(|ui| {
-        ui.heading("Execution log");
+        ui.heading(i18n.text("script-execution-log"));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let can_stop = scripts.running_execution_id().is_some();
             if ui
-                .add_enabled(can_stop, Button::new("Stop Script"))
-                .on_hover_text("Stop the running script execution")
+                .add_enabled(can_stop, Button::new(i18n.text("script-stop")))
+                .on_hover_text(i18n.text("script-stop-tooltip"))
                 .clicked()
             {
                 let _ = commands.send(AppCommand::CancelScript);

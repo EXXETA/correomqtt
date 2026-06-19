@@ -22,13 +22,14 @@ pub(super) fn four_pane(
     top_right: impl FnOnce(&mut Ui),
     bottom_left: impl FnOnce(&mut Ui),
     bottom_right: impl FnOnce(&mut Ui),
+    divider_control: impl FnOnce(&mut Ui, Rect),
 ) {
     let full_rect = ui.available_rect_before_wrap();
     ui.allocate_rect(full_rect, Sense::hover());
 
     let (top_rect, bottom_rect) =
         vertical_split(ui, Id::new("scripts-upper-ratio"), full_rect, tokens);
-    horizontal_split(
+    horizontal_split_with_control(
         ui,
         shared_list_ratio_id(),
         top_rect,
@@ -36,8 +37,9 @@ pub(super) fn four_pane(
         0.0,
         top_left,
         top_right,
+        Some(divider_control),
     );
-    horizontal_split(
+    horizontal_split_with_control(
         ui,
         shared_list_ratio_id(),
         bottom_rect,
@@ -45,6 +47,7 @@ pub(super) fn four_pane(
         PANE_PADDING_TOP,
         bottom_left,
         bottom_right,
+        None::<fn(&mut Ui, Rect)>,
     );
 }
 
@@ -106,7 +109,7 @@ fn vertical_split(ui: &mut Ui, id: Id, rect: Rect, tokens: ThemeTokens) -> (Rect
     (top, bottom)
 }
 
-fn horizontal_split(
+fn horizontal_split_with_control(
     ui: &mut Ui,
     id: Id,
     rect: Rect,
@@ -114,6 +117,7 @@ fn horizontal_split(
     top_padding: f32,
     left: impl FnOnce(&mut Ui),
     right: impl FnOnce(&mut Ui),
+    divider_control: Option<impl FnOnce(&mut Ui, Rect)>,
 ) {
     let usable = (rect.width() - DIVIDER_SIZE).max(1.0);
     let min_left = MIN_PANE_WIDTH.min(usable * 0.45);
@@ -134,6 +138,9 @@ fn horizontal_split(
         store_ratio(ui, id, left_width / usable);
     }
     draw_divider(ui, divider, tokens.border, true);
+    if let Some(divider_control) = divider_control {
+        divider_control(ui, divider);
+    }
 
     pane(
         ui,
@@ -200,7 +207,10 @@ fn store_ratio(ui: &Ui, id: Id, value: f32) {
 fn draw_divider(ui: &Ui, rect: Rect, color: Color32, vertical: bool) {
     let center = rect.center();
     let points = if vertical {
-        [pos2(center.x, rect.top()), pos2(center.x, rect.bottom())]
+        [
+            pos2(center.x, rect.top()),
+            pos2(center.x, rect.bottom() - PANE_PADDING_BOTTOM),
+        ]
     } else {
         [pos2(rect.left(), center.y), pos2(rect.right(), center.y)]
     };

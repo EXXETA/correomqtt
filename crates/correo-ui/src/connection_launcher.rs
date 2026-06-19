@@ -11,9 +11,10 @@ use crate::responsive;
 use crate::theme::{ThemeTokens, CONTROL_HEIGHT};
 use crate::widgets::{
     clearable_search_edit, disable_tile_text_selection, fill_remaining_tile_rows, menu_item,
-    menu_item_enabled, menu_item_with_activity_dot, set_menu_item_width, tighten_tile_spacing,
-    tile_inner_padding, tile_list_content_width, tile_scroll_bar_rect_with_height,
-    tile_table_interactive_fill, with_icon_button_padding, TILE_GAP,
+    menu_item_enabled, menu_item_with_activity_dot, paint_focus_outline, set_menu_item_width,
+    tighten_tile_spacing, tile_inner_padding, tile_list_content_width,
+    tile_scroll_bar_rect_with_height, tile_table_interactive_fill, with_icon_button_padding,
+    TILE_GAP,
 };
 use correo_style::layout;
 
@@ -36,15 +37,6 @@ pub fn panel(
         egui::vec2(tile_list_content_width(ui), CONTROL_HEIGHT),
         egui::Layout::left_to_right(egui::Align::Center),
         |ui| {
-            if !responsive::forced_connection_flyout_mode(ui.ctx())
-                && !responsive::connection_flyout_open(ui.ctx())
-                && header_icon_button(ui, regular::LIST)
-                    .on_hover_text("Use connections flyout")
-                    .clicked()
-            {
-                responsive::set_forced_connection_flyout_mode(ui.ctx(), true);
-                responsive::open_connection_flyout(ui.ctx());
-            }
             ui.heading(i18n.text("connections-heading"));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if header_add_button(ui)
@@ -74,7 +66,7 @@ pub fn panel(
         ui,
         None,
         &mut filter,
-        "Search Connections",
+        i18n.text("common-search"),
         tile_list_content_width(ui),
     );
     if response.changed() {
@@ -115,12 +107,14 @@ fn header_add_button(ui: &mut Ui) -> Response {
 }
 
 fn header_icon_button(ui: &mut Ui, icon: &'static str) -> Response {
-    with_icon_button_padding(ui, |ui| {
+    let response = with_icon_button_padding(ui, |ui| {
         ui.add_sized(
             crate::widgets::square_icon_button_size(),
             Button::new(RichText::new(icon).size(15.0)),
         )
-    })
+    });
+    paint_focus_outline(ui, &response);
+    response
 }
 
 fn connection_row(

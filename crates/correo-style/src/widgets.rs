@@ -364,6 +364,40 @@ pub fn tile_table_interactive_fill(
     }
 }
 
+pub fn dotted_focus_outline(ui: &Ui, rect: egui::Rect) {
+    let color = if ui.visuals().dark_mode {
+        egui::Color32::WHITE
+    } else {
+        egui::Color32::BLACK
+    };
+    let stroke = egui::Stroke::new(1.0, color);
+    let rect = rect.shrink(1.0);
+    dotted_line(ui, rect.left_top(), rect.right_top(), stroke);
+    dotted_line(ui, rect.right_top(), rect.right_bottom(), stroke);
+    dotted_line(ui, rect.right_bottom(), rect.left_bottom(), stroke);
+    dotted_line(ui, rect.left_bottom(), rect.left_top(), stroke);
+}
+
+fn dotted_line(ui: &Ui, start: egui::Pos2, end: egui::Pos2, stroke: egui::Stroke) {
+    let delta = end - start;
+    let length = delta.length();
+    if length <= 0.0 {
+        return;
+    }
+    let direction = delta / length;
+    let dot = 2.0;
+    let gap = 2.0;
+    let mut offset = 0.0;
+    while offset < length {
+        let next = (offset + dot).min(length);
+        ui.painter().line_segment(
+            [start + direction * offset, start + direction * next],
+            stroke,
+        );
+        offset += dot + gap;
+    }
+}
+
 fn checkbox_icon_font(mut font: FontId) -> FontId {
     font.size *= layout::CHECKBOX_ICON_SCALE;
     font

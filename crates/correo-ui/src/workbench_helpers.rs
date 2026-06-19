@@ -2,6 +2,7 @@ use correo_core::{AppCommand, AppCommandSender, AppSnapshot, ConnectionState, Qo
 use egui::{Align2, Button, ComboBox, CornerRadius, FontId, Frame, Rect, RichText, Ui, UiBuilder};
 
 use crate::theme::{ThemeTokens, CONTROL_HEIGHT};
+use crate::widgets::paint_focus_outline;
 
 pub(crate) fn connected(snapshot: &AppSnapshot) -> bool {
     snapshot
@@ -23,6 +24,7 @@ pub(crate) fn disconnected_action_button(
             ui.add_sized([width, CONTROL_HEIGHT], Button::new(&label))
         })
         .inner;
+    paint_focus_outline(ui, &response);
     let hover_response = ui.interact(
         response.rect,
         response.id.with("disabled-action-warning"),
@@ -64,14 +66,16 @@ pub(crate) fn qos_selector(
     mut on_change: impl FnMut(QosLevel),
 ) {
     let mut selected = current;
-    ComboBox::from_id_salt(id)
+    let response = ComboBox::from_id_salt(id)
         .selected_text(current.label())
         .width(ui.available_width())
         .show_ui(ui, |ui| {
             for qos in QosLevel::ALL {
                 ui.selectable_value(&mut selected, qos, qos.label());
             }
-        });
+        })
+        .response;
+    paint_focus_outline(ui, &response);
     if selected != current {
         on_change(selected);
     }

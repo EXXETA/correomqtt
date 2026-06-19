@@ -15,16 +15,17 @@ mod build_info {
     include!(concat!(env!("OUT_DIR"), "/about_metadata.rs"));
 }
 
-pub fn show(ui: &mut Ui, _tokens: ThemeTokens, i18n: &I18n) {
+pub fn show(ui: &mut Ui, _tokens: ThemeTokens, i18n: &I18n) -> bool {
+    let mut logo_triggered = false;
     ScrollArea::vertical()
         .id_salt("about-content")
         .auto_shrink([false, false])
         .show(ui, |ui| {
-            about_logo(ui);
+            logo_triggered = about_logo(ui);
             ui.add_space(18.0);
             value_row(
                 ui,
-                "CorreoMQTT",
+                i18n.product_name(),
                 &format!("v{}", build_info::APP_VERSION.trim_start_matches('v')),
             );
             value_row(ui, &i18n.text("about-license"), env!("CARGO_PKG_LICENSE"));
@@ -41,14 +42,16 @@ pub fn show(ui: &mut Ui, _tokens: ThemeTokens, i18n: &I18n) {
             ui.add_space(8.0);
             open_source_libraries(ui);
         });
+    logo_triggered
 }
 
-fn about_logo(ui: &mut Ui) {
+fn about_logo(ui: &mut Ui) -> bool {
     let size = egui::Vec2::splat(ABOUT_ICON_SIZE);
     let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click());
     let animation_id = ui.make_persistent_id("about-logo-easter-egg");
+    let triggered = response.double_clicked();
 
-    if response.double_clicked() && !reduce_motion(ui) {
+    if triggered && !reduce_motion(ui) {
         let now = ui.input(|input| input.time);
         ui.ctx()
             .data_mut(|data| data.insert_temp(animation_id, now));
@@ -58,14 +61,14 @@ fn about_logo(ui: &mut Ui) {
     let started_at = ui.ctx().data_mut(|data| data.get_temp::<f64>(animation_id));
     let Some(started_at) = started_at else {
         paint_logo(ui, rect, 0.0, 1.0);
-        return;
+        return triggered;
     };
 
     let elapsed = now - started_at;
     let total_seconds = LOGO_ROLL_OUT_SECONDS + LOGO_FADE_IN_SECONDS;
     if elapsed >= total_seconds {
         paint_logo(ui, rect, 0.0, 1.0);
-        return;
+        return triggered;
     }
 
     if elapsed < LOGO_ROLL_OUT_SECONDS {
@@ -80,6 +83,7 @@ fn about_logo(ui: &mut Ui) {
     }
 
     ui.ctx().request_repaint_after(Duration::from_millis(16));
+    triggered
 }
 
 fn paint_logo(ui: &Ui, rect: egui::Rect, rotation: f32, alpha: f32) {

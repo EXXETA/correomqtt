@@ -1,5 +1,5 @@
 use correo_core::{AppCommand, AppCommandSender, PluginRow, PluginSurfaceSnapshot};
-use egui::{RichText, ScrollArea, Ui};
+use egui::{Label, RichText, ScrollArea, Ui};
 use egui_phosphor::regular;
 
 use crate::i18n::I18n;
@@ -82,8 +82,11 @@ fn plugin_row(
         tokens,
         |ui| {
             ui.label(RichText::new(&plugin.name).strong());
-            ui.label(RichText::new(&plugin.description).color(tokens.text_secondary));
-            ui.horizontal_wrapped(|ui| {
+            ui.add(
+                Label::new(RichText::new(&plugin.description).color(tokens.text_secondary))
+                    .truncate(),
+            );
+            ui.horizontal(|ui| {
                 ui.label(
                     RichText::new(i18n.plugin_status_label(plugin.status))
                         .color(status_color(plugin.status, tokens)),

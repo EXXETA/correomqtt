@@ -3,7 +3,6 @@ use std::hash::Hash;
 const TILE_HOVER_SECONDS: f32 = 0.12;
 const TILE_SELECT_SECONDS: f32 = 0.18;
 const FLYOUT_SECONDS: f32 = 0.22;
-const FLYOUT_OFFSET: f32 = 28.0;
 
 pub(crate) fn apply_preference(ctx: &egui::Context, reduce_motion: bool) {
     if !reduce_motion {
@@ -55,18 +54,25 @@ pub(crate) fn flyout_progress(
     }
 }
 
+pub(crate) fn finish_flyout_closed(ctx: &egui::Context, id_source: impl Hash) {
+    let _ = ctx.animate_bool_with_time_and_easing(
+        egui::Id::new(("flyout-motion", id_source)),
+        false,
+        0.0,
+        ease_out_quart,
+    );
+}
+
 pub(crate) fn flyout_panel_rect(
     scrim_rect: egui::Rect,
     panel_width: f32,
     progress: f32,
 ) -> egui::Rect {
-    let width = panel_width.min(scrim_rect.width());
-    let rect = egui::Rect::from_min_size(
+    let width = panel_width.min(scrim_rect.width()) * progress.clamp(0.0, 1.0);
+    egui::Rect::from_min_size(
         scrim_rect.left_top(),
         egui::vec2(width, scrim_rect.height()),
-    );
-    let offset = FLYOUT_OFFSET.min(width * 0.12) * (1.0 - progress);
-    rect.translate(egui::vec2(-offset, 0.0))
+    )
 }
 
 pub(crate) fn scrim_color(max_alpha: u8, progress: f32) -> egui::Color32 {

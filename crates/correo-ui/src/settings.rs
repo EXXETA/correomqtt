@@ -6,7 +6,7 @@ use correo_style::layout;
 use egui::{Button, ComboBox, RichText, ScrollArea, TextEdit, Ui};
 use egui_phosphor::regular;
 
-use crate::i18n::I18n;
+use crate::i18n::{language_option_visible, I18n};
 use crate::theme::{ThemeTokens, CONTROL_HEIGHT};
 use crate::widgets::{
     checkbox, padded_text_edit, square_icon_button_size, with_icon_button_padding,
@@ -18,6 +18,7 @@ pub fn show(
     tokens: ThemeTokens,
     commands: &AppCommandSender,
     i18n: &I18n,
+    klingon_unlocked: bool,
 ) {
     let settings = &snapshot.global_settings;
     ui.heading(i18n.text("settings-header"));
@@ -67,7 +68,39 @@ pub fn show(
                     plugins(ui, settings, tokens, commands, i18n);
                 },
             );
+            section(
+                ui,
+                i18n.settings_section_label(correo_core::SettingsSection::Language),
+                tokens,
+                |ui| {
+                    language(ui, settings, commands, i18n, klingon_unlocked);
+                },
+            );
         });
+}
+
+fn language(
+    ui: &mut Ui,
+    settings: &GlobalSettingsSnapshot,
+    commands: &AppCommandSender,
+    i18n: &I18n,
+    klingon_unlocked: bool,
+) {
+    row(ui, &i18n.text("settings-language"), |ui| {
+        option_combo(
+            ui,
+            "settings-language",
+            &settings.language,
+            &settings.language_options,
+            |value| AppCommand::UpdateGlobalSetting {
+                field: GlobalSettingField::Language,
+                value,
+            },
+            commands,
+            i18n,
+            Some(klingon_unlocked),
+        );
+    });
 }
 
 fn section(ui: &mut Ui, title: String, tokens: ThemeTokens, add: impl FnOnce(&mut Ui)) {
@@ -139,6 +172,7 @@ fn keyring(
             },
             commands,
             i18n,
+            None,
         );
     });
 }
@@ -296,14 +330,29 @@ fn option_combo(
     command: impl FnOnce(String) -> AppCommand,
     commands: &AppCommandSender,
     i18n: &I18n,
+    language_klingon_unlocked: Option<bool>,
 ) {
     let mut selected = current.to_owned();
+    let selected_text = if language_klingon_unlocked.is_some() {
+        language_option_label(current, options, i18n)
+    } else {
+        option_label(current, options, i18n)
+    };
     ComboBox::from_id_salt(id)
-        .selected_text(option_label(current, options, i18n))
+        .selected_text(selected_text)
         .width(layout::SETTINGS_COMBO_WIDTH)
         .show_ui(ui, |ui| {
             for option in options {
-                let label = i18n.language_option_label(&option.id, &option.label);
+                if let Some(klingon_unlocked) = language_klingon_unlocked {
+                    if !language_option_visible(&option.id, current, klingon_unlocked) {
+                        continue;
+                    }
+                }
+                let label = if language_klingon_unlocked.is_some() {
+                    i18n.language_menu_option_label(&option.id, &option.label, current)
+                } else {
+                    i18n.language_option_label(&option.id, &option.label)
+                };
                 ui.selectable_value(&mut selected, option.id.clone(), label);
             }
         });
@@ -317,6 +366,14 @@ fn option_label(current: &str, options: &[SettingsOption], i18n: &I18n) -> Strin
         .iter()
         .find(|option| option.id == current)
         .map(|option| i18n.language_option_label(&option.id, &option.label))
+        .unwrap_or_else(|| current.to_owned())
+}
+
+fn language_option_label(current: &str, options: &[SettingsOption], i18n: &I18n) -> String {
+    options
+        .iter()
+        .find(|option| option.id == current)
+        .map(|option| i18n.language_menu_option_label(&option.id, &option.label, current))
         .unwrap_or_else(|| current.to_owned())
 }
 

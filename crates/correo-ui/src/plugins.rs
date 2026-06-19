@@ -8,9 +8,9 @@ use egui_phosphor::regular;
 
 use crate::i18n::I18n;
 use crate::widgets::{
-    clearable_search_edit, disable_tile_text_selection, square_icon_button_size,
-    tighten_tile_spacing, tile_inner_padding, tile_list_content_width, tile_table_fill,
-    tile_table_hover_fill, tile_table_selected_fill, with_icon_button_padding, TILE_GAP,
+    clearable_search_edit, disable_tile_text_selection, tighten_tile_spacing, tile_inner_padding,
+    tile_list_content_width, tile_table_fill, tile_table_hover_fill, tile_table_selected_fill,
+    FLYOUT_HANDLE_WIDTH, TILE_GAP,
 };
 use crate::{modal_style, motion, responsive, theme::ThemeTokens};
 use correo_style::layout;
@@ -68,7 +68,7 @@ fn toolbar(
     commands: &AppCommandSender,
     i18n: &I18n,
 ) {
-    ui.horizontal_wrapped(|ui| {
+    ui.horizontal(|ui| {
         for tab in PluginSurfaceTab::ALL {
             if ui
                 .selectable_label(plugins.active_tab == tab, i18n.plugin_tab_label(tab))
@@ -77,9 +77,12 @@ fn toolbar(
                 send(commands, AppCommand::SelectPluginSurfaceTab(tab));
             }
         }
-        ui.add_space(8.0);
-        ui.label(RichText::new(plugin_counts(plugins, i18n)).color(tokens.text_secondary));
     });
+    ui.label(RichText::new(plugin_counts(plugins, i18n)).color(tokens.text_secondary));
+}
+
+pub(super) fn plugin_metadata_line(ui: &mut Ui, parts: &[String], tokens: ThemeTokens) {
+    ui.label(RichText::new(parts.join("  ")).color(tokens.text_secondary));
 }
 
 fn empty_state(ui: &mut Ui, plugins: &PluginSurfaceSnapshot, tokens: ThemeTokens, i18n: &I18n) {
@@ -309,8 +312,6 @@ pub(super) fn plugin_split(
     add_detail: impl FnOnce(&mut Ui),
 ) {
     if responsive::plugin_context_is_compact(ui.ctx()) {
-        plugin_main_opener(ui);
-        ui.add_space(8.0);
         add_detail(ui);
         plugin_flyout(ui.ctx(), plugins, tokens, commands, i18n, add_list);
         return;
@@ -337,14 +338,6 @@ fn plugin_flyout(
     i18n: &I18n,
     add_list: impl FnOnce(&mut Ui),
 ) {
-    let open = responsive::plugin_flyout_open(ctx);
-    let Some(progress) = motion::flyout_progress(ctx, "plugin-context", open) else {
-        return;
-    };
-    if open && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
-        responsive::close_plugin_flyout(ctx);
-    }
-
     let screen = ctx.screen_rect();
     let overlay_rect = egui::Rect::from_min_max(
         egui::pos2(
@@ -355,6 +348,17 @@ fn plugin_flyout(
     );
     if overlay_rect.width() <= 0.0 || overlay_rect.height() <= 0.0 {
         return;
+    }
+
+    let open = responsive::plugin_flyout_open(ctx);
+    if !open {
+        plugin_flyout_collapsed_handle(ctx, overlay_rect);
+    }
+    let Some(progress) = motion::flyout_progress(ctx, "plugin-context", open) else {
+        return;
+    };
+    if open && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+        responsive::close_plugin_flyout(ctx);
     }
 
     egui::Area::new(egui::Id::new("plugin-context-flyout"))
@@ -369,8 +373,16 @@ fn plugin_flyout(
                 motion::scrim_color(modal_style::SCRIM_ALPHA, progress),
             );
 
-            let panel_width = layout::PLUGIN_FLYOUT_WIDTH.min(overlay_rect.width());
-            let panel_rect = motion::flyout_panel_rect(scrim_rect, panel_width, progress);
+            let handle_rect = egui::Rect::from_min_size(
+                scrim_rect.left_top(),
+                egui::vec2(FLYOUT_HANDLE_WIDTH, scrim_rect.height()),
+            );
+            let panel_area = egui::Rect::from_min_max(
+                egui::pos2(handle_rect.right(), scrim_rect.top()),
+                scrim_rect.right_bottom(),
+            );
+            let panel_width = layout::PLUGIN_FLYOUT_WIDTH.min(panel_area.width());
+            let panel_rect = motion::flyout_panel_rect(panel_area, panel_width, progress);
             ui.painter()
                 .rect_filled(panel_rect, egui::CornerRadius::ZERO, tokens.window_bg);
 
@@ -393,7 +405,7 @@ fn plugin_flyout(
             panel_ui.multiply_opacity(motion::content_opacity(progress));
             panel_ui.set_clip_rect(content_rect);
             plugin_sidebar(&mut panel_ui, plugins, tokens, commands, i18n, add_list);
-            plugin_flyout_restore_button(ui, panel_rect);
+            plugin_flyout_expanded_controls(ui, handle_rect, panel_rect);
 
             let clicked_outside = open
                 && ui.ctx().input(|input| {
@@ -409,6 +421,30 @@ fn plugin_flyout(
         });
 }
 
+fn plugin_flyout_collapsed_handle(ctx: &egui::Context, overlay_rect: egui::Rect) {
+    egui::Area::new(egui::Id::new("plugin-context-flyout-collapsed-handle"))
+        .order(egui::Order::Foreground)
+        .fixed_pos(overlay_rect.min)
+        .movable(false)
+        .show(ctx, |ui| {
+            let handle_rect = egui::Rect::from_min_size(
+                ui.min_rect().min,
+                egui::vec2(FLYOUT_HANDLE_WIDTH, overlay_rect.height()),
+            );
+            if crate::widgets::flyout_handle(
+                ui,
+                handle_rect,
+                "plugin-flyout-open-handle",
+                regular::CARET_RIGHT,
+                "Show plugin list",
+            )
+            .clicked()
+            {
+                responsive::open_plugin_flyout(ui.ctx());
+            }
+        });
+}
+
 fn plugin_sidebar(
     ui: &mut Ui,
     plugins: &PluginSurfaceSnapshot,
@@ -418,7 +454,6 @@ fn plugin_sidebar(
     add_list: impl FnOnce(&mut Ui),
 ) {
     ui.horizontal(|ui| {
-        plugin_list_header_icon(ui);
         ui.heading(i18n.text("plugin-header"));
     });
     ui.add_space(8.0);
@@ -427,69 +462,37 @@ fn plugin_sidebar(
     add_list(ui);
 }
 
-fn plugin_main_opener(ui: &mut Ui) {
-    if header_icon_button(ui, regular::LIST)
-        .on_hover_text("Show plugin list")
-        .clicked()
+fn plugin_flyout_expanded_controls(ui: &mut Ui, handle_rect: egui::Rect, panel_rect: egui::Rect) {
+    if crate::widgets::flyout_handle(
+        ui,
+        handle_rect,
+        "plugin-flyout-collapse-handle",
+        regular::CARET_LEFT,
+        "Collapse plugin list",
+    )
+    .clicked()
     {
-        responsive::open_plugin_flyout(ui.ctx());
+        responsive::close_plugin_flyout(ui.ctx());
     }
-}
 
-fn plugin_flyout_restore_button(ui: &mut Ui, panel_rect: egui::Rect) {
     if !(responsive::forced_plugin_flyout_mode(ui.ctx())
         && !responsive::plugin_context_requires_flyout(ui.ctx()))
     {
         return;
     }
 
-    let button_rect = egui::Rect::from_min_size(
-        egui::pos2(
-            panel_rect.right() + layout::TOOLBAR_GAP,
-            panel_rect.top() + f32::from(layout::SIDEBAR_MARGIN_TOP),
-        ),
-        egui::Vec2::from(layout::square_icon_button_size()),
-    );
-    let mut button_ui = ui.new_child(UiBuilder::new().max_rect(button_rect).layout(
-        egui::Layout::centered_and_justified(egui::Direction::LeftToRight),
-    ));
-    if button_ui
-        .scope(|ui| {
-            with_icon_button_padding(ui, |ui| {
-                ui.add_sized(
-                    layout::square_icon_button_size(),
-                    Button::new(RichText::new(regular::SIDEBAR_SIMPLE).size(15.0)),
-                )
-            })
-        })
-        .inner
-        .on_hover_text("Use plugin sidebar")
-        .clicked()
+    if crate::widgets::flyout_restore_button_above_edge(
+        ui,
+        "plugin-flyout-restore-button",
+        panel_rect.right(),
+        panel_rect.top(),
+        "Use plugin sidebar",
+    )
+    .clicked()
     {
-        responsive::set_forced_plugin_flyout_mode(ui.ctx(), false);
+        responsive::set_forced_context_flyout_mode(ui.ctx(), false);
         responsive::close_plugin_flyout(ui.ctx());
     }
-}
-
-pub(super) fn plugin_list_header_icon(ui: &mut Ui) {
-    if !responsive::forced_plugin_flyout_mode(ui.ctx())
-        && !responsive::plugin_flyout_open(ui.ctx())
-        && header_icon_button(ui, regular::LIST)
-            .on_hover_text("Use plugin flyout")
-            .clicked()
-    {
-        responsive::set_forced_plugin_flyout_mode(ui.ctx(), true);
-        responsive::open_plugin_flyout(ui.ctx());
-    }
-}
-
-fn header_icon_button(ui: &mut Ui, icon: &'static str) -> egui::Response {
-    with_icon_button_padding(ui, |ui| {
-        ui.add_sized(
-            square_icon_button_size(),
-            Button::new(RichText::new(icon).size(15.0)),
-        )
-    })
 }
 
 fn plugin_list_width(available_width: f32) -> f32 {
@@ -504,6 +507,18 @@ fn divider(ui: &mut Ui, tokens: ThemeTokens) {
         [egui::pos2(x, rect.top()), egui::pos2(x, rect.bottom())],
         Stroke::new(1.0, tokens.border),
     );
+    if crate::widgets::flyout_mode_button_above_divider(
+        ui,
+        "plugin-flyout-mode-button",
+        rect,
+        "Use plugin flyout",
+    )
+    .clicked()
+    {
+        responsive::set_forced_context_flyout_mode(ui.ctx(), true);
+        responsive::close_plugin_flyout(ui.ctx());
+        motion::finish_flyout_closed(ui.ctx(), "plugin-context");
+    }
 }
 
 pub(super) fn metadata_row(

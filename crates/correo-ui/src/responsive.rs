@@ -15,8 +15,12 @@ pub(crate) fn forced_connection_flyout_mode(ctx: &Context) -> bool {
     ctx.data_mut(|data| data.get_persisted(forced_flyout_id()).unwrap_or(false))
 }
 
-pub(crate) fn set_forced_connection_flyout_mode(ctx: &Context, enabled: bool) {
-    ctx.data_mut(|data| data.insert_persisted(forced_flyout_id(), enabled));
+pub(crate) fn set_forced_context_flyout_mode(ctx: &Context, enabled: bool) {
+    ctx.data_mut(|data| {
+        data.insert_persisted(forced_flyout_id(), enabled);
+        data.insert_persisted(forced_scripting_flyout_id(), enabled);
+        data.insert_persisted(forced_plugin_flyout_id(), enabled);
+    });
 }
 
 pub(crate) fn scripting_context_is_compact(ctx: &Context) -> bool {
@@ -34,10 +38,6 @@ pub(crate) fn forced_scripting_flyout_mode(ctx: &Context) -> bool {
     })
 }
 
-pub(crate) fn set_forced_scripting_flyout_mode(ctx: &Context, enabled: bool) {
-    ctx.data_mut(|data| data.insert_persisted(forced_scripting_flyout_id(), enabled));
-}
-
 pub(crate) fn plugin_context_is_compact(ctx: &Context) -> bool {
     forced_plugin_flyout_mode(ctx) || plugin_context_requires_flyout(ctx)
 }
@@ -51,10 +51,6 @@ pub(crate) fn forced_plugin_flyout_mode(ctx: &Context) -> bool {
         data.get_persisted(forced_plugin_flyout_id())
             .unwrap_or(false)
     })
-}
-
-pub(crate) fn set_forced_plugin_flyout_mode(ctx: &Context, enabled: bool) {
-    ctx.data_mut(|data| data.insert_persisted(forced_plugin_flyout_id(), enabled));
 }
 
 pub(crate) fn set_workbench_tabs_visible(ctx: &Context, visible: bool) {
