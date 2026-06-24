@@ -89,6 +89,13 @@ impl ConfigStore {
         Ok(config)
     }
 
+    pub fn save_connections(&self, connections: Vec<ConnectionConfig>) -> Result<AppConfig> {
+        let mut config = self.load_or_default()?;
+        config.connections = connections;
+        self.save(&config)?;
+        Ok(config)
+    }
+
     fn path(&self) -> PathBuf {
         self.root.join(CONFIG_FILE_NAME)
     }

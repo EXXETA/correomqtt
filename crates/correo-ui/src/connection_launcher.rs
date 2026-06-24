@@ -131,10 +131,14 @@ fn connection_row(
     let row_width = ui.available_width();
     let (rect, response) =
         ui.allocate_exact_size(egui::vec2(row_width, row_height), Sense::click_and_drag());
-    response.dnd_set_drag_payload(connection.id);
-    let dragged = response.dragged();
-    let drop_target =
-        response.contains_pointer() && egui::DragAndDrop::has_any_payload(ui.ctx()) && !dragged;
+    if !connection.immutable {
+        response.dnd_set_drag_payload(connection.id);
+    }
+    let dragged = !connection.immutable && response.dragged();
+    let drop_target = !connection.immutable
+        && response.contains_pointer()
+        && egui::DragAndDrop::has_any_payload(ui.ctx())
+        && !dragged;
 
     let fill = if dragged {
         tokens.panel_raised
@@ -199,7 +203,7 @@ fn connection_row(
 
     if let Some(dropped) = response.dnd_release_payload() {
         let connection_id = *dropped;
-        if connection_id != connection.id {
+        if connection_id != connection.id && !connection.immutable {
             let after = response
                 .interact_pointer_pos()
                 .or_else(|| ui.ctx().pointer_interact_pos())
@@ -270,7 +274,7 @@ fn connection_context_menu(
             }
         }
     }
-    if menu_item(ui, Some(regular::PENCIL_SIMPLE), &edit).clicked() {
+    if !connection.immutable && menu_item(ui, Some(regular::PENCIL_SIMPLE), &edit).clicked() {
         send(commands, AppCommand::EditConnection(connection.id));
         ui.close_menu();
     }
@@ -287,7 +291,7 @@ fn connection_context_menu(
         send(commands, AppCommand::OpenConnectionPlugins(connection.id));
         ui.close_menu();
     }
-    if menu_item(ui, Some(regular::TRASH), &delete).clicked() {
+    if !connection.immutable && menu_item(ui, Some(regular::TRASH), &delete).clicked() {
         send(commands, AppCommand::SelectConnection(connection.id));
         send(commands, AppCommand::RequestDeleteConnection);
         ui.close_menu();

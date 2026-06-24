@@ -152,6 +152,7 @@ impl I18n {
             Workspace::Connections => "workspace-connections",
             Workspace::ImportExport => "workspace-import-export",
             Workspace::Scripts => "workspace-scripts",
+            Workspace::Broker => "workspace-broker",
             Workspace::Plugins => "workspace-plugins",
             Workspace::Diagnostics => "workspace-diagnostics",
             Workspace::Settings => "workspace-settings",

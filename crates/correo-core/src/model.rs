@@ -3,11 +3,12 @@ use std::collections::{HashMap, HashSet};
 use correo_mqtt::ConnectionId;
 
 use crate::{
-    AppCommand, AppEvent, AppSnapshot, ConnectDisabledReason, ConnectionSettingsSnapshot,
-    ConnectionState, Diagnostic, MqttCommand, MqttCommandBuildError, StartupState,
-    WorkbenchSnapshot,
+    AppCommand, AppEvent, AppSnapshot, ConnectDisabledReason, ConnectionPersistenceSnapshot,
+    ConnectionSettingsSnapshot, ConnectionState, Diagnostic, MqttCommand, MqttCommandBuildError,
+    StartupState, WorkbenchSnapshot,
 };
 
+mod broker;
 mod connections;
 mod history;
 mod migration_recovery;
@@ -76,6 +77,7 @@ impl AppModel {
             saved_global_settings,
             saved_theme_mode,
         };
+        model.sync_built_in_broker_connection();
         model.normalize_connection_surface();
         model
     }
@@ -116,6 +118,21 @@ impl AppModel {
         command: &AppCommand,
     ) -> Result<Vec<MqttCommand>, MqttCommandBuildError> {
         crate::commands_for_app_command(command, &self.snapshot, &self.connection_settings)
+    }
+
+    pub(crate) fn connection_persistence_snapshot(&self) -> Vec<ConnectionPersistenceSnapshot> {
+        self.snapshot
+            .connections
+            .iter()
+            .filter(|connection| !connection.immutable)
+            .filter_map(|connection| {
+                let settings = self.connection_settings_for(connection.id)?.clone();
+                Some(ConnectionPersistenceSnapshot {
+                    storage_id: self.storage_connection_id(connection.id),
+                    settings,
+                })
+            })
+            .collect()
     }
 
     fn select_connection_workbench(&mut self, id: ConnectionId) {
@@ -165,6 +182,7 @@ impl AppModel {
     pub fn apply_command(&mut self, command: AppCommand) {
         if self.apply_migration_recovery_command(&command)
             || self.apply_scripting_command(&command)
+            || self.apply_broker_command(&command)
             || self.apply_plugin_command(&command)
         {
             return;
@@ -187,6 +205,13 @@ impl AppModel {
             AppCommand::OpenConnectionWorkbench(id) => self.select_connection_workbench(id),
             AppCommand::Connect(id) => self.connect(id),
             AppCommand::OpenConnectionSettings(id) | AppCommand::EditConnection(id) => {
+                if crate::is_built_in_broker_connection(id) {
+                    self.select_connection_workbench(id);
+                    self.push_diagnostic(Diagnostic::warning(
+                        "Correo Broker connection is managed automatically.",
+                    ));
+                    return;
+                }
                 self.select_connection_workbench(id);
                 self.load_connection_settings(id);
                 self.snapshot.connection_settings_overlay = Some(id);
@@ -375,6 +400,7 @@ impl AppModel {
             AppEvent::ConnectionListLoaded { connections } => {
                 self.snapshot.connection_count = connections.len();
                 self.snapshot.connections = connections;
+                self.sync_built_in_broker_connection();
                 if self
                     .snapshot
                     .selected_connection
@@ -448,6 +474,7 @@ impl AppModel {
                 error,
             } => self.update_script_execution(execution_id, status, duration, error),
             AppEvent::Mqtt(event) => self.apply_mqtt_event(event),
+            AppEvent::BuiltInBroker(event) => self.apply_broker_event(event),
             AppEvent::MigrationRecovery(event) => self.apply_migration_recovery_event(event),
             AppEvent::PluginWorkflow(event) => self.apply_plugin_workflow_event(event),
         }

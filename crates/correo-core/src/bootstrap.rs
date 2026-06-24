@@ -223,6 +223,7 @@ fn summary(
             .plugin_workflows
             .iter()
             .any(|workflow| workflow.enabled),
+        immutable: false,
         state: ConnectionState::Disconnected,
         disabled_reason: connection
             .url

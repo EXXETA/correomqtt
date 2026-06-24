@@ -8,7 +8,11 @@ use crate::responsive;
 use crate::theme::ThemeTokens;
 use crate::widgets::{dotted_focus_outline, square_icon_button_size, with_icon_button_padding};
 
-const TOP_WORKSPACES: [Workspace; 2] = [Workspace::Connections, Workspace::Scripts];
+const TOP_WORKSPACES: [Workspace; 3] = [
+    Workspace::Connections,
+    Workspace::Scripts,
+    Workspace::Broker,
+];
 const BOTTOM_WORKSPACES: [Workspace; 4] = [
     Workspace::Plugins,
     Workspace::Diagnostics,
@@ -108,7 +112,14 @@ mod tests {
 
     #[test]
     fn rail_groups_match_sidebar_spec() {
-        assert_eq!(TOP_WORKSPACES, [Workspace::Connections, Workspace::Scripts]);
+        assert_eq!(
+            TOP_WORKSPACES,
+            [
+                Workspace::Connections,
+                Workspace::Scripts,
+                Workspace::Broker
+            ]
+        );
         assert_eq!(
             BOTTOM_WORKSPACES,
             [

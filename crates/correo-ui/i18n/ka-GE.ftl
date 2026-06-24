@@ -34,7 +34,25 @@ workspace-diagnostics = დიაგნოსტიკა
 workspace-import-export = იმპორტი/ექსპორტი
 workspace-plugins = პლაგინები
 workspace-scripts = სკრიპტები
+workspace-broker = Broker
 workspace-settings = პარამეტრები
+
+broker-detail = Start a local built-in MQTT broker for development and testing. The listener accepts MQTT 3.1.1 and MQTT 5 clients on the configured port.
+broker-status = Status
+broker-status-stopped = Stopped
+broker-status-starting = Starting
+broker-status-running = Running
+broker-status-stopping = Stopping
+broker-status-error = Error
+broker-port = Port
+broker-credentials-enabled = Require username and password
+broker-username = Username
+broker-password = Password
+broker-start = Start broker
+broker-stop = Stop broker
+broker-clear-logs = Clear logs
+broker-logs = Broker logs
+broker-no-logs = No broker logs yet.
 
 script-search = სკრიპტების ძიება...
 script-new = ახალი სკრიპტი
@@ -221,6 +239,7 @@ state-error = შეცდომა
 
 disabled-already-connected = უკვე დაკავშირებულია
 disabled-missing-host = ჰოსტი აუცილებელია
+disabled-broker-stopped = Built-in broker is stopped
 disabled-busy = კავშირი დაკავებულია
 
 about-title = CorreoMQTT-ის შესახებ

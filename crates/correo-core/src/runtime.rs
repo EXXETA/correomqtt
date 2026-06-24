@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
 use crate::{
-    AppCommand, AppCommandSender, AppEvent, AppEventSender, AppModel, AppSnapshot, Diagnostic,
-    HistoryPersistenceEvent, HistoryPersistenceKind, HistoryPersistenceWorker,
-    MigrationPersistenceCommand, MigrationPersistenceWorker, MqttCommandSender, MqttService,
-    NoopPluginHookExecutor, PluginHookExecutor, PluginInstaller, ScriptingWorker,
-    SettingsPersistenceCommand, SettingsPersistenceEvent, SettingsPersistenceWorker, StartupState,
+    AppCommand, AppCommandSender, AppEvent, AppEventSender, AppModel, AppSnapshot,
+    BuiltInBrokerWorker, Diagnostic, HistoryPersistenceEvent, HistoryPersistenceKind,
+    HistoryPersistenceWorker, MigrationPersistenceCommand, MigrationPersistenceWorker,
+    MqttCommandSender, MqttService, NoopPluginHookExecutor, PluginHookExecutor, PluginInstaller,
+    ScriptingWorker, SettingsPersistenceCommand, SettingsPersistenceEvent,
+    SettingsPersistenceWorker, StartupState,
 };
 
 mod plugin_helpers;
@@ -20,6 +21,7 @@ pub struct AppRuntime {
     event_sender: AppEventSender,
     event_receiver: flume::Receiver<AppEvent>,
     mqtt_service: Option<MqttService>,
+    broker_worker: BuiltInBrokerWorker,
     history_worker: Option<HistoryPersistenceWorker>,
     migration_worker: Option<MigrationPersistenceWorker>,
     plugin_hooks: Arc<dyn PluginHookExecutor>,
@@ -45,13 +47,15 @@ impl AppRuntime {
     fn with_model(model: AppModel) -> Self {
         let (command_sender, command_receiver) = flume::unbounded();
         let (event_sender, event_receiver) = flume::unbounded();
+        let app_event_sender = AppEventSender::new(event_sender);
         Self {
             model,
             command_sender: AppCommandSender::new(command_sender),
             command_receiver,
-            event_sender: AppEventSender::new(event_sender),
+            event_sender: app_event_sender.clone(),
             event_receiver,
             mqtt_service: None,
+            broker_worker: BuiltInBrokerWorker::new(app_event_sender),
             history_worker: None,
             migration_worker: None,
             plugin_hooks: Arc::new(NoopPluginHookExecutor),
@@ -129,6 +133,8 @@ impl AppRuntime {
             report.events_processed += 1;
         }
 
+        self.broker_worker.poll();
+
         while let Some(event) = self.try_recv_history_event() {
             self.apply_history_event(event);
             report.events_processed += 1;
@@ -166,6 +172,7 @@ impl AppRuntime {
                 self.shutdown_requested = true;
             }
             self.forward_mqtt_commands(&command);
+            self.forward_broker_command(&command);
             self.apply_plugin_connection_command(&command);
             self.forward_migration_command(&command);
             let plugin_file_result = self.apply_plugin_file_command(&command);
@@ -187,6 +194,9 @@ impl AppRuntime {
             }
             if matches!(command, AppCommand::SaveConnectionPlugins) {
                 self.dispatch_connection_plugin_workflows_save();
+            }
+            if self.should_persist_connections_for_command(&command, &command_before) {
+                self.dispatch_connections_save();
             }
             self.dispatch_scripting_command(&command, &command_before);
             self.dispatch_dirty_workbenches();
@@ -358,9 +368,46 @@ impl AppRuntime {
         }
     }
 
+    fn dispatch_connections_save(&self) {
+        let Some(worker) = &self.settings_worker else {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    "Settings persistence worker is not running.",
+                )));
+            return;
+        };
+        if let Err(error) = worker.dispatch(SettingsPersistenceCommand::SaveConnections {
+            connections: self.model.connection_persistence_snapshot(),
+        }) {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    error.to_string(),
+                )));
+        }
+    }
+
+    fn should_persist_connections_for_command(
+        &self,
+        command: &AppCommand,
+        before: &AppSnapshot,
+    ) -> bool {
+        match command {
+            AppCommand::SaveConnectionSettings | AppCommand::SaveConnectionPlugins => {
+                before.connection_settings.dirty && before.connection_settings.valid
+            }
+            AppCommand::ConfirmDeleteConnection => {
+                before.connection_count != self.model.snapshot().connection_count
+            }
+            AppCommand::MoveConnection { .. } => true,
+            _ => false,
+        }
+    }
+
     fn apply_settings_event(&self, event: SettingsPersistenceEvent) {
         let diagnostic = match event {
-            SettingsPersistenceEvent::Saved => Diagnostic::info("Global settings persisted."),
+            SettingsPersistenceEvent::Saved => Diagnostic::info("Settings persisted."),
             SettingsPersistenceEvent::Failed { error } => {
                 Diagnostic::error(format!("Global settings persistence failed: {error}"))
             }
@@ -455,6 +502,18 @@ impl AppRuntime {
                         error.to_string(),
                     )));
             }
+        }
+    }
+
+    fn forward_broker_command(&mut self, command: &AppCommand) {
+        match command {
+            AppCommand::StartBuiltInBroker => {
+                if let Some(config) = self.model.broker_start_config() {
+                    self.broker_worker.start(config);
+                }
+            }
+            AppCommand::StopBuiltInBroker => self.broker_worker.stop(),
+            _ => {}
         }
     }
 

@@ -31,6 +31,7 @@ pub(crate) fn workspace_icon(workspace: Workspace) -> &'static str {
         Workspace::Connections => regular::LIST_BULLETS,
         Workspace::ImportExport => regular::TROLLEY_SUITCASE,
         Workspace::Scripts => regular::SCROLL,
+        Workspace::Broker => regular::HARD_DRIVES,
         Workspace::Plugins => regular::PACKAGE,
         Workspace::Diagnostics => regular::BUG,
         Workspace::Settings => regular::GEAR,
@@ -53,6 +54,7 @@ mod tests {
             regular::TROLLEY_SUITCASE
         );
         assert_eq!(workspace_icon(Workspace::Scripts), regular::SCROLL);
+        assert_eq!(workspace_icon(Workspace::Broker), regular::HARD_DRIVES);
         assert_eq!(workspace_icon(Workspace::Plugins), regular::PACKAGE);
         assert_eq!(workspace_icon(Workspace::Diagnostics), regular::BUG);
         assert_eq!(workspace_icon(Workspace::Settings), regular::GEAR);

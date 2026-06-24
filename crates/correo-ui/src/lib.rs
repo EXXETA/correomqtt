@@ -1,4 +1,5 @@
 mod about;
+mod broker;
 mod command_bar;
 mod connection_launcher;
 mod connection_plugins;

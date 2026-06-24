@@ -34,8 +34,8 @@ mod connection_settings;
 pub use connection_settings::*;
 
 use crate::{
-    Diagnostic, GlobalSettingsSnapshot, MigrationRecoverySnapshot, PluginSurfaceSnapshot,
-    ScriptSurfaceSnapshot, TransferSurfaceSnapshot,
+    BuiltInBrokerSnapshot, Diagnostic, GlobalSettingsSnapshot, MigrationRecoverySnapshot,
+    PluginSurfaceSnapshot, ScriptSurfaceSnapshot, TransferSurfaceSnapshot,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -51,6 +51,8 @@ pub struct AppSnapshot {
     pub connection_plugins_overlay: Option<ConnectionId>,
     pub connection_surface: ConnectionSurface,
     pub connections: Vec<ConnectionSummary>,
+    #[serde(default)]
+    pub built_in_broker: BuiltInBrokerSnapshot,
     pub diagnostics: Vec<Diagnostic>,
     pub global_settings: GlobalSettingsSnapshot,
     pub migration_recovery: MigrationRecoverySnapshot,
@@ -74,6 +76,7 @@ impl AppSnapshot {
             connection_plugins_overlay: None,
             connection_surface: ConnectionSurface::Workbench,
             connections: Vec::new(),
+            built_in_broker: BuiltInBrokerSnapshot::default(),
             diagnostics: Vec::new(),
             global_settings: GlobalSettingsSnapshot::default(),
             migration_recovery: MigrationRecoverySnapshot::default(),
@@ -117,6 +120,7 @@ pub enum Workspace {
     Connections,
     ImportExport,
     Scripts,
+    Broker,
     Plugins,
     Diagnostics,
     Settings,
@@ -124,9 +128,10 @@ pub enum Workspace {
 }
 
 impl Workspace {
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 7] = [
         Self::Connections,
         Self::Scripts,
+        Self::Broker,
         Self::Plugins,
         Self::Diagnostics,
         Self::Settings,
@@ -138,6 +143,7 @@ impl Workspace {
             Self::Connections => "Connections",
             Self::ImportExport => "Import/Export",
             Self::Scripts => "Scripting",
+            Self::Broker => "Broker",
             Self::Plugins => "Plugins",
             Self::Diagnostics => "Diagnostics",
             Self::Settings => "Settings",
@@ -150,6 +156,7 @@ impl Workspace {
             Self::Connections => "C",
             Self::ImportExport => "I/O",
             Self::Scripts => "S",
+            Self::Broker => "B",
             Self::Plugins => "P",
             Self::Diagnostics => "D",
             Self::Settings => "G",
@@ -223,6 +230,7 @@ impl ConnectionBadge {
 pub enum ConnectDisabledReason {
     AlreadyConnected,
     MissingHost,
+    BrokerStopped,
     Busy,
 }
 
@@ -231,6 +239,7 @@ impl ConnectDisabledReason {
         match self {
             Self::AlreadyConnected => "Already connected",
             Self::MissingHost => "Host is required",
+            Self::BrokerStopped => "Built-in broker is stopped",
             Self::Busy => "Connection is busy",
         }
     }
@@ -245,6 +254,8 @@ pub struct ConnectionSummary {
     pub badges: Vec<ConnectionBadge>,
     #[serde(default)]
     pub active_plugin_workflows: bool,
+    #[serde(default)]
+    pub immutable: bool,
     pub state: ConnectionState,
     pub disabled_reason: Option<ConnectDisabledReason>,
     pub recent_subscriptions: usize,

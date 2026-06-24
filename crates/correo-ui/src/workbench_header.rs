@@ -50,14 +50,16 @@ pub fn connection_header(
     );
     left.set_clip_rect(rect);
     left.heading(&connection.name);
-    if header_icon_button(
-        &mut left,
-        regular::PENCIL_SIMPLE,
-        i18n.text("connection-edit-tooltip"),
-    )
-    .clicked()
-    {
-        send(commands, AppCommand::OpenConnectionSettings(connection.id));
+    if !connection.immutable {
+        if header_icon_button(
+            &mut left,
+            regular::PENCIL_SIMPLE,
+            i18n.text("connection-edit-tooltip"),
+        )
+        .clicked()
+        {
+            send(commands, AppCommand::OpenConnectionSettings(connection.id));
+        }
     }
     if snapshot.plugins.has_connection_workflow_plugins()
         && header_icon_button_with_activity_dot(
@@ -71,14 +73,16 @@ pub fn connection_header(
     {
         send(commands, AppCommand::OpenConnectionPlugins(connection.id));
     }
-    if header_icon_button(
-        &mut left,
-        regular::TRASH,
-        i18n.text("connection-delete-title"),
-    )
-    .clicked()
-    {
-        send(commands, AppCommand::RequestDeleteConnection);
+    if !connection.immutable {
+        if header_icon_button(
+            &mut left,
+            regular::TRASH,
+            i18n.text("connection-delete-title"),
+        )
+        .clicked()
+        {
+            send(commands, AppCommand::RequestDeleteConnection);
+        }
     }
     plugin_connection_actions(&mut left, snapshot, connection, commands);
 
@@ -270,11 +274,11 @@ fn compact_overflow_menu(
     commands: &AppCommandSender,
     i18n: &I18n,
 ) {
-    let mut label_storage = vec![
-        i18n.text("connection-edit-tooltip"),
-        i18n.text("validators-title"),
-        i18n.text("connection-delete-title"),
-    ];
+    let mut label_storage = vec![i18n.text("validators-title")];
+    if !connection.immutable {
+        label_storage.push(i18n.text("connection-edit-tooltip"));
+        label_storage.push(i18n.text("connection-delete-title"));
+    }
     label_storage.extend(
         snapshot
             .plugins
@@ -293,15 +297,17 @@ fn compact_overflow_menu(
     let response = response.on_hover_text(i18n.text("connection-actions"));
     aligned_overflow_menu(ui, response, menu_width, MenuAlignment::Left, |ui| {
         set_menu_item_width(ui, &labels);
-        if menu_item(
-            ui,
-            Some(regular::PENCIL_SIMPLE),
-            &i18n.text("connection-edit-tooltip"),
-        )
-        .clicked()
-        {
-            send(commands, AppCommand::OpenConnectionSettings(connection.id));
-            return true;
+        if !connection.immutable {
+            if menu_item(
+                ui,
+                Some(regular::PENCIL_SIMPLE),
+                &i18n.text("connection-edit-tooltip"),
+            )
+            .clicked()
+            {
+                send(commands, AppCommand::OpenConnectionSettings(connection.id));
+                return true;
+            }
         }
         if snapshot.plugins.has_connection_workflow_plugins()
             && connection_workflow_menu_item(
@@ -315,15 +321,17 @@ fn compact_overflow_menu(
             send(commands, AppCommand::OpenConnectionPlugins(connection.id));
             return true;
         }
-        if menu_item(
-            ui,
-            Some(regular::TRASH),
-            &i18n.text("connection-delete-title"),
-        )
-        .clicked()
-        {
-            send(commands, AppCommand::RequestDeleteConnection);
-            return true;
+        if !connection.immutable {
+            if menu_item(
+                ui,
+                Some(regular::TRASH),
+                &i18n.text("connection-delete-title"),
+            )
+            .clicked()
+            {
+                send(commands, AppCommand::RequestDeleteConnection);
+                return true;
+            }
         }
         for action in snapshot.plugins.connection_header_actions() {
             let enabled = plugin_action_enabled(action.requires_connected, connection.state);
@@ -517,6 +525,7 @@ fn disabled_reason_label(reason: ConnectDisabledReason, i18n: &I18n) -> String {
     i18n.text(match reason {
         ConnectDisabledReason::AlreadyConnected => "disabled-already-connected",
         ConnectDisabledReason::MissingHost => "disabled-missing-host",
+        ConnectDisabledReason::BrokerStopped => "disabled-broker-stopped",
         ConnectDisabledReason::Busy => "disabled-busy",
     })
 }

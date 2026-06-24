@@ -34,7 +34,25 @@ workspace-diagnostics = Diagnostics
 workspace-import-export = Importer/Exporter
 workspace-plugins = Plugins
 workspace-scripts = Scripts
+workspace-broker = Broker
 workspace-settings = Paramètres
+
+broker-detail = Start a local built-in MQTT broker for development and testing. The listener accepts MQTT 3.1.1 and MQTT 5 clients on the configured port.
+broker-status = Status
+broker-status-stopped = Stopped
+broker-status-starting = Starting
+broker-status-running = Running
+broker-status-stopping = Stopping
+broker-status-error = Error
+broker-port = Port
+broker-credentials-enabled = Require username and password
+broker-username = Username
+broker-password = Password
+broker-start = Start broker
+broker-stop = Stop broker
+broker-clear-logs = Clear logs
+broker-logs = Broker logs
+broker-no-logs = No broker logs yet.
 
 script-search = Rechercher des scripts...
 script-new = Nouveau script
@@ -221,6 +239,7 @@ state-error = Erreur
 
 disabled-already-connected = Déjà connecté
 disabled-missing-host = L’hôte est obligatoire
+disabled-broker-stopped = Built-in broker is stopped
 disabled-busy = La connexion est occupée
 
 about-title = À propos de CorreoMQTT

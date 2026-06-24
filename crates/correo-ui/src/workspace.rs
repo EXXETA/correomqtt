@@ -2,9 +2,9 @@ use correo_core::{AppCommand, AppCommandSender, AppSnapshot, ConnectionSurface, 
 use egui::{RichText, Ui, UiBuilder};
 
 use crate::{
-    about, connection_plugins, connection_settings, diagnostics, i18n::I18n, plugins, responsive,
-    scripts, settings, theme::ThemeTokens, widgets, widgets::paint_focus_outline, workbench,
-    PayloadHighlighter,
+    about, broker, connection_plugins, connection_settings, diagnostics, i18n::I18n, plugins,
+    responsive, scripts, settings, theme::ThemeTokens, widgets, widgets::paint_focus_outline,
+    workbench, PayloadHighlighter,
 };
 
 const VIEW_PADDING: f32 = 10.0;
@@ -23,6 +23,7 @@ pub fn sidebar(
     match workspace {
         Workspace::ImportExport => transfer_sidebar(ui, snapshot, tokens, commands, i18n),
         Workspace::Scripts => scripts::sidebar(ui, &snapshot.scripts, tokens, commands, i18n),
+        Workspace::Broker => {}
         Workspace::Plugins => {}
         Workspace::Diagnostics => {}
         Workspace::Settings => {}
@@ -60,6 +61,10 @@ pub fn show(
             });
         }
         Workspace::Scripts => scripts::show(ui, snapshot, tokens, commands, i18n),
+        Workspace::Broker => padded_view(ui, |ui| {
+            workspace_title(ui, i18n.workspace_label(Workspace::Broker));
+            broker::show(ui, snapshot, tokens, commands, i18n);
+        }),
         Workspace::Plugins => padded_view_with_left_inset(
             ui,
             if responsive::plugin_context_is_compact(ui.ctx()) {

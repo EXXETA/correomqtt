@@ -246,6 +246,7 @@ fn context_panel_visible(snapshot: &AppSnapshot) -> bool {
     !matches!(
         snapshot.active_workspace,
         Workspace::Scripts
+            | Workspace::Broker
             | Workspace::Plugins
             | Workspace::Diagnostics
             | Workspace::Settings

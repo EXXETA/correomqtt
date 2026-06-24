@@ -3,17 +3,24 @@ use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
 
 use correo_storage::current::{
-    ConfigStore, ConnectionPluginDirection as StorageConnectionPluginDirection,
-    ConnectionPluginWorkflowConfig,
-    ConnectionPluginWorkflowKind as StorageConnectionPluginWorkflowKind, PluginStateSettings,
-    Settings,
+    Auth, ConfigStore, ConnectionConfig,
+    ConnectionPluginDirection as StorageConnectionPluginDirection, ConnectionPluginWorkflowConfig,
+    ConnectionPluginWorkflowKind as StorageConnectionPluginWorkflowKind, Lwt, MqttVersion,
+    PluginStateSettings, Proxy, Qos as StorageQos, Settings, TlsSsl,
 };
 use thiserror::Error;
 
 use crate::{
     normalize_keyring_backend, ConnectionPluginDirection, ConnectionPluginWorkflow,
-    ConnectionPluginWorkflowKind, GlobalSettingsSnapshot, PluginRepositoryRow, ThemeMode,
+    ConnectionPluginWorkflowKind, ConnectionSettingsSnapshot, GlobalSettingsSnapshot,
+    PluginRepositoryRow, ThemeMode,
 };
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConnectionPersistenceSnapshot {
+    pub storage_id: String,
+    pub settings: ConnectionSettingsSnapshot,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SettingsPersistenceCommand {
@@ -24,6 +31,9 @@ pub enum SettingsPersistenceCommand {
     SaveConnectionPluginWorkflows {
         connection_id: String,
         workflows: Vec<ConnectionPluginWorkflow>,
+    },
+    SaveConnections {
+        connections: Vec<ConnectionPersistenceSnapshot>,
     },
 }
 
@@ -98,6 +108,9 @@ fn apply_settings_command(
             &connection_id,
             workflows.into_iter().map(storage_plugin_workflow).collect(),
         ),
+        SettingsPersistenceCommand::SaveConnections { connections } => {
+            store.save_connections(connections.into_iter().map(storage_connection).collect())
+        }
     };
 
     match result {
@@ -106,6 +119,92 @@ fn apply_settings_command(
             error: error.to_string(),
         },
     }
+}
+
+fn storage_connection(snapshot: ConnectionPersistenceSnapshot) -> ConnectionConfig {
+    let settings = snapshot.settings;
+    ConnectionConfig {
+        id: snapshot.storage_id,
+        name: settings.profile_name.trim().to_owned(),
+        url: settings.host.trim().to_owned(),
+        port: parse_port(&settings.port, 1883),
+        client_id: non_empty(settings.client_id),
+        username: non_empty(settings.username),
+        clean_session: settings.clean_session,
+        mqtt_version: storage_mqtt_version(&settings.mqtt_version),
+        ssl: storage_tls(&settings.tls_mode),
+        ssl_keystore: non_empty(settings.tls_store),
+        ssl_host_verification: settings.tls_host_verification,
+        proxy: storage_proxy(&settings.proxy_mode),
+        ssh_host: non_empty(settings.ssh_host),
+        ssh_port: parse_port(&settings.ssh_port, 22),
+        local_port: parse_optional_port(&settings.local_mqtt_port),
+        auth: storage_auth(&settings.auth_mode),
+        auth_username: non_empty(settings.auth_username),
+        auth_keyfile: non_empty(settings.ssh_key_file),
+        lwt: if settings.lwt_enabled {
+            Lwt::On
+        } else {
+            Lwt::Off
+        },
+        lwt_topic: non_empty(settings.lwt_topic),
+        lwt_qos: Some(StorageQos::AtMostOnce),
+        lwt_retained: settings.lwt_retained,
+        lwt_payload: non_empty(settings.lwt_payload),
+        connection_ui_settings: None,
+        publish_list_view_config: None,
+        subscribe_list_view_config: None,
+        plugin_workflows: settings
+            .plugin_workflows
+            .into_iter()
+            .map(storage_plugin_workflow)
+            .collect(),
+    }
+}
+
+fn storage_mqtt_version(label: &str) -> MqttVersion {
+    if label.contains('5') {
+        MqttVersion::Mqtt50
+    } else {
+        MqttVersion::Mqtt311
+    }
+}
+
+fn storage_tls(label: &str) -> TlsSsl {
+    if label == "Keystore" {
+        TlsSsl::Keystore
+    } else {
+        TlsSsl::Off
+    }
+}
+
+fn storage_proxy(label: &str) -> Proxy {
+    if label == "SSH" {
+        Proxy::Ssh
+    } else {
+        Proxy::Off
+    }
+}
+
+fn storage_auth(label: &str) -> Auth {
+    match label {
+        "Password" => Auth::Password,
+        "Keyfile" => Auth::Keyfile,
+        _ => Auth::Off,
+    }
+}
+
+fn parse_port(value: &str, fallback: u16) -> u16 {
+    value
+        .trim()
+        .parse::<u16>()
+        .ok()
+        .filter(|port| *port > 0)
+        .unwrap_or(fallback)
+}
+
+fn parse_optional_port(value: &str) -> Option<u16> {
+    value.trim().parse::<u16>().ok().filter(|port| *port > 0)
 }
 
 fn storage_plugin_workflow(workflow: ConnectionPluginWorkflow) -> ConnectionPluginWorkflowConfig {
