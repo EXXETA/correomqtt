@@ -3,7 +3,7 @@ use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
 
 use correo_storage::current::{
-    Auth, ConfigStore, ConnectionConfig,
+    Auth, BuiltInBrokerConfig, ConfigStore, ConnectionConfig,
     ConnectionPluginDirection as StorageConnectionPluginDirection, ConnectionPluginWorkflowConfig,
     ConnectionPluginWorkflowKind as StorageConnectionPluginWorkflowKind, Lwt, MqttVersion,
     PluginStateSettings, Proxy, Qos as StorageQos, Settings, TlsSsl,
@@ -23,6 +23,14 @@ pub struct ConnectionPersistenceSnapshot {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BuiltInBrokerPersistenceSnapshot {
+    pub port: String,
+    pub credentials_enabled: bool,
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SettingsPersistenceCommand {
     Save {
         theme_mode: ThemeMode,
@@ -34,6 +42,9 @@ pub enum SettingsPersistenceCommand {
     },
     SaveConnections {
         connections: Vec<ConnectionPersistenceSnapshot>,
+    },
+    SaveBuiltInBroker {
+        broker: BuiltInBrokerPersistenceSnapshot,
     },
 }
 
@@ -111,6 +122,9 @@ fn apply_settings_command(
         SettingsPersistenceCommand::SaveConnections { connections } => {
             store.save_connections(connections.into_iter().map(storage_connection).collect())
         }
+        SettingsPersistenceCommand::SaveBuiltInBroker { broker } => {
+            store.save_built_in_broker(storage_built_in_broker(broker))
+        }
     };
 
     match result {
@@ -118,6 +132,15 @@ fn apply_settings_command(
         Err(error) => SettingsPersistenceEvent::Failed {
             error: error.to_string(),
         },
+    }
+}
+
+fn storage_built_in_broker(snapshot: BuiltInBrokerPersistenceSnapshot) -> BuiltInBrokerConfig {
+    BuiltInBrokerConfig {
+        port: snapshot.port,
+        credentials_enabled: snapshot.credentials_enabled,
+        username: snapshot.username,
+        password: snapshot.password,
     }
 }
 

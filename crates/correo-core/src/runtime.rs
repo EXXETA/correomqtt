@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use crate::{
     AppCommand, AppCommandSender, AppEvent, AppEventSender, AppModel, AppSnapshot,
-    BuiltInBrokerWorker, Diagnostic, HistoryPersistenceEvent, HistoryPersistenceKind,
-    HistoryPersistenceWorker, MigrationPersistenceCommand, MigrationPersistenceWorker,
-    MqttCommandSender, MqttService, NoopPluginHookExecutor, PluginHookExecutor, PluginInstaller,
-    ScriptingWorker, SettingsPersistenceCommand, SettingsPersistenceEvent,
-    SettingsPersistenceWorker, StartupState,
+    BuiltInBrokerPersistenceSnapshot, BuiltInBrokerWorker, Diagnostic, HistoryPersistenceEvent,
+    HistoryPersistenceKind, HistoryPersistenceWorker, MigrationPersistenceCommand,
+    MigrationPersistenceWorker, MqttCommandSender, MqttService, NoopPluginHookExecutor,
+    PluginHookExecutor, PluginInstaller, ScriptingWorker, SettingsPersistenceCommand,
+    SettingsPersistenceEvent, SettingsPersistenceWorker, StartupState,
 };
 
 mod plugin_helpers;
@@ -198,6 +198,9 @@ impl AppRuntime {
             if self.should_persist_connections_for_command(&command, &command_before) {
                 self.dispatch_connections_save();
             }
+            if self.should_persist_built_in_broker_for_command(&command, &command_before) {
+                self.dispatch_built_in_broker_save();
+            }
             self.dispatch_scripting_command(&command, &command_before);
             self.dispatch_dirty_workbenches();
             report.commands_processed += 1;
@@ -388,6 +391,32 @@ impl AppRuntime {
         }
     }
 
+    fn dispatch_built_in_broker_save(&self) {
+        let Some(worker) = &self.settings_worker else {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    "Settings persistence worker is not running.",
+                )));
+            return;
+        };
+        let broker = &self.model.snapshot().built_in_broker;
+        if let Err(error) = worker.dispatch(SettingsPersistenceCommand::SaveBuiltInBroker {
+            broker: BuiltInBrokerPersistenceSnapshot {
+                port: broker.port.clone(),
+                credentials_enabled: broker.credentials_enabled,
+                username: broker.username.clone(),
+                password: broker.password.clone(),
+            },
+        }) {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    error.to_string(),
+                )));
+        }
+    }
+
     fn should_persist_connections_for_command(
         &self,
         command: &AppCommand,
@@ -403,6 +432,20 @@ impl AppRuntime {
             AppCommand::MoveConnection { .. } => true,
             _ => false,
         }
+    }
+
+    fn should_persist_built_in_broker_for_command(
+        &self,
+        command: &AppCommand,
+        before: &AppSnapshot,
+    ) -> bool {
+        matches!(
+            command,
+            AppCommand::UpdateBuiltInBrokerPort(_)
+                | AppCommand::SetBuiltInBrokerCredentialsEnabled(_)
+                | AppCommand::UpdateBuiltInBrokerUsername(_)
+                | AppCommand::UpdateBuiltInBrokerPassword(_)
+        ) && before.built_in_broker != self.model.snapshot().built_in_broker
     }
 
     fn apply_settings_event(&self, event: SettingsPersistenceEvent) {

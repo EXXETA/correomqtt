@@ -1,6 +1,6 @@
 use correo_storage::current::{
-    AppConfig, Auth, ConfigStore, ConnectionConfig, Lwt, MqttVersion, Proxy, Settings, Theme,
-    ThemeSettings, TlsSsl,
+    AppConfig, Auth, BuiltInBrokerConfig, ConfigStore, ConnectionConfig, Lwt, MqttVersion, Proxy,
+    Settings, Theme, ThemeSettings, TlsSsl,
 };
 
 fn connection(id: &str) -> ConnectionConfig {
@@ -31,6 +31,7 @@ fn connection(id: &str) -> ConnectionConfig {
         connection_ui_settings: None,
         publish_list_view_config: None,
         subscribe_list_view_config: None,
+        plugin_workflows: Vec::new(),
     }
 }
 
@@ -46,6 +47,7 @@ fn saves_global_settings_without_replacing_connections() {
             }),
         }),
         settings: Settings::default(),
+        built_in_broker: BuiltInBrokerConfig::default(),
     };
     config.settings.keyring_identifier = Some("LibSecret".to_owned());
     store.save(&config).unwrap();

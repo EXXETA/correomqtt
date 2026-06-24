@@ -147,7 +147,7 @@ impl CorreoUi {
             .resizable(false)
             .frame(rail_frame(tokens))
             .show(context, |ui| {
-                nav::rail(ui, snapshot.active_workspace, tokens, commands, i18n);
+                nav::rail(ui, &snapshot, tokens, commands, i18n);
             });
 
         let compact_connections_context =
