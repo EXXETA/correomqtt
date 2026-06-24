@@ -155,21 +155,16 @@ impl CorreoUi {
 
         if context_panel_visible(&snapshot) && !compact_connections_context {
             if snapshot.active_workspace == Workspace::Connections {
-                let sidebar_width = connection_sidebar_width(context);
-                let response = SidePanel::left("correo-context")
-                    .exact_width(sidebar_width)
-                    .resizable(false)
+                SidePanel::left("correo-context")
+                    .default_width(layout::CONNECTION_FLYOUT_WIDTH)
+                    .width_range(
+                        layout::CONNECTION_SIDEBAR_MIN_WIDTH..=layout::CONNECTION_SIDEBAR_MAX_WIDTH,
+                    )
+                    .resizable(true)
                     .frame(sidebar_frame(tokens))
                     .show(context, |ui| {
                         connection_launcher::panel(ui, &snapshot, tokens, commands, i18n);
                     });
-                connection_sidebar_resize_handle(
-                    context,
-                    response.response.rect,
-                    response.response.layer_id,
-                    tokens,
-                    i18n,
-                );
             } else {
                 SidePanel::left("correo-context")
                     .default_width(layout::SIDEBAR_DEFAULT_WIDTH)
@@ -246,93 +241,13 @@ fn context_panel_visible(snapshot: &AppSnapshot) -> bool {
     !matches!(
         snapshot.active_workspace,
         Workspace::Scripts
+            | Workspace::Connections
             | Workspace::Broker
             | Workspace::Plugins
             | Workspace::Diagnostics
             | Workspace::Settings
             | Workspace::About
     )
-}
-
-fn connection_sidebar_width(context: &egui::Context) -> f32 {
-    context
-        .data_mut(|data| {
-            data.get_persisted(connection_sidebar_width_id())
-                .unwrap_or(layout::CONNECTION_FLYOUT_WIDTH)
-        })
-        .clamp(
-            layout::CONNECTION_SIDEBAR_MIN_WIDTH,
-            layout::CONNECTION_SIDEBAR_MAX_WIDTH,
-        )
-}
-
-fn connection_sidebar_resize_handle(
-    context: &egui::Context,
-    rect: egui::Rect,
-    layer_id: egui::LayerId,
-    tokens: ThemeTokens,
-    i18n: &I18n,
-) {
-    let x = rect.right();
-    let handle_width = layout::WORKBENCH_DIVIDER_SIZE;
-    let divider_top_inset = f32::from(layout::SIDEBAR_MARGIN_TOP);
-    let divider_bottom_inset =
-        f32::from(layout::SIDEBAR_MARGIN_BOTTOM) + f32::from(layout::CENTRAL_MARGIN);
-    let divider_rect = egui::Rect::from_min_max(
-        egui::pos2(x - handle_width * 0.5, rect.top() + divider_top_inset),
-        egui::pos2(x + handle_width * 0.5, rect.bottom() - divider_bottom_inset),
-    );
-    if widgets::flyout_mode_button_above_global_edge(
-        context,
-        "connections-flyout-mode-button",
-        divider_rect.center().x,
-        context.screen_rect().top() + layout::HEADER_HEIGHT,
-        &i18n.text("connection-use-flyout"),
-    )
-    .clicked()
-    {
-        responsive::set_forced_context_flyout_mode(context, true);
-        responsive::close_connection_flyout(context);
-        motion::finish_flyout_closed(context, "connections-context");
-    }
-    egui::Area::new(egui::Id::new("connections-context-resize-handle"))
-        .order(egui::Order::Middle)
-        .fixed_pos(divider_rect.min)
-        .movable(false)
-        .show(context, |ui| {
-            let handle_rect = egui::Rect::from_min_size(
-                ui.min_rect().min,
-                egui::vec2(handle_width, divider_rect.height()),
-            );
-            let resize_rect =
-                egui::Rect::from_min_max(handle_rect.left_top(), handle_rect.right_bottom());
-            let response = ui
-                .allocate_rect(resize_rect, egui::Sense::click_and_drag())
-                .on_hover_cursor(egui::CursorIcon::ResizeHorizontal);
-            if response.dragged() {
-                if let Some(pointer) = response.interact_pointer_pos() {
-                    let width = (pointer.x - rect.left()).clamp(
-                        layout::CONNECTION_SIDEBAR_MIN_WIDTH,
-                        layout::CONNECTION_SIDEBAR_MAX_WIDTH,
-                    );
-                    ui.ctx().data_mut(|data| {
-                        data.insert_persisted(connection_sidebar_width_id(), width)
-                    });
-                }
-            }
-        });
-
-    context.layer_painter(layer_id).line_segment(
-        [
-            egui::pos2(x, rect.top() + divider_top_inset),
-            egui::pos2(x, rect.bottom() - divider_bottom_inset),
-        ],
-        egui::Stroke::new(1.0, tokens.border),
-    );
-}
-
-fn connection_sidebar_width_id() -> egui::Id {
-    egui::Id::new("connections-context-sidebar-width")
 }
 
 fn connection_flyout(

@@ -1,14 +1,17 @@
 use correo_core::{AppCommand, AppCommandSender, AppSnapshot, ConnectionSurface, Workspace};
-use egui::{RichText, Ui, UiBuilder};
+use correo_style::layout;
+use egui::{CursorIcon, Id, Rect, RichText, Sense, Stroke, Ui, UiBuilder};
 
 use crate::{
-    about, broker, connection_plugins, connection_settings, diagnostics, i18n::I18n, plugins,
-    responsive, scripts, settings, theme::ThemeTokens, widgets, widgets::paint_focus_outline,
-    workbench, PayloadHighlighter,
+    about, broker, connection_launcher, connection_plugins, connection_settings, diagnostics,
+    i18n::I18n, motion, plugins, responsive, scripts, settings, theme::ThemeTokens, widgets,
+    widgets::paint_focus_outline, workbench, PayloadHighlighter,
 };
 
 const VIEW_PADDING: f32 = 10.0;
 const VIEW_PADDING_TOP: f32 = 0.0;
+const CONNECTION_DIVIDER_SIZE: f32 = 8.0;
+const CONNECTION_DETAIL_MIN_WIDTH: f32 = 345.0;
 
 pub fn sidebar(
     ui: &mut Ui,
@@ -43,17 +46,17 @@ pub fn show(
     about_logo_triggered: &mut bool,
 ) {
     match snapshot.active_workspace {
-        Workspace::Connections => padded_view_with_left_inset(
-            ui,
+        Workspace::Connections => {
             if responsive::connections_context_is_compact(ui.ctx(), snapshot.active_workspace) {
-                widgets::FLYOUT_HANDLE_WIDTH
+                padded_view_with_left_inset(ui, widgets::FLYOUT_HANDLE_WIDTH, |ui| {
+                    connections(ui, snapshot, tokens, commands, i18n, payload_highlighter);
+                });
             } else {
-                0.0
-            },
-            |ui| {
-                connections(ui, snapshot, tokens, commands, i18n, payload_highlighter);
-            },
-        ),
+                padded_view(ui, |ui| {
+                    connection_split(ui, snapshot, tokens, commands, i18n, payload_highlighter);
+                });
+            }
+        }
         Workspace::ImportExport => {
             padded_view(ui, |ui| {
                 workspace_title(ui, i18n.workspace_label(Workspace::ImportExport));
@@ -159,6 +162,119 @@ fn connections(
         connection_settings::overlay(ui, snapshot, tokens, commands, i18n);
         connection_plugins::overlay(ui, snapshot, tokens, commands, i18n);
     }
+}
+
+fn connection_split(
+    ui: &mut Ui,
+    snapshot: &AppSnapshot,
+    tokens: ThemeTokens,
+    commands: &AppCommandSender,
+    i18n: &I18n,
+    payload_highlighter: Option<&PayloadHighlighter>,
+) {
+    let rect = ui.available_rect_before_wrap();
+    ui.allocate_rect(rect, Sense::hover());
+    let (left, right, divider) = connection_horizontal_split(ui, rect, tokens);
+    connection_pane(ui, left, |ui| {
+        connection_launcher::panel(ui, snapshot, tokens, commands, i18n);
+    });
+    connection_pane(ui, right, |ui| {
+        connections(ui, snapshot, tokens, commands, i18n, payload_highlighter);
+    });
+    connection_flyout_mode_button(ui, divider, i18n);
+}
+
+fn connection_horizontal_split(ui: &mut Ui, rect: Rect, tokens: ThemeTokens) -> (Rect, Rect, Rect) {
+    let usable = (rect.width() - CONNECTION_DIVIDER_SIZE).max(1.0);
+    let min_left = layout::CONNECTION_SIDEBAR_MIN_WIDTH.min(usable * 0.45);
+    let min_right = CONNECTION_DETAIL_MIN_WIDTH.min((usable - min_left).max(0.0));
+    let max_left = (usable - min_right).max(min_left);
+    let id = Id::new("connections-list-ratio");
+    let default_ratio = (layout::CONNECTION_FLYOUT_WIDTH / usable).clamp(0.15, 0.85);
+    let mut left_width = connection_ratio(ui, id, default_ratio) * usable;
+    left_width = left_width.clamp(min_left, max_left);
+
+    let divider = Rect::from_min_size(
+        egui::pos2(rect.left() + left_width, rect.top()),
+        egui::vec2(CONNECTION_DIVIDER_SIZE, rect.height()),
+    );
+    let response = ui
+        .allocate_rect(divider, Sense::click_and_drag())
+        .on_hover_cursor(CursorIcon::ResizeHorizontal);
+    if response.dragged() {
+        left_width = (left_width + response.drag_delta().x).clamp(min_left, max_left);
+        store_connection_ratio(ui, id, left_width / usable);
+    }
+    draw_connection_divider(ui, divider, tokens, true);
+
+    let left = Rect::from_min_max(
+        rect.left_top(),
+        egui::pos2(
+            divider.left() - layout::WORKBENCH_CENTER_SPLIT_GUTTER,
+            rect.bottom(),
+        ),
+    );
+    let right = Rect::from_min_max(
+        egui::pos2(
+            divider.right() + layout::WORKBENCH_CENTER_SPLIT_GUTTER,
+            rect.top(),
+        ),
+        rect.right_bottom(),
+    );
+    (left, right, divider)
+}
+
+fn connection_pane(ui: &mut Ui, rect: Rect, add_contents: impl FnOnce(&mut Ui)) {
+    let mut child = ui.new_child(
+        UiBuilder::new()
+            .max_rect(rect)
+            .layout(egui::Layout::top_down(egui::Align::Min)),
+    );
+    child.set_clip_rect(rect);
+    add_contents(&mut child);
+}
+
+fn connection_flyout_mode_button(ui: &mut Ui, divider: Rect, i18n: &I18n) {
+    if crate::widgets::flyout_mode_button_above_divider(
+        ui,
+        "connections-flyout-mode-button",
+        divider,
+        &i18n.text("connection-use-flyout"),
+    )
+    .clicked()
+    {
+        responsive::set_forced_context_flyout_mode(ui.ctx(), true);
+        responsive::close_connection_flyout(ui.ctx());
+        motion::finish_flyout_closed(ui.ctx(), "connections-context");
+    }
+}
+
+fn draw_connection_divider(ui: &Ui, rect: Rect, tokens: ThemeTokens, vertical: bool) {
+    let center = rect.center();
+    let points = if vertical {
+        [
+            egui::pos2(center.x, rect.top()),
+            egui::pos2(center.x, rect.bottom()),
+        ]
+    } else {
+        [
+            egui::pos2(rect.left(), center.y),
+            egui::pos2(rect.right(), center.y),
+        ]
+    };
+    ui.painter()
+        .line_segment(points, Stroke::new(1.0, tokens.border));
+}
+
+fn connection_ratio(ui: &Ui, id: Id, default: f32) -> f32 {
+    ui.ctx()
+        .data_mut(|data| *data.get_persisted_mut_or(id, default))
+        .clamp(0.15, 0.85)
+}
+
+fn store_connection_ratio(ui: &Ui, id: Id, value: f32) {
+    ui.ctx()
+        .data_mut(|data| data.insert_persisted(id, value.clamp(0.15, 0.85)));
 }
 
 fn import_export_launcher(
