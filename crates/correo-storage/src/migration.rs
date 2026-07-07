@@ -395,10 +395,9 @@ fn record_unknown_value_fields(
 }
 
 fn classify_plugin_path(path: &Path) -> IgnoredJavaPluginStateKind {
-    let path = path.to_string_lossy();
-    if path.starts_with("plugins/jars") {
+    if path.starts_with(Path::new("plugins").join("jars")) {
         IgnoredJavaPluginStateKind::JarDirectory
-    } else if path.starts_with("plugins/config") {
+    } else if path.starts_with(Path::new("plugins").join("config")) {
         IgnoredJavaPluginStateKind::ConfigDirectory
     } else if path.ends_with("protocol.xml") {
         IgnoredJavaPluginStateKind::ProtocolXml

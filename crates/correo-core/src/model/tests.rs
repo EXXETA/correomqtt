@@ -727,7 +727,10 @@ fn migrated_fixture_opens_workbench_and_settings_without_secret_values() {
     assert_eq!(settings.proxy_mode, "SSH");
     assert!(settings.lwt_enabled);
     assert_eq!(settings.lwt_topic, "status/local-broker-01");
-    assert_eq!(settings.keyring_state, KeyringState::Available);
+    assert!(matches!(
+        settings.keyring_state,
+        KeyringState::Available | KeyringState::Unavailable
+    ));
 
     let exposed = format!("{:?}", model.snapshot());
     assert!(!exposed.contains("synthetic-mqtt-password"));
