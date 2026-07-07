@@ -70,6 +70,18 @@ impl MigrationApplier {
         }
     }
 
+    pub fn backup_from_path(
+        &self,
+        id: impl Into<String>,
+        path: impl Into<PathBuf>,
+    ) -> MigrationBackup {
+        MigrationBackup {
+            id: id.into(),
+            path: path.into(),
+            target_root: self.target_root.clone(),
+        }
+    }
+
     pub fn apply_preview(&self, preview: &MigrationPreview) -> Result<MigrationApplyOutcome> {
         let backup = self.create_backup()?;
         let diagnostics = self.apply_preview_with_backup(preview, &backup)?;
@@ -100,20 +112,14 @@ impl MigrationApplier {
                 reason: "rollback marker does not match the selected backup".to_owned(),
             });
         }
-        let expected =
-            marker
-                .state_fingerprint
-                .ok_or_else(|| StorageError::MigrationRollbackSafety {
-                    reason:
-                        "migration is still in progress and cannot be rolled back by user action"
-                            .to_owned(),
-                })?;
-        let actual = directory_fingerprint(&self.target_root)?;
-        if actual != expected {
-            return Err(StorageError::MigrationRollbackSafety {
-                reason: "target data changed after migration; refusing to overwrite newer data"
-                    .to_owned(),
-            });
+        if let Some(expected) = marker.state_fingerprint {
+            let actual = directory_fingerprint(&self.target_root)?;
+            if actual != expected {
+                return Err(StorageError::MigrationRollbackSafety {
+                    reason: "target data changed after migration; refusing to overwrite newer data"
+                        .to_owned(),
+                });
+            }
         }
         self.restore_backup_contents(backup)?;
         Ok(MigrationDiagnostics::rollback_complete(backup))
@@ -395,7 +401,22 @@ fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<()> {
         path: path.to_path_buf(),
         source,
     })?;
-    fs::write(path, json).map_err(|source| StorageError::Write {
+    write_file_atomic(path, json.as_bytes())
+}
+
+fn write_file_atomic(path: &Path, content: &[u8]) -> Result<()> {
+    let temporary = path.with_extension(format!("tmp.{}", std::process::id()));
+    fs::write(&temporary, content).map_err(|source| StorageError::Write {
+        path: temporary.clone(),
+        source,
+    })?;
+    if cfg!(windows) && path.exists() {
+        fs::remove_file(path).map_err(|source| StorageError::Write {
+            path: path.to_path_buf(),
+            source,
+        })?;
+    }
+    fs::rename(&temporary, path).map_err(|source| StorageError::Write {
         path: path.to_path_buf(),
         source,
     })

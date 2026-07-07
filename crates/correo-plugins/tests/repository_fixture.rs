@@ -14,6 +14,19 @@ fn repository_fixture_matches_generated_bundled_manifest_catalog() {
     let mut generated = serde_json::to_string_pretty(&repository).unwrap();
     generated.push('\n');
 
+    // Golden file: regenerate with REGEN_FIXTURE=1 after intentional
+    // manifest changes, then review the diff.
+    if std::env::var_os("REGEN_FIXTURE").is_some() {
+        std::fs::write(
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/fixtures/repository.json"
+            ),
+            &generated,
+        )
+        .unwrap();
+    }
+
     assert_eq!(generated, FIXTURE);
     assert_eq!(
         repository.repository_format_version,

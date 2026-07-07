@@ -1,13 +1,17 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 
 use correo_mqtt::{MqttConnectionOptions, MqttError, MqttSession, RumqttSession};
 use flume::{Receiver, Sender};
 use futures::StreamExt;
 use thiserror::Error;
 use tokio::task::JoinHandle;
+use tokio::time::timeout;
 
 use super::{MqttCommand, MqttEvent, MqttFailure, MqttOperation};
+
+const DEFAULT_OPERATION_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub trait MqttSessionFactory: Send + Sync + 'static {
     fn create_session(&self, options: &MqttConnectionOptions) -> Box<dyn MqttSession>;
@@ -31,6 +35,13 @@ pub struct MqttService {
 
 impl MqttService {
     pub fn spawn(factory: impl MqttSessionFactory) -> Result<Self, MqttServiceError> {
+        Self::spawn_with_operation_timeout(factory, DEFAULT_OPERATION_TIMEOUT)
+    }
+
+    pub(crate) fn spawn_with_operation_timeout(
+        factory: impl MqttSessionFactory,
+        operation_timeout: Duration,
+    ) -> Result<Self, MqttServiceError> {
         tokio::runtime::Handle::try_current().map_err(|_| MqttServiceError::MissingRuntime)?;
 
         let (command_sender, command_receiver) = flume::unbounded();
@@ -40,6 +51,7 @@ impl MqttService {
             commands: command_receiver,
             events: event_sender,
             sessions: HashMap::new(),
+            operation_timeout,
         };
         let task = tokio::spawn(service_loop.run());
 
@@ -52,6 +64,11 @@ impl MqttService {
 
     pub fn command_sender(&self) -> MqttCommandSender {
         self.commands.clone()
+    }
+
+    pub async fn shutdown(mut self) {
+        let _ = self.commands.send(MqttCommand::Shutdown);
+        let _ = (&mut self.task).await;
     }
 
     pub(crate) fn try_recv_event(&self) -> Result<MqttEvent, flume::TryRecvError> {
@@ -79,7 +96,7 @@ impl MqttCommandSender {
     pub fn send(&self, command: MqttCommand) -> Result<(), MqttServiceSendError> {
         self.sender
             .try_send(command)
-            .map_err(|error| MqttServiceSendError::Disconnected(error.into_inner()))
+            .map_err(|error| MqttServiceSendError::Disconnected(Box::new(error.into_inner())))
     }
 }
 
@@ -92,7 +109,7 @@ pub enum MqttServiceError {
 #[derive(Debug, Error)]
 pub enum MqttServiceSendError {
     #[error("MQTT service command receiver is disconnected")]
-    Disconnected(MqttCommand),
+    Disconnected(Box<MqttCommand>),
 }
 
 struct ServiceLoop {
@@ -100,6 +117,7 @@ struct ServiceLoop {
     commands: Receiver<MqttCommand>,
     events: Sender<MqttEvent>,
     sessions: HashMap<correo_mqtt::ConnectionId, SessionEntry>,
+    operation_timeout: Duration,
 }
 
 impl ServiceLoop {
@@ -203,7 +221,10 @@ impl ServiceLoop {
             return;
         };
 
-        if let Err(error) = entry.session.publish(request).await {
+        if let Err(error) = operation_result(
+            timeout(self.operation_timeout, entry.session.publish(request)).await,
+            MqttOperation::Publish,
+        ) {
             self.fail(Some(connection_id), MqttOperation::Publish, error);
         }
     }
@@ -223,7 +244,10 @@ impl ServiceLoop {
             return;
         };
 
-        if let Err(error) = entry.session.subscribe(subscription).await {
+        if let Err(error) = operation_result(
+            timeout(self.operation_timeout, entry.session.subscribe(subscription)).await,
+            MqttOperation::Subscribe,
+        ) {
             self.fail(Some(connection_id), MqttOperation::Subscribe, error);
         }
     }
@@ -243,7 +267,10 @@ impl ServiceLoop {
             return;
         };
 
-        if let Err(error) = entry.session.unsubscribe(request).await {
+        if let Err(error) = operation_result(
+            timeout(self.operation_timeout, entry.session.unsubscribe(request)).await,
+            MqttOperation::Unsubscribe,
+        ) {
             self.fail(Some(connection_id), MqttOperation::Unsubscribe, error);
         }
     }
@@ -280,6 +307,18 @@ impl ServiceLoop {
             operation,
             report: error.to_report(),
         }));
+    }
+}
+
+fn operation_result(
+    result: Result<Result<(), MqttError>, tokio::time::error::Elapsed>,
+    operation: MqttOperation,
+) -> Result<(), MqttError> {
+    match result {
+        Ok(result) => result,
+        Err(_) => Err(MqttError::protocol(format!(
+            "{operation} timed out while waiting for MQTT acknowledgement"
+        ))),
     }
 }
 

@@ -7,18 +7,35 @@ use sha2::{Digest, Sha256};
 
 use crate::XtaskError;
 
-pub(crate) fn write_checksum_files(artifact: &Path, out_dir: &Path) -> Result<String, XtaskError> {
+pub(crate) fn write_sidecar(artifact: &Path, out_dir: &Path) -> Result<String, XtaskError> {
     let checksum = sha256_file(artifact)?;
     let file_name = artifact_file_name(artifact)?;
-    fs::write(
-        out_dir.join(format!("{file_name}.sha256")),
-        format!("{checksum}  {file_name}\n"),
+    write_file_atomic(
+        &out_dir.join(format!("{file_name}.sha256")),
+        format!("{checksum}  {file_name}\n").as_bytes(),
     )?;
+    Ok(checksum)
+}
 
+// Release artifact extensions that belong in SHA256SUMS.
+const ARTIFACT_EXTENSIONS: &[&str] = &["zip", "dmg", "deb", "rpm", "msi"];
+
+pub(crate) fn write_checksum_files(artifact: &Path, out_dir: &Path) -> Result<String, XtaskError> {
+    write_sidecar(artifact, out_dir)
+}
+
+/// Regenerates SHA256SUMS over every release artifact in `out_dir`. Must run
+/// after all artifacts (zip + any dmg/deb/rpm/msi) have been written, so the
+/// summary is complete rather than zip-only.
+pub(crate) fn write_sha256sums(out_dir: &Path) -> Result<(), XtaskError> {
     let mut checksum_entries = Vec::new();
     for entry in fs::read_dir(out_dir)? {
         let path = entry?.path();
-        if path.extension().is_some_and(|extension| extension == "zip") {
+        let is_artifact = path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| ARTIFACT_EXTENSIONS.contains(&extension));
+        if is_artifact {
             let checksum = sha256_file(&path)?;
             let file_name = artifact_file_name(&path)?;
             checksum_entries.push((file_name, checksum));
@@ -30,8 +47,28 @@ pub(crate) fn write_checksum_files(artifact: &Path, out_dir: &Path) -> Result<St
     for (file_name, checksum) in checksum_entries {
         writeln!(&mut summary, "{checksum}  {file_name}").expect("writing to a String cannot fail");
     }
-    fs::write(out_dir.join("SHA256SUMS"), summary)?;
-    Ok(checksum)
+    write_file_atomic(&out_dir.join("SHA256SUMS"), summary.as_bytes())?;
+    Ok(())
+}
+
+fn write_file_atomic(path: &Path, content: &[u8]) -> Result<(), XtaskError> {
+    let temporary = temporary_path(path);
+    fs::write(&temporary, content)?;
+    replace_file(&temporary, path)?;
+    Ok(())
+}
+
+fn temporary_path(path: &Path) -> std::path::PathBuf {
+    let suffix = format!("tmp.{}", std::process::id());
+    path.with_extension(suffix)
+}
+
+fn replace_file(source: &Path, destination: &Path) -> Result<(), XtaskError> {
+    if cfg!(windows) && destination.exists() {
+        fs::remove_file(destination)?;
+    }
+    fs::rename(source, destination)?;
+    Ok(())
 }
 
 pub(crate) fn sha256_file(path: &Path) -> Result<String, XtaskError> {

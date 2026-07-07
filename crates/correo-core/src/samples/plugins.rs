@@ -88,15 +88,26 @@ fn json_formatter() -> PluginRow {
             ),
         ],
         connection_header_actions: Vec::new(),
-        diagnostics: vec![diag(
-            "diag-json-ready",
-            "org.correomqtt.plugins.json-format",
-            PluginDiagnosticSeverity::Info,
-            Some(PluginHookKind::DetailFormatter),
-            "Bundled formatter initialized",
-            "Manifest loaded and compatible entrypoint exports were found.",
-            "10:23:58",
-        )],
+        diagnostics: vec![
+            diag(
+                "diag-json-ready",
+                "org.correomqtt.plugins.json-format",
+                PluginDiagnosticSeverity::Info,
+                Some(PluginHookKind::DetailFormatter),
+                "Bundled formatter initialized",
+                "Manifest loaded and compatible entrypoint exports were found.",
+                "10:23:58",
+            ),
+            diag(
+                "diag-json-fallback",
+                "org.correomqtt.plugins.json-format",
+                PluginDiagnosticSeverity::Warning,
+                Some(PluginHookKind::DetailFormatter),
+                "Formatter fell back to raw payload",
+                "Formatting failed for one message, so the detail view fell back to the original raw payload.",
+                "10:22:31",
+            ),
+        ],
         legacy_note: None,
     }
 }

@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use correo_mqtt::{ConnectionId, Qos};
+use correo_mqtt::{ConnectionId, MqttConnectionOptions, MqttEndpoint, Qos};
 use correo_storage::current::{
     AppConfig, HistoryPersistenceSnapshot, ScriptExecution, ScriptExecutionStatus, ScriptFile,
     ScriptLogLevel, ScriptLogRecord, ScriptPersistenceSnapshot, ScriptStore,
@@ -36,6 +36,7 @@ fn worker_runs_reported_promise_sample_and_persists_logs() {
             script_path: "new_script.js".to_owned(),
             source: source.to_owned(),
             connection_id: Some("connection-1".to_owned()),
+            connect_command: None,
         })
         .unwrap();
 
@@ -128,6 +129,13 @@ fn worker_script_mqtt_bridge_queues_commands_and_runs_callbacks() {
             script_path: "mqtt.js".to_owned(),
             source: source.to_owned(),
             connection_id: Some(connection_id.to_string()),
+            connect_command: Some(Box::new(MqttCommand::Connect {
+                options: MqttConnectionOptions::new(
+                    connection_id,
+                    "script",
+                    MqttEndpoint::new("broker.example", 1883).expect("endpoint"),
+                ),
+            })),
         })
         .unwrap();
 
@@ -156,6 +164,7 @@ fn worker_script_mqtt_bridge_queues_commands_and_runs_callbacks() {
     assert!(matches!(
         commands.as_slice(),
         [
+            MqttCommand::Connect { options },
             MqttCommand::Publish {
                 connection_id: publish_connection_id,
                 request,
@@ -164,7 +173,8 @@ fn worker_script_mqtt_bridge_queues_commands_and_runs_callbacks() {
                 connection_id: subscribe_connection_id,
                 subscription,
             }
-        ] if *publish_connection_id == connection_id
+        ] if options.connection_id == connection_id
+            && *publish_connection_id == connection_id
             && request.topic.as_str() == "script/out"
             && request.payload == b"payload"
             && request.qos == Qos::AtLeastOnce

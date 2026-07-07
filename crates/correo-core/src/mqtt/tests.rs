@@ -19,9 +19,9 @@ async fn runtime_routes_mqtt_lifecycle_without_blocking_pump() {
     let options = connection_options(connection_id);
     runtime
         .command_sender()
-        .send(AppCommand::Mqtt(MqttCommand::Connect {
+        .send(AppCommand::Mqtt(Box::new(MqttCommand::Connect {
             options: options.clone(),
-        }))
+        })))
         .unwrap();
 
     let first_pump = runtime.pump();
@@ -38,9 +38,9 @@ async fn runtime_routes_mqtt_lifecycle_without_blocking_pump() {
 
     runtime
         .command_sender()
-        .send(AppCommand::Mqtt(MqttCommand::Reconnect {
+        .send(AppCommand::Mqtt(Box::new(MqttCommand::Reconnect {
             options: options.clone(),
-        }))
+        })))
         .unwrap();
     runtime.pump();
     assert_eq!(
@@ -69,9 +69,9 @@ async fn runtime_applies_pub_sub_and_incoming_events() {
 
     runtime
         .command_sender()
-        .send(AppCommand::Mqtt(MqttCommand::Connect {
+        .send(AppCommand::Mqtt(Box::new(MqttCommand::Connect {
             options: connection_options(connection_id),
-        }))
+        })))
         .unwrap();
     pump_until(&mut runtime, |runtime| {
         connection_state(runtime, connection_id) == ConnectionState::Connected
@@ -80,10 +80,10 @@ async fn runtime_applies_pub_sub_and_incoming_events() {
 
     runtime
         .command_sender()
-        .send(AppCommand::Mqtt(MqttCommand::Subscribe {
+        .send(AppCommand::Mqtt(Box::new(MqttCommand::Subscribe {
             connection_id,
             subscription: Subscription::new("bridge/#", Qos::AtLeastOnce).unwrap(),
-        }))
+        })))
         .unwrap();
     pump_until(&mut runtime, |runtime| {
         runtime
@@ -98,7 +98,7 @@ async fn runtime_applies_pub_sub_and_incoming_events() {
 
     runtime
         .command_sender()
-        .send(AppCommand::Mqtt(MqttCommand::Publish {
+        .send(AppCommand::Mqtt(Box::new(MqttCommand::Publish {
             connection_id,
             request: PublishRequest::new(
                 "bridge/device-1/state",
@@ -107,7 +107,7 @@ async fn runtime_applies_pub_sub_and_incoming_events() {
                 false,
             )
             .unwrap(),
-        }))
+        })))
         .unwrap();
     pump_until(&mut runtime, |runtime| {
         runtime
@@ -131,10 +131,10 @@ async fn runtime_applies_pub_sub_and_incoming_events() {
 
     runtime
         .command_sender()
-        .send(AppCommand::Mqtt(MqttCommand::Unsubscribe {
+        .send(AppCommand::Mqtt(Box::new(MqttCommand::Unsubscribe {
             connection_id,
             request: UnsubscribeRequest::new("bridge/#").unwrap(),
-        }))
+        })))
         .unwrap();
     pump_until(&mut runtime, |runtime| {
         runtime
@@ -349,7 +349,7 @@ async fn disconnect_cleans_up_service_session() {
 
     runtime
         .command_sender()
-        .send(AppCommand::Mqtt(MqttCommand::Publish {
+        .send(AppCommand::Mqtt(Box::new(MqttCommand::Publish {
             connection_id,
             request: PublishRequest::new(
                 "bridge/after-disconnect",
@@ -358,7 +358,7 @@ async fn disconnect_cleans_up_service_session() {
                 false,
             )
             .unwrap(),
-        }))
+        })))
         .unwrap();
     pump_until(&mut runtime, |runtime| {
         runtime
@@ -384,9 +384,9 @@ async fn mqtt_failures_are_redacted_before_diagnostics() {
 
     runtime
         .command_sender()
-        .send(AppCommand::Mqtt(MqttCommand::Connect {
+        .send(AppCommand::Mqtt(Box::new(MqttCommand::Connect {
             options: connection_options(connection_id),
-        }))
+        })))
         .unwrap();
 
     pump_until(&mut runtime, |runtime| {

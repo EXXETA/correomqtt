@@ -1,6 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
 use correo_mqtt::ConnectionId;
+use correo_storage::current::{
+    ConnectionConfig as StorageConnectionConfig, ImportedSecret as StorageImportedSecret,
+};
 
 use crate::{
     AppCommand, AppEvent, AppSnapshot, ConnectDisabledReason, ConnectionSettingsSnapshot,
@@ -22,6 +25,8 @@ mod scripting_tests;
 mod settings;
 mod subscriptions;
 mod transfer;
+mod transfer_connection_export;
+mod transfer_connections;
 
 #[derive(Debug, Clone)]
 pub struct AppModel {
@@ -32,6 +37,10 @@ pub struct AppModel {
     dirty_workbenches: HashSet<ConnectionId>,
     saved_global_settings: crate::GlobalSettingsSnapshot,
     saved_theme_mode: crate::ThemeMode,
+    pending_connection_imports: HashMap<String, StorageConnectionConfig>,
+    pending_connection_import_secrets: Vec<StorageImportedSecret>,
+    pending_connection_import_persistence:
+        Option<(Vec<StorageConnectionConfig>, Vec<StorageImportedSecret>)>,
 }
 
 impl AppModel {
@@ -75,6 +84,9 @@ impl AppModel {
             dirty_workbenches: HashSet::new(),
             saved_global_settings,
             saved_theme_mode,
+            pending_connection_imports: HashMap::new(),
+            pending_connection_import_secrets: Vec::new(),
+            pending_connection_import_persistence: None,
         };
         model.normalize_connection_surface();
         model
@@ -105,10 +117,16 @@ impl AppModel {
                 let workbench = self.workbench_for_connection(connection_id)?.clone();
                 Some(crate::HistoryPersistenceCommand::ReplaceWorkbench {
                     connection_id: self.storage_connection_id(connection_id),
-                    workbench,
+                    workbench: Box::new(workbench),
                 })
             })
             .collect()
+    }
+
+    pub(crate) fn drain_connection_import_persistence(
+        &mut self,
+    ) -> Option<(Vec<StorageConnectionConfig>, Vec<StorageImportedSecret>)> {
+        self.pending_connection_import_persistence.take()
     }
 
     pub(crate) fn mqtt_commands_for_app_command(
@@ -216,7 +234,9 @@ impl AppModel {
             AppCommand::UpdateConnectionExportPath(path) => {
                 self.update_connection_export_path(path)
             }
-            AppCommand::StartConnectionExport => self.start_connection_export(),
+            AppCommand::StartConnectionExport { password } => {
+                self.start_connection_export(&password)
+            }
             AppCommand::ImportMessages => self.import_messages(),
             AppCommand::ImportMessagesFromPath(path) => self.import_messages_from_path(&path),
             AppCommand::ExportMessages => self.export_messages(),
@@ -299,6 +319,11 @@ impl AppModel {
                 self.snapshot.connection_settings.dirty = true;
                 self.refresh_connection_settings_validation();
             }
+            AppCommand::UpdateLwtQos(qos) => {
+                self.snapshot.connection_settings.lwt_qos = qos;
+                self.snapshot.connection_settings.dirty = true;
+                self.refresh_connection_settings_validation();
+            }
             AppCommand::SaveConnectionSettings => self.save_connection_settings(),
             AppCommand::DiscardConnectionSettings => self.discard_connection_settings(),
             AppCommand::OpenConnectionPlugins(connection_id) => {
@@ -360,7 +385,7 @@ impl AppModel {
             }
             AppCommand::SaveGlobalSettings => self.save_global_settings(),
             AppCommand::DiscardGlobalSettings => self.discard_global_settings(),
-            AppCommand::Mqtt(command) => self.apply_mqtt_command(command),
+            AppCommand::Mqtt(command) => self.apply_mqtt_command(*command),
             AppCommand::Shutdown => {}
             _ => unreachable!("handled before main dispatch"),
         }
@@ -423,10 +448,10 @@ impl AppModel {
             } => {
                 self.snapshot.selected_connection = Some(connection_id);
                 self.connection_settings
-                    .insert(connection_id, settings.clone());
-                self.snapshot.connection_settings = settings;
+                    .insert(connection_id, (*settings).clone());
+                self.snapshot.connection_settings = *settings;
             }
-            AppEvent::GlobalSettingsLoaded { settings } => self.load_global_settings(settings),
+            AppEvent::GlobalSettingsLoaded { settings } => self.load_global_settings(*settings),
             AppEvent::ThemeModeChanged { mode } => self.snapshot.theme_mode = mode,
             AppEvent::MigrationApplied {
                 state,
@@ -434,6 +459,16 @@ impl AppModel {
                 diagnostics,
             } => self.apply_migrated_startup_state(*state, completion, diagnostics),
             AppEvent::DiagnosticRaised(diagnostic) => self.push_diagnostic(diagnostic),
+            AppEvent::UpdateCheckCompleted {
+                summary,
+                update_available,
+            } => {
+                self.snapshot.global_settings.last_update_check = summary.clone();
+                self.saved_global_settings.last_update_check = summary.clone();
+                if update_available {
+                    self.push_diagnostic(crate::Diagnostic::info(summary));
+                }
+            }
             AppEvent::ScriptExecutionLogAppended {
                 execution_id,
                 level,

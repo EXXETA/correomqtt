@@ -3,11 +3,12 @@ use std::collections::HashMap;
 
 use correo_mqtt::ConnectionId;
 use correo_storage::current::{
-    AppConfig, Auth, ConnectionConfig, ConnectionHistorySnapshot,
+    default_secret_store, AppConfig, Auth, ConnectionConfig, ConnectionHistorySnapshot,
     ConnectionPluginDirection as StorageConnectionPluginDirection, ConnectionPluginWorkflowConfig,
     ConnectionPluginWorkflowKind as StorageConnectionPluginWorkflowKind,
-    HistoryPersistenceSnapshot, Lwt, MqttVersion, Proxy, Qos as StorageQos,
-    ScriptPersistenceSnapshot, Settings, ThemeSettings, TlsSsl,
+    HistoryPersistenceSnapshot, ImportedSecret, Lwt, MqttVersion,
+    PluginHookKind as StoragePluginHookKind, PluginHookSettings, Proxy, Qos as StorageQos,
+    ScriptPersistenceSnapshot, SecretKind, SecretReference, Settings, ThemeSettings, TlsSsl,
 };
 use correo_storage::migration::MigrationPreview;
 
@@ -16,8 +17,9 @@ use crate::{
     ConnectionPluginDirection, ConnectionPluginWorkflow, ConnectionPluginWorkflowKind,
     ConnectionPluginWorkflowStatus, ConnectionSettingsSnapshot, ConnectionState, ConnectionSummary,
     Diagnostic, GlobalSettingsSnapshot, KeyringState, LegacyMigrationStatus,
-    MigrationRecoverySnapshot, PluginRepositoryRow, PluginStateSnapshot, PublishHistoryRow,
-    QosLevel, SubscribePaneSnapshot, SubscriptionRow, ThemeMode, WorkbenchSnapshot,
+    MigrationRecoverySnapshot, PluginHookSettingsSnapshot, PluginRepositoryRow,
+    PluginStateSnapshot, PublishHistoryRow, QosLevel, SecretInput, SubscribePaneSnapshot,
+    SubscriptionRow, ThemeMode, WorkbenchSnapshot,
 };
 
 #[path = "bootstrap_scripts.rs"]
@@ -139,7 +141,7 @@ pub fn startup_state_from_current_with_plugins(
         let id = ConnectionId::new();
         let history = histories.connections.get(&connection.id);
         mapped.push(summary(id, connection, history));
-        connection_settings.insert(id, settings_snapshot(connection, &warnings));
+        connection_settings.insert(id, settings_snapshot(connection, &warnings, None));
         storage_connection_ids.insert(id, connection.id.clone());
         let workbench = persisted_workbenches
             .get(&connection.id)
@@ -163,6 +165,7 @@ pub fn startup_state_from_current_with_plugins(
         &installed_plugin_ids,
         &installed_plugin_paths,
         &config.settings.plugin_states,
+        &config.settings.plugin_hooks,
     );
     snapshot.scripts = script_surface(&scripts);
     snapshot.diagnostics = warnings
@@ -241,11 +244,23 @@ fn summary(
     }
 }
 
-fn settings_snapshot(
+pub(crate) fn settings_snapshot(
     connection: &ConnectionConfig,
     warnings: &[String],
+    secret_override: Option<&[ImportedSecret]>,
 ) -> ConnectionSettingsSnapshot {
     let valid = !connection.name.trim().is_empty() && !connection.url.trim().is_empty();
+    // A freshly imported connection carries its secrets in memory: use them so
+    // the snapshot is usable before the async keyring write lands, instead of
+    // reading the not-yet-written keyring.
+    let [(password, password_keyring_state), (tls_keystore_password, tls_keyring_state), (ssh_password, ssh_keyring_state)] =
+        match secret_override {
+            Some(secrets) => connection_secrets_from(secrets, &connection.id),
+            None => connection_secrets(&connection.id),
+        };
+    let password_status = password_status(connection, &password).to_owned();
+    let tls_password_status = tls_password_status(connection, &tls_keystore_password).to_owned();
+    let ssh_password_status = ssh_password_status(connection, &ssh_password).to_owned();
     ConnectionSettingsSnapshot {
         internal_id: connection.id.clone(),
         profile_name: connection.name.clone(),
@@ -255,11 +270,13 @@ fn settings_snapshot(
         clean_session: connection.clean_session,
         client_id: connection.client_id.clone().unwrap_or_default(),
         username: connection.username.clone().unwrap_or_default(),
-        password_status: password_status(connection).to_owned(),
+        password,
+        password_status,
         auth_mode: auth_label(connection).to_owned(),
         tls_mode: tls_label(connection).to_owned(),
         tls_store: connection.ssl_keystore.clone().unwrap_or_default(),
-        tls_password_status: tls_password_status(connection).to_owned(),
+        tls_keystore_password,
+        tls_password_status,
         tls_host_verification: connection.ssl_host_verification,
         proxy_mode: proxy_label(connection).to_owned(),
         ssh_host: connection.ssh_host.clone().unwrap_or_default(),
@@ -269,16 +286,22 @@ fn settings_snapshot(
             .map(|port| port.to_string())
             .unwrap_or_default(),
         auth_username: connection.auth_username.clone().unwrap_or_default(),
-        ssh_password_status: ssh_password_status(connection).to_owned(),
+        ssh_password,
+        ssh_password_status,
         ssh_key_file: connection.auth_keyfile.clone().unwrap_or_default(),
         lwt_enabled: connection.lwt == Lwt::On,
         lwt_topic: connection.lwt_topic.clone().unwrap_or_default(),
+        lwt_qos: connection.lwt_qos.map(qos).unwrap_or(QosLevel::One),
         lwt_retained: connection.lwt_retained,
         lwt_payload: connection.lwt_payload.clone().unwrap_or_default(),
         dirty: false,
         valid,
         save_disabled_reason: "No changes to save".to_owned(),
-        keyring_state: KeyringState::Available,
+        keyring_state: keyring_state([
+            password_keyring_state,
+            tls_keyring_state,
+            ssh_keyring_state,
+        ]),
         validation_errors: warnings.to_vec(),
         plugin_workflows: connection
             .plugin_workflows
@@ -286,6 +309,67 @@ fn settings_snapshot(
             .map(connection_plugin_workflow)
             .collect(),
         ..ConnectionSettingsSnapshot::default()
+    }
+}
+
+// One store read for all three secret kinds — with the keychain-backed blob
+// this is a single IPC instead of three per connection.
+fn connection_secrets_from(
+    secrets: &[ImportedSecret],
+    connection_id: &str,
+) -> [(SecretInput, KeyringState); 3] {
+    [
+        SecretKind::Password,
+        SecretKind::SslKeystorePassword,
+        SecretKind::AuthPassword,
+    ]
+    .map(|kind| {
+        let value = secrets
+            .iter()
+            .find(|secret| {
+                secret.reference.connection_id == connection_id && secret.reference.kind == kind
+            })
+            .map(|secret| SecretInput::new(secret.value.expose_secret()))
+            .unwrap_or_default();
+        (value, KeyringState::Available)
+    })
+}
+
+fn connection_secrets(connection_id: &str) -> [(SecretInput, KeyringState); 3] {
+    let references = [
+        SecretKind::Password,
+        SecretKind::SslKeystorePassword,
+        SecretKind::AuthPassword,
+    ]
+    .map(|kind| SecretReference {
+        connection_id: connection_id.to_owned(),
+        kind,
+    });
+    match default_secret_store().get_all(&references) {
+        Ok(values) if values.len() == 3 => {
+            let mut values = values.into_iter();
+            [(); 3].map(|()| {
+                (
+                    values
+                        .next()
+                        .flatten()
+                        .map(|secret| SecretInput::new(secret.expose_for_migration()))
+                        .unwrap_or_default(),
+                    KeyringState::Available,
+                )
+            })
+        }
+        _ => [(); 3].map(|()| (SecretInput::default(), KeyringState::Unavailable)),
+    }
+}
+
+fn keyring_state(states: [KeyringState; 3]) -> KeyringState {
+    if states.contains(&KeyringState::Unavailable) {
+        KeyringState::Unavailable
+    } else if states.contains(&KeyringState::Locked) {
+        KeyringState::Locked
+    } else {
+        KeyringState::Available
     }
 }
 
@@ -408,6 +492,16 @@ fn global_settings(settings: &Settings) -> GlobalSettingsSnapshot {
                 )
             })
             .collect(),
+        plugin_hooks: settings
+            .plugin_hooks
+            .iter()
+            .map(|(plugin_id, hooks)| {
+                (
+                    plugin_id.clone(),
+                    hooks.iter().map(plugin_hook_settings).collect(),
+                )
+            })
+            .collect(),
         first_start: settings.first_start,
         config_version: settings
             .config_created_with_correo_version
@@ -425,6 +519,25 @@ fn global_settings(settings: &Settings) -> GlobalSettingsSnapshot {
         );
     }
     snapshot
+}
+
+fn plugin_hook_settings(settings: &PluginHookSettings) -> PluginHookSettingsSnapshot {
+    PluginHookSettingsSnapshot {
+        hook: plugin_hook_kind(settings.hook),
+        enabled: settings.enabled,
+        target: settings.target.clone(),
+        config_json: settings.config_json.clone(),
+    }
+}
+
+fn plugin_hook_kind(kind: StoragePluginHookKind) -> crate::PluginHookKind {
+    match kind {
+        StoragePluginHookKind::IncomingTransform => crate::PluginHookKind::IncomingTransform,
+        StoragePluginHookKind::OutgoingTransform => crate::PluginHookKind::OutgoingTransform,
+        StoragePluginHookKind::Validator => crate::PluginHookKind::Validator,
+        StoragePluginHookKind::DetailTransform => crate::PluginHookKind::DetailTransform,
+        StoragePluginHookKind::DetailFormatter => crate::PluginHookKind::DetailFormatter,
+    }
 }
 
 fn badges(connection: &ConnectionConfig) -> Vec<ConnectionBadge> {
@@ -509,9 +622,11 @@ fn auth_label(connection: &ConnectionConfig) -> &'static str {
     }
 }
 
-fn password_status(connection: &ConnectionConfig) -> &'static str {
-    if connection.username.is_some() {
+fn password_status(connection: &ConnectionConfig, password: &SecretInput) -> &'static str {
+    if !password.is_empty() {
         "MQTT password managed by keyring"
+    } else if connection.username.is_some() {
+        "MQTT password missing from keyring"
     } else {
         "No MQTT password configured"
     }
@@ -524,9 +639,11 @@ fn tls_label(connection: &ConnectionConfig) -> &'static str {
     }
 }
 
-fn tls_password_status(connection: &ConnectionConfig) -> &'static str {
-    if connection.ssl_keystore.is_some() {
+fn tls_password_status(connection: &ConnectionConfig, password: &SecretInput) -> &'static str {
+    if !password.is_empty() {
         "SSL password managed by keyring"
+    } else if connection.ssl_keystore.is_some() {
+        "SSL password missing from keyring"
     } else {
         "No SSL password configured"
     }
@@ -539,11 +656,18 @@ fn proxy_label(connection: &ConnectionConfig) -> &'static str {
     }
 }
 
-fn ssh_password_status(connection: &ConnectionConfig) -> &'static str {
-    if connection.auth == Auth::Password {
-        "SSH password managed by keyring"
-    } else {
-        "No SSH password configured"
+fn ssh_password_status(connection: &ConnectionConfig, password: &SecretInput) -> &'static str {
+    if !password.is_empty() {
+        return match connection.auth {
+            Auth::Keyfile => "SSH key passphrase managed by keyring",
+            _ => "SSH password managed by keyring",
+        };
+    }
+
+    match connection.auth {
+        Auth::Password => "SSH password missing from keyring",
+        Auth::Keyfile => "No SSH key passphrase configured",
+        Auth::Off => "No SSH password configured",
     }
 }
 
@@ -687,5 +811,28 @@ mod tests {
             "path": format!("plugins/{plugin_id}"),
         });
         serde_json::to_string(&value).unwrap()
+    }
+
+    #[test]
+    fn connection_secrets_from_hydrates_matching_imported_values() {
+        use correo_storage::current::SecretMaterial;
+        let secret = |connection_id: &str, kind, value: &str| ImportedSecret {
+            reference: SecretReference {
+                connection_id: connection_id.to_owned(),
+                kind,
+            },
+            value: SecretMaterial::new(value),
+        };
+        let secrets = vec![
+            secret("c1", SecretKind::Password, "mqtt-pw"),
+            secret("c1", SecretKind::AuthPassword, "ssh-pw"),
+            // A secret for another connection must be ignored.
+            secret("other", SecretKind::Password, "nope"),
+        ];
+
+        let [(password, _), (tls, _), (ssh, _)] = connection_secrets_from(&secrets, "c1");
+        assert_eq!(password.expose_for_ui(), "mqtt-pw");
+        assert_eq!(tls.expose_for_ui(), "");
+        assert_eq!(ssh.expose_for_ui(), "ssh-pw");
     }
 }

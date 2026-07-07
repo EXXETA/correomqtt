@@ -1,11 +1,12 @@
 use crate::current::{
-    Auth, ConnectionConfig as CurrentConnectionConfig, GlobalUiSettings, Lwt, MqttVersion, Proxy,
-    Settings, ThemeSettings, TlsSsl,
+    Auth, ConnectionConfig as CurrentConnectionConfig, GlobalUiSettings, Lwt, MqttVersion,
+    Protocol, Proxy, Settings, ThemeSettings, TlsSsl,
 };
 use crate::legacy::LegacyConfig;
 use crate::{legacy::LegacyConnection, Result, StorageError};
 use serde_json::Value;
 
+use super::ui_config::{connection_ui_settings, message_list_view_config};
 use super::{MigrationReport, MigrationWarning};
 
 pub fn migrate_connections(
@@ -67,10 +68,27 @@ fn migrate_connection(
     connection: LegacyConnection,
     report: &mut MigrationReport,
 ) -> Result<CurrentConnectionConfig> {
+    warn_tls_review_needed(&connection, index, report);
     let id = require(connection.id, "connection", "id")?;
+    let connection_ui_settings =
+        connection_ui_settings(connection.connection_ui_settings.as_ref(), index, report);
+    let publish_list_view_config = message_list_view_config(
+        connection.publish_list_view_config.as_ref(),
+        index,
+        "publishListViewConfig",
+        report,
+    );
+    let subscribe_list_view_config = message_list_view_config(
+        connection.subscribe_list_view_config.as_ref(),
+        index,
+        "subscribeListViewConfig",
+        report,
+    );
     Ok(CurrentConnectionConfig {
         id,
         name: require(connection.name, "connection", "name")?,
+        // The Java app is MQTT-only, so every migrated profile is MQTT.
+        protocol: Protocol::Mqtt,
         url: require(connection.url, "connection", "url")?,
         port: connection.port.unwrap_or(1883),
         client_id: connection.client_id,
@@ -91,14 +109,68 @@ fn migrate_connection(
         lwt_topic: connection.lwt_topic,
         lwt_qos: connection
             .lwt_qo_s
-            .and_then(|qos| crate::current::Qos::from_legacy(qos)),
+            .and_then(crate::current::Qos::from_legacy),
         lwt_retained: connection.lwt_retained,
         lwt_payload: connection.lwt_payload,
-        connection_ui_settings: None,
-        publish_list_view_config: None,
-        subscribe_list_view_config: None,
+        connection_ui_settings,
+        publish_list_view_config,
+        subscribe_list_view_config,
         plugin_workflows: Vec::new(),
     })
+}
+
+fn warn_tls_review_needed(
+    connection: &LegacyConnection,
+    index: usize,
+    report: &mut MigrationReport,
+) {
+    let tls_enabled = matches!(
+        normalized(connection.ssl.as_deref()).as_deref(),
+        Some("ON" | "KEYSTORE" | "SSL" | "TLS")
+    );
+    if !tls_enabled {
+        return;
+    }
+
+    if let Some(path) = connection.ssl_keystore.as_deref() {
+        let lower = path.to_ascii_lowercase();
+        if lower.ends_with(".p12") || lower.ends_with(".pfx") {
+            report.warnings.push(MigrationWarning {
+                code: "legacy_connection_tls_pkcs12_review",
+                message: format!(
+                    "Legacy connection config.connections[{index}].sslKeystore uses PKCS#12, which is not supported; convert the client certificate to PEM (openssl pkcs12 -in keystore.p12 -out cert.pem) and re-select it in the connection settings"
+                ),
+            });
+        } else {
+            report.warnings.push(MigrationWarning {
+                code: "legacy_connection_tls_keystore_review",
+                message: format!(
+                    "Legacy connection config.connections[{index}].sslKeystore uses a Java keystore, which is not supported; export the client certificate to PEM (keytool -importkeystore to PKCS#12, then openssl pkcs12) and re-select it in the connection settings"
+                ),
+            });
+        }
+    }
+
+    if !connection.ssl_host_verification {
+        report.warnings.push(MigrationWarning {
+            code: "legacy_connection_tls_host_verification_review",
+            message: format!(
+                "Legacy connection config.connections[{index}] disables TLS host verification; Rust currently requires manual review for this insecure option"
+            ),
+        });
+    }
+
+    if matches!(
+        normalized(connection.proxy.as_deref()).as_deref(),
+        Some("SSH")
+    ) {
+        report.warnings.push(MigrationWarning {
+            code: "legacy_connection_tls_over_ssh_review",
+            message: format!(
+                "Legacy connection config.connections[{index}] combines TLS and SSH tunneling; Rust currently requires manual review for TLS-over-SSH"
+            ),
+        });
+    }
 }
 
 fn mqtt_version(value: Option<&str>, index: usize, report: &mut MigrationReport) -> MqttVersion {

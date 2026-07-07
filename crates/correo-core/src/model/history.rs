@@ -20,7 +20,7 @@ impl AppModel {
                 retain,
             } => vec![HistoryPersistenceCommand::RecordPublish {
                 connection_id: self.storage_connection_id(*connection_id),
-                message: Message {
+                message: Box::new(Message {
                     topic: topic.as_str().to_owned(),
                     payload: Some(String::from_utf8_lossy(payload).into_owned()),
                     retained: *retain,
@@ -29,7 +29,7 @@ impl AppModel {
                     message_id: None,
                     message_type: Some(MessageType::Outgoing),
                     publish_status: Some(PublishStatus::Succeeded),
-                },
+                }),
             }],
             MqttEvent::Subscribed {
                 connection_id,
@@ -62,7 +62,7 @@ impl AppModel {
                 .map(|row| {
                     vec![HistoryPersistenceCommand::RemovePublishedMessage {
                         connection_id: storage_connection_id,
-                        message: published_message_from_row(row),
+                        message: Box::new(published_message_from_row(row)),
                     }]
                 })
                 .unwrap_or_default(),

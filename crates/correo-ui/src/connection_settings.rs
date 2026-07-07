@@ -13,6 +13,7 @@ use crate::widgets::{
     dotted_focus_outline, paint_top_tab_strip_underline, square_icon_button_size,
     with_icon_button_padding, TopUnderlineTab,
 };
+use crate::workbench_helpers::qos_selector;
 use crate::{i18n::I18n, theme::ThemeTokens};
 
 #[path = "connection_settings_actions.rs"]
@@ -211,7 +212,7 @@ fn tab_bar(
     i18n: &I18n,
 ) {
     let tab_count = ConnectionSettingsTab::ALL.len() as f32;
-    let strip_width = ui.available_width().min(controls::FORM_MAX_WIDTH).max(0.0);
+    let strip_width = ui.available_width().clamp(0.0, controls::FORM_MAX_WIDTH);
     let strip_rect = Rect::from_min_size(
         ui.available_rect_before_wrap().min,
         egui::vec2(strip_width, layout::CONTROL_HEIGHT),
@@ -438,7 +439,7 @@ fn proxy_tab(
             &i18n.text("connection-ssh-password"),
             &settings.ssh_password,
             ConnectionSecretField::SshPassword,
-            settings.auth_mode == "Password",
+            settings.auth_mode != "No Auth",
             commands,
         );
         file_field(
@@ -476,6 +477,11 @@ fn lwt_tab(
             ConnectionSettingField::LwtTopic,
             commands,
         );
+        row(ui, "QoS", |ui| {
+            qos_selector(ui, "connection-lwt-qos", settings.lwt_qos, |qos| {
+                send(commands, AppCommand::UpdateLwtQos(qos));
+            });
+        });
         flag(
             ui,
             &i18n.text("connection-lwt-retained"),

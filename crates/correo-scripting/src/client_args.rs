@@ -153,14 +153,18 @@ pub(crate) fn parse_async_publish_args<'js>(
     Ok((publish, on_success, on_error))
 }
 
-pub(crate) fn parse_async_subscribe_args<'js>(
-    args: Vec<Value<'js>>,
-) -> ScriptingResult<(
+/// Parsed subscribe call: the subscription plus its success, error and
+/// per-message callbacks.
+pub(crate) type AsyncSubscribeArgs<'js> = (
     SubscribeInvocation,
     Option<Function<'js>>,
     Option<Function<'js>>,
     Option<Function<'js>>,
-)> {
+);
+
+pub(crate) fn parse_async_subscribe_args(
+    args: Vec<Value<'_>>,
+) -> ScriptingResult<AsyncSubscribeArgs<'_>> {
     let callback_start = subscribe_callback_start(&args)?;
     validate_callback_tail("subscribe", &args[callback_start..], 3)?;
     let callbacks = args[callback_start..]

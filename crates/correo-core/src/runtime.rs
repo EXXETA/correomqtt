@@ -78,6 +78,12 @@ impl AppRuntime {
         self.mqtt_service = Some(service);
     }
 
+    pub async fn shutdown_mqtt(&mut self) {
+        if let Some(service) = self.mqtt_service.take() {
+            service.shutdown().await;
+        }
+    }
+
     pub fn attach_history_worker(&mut self, worker: HistoryPersistenceWorker) {
         self.history_worker = Some(worker);
     }
@@ -156,11 +162,22 @@ impl AppRuntime {
 
         while let Ok(command) = self.command_receiver.try_recv() {
             let command_before = self.model.snapshot().clone();
+            let deleted_connection_id = if matches!(command, AppCommand::ConfirmDeleteConnection) {
+                self.model
+                    .snapshot()
+                    .selected_connection
+                    .map(|connection_id| self.model.storage_connection_id(connection_id))
+            } else {
+                None
+            };
             let should_persist_settings = (matches!(command, AppCommand::SaveGlobalSettings)
                 && self.model.snapshot().global_settings.dirty)
                 || matches!(
                     command,
-                    AppCommand::SetPluginEnabled { .. } | AppCommand::ConfirmPluginDisable
+                    AppCommand::SetPluginEnabled { .. }
+                        | AppCommand::ConfirmPluginDisable
+                        | AppCommand::SetPluginHookEnabled { .. }
+                        | AppCommand::ApplyPluginHookEdit
                 );
             if matches!(command, AppCommand::Shutdown) {
                 self.shutdown_requested = true;
@@ -184,6 +201,20 @@ impl AppRuntime {
             }
             if should_persist_settings {
                 self.dispatch_global_settings_save();
+            }
+            if matches!(command, AppCommand::SaveConnectionSettings)
+                && !self.model.snapshot().connection_settings.dirty
+            {
+                self.dispatch_connection_settings_save();
+            }
+            if matches!(command, AppCommand::StartConnectionImport) {
+                self.dispatch_connection_import_save();
+            }
+            if let Some(connection_id) = deleted_connection_id {
+                self.dispatch_connection_delete(connection_id);
+            }
+            if matches!(command, AppCommand::MoveConnection { .. }) {
+                self.dispatch_connection_order_save();
             }
             if matches!(command, AppCommand::SaveConnectionPlugins) {
                 self.dispatch_connection_plugin_workflows_save();
@@ -316,7 +347,7 @@ impl AppRuntime {
         };
         if let Err(error) = worker.dispatch(SettingsPersistenceCommand::Save {
             theme_mode: self.model.snapshot().theme_mode.clone(),
-            settings: self.model.snapshot().global_settings.clone(),
+            settings: Box::new(self.model.snapshot().global_settings.clone()),
         }) {
             let _ = self
                 .event_sender
@@ -358,11 +389,108 @@ impl AppRuntime {
         }
     }
 
+    fn dispatch_connection_settings_save(&self) {
+        let Some(connection_id) = self.model.snapshot().selected_connection else {
+            return;
+        };
+        let Some(worker) = &self.settings_worker else {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    "Settings persistence worker is not running.",
+                )));
+            return;
+        };
+        let storage_connection_id = self.model.storage_connection_id(connection_id);
+        if let Err(error) = worker.dispatch(SettingsPersistenceCommand::SaveConnectionSettings {
+            connection_id: storage_connection_id,
+            settings: Box::new(self.model.snapshot().connection_settings.clone()),
+        }) {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    error.to_string(),
+                )));
+        }
+    }
+
+    fn dispatch_connection_delete(&self, connection_id: String) {
+        let Some(worker) = &self.settings_worker else {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    "Settings persistence worker is not running.",
+                )));
+            return;
+        };
+        if let Err(error) =
+            worker.dispatch(SettingsPersistenceCommand::DeleteConnection { connection_id })
+        {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    error.to_string(),
+                )));
+        }
+    }
+
+    fn dispatch_connection_order_save(&self) {
+        let Some(worker) = &self.settings_worker else {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    "Settings persistence worker is not running.",
+                )));
+            return;
+        };
+        let connection_ids = self
+            .model
+            .snapshot()
+            .connections
+            .iter()
+            .map(|connection| self.model.storage_connection_id(connection.id))
+            .collect();
+        if let Err(error) =
+            worker.dispatch(SettingsPersistenceCommand::SaveConnectionOrder { connection_ids })
+        {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    error.to_string(),
+                )));
+        }
+    }
+
+    fn dispatch_connection_import_save(&mut self) {
+        if self.settings_worker.is_none() {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    "Settings persistence worker is not running.",
+                )));
+            return;
+        }
+        let Some((connections, secrets)) = self.model.drain_connection_import_persistence() else {
+            return;
+        };
+        let worker = self.settings_worker.as_ref().expect("checked above");
+        if let Err(error) = worker.dispatch(SettingsPersistenceCommand::SaveImportedConnections {
+            connections,
+            secrets,
+        }) {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    error.to_string(),
+                )));
+        }
+    }
+
     fn apply_settings_event(&self, event: SettingsPersistenceEvent) {
         let diagnostic = match event {
-            SettingsPersistenceEvent::Saved => Diagnostic::info("Global settings persisted."),
+            SettingsPersistenceEvent::Saved => Diagnostic::info("Settings persisted."),
             SettingsPersistenceEvent::Failed { error } => {
-                Diagnostic::error(format!("Global settings persistence failed: {error}"))
+                Diagnostic::error(format!("Settings persistence failed: {error}"))
             }
         };
         let _ = self
@@ -408,13 +536,24 @@ impl AppRuntime {
                 .map(|legacy_path| MigrationPersistenceCommand::Prepare {
                     legacy_path: legacy_path.clone(),
                 }),
-            crate::MigrationRecoveryCommand::SubmitPassword
-            | crate::MigrationRecoveryCommand::SkipSecrets => {
-                Some(MigrationPersistenceCommand::LoadReview)
+            crate::MigrationRecoveryCommand::SubmitPassword { password } => {
+                Some(MigrationPersistenceCommand::UnlockSecrets {
+                    master_password: password.clone(),
+                })
+            }
+            crate::MigrationRecoveryCommand::SkipSecrets => {
+                Some(MigrationPersistenceCommand::SkipSecrets)
             }
             crate::MigrationRecoveryCommand::ApplyMigration => {
                 Some(MigrationPersistenceCommand::Apply {
                     fallback_theme: self.model.snapshot().theme_mode.clone(),
+                })
+            }
+            crate::MigrationRecoveryCommand::ConfirmRestoreBackup => {
+                let recovery = &self.model.snapshot().migration_recovery;
+                Some(MigrationPersistenceCommand::Restore {
+                    backup_name: recovery.backup_name.clone()?,
+                    backup_path_hint: recovery.backup_path_hint.clone()?,
                 })
             }
             _ => None,
@@ -422,6 +561,12 @@ impl AppRuntime {
     }
 
     fn forward_mqtt_commands(&self, command: &AppCommand) {
+        // RunScript's connect command belongs to the script MQTT bridge, which
+        // sends it when the script calls client.connect(). Forwarding it here
+        // too would connect the same connection twice.
+        if matches!(command, AppCommand::RunScript) {
+            return;
+        }
         let commands = match self.mqtt_commands_for_app_command_with_plugins(command) {
             Ok(commands) => commands,
             Err(error) => {
@@ -570,120 +715,8 @@ pub struct PumpReport {
 }
 
 #[cfg(test)]
-mod tests {
-    use std::path::{Path, PathBuf};
-    use std::time::{Duration, Instant};
-
-    use crate::{
-        AppCommand, AppEvent, AppRuntime, Diagnostic, MigrationPersistenceWorker,
-        MigrationRecoveryCommand, MigrationRecoveryState, StartupState, ThemeMode,
-    };
-
-    #[test]
-    fn pump_processes_commands_without_awaiting() {
-        let mut runtime = AppRuntime::new();
-        runtime
-            .command_sender()
-            .send(AppCommand::SetThemeMode(ThemeMode::Dark))
-            .unwrap();
-
-        let report = runtime.pump();
-
-        assert_eq!(report.commands_processed, 1);
-        assert!(report.snapshot_changed);
-        assert_eq!(runtime.snapshot().theme_mode, ThemeMode::Dark);
-    }
-
-    #[test]
-    fn pump_redacts_service_diagnostics() {
-        let mut runtime = AppRuntime::new();
-        runtime
-            .event_sender()
-            .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
-                "auth failed: password:open-sesame",
-            )))
-            .unwrap();
-
-        runtime.pump();
-
-        let message = &runtime.snapshot().diagnostics[0].message;
-        assert!(!message.contains("open-sesame"));
-        assert!(message.contains("[REDACTED]"));
-    }
-
-    #[test]
-    fn migration_worker_advances_recovery_flow_to_complete() {
-        let temp = tempfile::tempdir().unwrap();
-        let legacy_path = storage_fixture("legacy_profile").display().to_string();
-        let mut runtime = AppRuntime::with_startup_state(StartupState::legacy_migration_detected(
-            ThemeMode::Dark,
-            legacy_path,
-        ));
-        runtime.attach_migration_worker(MigrationPersistenceWorker::start(temp.path()));
-
-        runtime
-            .command_sender()
-            .send(AppCommand::MigrationRecovery(
-                MigrationRecoveryCommand::ChooseMigrate,
-            ))
-            .unwrap();
-        runtime.pump();
-        assert_eq!(
-            runtime.snapshot().migration_recovery.state,
-            MigrationRecoveryState::CreatingBackup
-        );
-
-        pump_until(&mut runtime, |runtime| {
-            runtime.snapshot().migration_recovery.state == MigrationRecoveryState::NeedsPassword
-        });
-        assert!(runtime.snapshot().migration_recovery.backup_name.is_some());
-
-        runtime
-            .command_sender()
-            .send(AppCommand::MigrationRecovery(
-                MigrationRecoveryCommand::SkipSecrets,
-            ))
-            .unwrap();
-        runtime.pump();
-        pump_until(&mut runtime, |runtime| {
-            let recovery = &runtime.snapshot().migration_recovery;
-            recovery.state == MigrationRecoveryState::Reviewing && recovery.counts.connections == 2
-        });
-
-        runtime
-            .command_sender()
-            .send(AppCommand::MigrationRecovery(
-                MigrationRecoveryCommand::ApplyMigration,
-            ))
-            .unwrap();
-        runtime.pump();
-        pump_until(&mut runtime, |runtime| {
-            runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Complete
-        });
-
-        assert_eq!(runtime.snapshot().connection_count, 2);
-        assert!(temp.path().join("config.json").exists());
-    }
-
-    fn storage_fixture(path: &str) -> PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../correo-storage/tests/fixtures")
-            .join(path)
-    }
-
-    fn pump_until(runtime: &mut AppRuntime, mut predicate: impl FnMut(&AppRuntime) -> bool) {
-        let deadline = Instant::now() + Duration::from_secs(2);
-        while Instant::now() < deadline {
-            runtime.pump();
-            if predicate(runtime) {
-                return;
-            }
-            std::thread::sleep(Duration::from_millis(10));
-        }
-        runtime.pump();
-        assert!(predicate(runtime));
-    }
-}
+#[path = "runtime_tests.rs"]
+mod tests;
 
 #[cfg(test)]
 mod plugin_tests;

@@ -22,7 +22,8 @@
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
@@ -153,7 +154,8 @@
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
@@ -198,7 +200,8 @@
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
@@ -244,20 +247,26 @@
         "compatible_correomqtt": ">=0.1.0, <1.0.0",
         "capabilities": {
           "hooks": [
-            "detail_formatter"
+            "detail_formatter",
+            "payload_highlighter"
           ],
           "host": {
             "filesystem": false,
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
           {
             "hook": "detail_formatter",
             "export": "builtin_detail_formatter"
+          },
+          {
+            "hook": "payload_highlighter",
+            "export": "builtin_payload_highlighter"
           }
         ],
         "config_schema": {
@@ -292,7 +301,8 @@
             "message_save": true,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
@@ -318,28 +328,30 @@
       "manifest": {
         "manifest_version": 1,
         "id": "org.correomqtt.plugins.system-topic",
-        "name": "System Topic Formatter",
+        "name": "System Topics",
         "version": "0.1.0",
-        "description": "Labels known $SYS broker metrics for the message detail view.",
+        "description": "Adds a connection header action that opens live $SYS broker metrics.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
         "compatible_correomqtt": ">=0.1.0, <1.0.0",
         "capabilities": {
-          "hooks": [
-            "detail_formatter"
-          ],
+          "hooks": [],
           "host": {
             "filesystem": false,
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": true,
+            "ui": true
           }
         },
-        "entrypoints": [
+        "entrypoints": [],
+        "connection_header_actions": [
           {
-            "hook": "detail_formatter",
-            "export": "builtin_detail_formatter"
+            "id": "system-topics",
+            "label": "$SYS",
+            "tooltip": "Open system topics",
+            "requires_connected": true
           }
         ],
         "config_schema": {
@@ -367,20 +379,26 @@
         "compatible_correomqtt": ">=0.1.0, <1.0.0",
         "capabilities": {
           "hooks": [
-            "detail_formatter"
+            "detail_formatter",
+            "payload_highlighter"
           ],
           "host": {
             "filesystem": false,
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
           {
             "hook": "detail_formatter",
             "export": "builtin_detail_formatter"
+          },
+          {
+            "hook": "payload_highlighter",
+            "export": "builtin_payload_highlighter"
           }
         ],
         "config_schema": {
@@ -415,7 +433,8 @@
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
@@ -497,7 +516,8 @@
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [

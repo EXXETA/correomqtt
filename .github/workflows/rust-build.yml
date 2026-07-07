@@ -16,9 +16,16 @@ env:
 
 jobs:
   check:
-    name: Packaging automation tests
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    name: Format, lint and test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      # Run the workspace test suite on every target OS so platform-specific
+      # code (path handling, file permissions, the per-OS secret store) is
+      # exercised, not just Linux. fmt/clippy run once on Linux only.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,6 +35,22 @@ jobs:
           rustup show active-toolchain
           rustc -vV
           cargo --version
+
+      - name: Install Linux desktop build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libdbus-1-dev \
+            libgl1-mesa-dev \
+            libwayland-dev \
+            libx11-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxinerama-dev \
+            libxkbcommon-dev \
+            libxrandr-dev \
+            pkg-config
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -43,8 +66,66 @@ jobs:
       - name: Verify lockfile
         run: cargo fetch --locked
 
-      - name: Test packaging automation
-        run: cargo test --locked -p xtask
+      - name: Check formatting
+        if: runner.os == 'Linux'
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        if: runner.os == 'Linux'
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Test workspace
+        run: cargo test --workspace --locked
+
+  mqtt-integration:
+    name: MQTT broker integration tests
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start Mosquitto broker
+        run: |
+          docker run -d --name correo-mqtt-ci -p 1883:1883 \
+            -v "$PWD/crates/correo-mqtt/tests/mosquitto.ci.conf:/mosquitto/config/mosquitto.conf:ro" \
+            eclipse-mosquitto:2
+          for _ in $(seq 1 30); do
+            if (exec 3<>/dev/tcp/127.0.0.1/1883) 2>/dev/null; then
+              echo "broker ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "broker did not become ready"
+          docker logs correo-mqtt-ci
+          exit 1
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            target
+          key: cargo-${{ runner.os }}-${{ runner.arch }}-mqtt-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ runner.arch }}-mqtt-
+
+      # Plain broker roundtrip (connect/disconnect + publish→subscribe→receive
+      # for QoS 0/1/2 + retained, MQTT 3.1.1 and 5.0). The TLS variants stay
+      # skipped: they need CORREO_MQTT_TLS_CA_PEM + a TLS listener (follow-up).
+      - name: Run broker roundtrip tests
+        env:
+          CORREO_MQTT_INTEGRATION_BROKER: "1"
+          CORREO_MQTT_BROKER_HOST: 127.0.0.1
+          CORREO_MQTT_BROKER_PORT: "1883"
+        run: cargo test -p correo-mqtt --test local_broker --locked -- --ignored
+
+      - name: Stop Mosquitto broker
+        if: always()
+        run: docker rm -f correo-mqtt-ci || true
 
   package:
     name: Package ${{ matrix.platform }} (${{ matrix.target }})
@@ -76,6 +157,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
+            libdbus-1-dev \
             libgl1-mesa-dev \
             libwayland-dev \
             libx11-dev \
@@ -85,6 +167,20 @@ jobs:
             libxkbcommon-dev \
             libxrandr-dev \
             pkg-config
+
+      - name: Install nfpm for DEB/RPM packaging
+        if: runner.os == 'Linux'
+        run: |
+          curl -sSfL -o /tmp/nfpm.deb https://github.com/goreleaser/nfpm/releases/download/v2.47.0/nfpm_2.47.0_amd64.deb
+          echo "3f1cf344bd0b57373ca55636a78c08b0491f7293d609a456a9ac3b0b150fda97  /tmp/nfpm.deb" | sha256sum -c -
+          sudo dpkg -i /tmp/nfpm.deb
+
+      - name: Install WiX for MSI packaging
+        if: runner.os == 'Windows'
+        run: |
+          dotnet tool install --global wix
+          Add-Content $env:GITHUB_PATH "$env:USERPROFILE\.dotnet\tools"
+          & "$env:USERPROFILE\.dotnet\tools\wix.exe" --version
 
       - name: Show package provenance
         run: |
@@ -128,6 +224,14 @@ jobs:
           path: |
             dist/beta/${{ matrix.target }}/*.zip
             dist/beta/${{ matrix.target }}/*.zip.sha256
+            dist/beta/${{ matrix.target }}/*.dmg
+            dist/beta/${{ matrix.target }}/*.dmg.sha256
+            dist/beta/${{ matrix.target }}/*.deb
+            dist/beta/${{ matrix.target }}/*.deb.sha256
+            dist/beta/${{ matrix.target }}/*.rpm
+            dist/beta/${{ matrix.target }}/*.rpm.sha256
+            dist/beta/${{ matrix.target }}/*.msi
+            dist/beta/${{ matrix.target }}/*.msi.sha256
             dist/beta/${{ matrix.target }}/SHA256SUMS
 
   plugin-release:
@@ -144,7 +248,7 @@ jobs:
         run: |
           echo "commit=${{ github.sha }}"
           echo "tag=${{ github.ref_name }}"
-          echo "command=cargo xtask plugin-release --out-dir dist/plugins --asset-base-url https://github.com/EXXETA/correomqtt/releases/download/latest"
+          echo "command=cargo xtask plugin-release --out-dir dist/plugins --asset-base-url https://github.com/EXXETA/correomqtt/releases/download/${{ github.ref_name }}"
           rustup show active-toolchain
           rustc -vV
           cargo --version
@@ -167,7 +271,7 @@ jobs:
         run: cargo fetch --locked --target wasm32-unknown-unknown
 
       - name: Build plugin release artifacts
-        run: cargo xtask plugin-release --out-dir dist/plugins --asset-base-url https://github.com/EXXETA/correomqtt/releases/download/latest
+        run: cargo xtask plugin-release --out-dir dist/plugins --asset-base-url https://github.com/EXXETA/correomqtt/releases/download/${{ github.ref_name }}
 
       - name: List plugin outputs
         run: ls dist/plugins

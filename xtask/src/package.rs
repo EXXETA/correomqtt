@@ -10,9 +10,13 @@ use crate::{cargo_dynamic, XtaskError};
 
 pub(crate) mod checksums;
 mod guard;
+mod installers;
+mod metadata;
 mod plugins;
 
-use self::checksums::write_checksum_files;
+use self::checksums::{write_checksum_files, write_sha256sums};
+use self::installers::{create_dmg, create_linux_installers, create_msi, record_extra_artifact};
+use self::metadata::*;
 
 const APP_NAME: &str = "CorreoMQTT";
 const APP_ID: &str = "org.correomqtt.CorreoMQTT";
@@ -77,6 +81,23 @@ fn package(command_base: &str, args: Vec<String>) -> Result<Option<PackageOutput
 
     println!("package: {}", artifact.display());
     println!("sha256:  {checksum}");
+    if platform == Platform::Macos {
+        if let Some(dmg) = create_dmg(&stage_dir, &plan)? {
+            record_extra_artifact("dmg", &dmg, &plan)?;
+        }
+    }
+    if platform == Platform::Linux {
+        for installer in create_linux_installers(&stage_dir, &plan)? {
+            record_extra_artifact("installer", &installer, &plan)?;
+        }
+    }
+    if platform == Platform::Windows {
+        if let Some(msi) = create_msi(&stage_dir, &plan)? {
+            record_extra_artifact("msi", &msi, &plan)?;
+        }
+    }
+    // Regenerate the summary now that every artifact (zip + installers) exists.
+    write_sha256sums(&plan.out_dir)?;
     Ok(Some(PackageOutput {
         command,
         target: plan.target,
@@ -195,7 +216,22 @@ fn write_file(path: &Path, content: &[u8]) -> Result<(), XtaskError> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    fs::write(path, content)?;
+    let temporary = temporary_path(path);
+    fs::write(&temporary, content)?;
+    replace_file(&temporary, path)?;
+    Ok(())
+}
+
+fn temporary_path(path: &Path) -> PathBuf {
+    let suffix = format!("tmp.{}", std::process::id());
+    path.with_extension(suffix)
+}
+
+fn replace_file(source: &Path, destination: &Path) -> Result<(), XtaskError> {
+    if cfg!(windows) && destination.exists() {
+        fs::remove_file(destination)?;
+    }
+    fs::rename(source, destination)?;
     Ok(())
 }
 
@@ -271,87 +307,6 @@ fn zip_path(path: &Path) -> String {
         .map(|component| component.as_os_str().to_string_lossy())
         .collect::<Vec<_>>()
         .join("/")
-}
-
-fn linux_desktop_entry() -> String {
-    format!(
-        "[Desktop Entry]\n\
-         Name={APP_NAME}\n\
-         Comment=Native MQTT desktop client\n\
-         Exec={BIN_NAME}\n\
-         Icon={APP_ID}\n\
-         StartupWMClass={APP_ID}\n\
-         Terminal=false\n\
-         Type=Application\n\
-         Categories=Development;Network;\n"
-    )
-}
-
-fn linux_metainfo() -> String {
-    format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
-         <component type=\"desktop-application\">\n\
-           <id>{APP_ID}</id>\n\
-           <name>{APP_NAME}</name>\n\
-           <summary>Native MQTT desktop client</summary>\n\
-           <metadata_license>CC0-1.0</metadata_license>\n\
-           <project_license>GPL-3.0-or-later</project_license>\n\
-         </component>\n"
-    )
-}
-
-fn macos_info_plist() -> String {
-    format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
-         <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \
-         \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n\
-         <plist version=\"1.0\">\n\
-         <dict>\n\
-           <key>CFBundleDisplayName</key><string>{APP_NAME}</string>\n\
-           <key>CFBundleExecutable</key><string>{BIN_NAME}</string>\n\
-           <key>CFBundleIconFile</key><string>Icon.icns</string>\n\
-           <key>CFBundleIdentifier</key><string>{APP_ID}</string>\n\
-           <key>CFBundleName</key><string>{APP_NAME}</string>\n\
-           <key>CFBundlePackageType</key><string>APPL</string>\n\
-           <key>CFBundleShortVersionString</key><string>{}</string>\n\
-           <key>CFBundleVersion</key><string>{}</string>\n\
-           <key>LSApplicationCategoryType</key><string>public.app-category.developer-tools</string>\n\
-         </dict>\n\
-         </plist>\n",
-        env!("CARGO_PKG_VERSION"),
-        env!("CARGO_PKG_VERSION")
-    )
-}
-
-fn windows_metadata() -> String {
-    format!(
-        "{{\n  \"name\": \"{APP_NAME}\",\n  \"identifier\": \"{APP_ID}\",\n  \
-         \"version\": \"{}\",\n  \"vendor\": \"{VENDOR}\",\n  \"binary\": \
-         \"{BIN_NAME}.exe\",\n  \"icon\": \"icons/Icon.ico\",\n  \"signed\": false\n}}\n",
-        env!("CARGO_PKG_VERSION")
-    )
-}
-
-fn package_readme() -> String {
-    format!(
-        "{APP_NAME} unsigned beta package\n\n\
-         Version: {}\n\
-         Vendor: {VENDOR}\n\
-         App ID: {APP_ID}\n\n\
-         This package is intentionally unsigned. Signing, notarization, \
-         auto-update, paid services, and external release commitments are \
-         outside this automation scope.\n\n\
-         Runtime data:\n\
-         Set CORREOMQTT_CONFIG_DIR to use a specific config/history/log root.\n\
-         Without it, the Rust beta uses the OS project data directory for \
-         org/CorreoMQTT/CorreoMQTT and also checks legacy Java roots during startup.\n\
-         Current config and histories live under that root. Script execution \
-         metadata/logs live under scripts/executions/ and scripts/logs/ when \
-         scripting persistence writes them. Rust plugin packages and \
-         local-repo.json are included next to the executable. \
-         App diagnostics currently go to stdout/stderr.\n",
-        env!("CARGO_PKG_VERSION")
-    )
 }
 
 fn print_package_help() {

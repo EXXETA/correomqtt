@@ -158,18 +158,13 @@ impl Workspace {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum ConnectionSurface {
     Launcher,
+    #[default]
     Workbench,
     Settings,
     Transfer,
-}
-
-impl Default for ConnectionSurface {
-    fn default() -> Self {
-        Self::Workbench
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

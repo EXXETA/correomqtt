@@ -6,6 +6,9 @@ use crate::XtaskError;
 use super::checksums::{artifact_file_name, sha256_file};
 use super::PackageOutput;
 
+const RELEASE_ARTIFACT_EXTENSIONS: &[&str] = &["zip", "dmg", "deb", "rpm", "msi"];
+
+
 pub(super) fn verify(output: &Option<PackageOutput>) -> Result<(), XtaskError> {
     let Some(output) = output else {
         return Ok(());
@@ -58,9 +61,9 @@ pub(super) fn verify(output: &Option<PackageOutput>) -> Result<(), XtaskError> {
     let actual_sums = fs::read_to_string(&sums_path)?;
     ensure(
         output,
-        actual_sums == expected_line,
+        actual_sums.contains(&expected_line),
         format!(
-            "{} did not contain exactly the expected package checksum",
+            "{} did not contain the expected package checksum line",
             sums_path.display()
         ),
     )?;
@@ -77,17 +80,47 @@ pub(super) fn verify(output: &Option<PackageOutput>) -> Result<(), XtaskError> {
         ),
     )?;
 
-    let sha_files = files_with_suffix(&output.out_dir, ".zip.sha256")?;
+
+    let release_artifacts = files_with_extensions(&output.out_dir, RELEASE_ARTIFACT_EXTENSIONS)?;
+    let expected_sidecars = release_artifacts
+        .iter()
+        .map(|artifact| {
+            let artifact_name = artifact_file_name(artifact)?;
+            Ok(output.out_dir.join(format!("{artifact_name}.sha256")))
+        })
+        .collect::<Result<Vec<_>, XtaskError>>()?;
+    let actual_sidecars = files_with_suffix(&output.out_dir, ".sha256")?;
     ensure(
         output,
-        sha_files == vec![checksum_path.clone()],
+        actual_sidecars == expected_sidecars,
         format!(
-            "unexpected per-archive checksum outputs in {}: expected [{}], actual [{}]",
+            "unexpected checksum sidecars in {}: expected [{}], actual [{}]",
             output.out_dir.display(),
-            checksum_path.display(),
-            display_paths(&sha_files)
+            display_paths(&expected_sidecars),
+            display_paths(&actual_sidecars)
         ),
     )?;
+    for artifact in &release_artifacts {
+        let artifact_name = artifact_file_name(artifact)?;
+        let sidecar_path = output.out_dir.join(format!("{artifact_name}.sha256"));
+        let artifact_checksum = sha256_file(artifact)?;
+        let artifact_line = format!("{artifact_checksum}  {artifact_name}\n");
+        ensure(
+            output,
+            sidecar_path.exists(),
+            format!("missing checksum sidecar {}", sidecar_path.display()),
+        )?;
+        ensure(
+            output,
+            fs::read_to_string(&sidecar_path)? == artifact_line,
+            format!("checksum sidecar {} is stale or invalid", sidecar_path.display()),
+        )?;
+        ensure(
+            output,
+            actual_sums.contains(&artifact_line),
+            format!("SHA256SUMS does not contain {artifact_name}"),
+        )?;
+    }
 
     println!("package-smoke: target {}", output.target);
     println!("package-smoke: command {}", output.command);
@@ -112,13 +145,17 @@ fn ensure(output: &PackageOutput, condition: bool, message: String) -> Result<()
 }
 
 fn files_with_extension(dir: &Path, extension: &str) -> Result<Vec<PathBuf>, XtaskError> {
+    files_with_extensions(dir, &[extension])
+}
+
+fn files_with_extensions(dir: &Path, extensions: &[&str]) -> Result<Vec<PathBuf>, XtaskError> {
     let mut files = Vec::new();
     for entry in fs::read_dir(dir)? {
         let path = entry?.path();
         if path
             .extension()
             .and_then(|value| value.to_str())
-            .is_some_and(|value| value == extension)
+            .is_some_and(|value| extensions.contains(&value))
         {
             files.push(path);
         }

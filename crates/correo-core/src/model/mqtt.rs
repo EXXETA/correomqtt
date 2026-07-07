@@ -7,6 +7,10 @@ use crate::{
     WorkbenchSnapshot, WorkflowFeedback,
 };
 
+const MAX_INCOMING_MESSAGES: usize = 1_000;
+const MAX_PUBLISH_HISTORY_ROWS: usize = 500;
+
+
 impl AppModel {
     pub(super) fn update_publish_topic(&mut self, topic: String) {
         self.snapshot.workbench.publish.topic = topic;
@@ -386,11 +390,14 @@ impl AppModel {
             diagnostics: Vec::new(),
             formatted_detail: None,
         };
-        let workbench = self.workbench_for_connection_mut(connection_id);
-        workbench.messages.insert(0, row);
-        workbench.selected_message_id = workbench.messages.first().map(|message| message.id);
+        {
+            let workbench = self.workbench_for_connection_mut(connection_id);
+            workbench.messages.insert(0, row);
+            workbench.selected_message_id = workbench.messages.first().map(|message| message.id);
+        }
         self.increment_matching_subscriptions(connection_id, &topic);
         self.update_recent_message_count(connection_id);
+        self.prune_incoming_messages(connection_id);
         self.mark_workbench_dirty(connection_id);
     }
 
@@ -407,6 +414,25 @@ impl AppModel {
             if subscription.active && topic_matches_filter(topic, &subscription.topic_filter) {
                 subscription.message_count = subscription.message_count.saturating_add(1);
             }
+        }
+    }
+
+    fn prune_incoming_messages(&mut self, connection_id: correo_mqtt::ConnectionId) {
+        let removed_topics = {
+            let workbench = self.workbench_for_connection_mut(connection_id);
+            if workbench.messages.len() <= MAX_INCOMING_MESSAGES {
+                return;
+            }
+            workbench
+                .messages
+                .split_off(MAX_INCOMING_MESSAGES)
+                .into_iter()
+                .map(|message| message.topic)
+                .collect::<Vec<_>>()
+        };
+
+        for topic in removed_topics {
+            decrement_matching_subscriptions(self.workbench_for_connection_mut(connection_id), &topic);
         }
     }
 
@@ -526,6 +552,7 @@ impl AppModel {
                 badges,
             },
         );
+        workbench.publish.history.truncate(MAX_PUBLISH_HISTORY_ROWS);
         workbench.publish.selected_history_id = Some(id);
         workbench.publish.feedback = Some(WorkflowFeedback::info(format!(
             "Published {byte_size} bytes to {topic}."

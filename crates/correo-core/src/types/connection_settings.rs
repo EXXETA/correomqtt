@@ -3,6 +3,8 @@ use std::fmt;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 
+use super::QosLevel;
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ConnectionSettingsTab {
     #[default]
@@ -131,6 +133,7 @@ pub struct ConnectionSettingsSnapshot {
     pub ssh_key_file: String,
     pub lwt_enabled: bool,
     pub lwt_topic: String,
+    pub lwt_qos: QosLevel,
     pub lwt_retained: bool,
     pub lwt_payload: String,
     pub dirty: bool,

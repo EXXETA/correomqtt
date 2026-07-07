@@ -11,6 +11,7 @@ fn main() -> Result<(), XtaskError> {
     match args.next().as_deref() {
         Some("check") => cargo(&["check", "--workspace"]),
         Some("test") => cargo(&["test", "--workspace"]),
+        Some("dev") => dev(),
         Some("package") => package::run(args.collect()),
         Some("package-smoke") => package::smoke(args.collect()),
         Some("plugin-release") => plugin_repository::release(args.collect()),
@@ -40,6 +41,11 @@ fn migrate_fixtures() -> Result<(), XtaskError> {
     }
 }
 
+fn dev() -> Result<(), XtaskError> {
+    plugin_repository::run(Vec::new())?;
+    cargo(&["run", "-p", "correo-app"])
+}
+
 pub(crate) fn cargo(args: &[&str]) -> Result<(), XtaskError> {
     let cargo = std::env::var_os("CARGO").unwrap_or_else(|| OsString::from("cargo"));
     let status = Command::new(cargo).args(args).status()?;
@@ -66,7 +72,7 @@ fn ensure_success(status: ExitStatus, args: &[&str]) -> Result<(), XtaskError> {
 
 fn print_help() {
     println!(
-        "Usage: cargo xtask <check|test|package|package-smoke|plugin-release|plugin-repository|migrate-fixtures>"
+        "Usage: cargo xtask <check|test|dev|package|package-smoke|plugin-release|plugin-repository|migrate-fixtures>"
     );
     println!();
     println!("Package options:");
@@ -88,6 +94,13 @@ pub(crate) enum XtaskError {
     UnsupportedTarget(String),
     #[error("expected build artifact does not exist: {0}")]
     MissingArtifact(String),
+    #[error(
+        "missing Rust target `{target}`; install it with `{install_command}` and run the xtask command again"
+    )]
+    MissingRustTarget {
+        target: String,
+        install_command: String,
+    },
     #[error(
         "package artifact guard failed for {target}: {message}; command: {command}; artifact: {artifact}"
     )]

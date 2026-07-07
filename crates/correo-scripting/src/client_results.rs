@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use rquickjs::{prelude::Opt, Ctx, Function};
+use rquickjs::{Ctx, Exception, Function, Promise};
 
 use crate::{
     client_args::{MqttOperation, SubscribeInvocation},
@@ -49,23 +49,15 @@ pub(crate) fn promise_adapter<'js>(
     ctx: Ctx<'js>,
     state: Arc<HostState>,
     operation: MqttOperation,
-    name: &'static str,
+    _name: &'static str,
     subscriptions: MessageSubscriptions<'js>,
-) -> rquickjs::Result<Function<'js>> {
-    Function::new(
-        ctx,
-        move |resolve: Opt<Function>, reject: Opt<Function>| match operation.run(&state) {
-            Ok(()) => {
-                finish_mqtt_operation(&operation, &subscriptions)?;
-                call_required_callback(&state, resolve.0, "promise resolve callback")
-            }
-            Err(error) => match reject.0 {
-                Some(reject) => reject.call::<_, ()>(()),
-                None => Err(state.throw_host_error(error)),
-            },
-        },
-    )?
-    .with_name(name)
+) -> rquickjs::Result<Promise<'js>> {
+    let result = match operation.run(&state) {
+        Ok(()) => finish_mqtt_operation(&operation, &subscriptions)
+            .map_err(|error| ScriptingError::JavaScriptGuest(error.to_string())),
+        Err(error) => Err(error),
+    };
+    promise_from_result(ctx, &state, result)
 }
 
 pub(crate) fn promise_subscribe_adapter<'js>(
@@ -74,48 +66,56 @@ pub(crate) fn promise_subscribe_adapter<'js>(
     subscribe: SubscribeInvocation,
     on_message: Option<Function<'js>>,
     subscriptions: MessageSubscriptions<'js>,
-) -> rquickjs::Result<Function<'js>> {
+) -> rquickjs::Result<Promise<'js>> {
     let topic_filter = subscribe.topic_filter().to_owned();
     let operation = MqttOperation::Subscribe(subscribe);
     let result = operation.run(&state);
     if result.is_ok() {
         register_message_callback(&subscriptions, topic_filter, on_message);
     }
-    Function::new(
-        ctx,
-        move |resolve: Opt<Function>, reject: Opt<Function>| match result.clone() {
-            Ok(()) => call_required_callback(&state, resolve.0, "promise resolve callback"),
-            Err(error) => match reject.0 {
-                Some(reject) => reject.call::<_, ()>(()),
-                None => Err(state.throw_host_error(error)),
-            },
-        },
-    )?
-    .with_name("subscribe")
+    promise_from_result(ctx, &state, result)
 }
 
 pub(crate) fn promise_connectivity_adapter<'js>(
     ctx: Ctx<'js>,
     state: Arc<HostState>,
     operation: ConnectivityOperation,
-    name: &'static str,
+    _name: &'static str,
     subscriptions: MessageSubscriptions<'js>,
-) -> rquickjs::Result<Function<'js>> {
-    Function::new(
-        ctx,
-        move |resolve: Opt<Function>, reject: Opt<Function>| match operation.run(&state) {
-            Ok(()) => {
-                operation.finish(&subscriptions);
-                call_required_callback(&state, resolve.0, "promise resolve callback")
-            }
-            Err(error) => match reject.0 {
-                Some(reject) => reject.call::<_, ()>(()),
-                None => Err(state.throw_host_error(error)),
-            },
-        },
-    )?
-    .with_name(name)
+) -> rquickjs::Result<Promise<'js>> {
+    let result = match operation.run(&state) {
+        Ok(()) => {
+            operation.finish(&subscriptions);
+            Ok(())
+        }
+        Err(error) => Err(error),
+    };
+    promise_from_result(ctx, &state, result)
 }
+
+fn promise_from_result<'js>(
+    ctx: Ctx<'js>,
+    state: &HostState,
+    result: ScriptingResult<()>,
+) -> rquickjs::Result<Promise<'js>> {
+    let (promise, resolve, reject) = ctx.promise()?;
+    match result {
+        Ok(()) => resolve.call::<_, ()>(())?,
+        Err(error) => reject.call::<_, ()>((promise_exception(ctx, state, &error)?,))?,
+    }
+    Ok(promise)
+}
+
+fn promise_exception<'js>(
+    ctx: Ctx<'js>,
+    state: &HostState,
+    error: &ScriptingError,
+) -> rquickjs::Result<Exception<'js>> {
+    let exception = Exception::from_message(ctx.clone(), &error.to_string())?;
+    state.register_promise_host_error(&ctx, &exception, error);
+    Ok(exception)
+}
+
 
 fn finish_mqtt_operation<'js>(
     operation: &MqttOperation,
@@ -149,14 +149,3 @@ pub(crate) fn call_optional_callback(callback: Option<Function<'_>>) -> rquickjs
     }
 }
 
-pub(crate) fn call_required_callback(
-    state: &HostState,
-    callback: Option<Function<'_>>,
-    label: &str,
-) -> rquickjs::Result<()> {
-    callback
-        .ok_or_else(|| {
-            state.throw_host_error(ScriptingError::HostApi(format!("{label} is required")))
-        })?
-        .call::<_, ()>(())
-}

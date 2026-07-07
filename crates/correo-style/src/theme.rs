@@ -61,8 +61,9 @@ impl<'de> Deserialize<'de> for ThemeId {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum ThemeSelection {
+    #[default]
     System,
     Theme(ThemeId),
 }
@@ -105,12 +106,6 @@ impl ThemeSelection {
 
     pub fn is_dark(&self) -> bool {
         matches!(self, Self::Theme(ThemeId::Builtin(BuiltinTheme::Dark)))
-    }
-}
-
-impl Default for ThemeSelection {
-    fn default() -> Self {
-        Self::System
     }
 }
 

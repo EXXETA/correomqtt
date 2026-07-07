@@ -37,7 +37,7 @@ fn release_artifacts_point_repository_entries_at_archives() {
 
     assert_eq!(repository.plugins.len(), 1);
     let entry = &repository.plugins[0];
-    let archive_file_name = plugin_archive_file_name(&entry.manifest);
+    let archive_file_name = plugin_archive_file_name(&entry.manifest).unwrap();
     let archive_path = out_dir.join(&archive_file_name);
     let expected_sha256 = package::checksums::sha256_file(&archive_path).unwrap();
     assert_eq!(
@@ -74,8 +74,20 @@ fn plugin_release_config_defaults_to_latest_github_assets() {
     let config = PluginReleaseConfig::from_args(Vec::new()).unwrap();
     assert_eq!(config.out_dir, PathBuf::from("dist/plugins"));
     assert_eq!(config.asset_base_url, DEFAULT_RELEASE_ASSET_BASE_URL);
+    // GitHub's stable latest-asset form is /releases/latest/download/, not the
+    // literal-tag form /releases/download/latest/.
+    assert!(config.asset_base_url.ends_with("/releases/latest/download"));
     assert!(config.build);
     assert!(!config.show_help);
+}
+
+#[test]
+fn plugin_ids_must_be_safe_single_path_components() {
+    assert!(safe_plugin_id_component("org.correomqtt.plugins.release-test").is_ok());
+    assert!(safe_plugin_id_component("../outside").is_err());
+    assert!(safe_plugin_id_component("nested/plugin").is_err());
+    assert!(safe_plugin_id_component("C:\\outside").is_err());
+    assert!(safe_plugin_id_component("").is_err());
 }
 
 fn manifest_toml() -> String {

@@ -50,7 +50,7 @@ impl ConfigStore {
             path: path.clone(),
             source,
         })?;
-        std::fs::write(&path, text).map_err(|source| StorageError::Write { path, source })
+        write_file_atomic(&path, text.as_bytes())
     }
 
     pub fn save_global_settings(
@@ -89,8 +89,98 @@ impl ConfigStore {
         Ok(config)
     }
 
+    pub fn save_connection(&self, connection: ConnectionConfig) -> Result<AppConfig> {
+        let mut config = self.load_or_default()?;
+        upsert_connection(&mut config, connection);
+        self.save(&config)?;
+        Ok(config)
+    }
+
+    pub fn save_connections(&self, connections: Vec<ConnectionConfig>) -> Result<AppConfig> {
+        let mut config = self.load_or_default()?;
+        for connection in connections {
+            upsert_connection(&mut config, connection);
+        }
+        self.save(&config)?;
+        Ok(config)
+    }
+
+    pub fn delete_connection(&self, connection_id: &str) -> Result<AppConfig> {
+        let mut config = self.load_or_default()?;
+        config
+            .connections
+            .retain(|connection| connection.id != connection_id);
+        self.save(&config)?;
+        Ok(config)
+    }
+
+    pub fn save_connection_order(&self, ordered_ids: &[String]) -> Result<AppConfig> {
+        let mut config = self.load_or_default()?;
+        config.connections.sort_by_key(|connection| {
+            ordered_ids
+                .iter()
+                .position(|id| id == &connection.id)
+                .unwrap_or(usize::MAX)
+        });
+        self.save(&config)?;
+        Ok(config)
+    }
+
     fn path(&self) -> PathBuf {
         self.root.join(CONFIG_FILE_NAME)
+    }
+}
+
+fn write_file_atomic(path: &Path, content: &[u8]) -> Result<()> {
+    let temporary = path.with_extension(format!("tmp.{}", std::process::id()));
+    std::fs::write(&temporary, content).map_err(|source| StorageError::Write {
+        path: temporary.clone(),
+        source,
+    })?;
+    if cfg!(windows) && path.exists() {
+        std::fs::remove_file(path).map_err(|source| StorageError::Write {
+            path: path.to_path_buf(),
+            source,
+        })?;
+    }
+    std::fs::rename(&temporary, path).map_err(|source| StorageError::Write {
+        path: path.to_path_buf(),
+        source,
+    })
+}
+
+fn upsert_connection(config: &mut AppConfig, mut connection: ConnectionConfig) {
+    if let Some(existing) = config
+        .connections
+        .iter_mut()
+        .find(|existing| existing.id == connection.id)
+    {
+        preserve_form_external_fields(&mut connection, existing);
+        *existing = connection;
+    } else {
+        config.connections.push(connection);
+    }
+}
+
+// The connection settings form does not edit these UI-metadata fields (splitter
+// positions, per-list column visibility), so an incoming `None` means
+// "unchanged" and must not wipe values that migration or the workbench
+// persisted.
+fn preserve_form_external_fields(incoming: &mut ConnectionConfig, existing: &ConnectionConfig) {
+    if incoming.connection_ui_settings.is_none() {
+        incoming
+            .connection_ui_settings
+            .clone_from(&existing.connection_ui_settings);
+    }
+    if incoming.publish_list_view_config.is_none() {
+        incoming
+            .publish_list_view_config
+            .clone_from(&existing.publish_list_view_config);
+    }
+    if incoming.subscribe_list_view_config.is_none() {
+        incoming
+            .subscribe_list_view_config
+            .clone_from(&existing.subscribe_list_view_config);
     }
 }
 
@@ -109,6 +199,11 @@ pub struct AppConfig {
 pub struct ConnectionConfig {
     pub id: String,
     pub name: String,
+    // Messaging protocol discriminator. Defaults to MQTT so existing profiles
+    // load unchanged; a new variant (e.g. Kafka) can be added without a
+    // breaking config migration.
+    #[serde(default)]
+    pub protocol: Protocol,
     pub url: String,
     pub port: u16,
     pub client_id: Option<String>,
@@ -179,6 +274,7 @@ pub struct Settings {
     pub bundled_plugins_url: Option<String>,
     pub plugin_repositories: BTreeMap<String, String>,
     pub plugin_states: BTreeMap<String, PluginStateSettings>,
+    pub plugin_hooks: BTreeMap<String, Vec<PluginHookSettings>>,
     pub first_start: bool,
     pub keyring_identifier: Option<String>,
     pub global_ui_settings: Option<GlobalUiSettings>,
@@ -199,12 +295,33 @@ impl Default for Settings {
             bundled_plugins_url: None,
             plugin_repositories: BTreeMap::new(),
             plugin_states: BTreeMap::new(),
+            plugin_hooks: BTreeMap::new(),
             first_start: true,
             keyring_identifier: None,
             global_ui_settings: None,
             config_created_with_correo_version: None,
         }
     }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct PluginHookSettings {
+    pub hook: PluginHookKind,
+    pub enabled: bool,
+    pub target: String,
+    pub config_json: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PluginHookKind {
+    IncomingTransform,
+    OutgoingTransform,
+    Validator,
+    DetailTransform,
+    #[default]
+    DetailFormatter,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -260,6 +377,16 @@ pub enum LabelType {
     Qos,
     Retained,
     Timestamp,
+}
+
+/// Messaging protocol of a connection. Only MQTT ships today; the enum exists
+/// so a second protocol can be added later without changing the config schema
+/// shape or breaking existing serialized profiles.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Protocol {
+    #[default]
+    Mqtt,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

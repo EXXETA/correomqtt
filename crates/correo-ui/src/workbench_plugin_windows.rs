@@ -120,7 +120,7 @@ fn render_metric_list(ui: &mut egui::Ui, list: &PluginMetricListNode, tokens: Th
 }
 
 fn render_metric_row(ui: &mut egui::Ui, row: &PluginMetricRow, index: usize, tokens: ThemeTokens) {
-    let fill = if index % 2 == 0 {
+    let fill = if index.is_multiple_of(2) {
         tokens.panel_bg
     } else {
         tokens.window_bg

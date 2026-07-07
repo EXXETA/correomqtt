@@ -179,9 +179,9 @@ async fn incoming_transform_error_keeps_payload_and_records_diagnostic() {
 
     runtime
         .command_sender()
-        .send(AppCommand::Mqtt(MqttCommand::Connect {
+        .send(AppCommand::Mqtt(Box::new(MqttCommand::Connect {
             options: connection_options(connection_id),
-        }))
+        })))
         .unwrap();
     pump_until(&mut runtime, |runtime| {
         connection_state(runtime, connection_id) == ConnectionState::Connected
@@ -190,11 +190,11 @@ async fn incoming_transform_error_keeps_payload_and_records_diagnostic() {
 
     runtime
         .command_sender()
-        .send(AppCommand::Mqtt(MqttCommand::Publish {
+        .send(AppCommand::Mqtt(Box::new(MqttCommand::Publish {
             connection_id,
             request: PublishRequest::new("bridge/raw", b"online".to_vec(), Qos::AtMostOnce, false)
                 .unwrap(),
-        }))
+        })))
         .unwrap();
     pump_until(&mut runtime, |runtime| {
         runtime
@@ -223,8 +223,10 @@ async fn incoming_validator_result_is_recorded_on_message() {
         "bridge/#",
     );
     let mut runtime = AppRuntime::with_snapshot(snapshot);
+    // A blocking validator now cancels the publish before the fake session can
+    // loop it back, so a warning validator exercises the incoming recording.
     runtime.attach_plugin_hook_executor(MockHooks::new(
-        MockBehavior::ValidatorBlock("payload missing required text".to_owned()),
+        MockBehavior::ValidatorWarning("payload missing required text".to_owned()),
         Arc::default(),
     ));
     runtime.attach_mqtt_service(
@@ -239,9 +241,9 @@ async fn incoming_validator_result_is_recorded_on_message() {
 
     runtime
         .command_sender()
-        .send(AppCommand::Mqtt(MqttCommand::Connect {
+        .send(AppCommand::Mqtt(Box::new(MqttCommand::Connect {
             options: connection_options(connection_id),
-        }))
+        })))
         .unwrap();
     pump_until(&mut runtime, |runtime| {
         connection_state(runtime, connection_id) == ConnectionState::Connected
@@ -250,11 +252,11 @@ async fn incoming_validator_result_is_recorded_on_message() {
 
     runtime
         .command_sender()
-        .send(AppCommand::Mqtt(MqttCommand::Publish {
+        .send(AppCommand::Mqtt(Box::new(MqttCommand::Publish {
             connection_id,
             request: PublishRequest::new("bridge/raw", b"online".to_vec(), Qos::AtMostOnce, false)
                 .unwrap(),
-        }))
+        })))
         .unwrap();
     pump_until(&mut runtime, |runtime| {
         runtime
@@ -265,7 +267,7 @@ async fn incoming_validator_result_is_recorded_on_message() {
             .is_some_and(|message| {
                 message.diagnostics.iter().any(|diagnostic| {
                     diagnostic.message == "payload missing required text"
-                        && diagnostic.severity == crate::PluginDiagnosticSeverity::Error
+                        && diagnostic.severity == crate::PluginDiagnosticSeverity::Warning
                 })
             })
     })

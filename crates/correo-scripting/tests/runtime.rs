@@ -143,7 +143,8 @@ fn compatibility_aliases_are_available() {
         logger.info("aliases ok");
     "#;
 
-    let (host, error) = execute(source);
+    // connect() needs a host MQTT client since scripts drive real connections.
+    let (host, error) = execute_with_mqtt(source, Arc::new(RecordingMqttClient::default()));
 
     assert_eq!(error, None);
     let logs = host.logs();
@@ -240,32 +241,15 @@ fn async_client_accepts_legacy_pubsub_callbacks() {
 }
 
 #[test]
-fn promise_client_returns_callable_pubsub_adapters() {
+fn promise_client_executes_pubsub_when_awaited() {
     let mqtt = Arc::new(RecordingMqttClient::default());
     let source = r#"
-        let resolved = 0;
-        let rejected = 0;
-        const resolve = function () { resolved += 1; };
-        const reject = function () { rejected += 1; };
         const client = clientFactory.getPromiseClient();
 
-        const publishDefault = client.publish("topic/promise/default", "promise payload");
-        const publishLegacy = client.publish("topic/promise/legacy", 1, "legacy promise payload");
-        const subscribe = client.subscribe("topic/promise/+", 1, function (_payload) {});
-        const unsubscribe = client.unsubscribe("topic/promise/+");
-
-        if (typeof publishDefault !== "function") throw new Error("publish adapter missing");
-        if (typeof publishLegacy !== "function") throw new Error("legacy publish adapter missing");
-        if (typeof subscribe !== "function") throw new Error("subscribe adapter missing");
-        if (typeof unsubscribe !== "function") throw new Error("unsubscribe adapter missing");
-
-        publishDefault(resolve, reject);
-        publishLegacy(resolve, reject);
-        subscribe(resolve, reject);
-        unsubscribe(resolve, reject);
-
-        if (resolved !== 4) throw new Error("promise adapters did not resolve");
-        if (rejected !== 0) throw new Error("promise adapters rejected unexpectedly");
+        await client.publish("topic/promise/default", "promise payload");
+        await client.publish("topic/promise/legacy", 1, "legacy promise payload");
+        await client.subscribe("topic/promise/+", 1, function (_payload) {});
+        await client.unsubscribe("topic/promise/+");
     "#;
 
     let (_, error) = execute_with_mqtt(source, mqtt.clone());
@@ -374,6 +358,149 @@ fn mqtt_errors_are_typed_and_requests_are_narrow() {
 }
 
 #[test]
+fn handled_promise_mqtt_error_does_not_poison_later_guest_error() {
+    let mqtt = Arc::new(FailingMqttClient::default());
+    let host = Arc::new(TestHost::with_mqtt(mqtt));
+    let runtime = ScriptRuntime::new(host);
+    let outcome = runtime.execute(
+        ScriptExecutionRequest::new(
+            "promise-error.js",
+            r#"
+            const client = clientFactory.getPromiseClient();
+            try {
+                await client.publish("topic/test", "payload");
+            } catch (_error) {
+                throw new Error("guest failure after handled promise rejection");
+            }
+            "#,
+        ),
+        ScriptCancellationToken::new(),
+    );
+
+    assert!(matches!(
+        outcome.error,
+        Some(ScriptingError::JavaScriptGuest(message))
+            if message.contains("guest failure after handled promise rejection")
+    ));
+}
+
+#[test]
+fn handled_promise_mqtt_error_message_rethrow_stays_guest_error() {
+    let mqtt = Arc::new(FailingMqttClient::default());
+    let host = Arc::new(TestHost::with_mqtt(mqtt));
+    let runtime = ScriptRuntime::new(host);
+    let outcome = runtime.execute(
+        ScriptExecutionRequest::new(
+            "promise-error-rethrow.js",
+            r#"
+            const client = clientFactory.getPromiseClient();
+            try {
+                await client.publish("topic/test", "payload");
+            } catch (error) {
+                throw new Error(error.message);
+            }
+            "#,
+        ),
+        ScriptCancellationToken::new(),
+    );
+
+    assert!(matches!(
+        outcome.error,
+        Some(ScriptingError::JavaScriptGuest(message))
+            if message.contains("script MQTT operation failed")
+    ));
+}
+
+#[test]
+fn handled_promise_mqtt_error_property_copy_rethrow_stays_guest_error() {
+    let mqtt = Arc::new(FailingMqttClient::default());
+    let host = Arc::new(TestHost::with_mqtt(mqtt));
+    let runtime = ScriptRuntime::new(host);
+    let outcome = runtime.execute(
+        ScriptExecutionRequest::new(
+            "promise-error-property-copy-rethrow.js",
+            r#"
+            const client = clientFactory.getPromiseClient();
+            try {
+                await client.publish("topic/test", "payload");
+            } catch (error) {
+                const rethrown = new Error(error.message);
+                for (const property of Object.getOwnPropertyNames(error)) {
+                    rethrown[property] = error[property];
+                }
+                throw rethrown;
+            }
+            "#,
+        ),
+        ScriptCancellationToken::new(),
+    );
+
+    assert!(matches!(
+        outcome.error,
+        Some(ScriptingError::JavaScriptGuest(message))
+            if message.contains("script MQTT operation failed")
+    ));
+}
+
+#[test]
+fn awaited_promise_mqtt_error_stays_typed() {
+    let mqtt = Arc::new(FailingMqttClient::default());
+    let host = Arc::new(TestHost::with_mqtt(mqtt));
+    let runtime = ScriptRuntime::new(host);
+    let outcome = runtime.execute(
+        ScriptExecutionRequest::new(
+            "promise-mqtt-error.js",
+            r#"
+            const client = clientFactory.getPromiseClient();
+            await client.publish("topic/test", "payload");
+            "#,
+        ),
+        ScriptCancellationToken::new(),
+    );
+
+    assert!(matches!(
+        outcome.error,
+        Some(ScriptingError::MqttOperation(_))
+    ));
+}
+
+#[test]
+fn guest_error_containing_static_promise_marker_stays_guest_error() {
+    let runtime = ScriptRuntime::default();
+    let outcome = runtime.execute(
+        ScriptExecutionRequest::new(
+            "spoof-marker.js",
+            r#"throw new Error("not internal __correomqtt_host_error__:mqtt:spoofed");"#,
+        ),
+        ScriptCancellationToken::new(),
+    );
+
+    assert!(matches!(
+        outcome.error,
+        Some(ScriptingError::JavaScriptGuest(message))
+            if message.contains("__correomqtt_host_error__:mqtt:spoofed")
+    ));
+}
+
+#[test]
+fn guest_error_with_static_promise_marker_prefix_stays_guest_error() {
+    let runtime = ScriptRuntime::default();
+    let outcome = runtime.execute(
+        ScriptExecutionRequest::new(
+            "spoof-prefix-marker.js",
+            r#"throw new Error("__correomqtt_host_error__:mqtt:spoofed");"#,
+        ),
+        ScriptCancellationToken::new(),
+    );
+
+    assert!(matches!(
+        outcome.error,
+        Some(ScriptingError::JavaScriptGuest(message))
+            if message.contains("__correomqtt_host_error__:mqtt:spoofed")
+    ));
+}
+
+#[test]
 fn cancellation_interrupts_tight_javascript_loop() {
     let runtime = ScriptRuntime::default();
     let cancellation = ScriptCancellationToken::new();
@@ -395,6 +522,19 @@ fn cancellation_interrupts_tight_javascript_loop() {
         .expect("script should stop after cancellation");
 
     assert_eq!(outcome.error, Some(ScriptingError::Cancelled));
+}
+
+#[test]
+fn deadline_cancels_tight_javascript_loop() {
+    let runtime = ScriptRuntime::default();
+    let cancellation = ScriptCancellationToken::new();
+    let outcome = runtime.execute(
+        ScriptExecutionRequest::new("deadline-loop.js", "while (true) {}"),
+        cancellation.clone(),
+    );
+
+    assert_eq!(outcome.error, Some(ScriptingError::Cancelled));
+    assert!(cancellation.is_cancelled());
 }
 
 #[derive(Default)]

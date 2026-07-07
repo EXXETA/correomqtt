@@ -95,6 +95,7 @@ fn invalid(message: impl Into<String>) -> XmlXsdValidation {
 
 #[derive(Debug, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 struct XmlXsdValidatorConfig {
     schema_text: Option<String>,
     schema_source: Option<SchemaSource>,
@@ -127,16 +128,6 @@ impl XmlXsdValidatorConfig {
             );
         }
         Err("Inline XSD schema text is required.".to_owned())
-    }
-}
-
-impl Default for XmlXsdValidatorConfig {
-    fn default() -> Self {
-        Self {
-            schema_text: None,
-            schema_source: None,
-            schema: None,
-        }
     }
 }
 

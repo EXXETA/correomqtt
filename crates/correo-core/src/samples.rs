@@ -220,6 +220,7 @@ fn sample_connection_settings() -> ConnectionSettingsSnapshot {
         ssh_password_status: "No SSH password configured".to_owned(),
         lwt_enabled: true,
         lwt_topic: "status/correomqtt".to_owned(),
+        lwt_qos: QosLevel::One,
         lwt_retained: false,
         lwt_payload: "{\"online\":false}".to_owned(),
         dirty: true,

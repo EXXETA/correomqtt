@@ -1,11 +1,12 @@
 use std::collections::BTreeMap;
 
-use correo_storage::current::PluginStateSettings;
+use correo_storage::current::PluginHookSettings;
 
 use crate::{
-    marketplace_rows_from_repository_json, PluginFeedback, PluginLoadState, PluginSource,
-    PluginStatus, PluginSurfaceSnapshot, PluginSurfaceTab,
+    marketplace_rows_from_repository_json, PluginFeedback, PluginHookAssignment, PluginHookStatus,
+    PluginLoadState, PluginSource, PluginStatus, PluginSurfaceSnapshot, PluginSurfaceTab,
 };
+use correo_storage::current::PluginStateSettings;
 
 pub(super) fn plugin_surface(
     install_bundled_plugins: bool,
@@ -14,6 +15,7 @@ pub(super) fn plugin_surface(
     installed_plugin_ids: &[String],
     installed_plugin_paths: &[(String, String)],
     plugin_states: &BTreeMap<String, PluginStateSettings>,
+    plugin_hooks: &BTreeMap<String, Vec<PluginHookSettings>>,
 ) -> PluginSurfaceSnapshot {
     let mut marketplace_plugins = Vec::new();
     let mut feedback = None;
@@ -43,6 +45,9 @@ pub(super) fn plugin_surface(
                 let mut plugin = marketplace_plugin.to_installed_plugin();
                 if bundled_plugin_ids.iter().any(|id| id == &plugin.id) {
                     plugin.source = PluginSource::Bundled;
+                }
+                if let Some(hooks) = plugin_hooks.get(&plugin.id) {
+                    plugin.hooks = hooks.iter().map(plugin_hook_assignment).collect();
                 }
                 if let Some(state) = plugin_states.get(&plugin.id) {
                     plugin.enabled = state.enabled;
@@ -87,6 +92,46 @@ pub(super) fn plugin_surface(
         selected_marketplace_plugin_id,
         feedback,
         ..PluginSurfaceSnapshot::default()
+    }
+}
+
+fn plugin_hook_assignment(settings: &PluginHookSettings) -> PluginHookAssignment {
+    let enabled = settings.enabled;
+    PluginHookAssignment {
+        hook: plugin_hook_kind(settings.hook),
+        enabled,
+        target: settings.target.clone(),
+        config_json: settings.config_json.clone(),
+        status: if enabled {
+            PluginHookStatus::Ready
+        } else {
+            PluginHookStatus::Disabled
+        },
+        last_run: "never".to_owned(),
+        message: if enabled {
+            "Restored from settings"
+        } else {
+            "Assignment disabled"
+        }
+        .to_owned(),
+    }
+}
+
+fn plugin_hook_kind(kind: correo_storage::current::PluginHookKind) -> crate::PluginHookKind {
+    match kind {
+        correo_storage::current::PluginHookKind::IncomingTransform => {
+            crate::PluginHookKind::IncomingTransform
+        }
+        correo_storage::current::PluginHookKind::OutgoingTransform => {
+            crate::PluginHookKind::OutgoingTransform
+        }
+        correo_storage::current::PluginHookKind::Validator => crate::PluginHookKind::Validator,
+        correo_storage::current::PluginHookKind::DetailTransform => {
+            crate::PluginHookKind::DetailTransform
+        }
+        correo_storage::current::PluginHookKind::DetailFormatter => {
+            crate::PluginHookKind::DetailFormatter
+        }
     }
 }
 

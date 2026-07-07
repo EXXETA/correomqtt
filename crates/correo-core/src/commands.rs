@@ -52,7 +52,9 @@ pub enum AppCommand {
     },
     SetConnectionExportEncrypted(bool),
     UpdateConnectionExportPath(String),
-    StartConnectionExport,
+    StartConnectionExport {
+        password: SecretInput,
+    },
     ImportMessages,
     ImportMessagesFromPath(PathBuf),
     ExportMessages,
@@ -119,6 +121,7 @@ pub enum AppCommand {
     },
     GenerateClientId,
     SetLwtEnabled(bool),
+    UpdateLwtQos(QosLevel),
     SaveConnectionSettings,
     DiscardConnectionSettings,
     OpenConnectionPlugins(ConnectionId),
@@ -257,7 +260,7 @@ pub enum AppCommand {
         action_id: String,
         connection_id: ConnectionId,
     },
-    Mqtt(MqttCommand),
+    Mqtt(Box<MqttCommand>),
     Shutdown,
 }
 
@@ -267,7 +270,7 @@ pub enum MigrationRecoveryCommand {
     StartEmptyProfile,
     CancelEmptyProfile,
     ConfirmStartEmptyProfile,
-    SubmitPassword,
+    SubmitPassword { password: SecretInput },
     SkipSecrets,
     SelectMigrationItem { item_id: String, selected: bool },
     ApplyMigration,
@@ -299,10 +302,10 @@ pub enum AppEvent {
     },
     ConnectionSettingsLoaded {
         connection_id: ConnectionId,
-        settings: ConnectionSettingsSnapshot,
+        settings: Box<ConnectionSettingsSnapshot>,
     },
     GlobalSettingsLoaded {
-        settings: GlobalSettingsSnapshot,
+        settings: Box<GlobalSettingsSnapshot>,
     },
     ThemeModeChanged {
         mode: ThemeMode,
@@ -313,6 +316,10 @@ pub enum AppEvent {
         diagnostics: Vec<MigrationRecoveryDiagnostic>,
     },
     DiagnosticRaised(Diagnostic),
+    UpdateCheckCompleted {
+        summary: String,
+        update_available: bool,
+    },
     ScriptExecutionLogAppended {
         execution_id: String,
         level: ScriptLogLevel,
@@ -400,7 +407,7 @@ impl AppCommandSender {
     pub fn send(&self, command: AppCommand) -> Result<(), CommandSendError> {
         self.sender
             .try_send(command)
-            .map_err(|error| CommandSendError::CommandDisconnected(error.into_inner()))
+            .map_err(|error| CommandSendError::CommandDisconnected(Box::new(error.into_inner())))
     }
 
     pub fn push(&mut self, command: AppCommand) {
@@ -421,14 +428,14 @@ impl AppEventSender {
     pub fn emit(&self, event: AppEvent) -> Result<(), CommandSendError> {
         self.sender
             .try_send(event)
-            .map_err(|error| CommandSendError::EventDisconnected(error.into_inner()))
+            .map_err(|error| CommandSendError::EventDisconnected(Box::new(error.into_inner())))
     }
 }
 
 #[derive(Debug, Error)]
 pub enum CommandSendError {
     #[error("app command receiver is disconnected")]
-    CommandDisconnected(AppCommand),
+    CommandDisconnected(Box<AppCommand>),
     #[error("app event receiver is disconnected")]
-    EventDisconnected(AppEvent),
+    EventDisconnected(Box<AppEvent>),
 }

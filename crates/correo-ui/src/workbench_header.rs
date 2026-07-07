@@ -63,7 +63,7 @@ pub fn connection_header(
         && header_icon_button_with_activity_dot(
             &mut left,
             regular::PUZZLE_PIECE,
-            &i18n.text("validators-title"),
+            i18n.text("validators-title"),
             connection.active_plugin_workflows,
             tokens.accent,
         )

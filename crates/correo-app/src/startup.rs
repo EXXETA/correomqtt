@@ -12,7 +12,6 @@ use correo_storage::current::{
 };
 use correo_storage::legacy::LegacyProfile;
 use correo_storage::migration::MigrationPreview;
-use directories::ProjectDirs;
 
 use crate::plugins::{load_startup_plugins, StartupPlugins};
 
@@ -74,12 +73,7 @@ pub fn load_startup_state(fallback_theme: ThemeMode) -> LoadedStartup {
 }
 
 pub fn history_root() -> PathBuf {
-    if let Some(path) = std::env::var_os("CORREOMQTT_CONFIG_DIR") {
-        return PathBuf::from(path);
-    }
-    ProjectDirs::from("org", "CorreoMQTT", "CorreoMQTT")
-        .map(|project_dirs| project_dirs.data_dir().to_path_buf())
-        .unwrap_or_else(|| PathBuf::from(".correomqtt"))
+    correo_storage::current::config_root()
 }
 
 fn load_root(root: &Path, fallback_theme: ThemeMode) -> Result<LoadedStartup, String> {
@@ -164,14 +158,9 @@ fn load_current_workbenches(
 }
 
 fn current_roots() -> Vec<PathBuf> {
-    let mut roots = Vec::new();
-    if let Some(path) = std::env::var_os("CORREOMQTT_CONFIG_DIR") {
-        roots.push(PathBuf::from(path));
-    }
-    if let Some(project_dirs) = ProjectDirs::from("org", "CorreoMQTT", "CorreoMQTT") {
-        roots.push(project_dirs.data_dir().to_path_buf());
-    }
-    dedup_existing_order(roots)
+    // The app reads its config from config_root(), so migration discovery
+    // only needs to look there.
+    dedup_existing_order(vec![correo_storage::current::config_root()])
 }
 
 fn legacy_roots() -> Vec<PathBuf> {

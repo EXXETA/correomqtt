@@ -17,7 +17,6 @@ correo-plugins = { path = "../correo-plugins" }
 correo-plugins-systopic = { path = "../../plugins/correo-plugins-systopic" }
 correo-storage = { path = "../correo-storage" }
 correo-ui = { path = "../correo-ui" }
-directories.workspace = true
 eframe.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true

@@ -1,0 +1,7 @@
+# The egui render functions thread a consistent context bundle
+# (ui, snapshot, theme tokens, command sender, i18n) plus a handful of
+# item-specific parameters, which lands them at 8-10 arguments. That bundle is
+# the codebase's established UI signature, so the default threshold of 7 is
+# calibrated up to 10 rather than boxing the bundle into a context struct that
+# every render helper would have to thread anyway.
+too-many-arguments-threshold = 10

@@ -792,8 +792,8 @@ fn scripting_flyout_expanded_controls(
         responsive::close_scripting_flyout(ui.ctx());
     }
 
-    if !(responsive::forced_scripting_flyout_mode(ui.ctx())
-        && !responsive::scripting_context_requires_flyout(ui.ctx()))
+    if !responsive::forced_scripting_flyout_mode(ui.ctx())
+        || responsive::scripting_context_requires_flyout(ui.ctx())
     {
         return;
     }

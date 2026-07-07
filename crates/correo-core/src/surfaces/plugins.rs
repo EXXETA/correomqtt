@@ -236,17 +236,20 @@ pub struct PluginMarketplaceRow {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
+#[derive(Default)]
 pub enum PluginMarketplaceSource {
-    Bundled { plugin_id: String },
-    LocalPackage { path: String },
-    Archive { url: String, sha256: String },
+    Bundled {
+        plugin_id: String,
+    },
+    LocalPackage {
+        path: String,
+    },
+    Archive {
+        url: String,
+        sha256: String,
+    },
+    #[default]
     Unknown,
-}
-
-impl Default for PluginMarketplaceSource {
-    fn default() -> Self {
-        Self::Unknown
-    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]

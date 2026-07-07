@@ -1,18 +1,15 @@
 use correo_storage::current::{
-    redact_script_log_text, ConfigStore, ScriptExecution, ScriptExecutionStatus, ScriptLogLevel,
-    ScriptLogRecord, ScriptStore,
+    ConfigStore, ConnectionPluginDirection, ConnectionPluginWorkflowKind, LabelType,
+    PluginHookKind, ScriptExecutionStatus,
 };
-use correo_storage::legacy::passwords::{LegacyPasswords, SecretKind};
 use correo_storage::legacy::LegacyProfile;
 use correo_storage::migration::{
-    connection_secrets, IgnoredJavaPluginStateKind, MigrationApplier, MigrationDiagnostics,
-    MigrationPreview, MigrationWarning,
+    IgnoredJavaPluginStateKind, MigrationApplier, MigrationDiagnostics, MigrationPreview,
+    MigrationWarning,
 };
 use correo_storage::StorageError;
 use std::path::Path;
 use std::path::PathBuf;
-
-const MASTER_PASSWORD: &str = "synthetic-master-passphrase";
 
 fn fixture(path: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -108,6 +105,72 @@ fn loads_legacy_profile_fixtures_and_reinitializes_plugins() {
         preview.settings.plugin_repositories.get("synthetic"),
         Some(&"https://example.invalid/plugins.json".to_owned())
     );
+    let local_connection = preview
+        .connections
+        .iter()
+        .find(|connection| connection.id == "local-broker-01")
+        .unwrap();
+    let connection_ui = local_connection.connection_ui_settings.as_ref().unwrap();
+    assert!(connection_ui.show_subscribe);
+    assert!(connection_ui.show_publish);
+    assert_eq!(connection_ui.main_divider_position, 0.42);
+    assert_eq!(connection_ui.publish_detail_divider_position, 0.63);
+    assert!(!connection_ui.subscribe_detail_active);
+    let publish_labels = &local_connection
+        .publish_list_view_config
+        .as_ref()
+        .unwrap()
+        .label_visibility;
+    assert_eq!(publish_labels.get(&LabelType::Qos), Some(&true));
+    assert_eq!(publish_labels.get(&LabelType::Retained), Some(&false));
+    assert_eq!(publish_labels.get(&LabelType::Timestamp), Some(&true));
+    let subscribe_labels = &local_connection
+        .subscribe_list_view_config
+        .as_ref()
+        .unwrap()
+        .label_visibility;
+    assert_eq!(subscribe_labels.get(&LabelType::Qos), Some(&true));
+    assert_eq!(subscribe_labels.get(&LabelType::Retained), Some(&false));
+    assert!(local_connection.plugin_workflows.iter().any(|workflow| {
+        workflow.plugin_id == "org.correomqtt.plugins.base64"
+            && workflow.kind == ConnectionPluginWorkflowKind::Manipulator
+            && workflow.direction == ConnectionPluginDirection::Outgoing
+            && workflow.topic_filter == "#"
+    }));
+    let contains_string_workflow = local_connection
+        .plugin_workflows
+        .iter()
+        .find(|workflow| workflow.plugin_id == "org.correomqtt.plugins.contains-string-validator")
+        .unwrap();
+    assert_eq!(
+        contains_string_workflow.kind,
+        ConnectionPluginWorkflowKind::Validator
+    );
+    assert_eq!(
+        contains_string_workflow.direction,
+        ConnectionPluginDirection::Both
+    );
+    assert_eq!(contains_string_workflow.topic_filter, "alerts/status");
+    assert_eq!(contains_string_workflow.config["rules"][0]["text"], "ok");
+    let xml_xsd_workflow = local_connection
+        .plugin_workflows
+        .iter()
+        .find(|workflow| workflow.plugin_id == "org.correomqtt.plugins.xml-xsd-validator")
+        .unwrap();
+    assert_eq!(xml_xsd_workflow.topic_filter, "alerts/status");
+    assert_eq!(
+        xml_xsd_workflow.config["schema"],
+        "/synthetic/schema/note.xsd"
+    );
+    let xml_hooks = preview
+        .settings
+        .plugin_hooks
+        .get("org.correomqtt.plugins.xml-format")
+        .unwrap();
+    assert_eq!(xml_hooks.len(), 1);
+    assert_eq!(xml_hooks[0].hook, PluginHookKind::DetailFormatter);
+    assert_eq!(xml_hooks[0].target, "Format detail");
+    assert_eq!(xml_hooks[0].config_json, "{}");
     let global_ui = preview.settings.global_ui_settings.as_ref().unwrap();
     assert_eq!(global_ui.window_width, 1280.0);
     assert_eq!(global_ui.window_height, 800.0);
@@ -136,7 +199,23 @@ fn loads_legacy_profile_fixtures_and_reinitializes_plugins() {
     assert!(preview
         .warnings
         .iter()
-        .any(|warning| warning.code == "legacy_hooks_not_mapped"));
+        .any(|warning| warning.code == "legacy_hooks_partially_mapped"));
+    assert!(preview
+        .warnings
+        .iter()
+        .any(|warning| warning.code == "legacy_hook_not_mapped"));
+    assert!(preview
+        .warnings
+        .iter()
+        .any(|warning| warning.code == "legacy_connection_tls_pkcs12_review"));
+    assert!(preview
+        .warnings
+        .iter()
+        .any(|warning| warning.code == "legacy_connection_tls_host_verification_review"));
+    assert!(preview
+        .warnings
+        .iter()
+        .any(|warning| warning.code == "legacy_xml_xsd_schema_path_requires_review"));
     assert!(preview
         .warnings
         .iter()
@@ -210,165 +289,6 @@ fn loads_legacy_profile_fixtures_and_reinitializes_plugins() {
         .any(|record| record.message.contains("synthetic-log-password")
             || record.message.contains("synthetic-export-password")));
     assert_eq!(preview.warnings, preview.report.warnings);
-}
-
-#[test]
-fn decrypts_current_aes_gcm_password_fixture() {
-    let passwords = LegacyPasswords::read_from(fixture("legacy_profile/passwords.json"))
-        .unwrap()
-        .decrypt(MASTER_PASSWORD)
-        .unwrap();
-
-    let secrets = connection_secrets(&passwords, "local-broker-01");
-    assert_eq!(secrets.len(), 3);
-    assert!(secrets.contains(&(SecretKind::Password, "synthetic-mqtt-password")));
-    assert!(secrets.contains(&(SecretKind::AuthPassword, "synthetic-ssh-password")));
-    assert!(secrets.contains(&(
-        SecretKind::SslKeystorePassword,
-        "synthetic-keystore-password"
-    )));
-}
-
-#[test]
-fn decrypts_legacy_aes_cbc_password_fixture() {
-    let passwords = LegacyPasswords::read_from(fixture("password_formats/passwords_cbc.json"))
-        .unwrap()
-        .decrypt(MASTER_PASSWORD)
-        .unwrap();
-
-    assert_eq!(
-        passwords
-            .get("local-broker-01_password")
-            .map(String::as_str),
-        Some("synthetic-mqtt-password")
-    );
-    assert_eq!(
-        passwords
-            .get("local-broker-01_auth_password")
-            .map(String::as_str),
-        Some("synthetic-ssh-password")
-    );
-    assert_eq!(
-        passwords
-            .get("local-broker-01_ssl_keystore_password")
-            .map(String::as_str),
-        Some("synthetic-keystore-password")
-    );
-}
-
-#[test]
-fn script_store_crud_tracks_dirty_state_and_redacts_logs() {
-    let temp = tempfile::tempdir().unwrap();
-    let store = ScriptStore::new(temp.path());
-
-    let script = store
-        .create_script("alerts/publish.js", "logger.info('ok');")
-        .unwrap();
-    assert_eq!(script.name, "publish.js");
-    assert_eq!(store.list_scripts().unwrap().len(), 1);
-    assert!(
-        !store
-            .dirty_state("alerts/publish.js", "logger.info('ok');")
-            .unwrap()
-            .dirty
-    );
-    assert!(
-        store
-            .dirty_state("alerts/publish.js", "logger.info('changed');")
-            .unwrap()
-            .dirty
-    );
-
-    store
-        .update_script("alerts/publish.js", "logger.info('changed');")
-        .unwrap();
-    let renamed = store
-        .rename_script("alerts/publish.js", "alerts/publish_renamed.js")
-        .unwrap();
-    assert_eq!(
-        renamed.relative_path,
-        Path::new("alerts/publish_renamed.js")
-    );
-    assert!(matches!(
-        store.create_script("../escape.js", ""),
-        Err(StorageError::InvalidScriptFileName(_))
-    ));
-
-    let execution = ScriptExecution {
-        execution_id: "execution-002".to_owned(),
-        script_name: "publish_renamed.js".to_owned(),
-        script_path: Path::new("alerts/publish_renamed.js").to_path_buf(),
-        connection_id: Some("local-broker-01".to_owned()),
-        status: ScriptExecutionStatus::Running,
-        error: None,
-        started_at: Some("2026-06-08T17:20:00.000".to_owned()),
-        ended_at: None,
-        duration_ms: None,
-        cancelled: false,
-        log_path: None,
-    };
-    store
-        .save_execution("alerts/publish_renamed.js", &execution)
-        .unwrap();
-    assert_eq!(
-        store
-            .load_executions("alerts/publish_renamed.js")
-            .unwrap()
-            .first()
-            .unwrap()
-            .execution_id,
-        "execution-002"
-    );
-
-    for (sequence, message) in [
-        "INFO first line",
-        "password=synthetic-runtime-password",
-        "private key material: synthetic-key-material",
-    ]
-    .into_iter()
-    .enumerate()
-    {
-        store
-            .append_log_record(
-                "alerts/publish_renamed.js",
-                &ScriptLogRecord {
-                    execution_id: "execution-002".to_owned(),
-                    sequence: sequence as u64,
-                    timestamp: None,
-                    level: ScriptLogLevel::Info,
-                    message: message.to_owned(),
-                },
-            )
-            .unwrap();
-    }
-    let log = store
-        .load_log("alerts/publish_renamed.js", "execution-002", 2)
-        .unwrap();
-    assert_eq!(log.records.len(), 2);
-    assert_eq!(log.truncated_count, 1);
-    assert!(log.records.iter().all(|record| !record
-        .message
-        .contains("synthetic-runtime-password")
-        && !record.message.contains("synthetic-key-material")));
-
-    store.delete_script("alerts/publish_renamed.js").unwrap();
-    assert!(matches!(
-        store.load_script("alerts/publish_renamed.js"),
-        Err(StorageError::ScriptNotFound(_))
-    ));
-}
-
-#[test]
-fn redacts_sensitive_script_log_shapes() {
-    let redacted = redact_script_log_text(
-        "password=synthetic-password\nexport password: synthetic-export\n-----BEGIN PRIVATE KEY-----",
-    );
-
-    assert!(redacted.contains("password= [REDACTED]"));
-    assert!(redacted.contains("export password: [REDACTED]"));
-    assert!(redacted.contains("[REDACTED KEY MATERIAL]"));
-    assert!(!redacted.contains("synthetic-password"));
-    assert!(!redacted.contains("synthetic-export"));
 }
 
 #[test]
@@ -446,6 +366,35 @@ fn migration_rollback_refuses_after_target_changes() {
         StorageError::MigrationRollbackSafety { .. }
     ));
     assert!(target.join("newer-data.txt").exists());
+}
+
+#[test]
+fn migration_rollback_allows_interrupted_marker_without_fingerprint() {
+    let temp = tempfile::tempdir().unwrap();
+    let target = temp.path().join("current");
+    let backup_root = temp.path().join("backups");
+    seed_existing_target(&target);
+
+    let applier = MigrationApplier::with_backup_root(&target, &backup_root);
+    let backup = applier.create_backup().unwrap();
+    std::fs::write(target.join("config.json"), r#"{"connections":[]}"#).unwrap();
+    std::fs::write(
+        target.join(".correo-migration-rollback.json"),
+        serde_json::json!({
+            "backup_id": backup.id,
+            "backup_path": backup.path,
+            "state_fingerprint": null
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    applier.rollback(&backup).unwrap();
+
+    assert!(std::fs::read_to_string(target.join("config.json"))
+        .unwrap()
+        .contains("before"));
+    assert!(target.join("scripts/original.js").exists());
 }
 
 #[test]

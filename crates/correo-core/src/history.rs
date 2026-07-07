@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
 
 use correo_storage::current::{HistoryStore, Message};
@@ -11,7 +11,7 @@ use crate::WorkbenchSnapshot;
 pub enum HistoryPersistenceCommand {
     RecordPublish {
         connection_id: String,
-        message: Message,
+        message: Box<Message>,
     },
     RecordSubscription {
         connection_id: String,
@@ -20,14 +20,14 @@ pub enum HistoryPersistenceCommand {
     },
     RemovePublishedMessage {
         connection_id: String,
-        message: Message,
+        message: Box<Message>,
     },
     ClearPublishedMessages {
         connection_id: String,
     },
     ReplaceWorkbench {
         connection_id: String,
-        workbench: WorkbenchSnapshot,
+        workbench: Box<WorkbenchSnapshot>,
     },
 }
 
@@ -90,10 +90,7 @@ impl HistoryPersistenceWorker {
     }
 
     pub fn recv_event_timeout(&self, timeout: Duration) -> Option<HistoryPersistenceEvent> {
-        match self.events.recv_timeout(timeout) {
-            Ok(event) => Some(event),
-            Err(RecvTimeoutError::Timeout | RecvTimeoutError::Disconnected) => None,
-        }
+        self.events.recv_timeout(timeout).ok()
     }
 }
 
@@ -107,7 +104,7 @@ fn apply_history_command(
             message,
         } => {
             let result = store
-                .record_publish_success(&connection_id, message)
+                .record_publish_success(&connection_id, *message)
                 .map(|_| ());
             (connection_id, HistoryPersistenceKind::Publish, result)
         }
@@ -185,7 +182,7 @@ mod tests {
         worker
             .dispatch(HistoryPersistenceCommand::RecordPublish {
                 connection_id: "connection-01".to_owned(),
-                message,
+                message: Box::new(message),
             })
             .unwrap();
         worker
@@ -200,7 +197,7 @@ mod tests {
         worker
             .dispatch(HistoryPersistenceCommand::ReplaceWorkbench {
                 connection_id: "connection-01".to_owned(),
-                workbench: workbench.clone(),
+                workbench: Box::new(workbench.clone()),
             })
             .unwrap();
 

@@ -32,12 +32,9 @@ repository = "https://github.com/farion/correomqtt-rust"
 [workspace.dependencies]
 aes = "0.8"
 aes-gcm = "0.10"
-anyhow = "1"
-arboard = "3"
 async-trait = "0.1"
 base64 = "0.22"
 cbc = { version = "0.1", features = ["alloc"] }
-color-eyre = "0.6"
 directories = "6"
 eframe = { version = "0.31", default-features = false, features = ["accesskit", "default_fonts", "glow", "persistence", "wayland", "x11"] }
 egui = "0.31"
@@ -49,7 +46,7 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 fluent-bundle = "0.16"
 futures = "0.3"
 image = "0.25"
-keyring = "3"
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
 pbkdf2 = "0.12"
 rand = "0.8"
 rquickjs = "0.8.1"
@@ -58,18 +55,14 @@ rfd = "0.15"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 rustls-native-certs = "0.8"
 rustls-pemfile = "2"
-schemars = { version = "0.8", features = ["derive"] }
 semver = { version = "1", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_path_to_error = "0.1"
-serde_with = "3"
 sha2 = "0.10"
 tempfile = "3"
 thiserror = "1"
 time = { version = "0.3", features = ["formatting", "local-offset", "macros", "parsing", "serde"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
-tokio-util = "0.7"
 toml = "0.8"
 tracing = "0.1"
 tracing-appender = "0.2"

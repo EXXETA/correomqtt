@@ -58,7 +58,7 @@ fn plugin_list(
         .show(ui, |ui| {
             ui.spacing_mut().item_spacing.y = 0.0;
             ui.set_width(tile_list_content_width(ui));
-            for (index, plugin) in filtered.into_iter().enumerate() {
+            for (index, plugin) in filtered.iter().enumerate() {
                 plugin_row(ui, index, plugins, plugin, tokens, commands, i18n);
             }
             fill_remaining_tile_rows(ui, filtered.len(), TILE_HEIGHT, list_height, tokens);

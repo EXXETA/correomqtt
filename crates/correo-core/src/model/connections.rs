@@ -1,11 +1,12 @@
 use correo_mqtt::ConnectionId;
+use correo_storage::current::{ConnectionConfig as StorageConnectionConfig, ImportedSecret};
 
 use crate::{
     AppModel, ConnectDisabledReason, ConnectionBadge, ConnectionPluginDirection,
     ConnectionPluginWorkflow, ConnectionPluginWorkflowField, ConnectionPluginWorkflowKind,
     ConnectionPluginWorkflowStatus, ConnectionSecretField, ConnectionSettingField,
     ConnectionSettingFlag, ConnectionSettingsSnapshot, ConnectionSettingsTab, ConnectionState,
-    ConnectionSummary, Diagnostic, KeyringState, PluginStatus, SecretInput,
+    ConnectionSummary, Diagnostic, KeyringState, PluginStatus, QosLevel, SecretInput,
 };
 
 const CONTAINS_STRING_ID: &str = "org.correomqtt.plugins.contains-string-validator";
@@ -36,6 +37,23 @@ impl AppModel {
         self.snapshot.connection_plugins_overlay = None;
         self.snapshot.connection_settings = new_connection_settings();
         self.push_diagnostic(Diagnostic::info("New connection draft opened."));
+    }
+
+    pub(super) fn add_imported_connection(
+        &mut self,
+        connection: StorageConnectionConfig,
+        secrets: &[ImportedSecret],
+    ) -> ConnectionId {
+        let id = ConnectionId::new();
+        let settings = crate::bootstrap::settings_snapshot(&connection, &[], Some(secrets));
+        self.connection_settings.insert(id, settings.clone());
+        self.storage_connection_ids
+            .insert(id, connection.id.clone());
+        self.snapshot
+            .connections
+            .push(connection_summary(id, &settings));
+        self.snapshot.connection_count = self.snapshot.connections.len();
+        id
     }
 
     pub(super) fn connect(&mut self, id: ConnectionId) {
@@ -126,9 +144,7 @@ impl AppModel {
         self.snapshot.selected_connection = Some(id);
         self.snapshot.connection_surface = crate::ConnectionSurface::Workbench;
         self.snapshot.connection_settings = settings;
-        self.push_diagnostic(Diagnostic::info(
-            "New connection profile added to the current session.",
-        ));
+        self.push_diagnostic(Diagnostic::info("New connection profile saved."));
     }
 
     pub(super) fn open_connection_plugins(&mut self, id: ConnectionId) {
@@ -638,6 +654,7 @@ fn new_connection_settings() -> ConnectionSettingsSnapshot {
         local_mqtt_port: "1883".to_owned(),
         auth_mode: "No Auth".to_owned(),
         ssh_password_status: "No SSH password configured".to_owned(),
+        lwt_qos: QosLevel::One,
         lwt_retained: false,
         dirty: true,
         keyring_state: KeyringState::Available,

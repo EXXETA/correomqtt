@@ -26,8 +26,10 @@ use sha2::{Digest, Sha256};
 
 const BUNDLED_JSON: &str = include_str!("bundled.json");
 const LOCAL_REPOSITORY_FILE: &str = "local-repo.json";
+// GitHub's stable newest-release asset form is /releases/latest/download/,
+// matching what `cargo xtask plugin-release` publishes.
 pub const DEFAULT_REPOSITORY_URL: &str =
-    "https://github.com/EXXETA/correomqtt/releases/download/latest/default-repo.json";
+    "https://github.com/EXXETA/correomqtt/releases/latest/download/default-repo.json";
 
 #[derive(Debug, Default)]
 pub struct StartupPlugins {

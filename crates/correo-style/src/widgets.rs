@@ -302,7 +302,7 @@ pub fn tighten_tile_spacing(ui: &mut Ui) {
 }
 
 pub fn tile_table_fill(index: usize, tokens: ThemeTokens) -> egui::Color32 {
-    if index % 2 == 0 {
+    if index.is_multiple_of(2) {
         tokens.panel_bg
     } else {
         tokens.panel_raised

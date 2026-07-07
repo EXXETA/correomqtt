@@ -87,7 +87,7 @@ fn redact_key(input: &str, key: &str) -> String {
         }
 
         let value_end = input[value_start..]
-            .find(|character| matches!(character, ',' | ';' | '\n' | '\r'))
+            .find([',', ';', '\n', '\r'])
             .map(|offset| value_start + offset)
             .unwrap_or(input.len());
 
@@ -107,7 +107,7 @@ fn redact_url_passwords(input: &str) -> String {
     while let Some(scheme_offset) = input[cursor..].find("://") {
         let authority_start = cursor + scheme_offset + 3;
         let authority_end = input[authority_start..]
-            .find(|character| matches!(character, '/' | '?' | '#' | ' ' | '\n' | '\r'))
+            .find(['/', '?', '#', ' ', '\n', '\r'])
             .map(|offset| authority_start + offset)
             .unwrap_or(input.len());
         let authority = &input[authority_start..authority_end];

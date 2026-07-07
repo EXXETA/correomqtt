@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use correo_mqtt::{IncomingMessage, Qos, Subscription, TopicName};
 use correo_storage::current::{MessageType, PublishStatus, Qos as StorageQos};
 use correo_storage::legacy::LegacyProfile;
 use correo_storage::migration::MigrationPreview;
@@ -10,8 +11,8 @@ use crate::{
     Diagnostic, GlobalSettingField, GlobalSettingFlag, KeyringState, LegacyMigrationStatus,
     MigrationFailureStage, MigrationRecoveryCommand, MigrationRecoveryCompletion,
     MigrationRecoveryCounts, MigrationRecoveryEvent, MigrationRecoveryFailure,
-    MigrationRecoverySnapshot, MigrationRecoveryState, MqttCommand, QosLevel, StartupState,
-    ThemeMode, TransferSection, Workspace,
+    MigrationRecoverySnapshot, MigrationRecoveryState, MqttCommand, MqttEvent, QosLevel,
+    StartupState, ThemeMode, TransferSection, Workspace,
 };
 
 fn storage_fixture(path: &str) -> PathBuf {
@@ -95,6 +96,56 @@ fn publish_command_sets_feedback_without_recording_success_history() {
         .feedback
         .as_ref()
         .is_some_and(|feedback| feedback.message.contains("queued")));
+}
+
+#[test]
+fn incoming_messages_are_capped_and_subscription_counts_follow_retention() {
+    let mut model = AppModel::default();
+    let connection_id = model.snapshot().connections[0].id;
+    model.apply_event(AppEvent::Mqtt(MqttEvent::Subscribed {
+        connection_id,
+        subscription: Subscription::new("sensors/#", Qos::AtLeastOnce).unwrap(),
+    }));
+
+    for index in 0..1_005 {
+        model.apply_event(AppEvent::Mqtt(MqttEvent::IncomingMessage(IncomingMessage {
+            connection_id,
+            topic: TopicName::new(format!("sensors/{index}")).unwrap(),
+            payload: format!("payload-{index}").into_bytes(),
+            qos: Qos::AtLeastOnce,
+            retain: false,
+            duplicate: false,
+            packet_id: None,
+        })));
+    }
+
+    let workbench = &model.snapshot().workbench;
+    assert_eq!(workbench.messages.len(), 1_000);
+    assert_eq!(workbench.messages.first().map(|message| message.topic.as_str()), Some("sensors/1004"));
+    assert_eq!(workbench.messages.last().map(|message| message.topic.as_str()), Some("sensors/5"));
+    assert_eq!(workbench.subscribe.subscriptions[0].message_count, 1_000);
+}
+
+#[test]
+fn publish_history_is_capped_to_latest_rows() {
+    let mut model = AppModel::default();
+    let connection_id = model.snapshot().connections[0].id;
+
+    for index in 0..505 {
+        model.apply_event(AppEvent::Mqtt(MqttEvent::Published {
+            connection_id,
+            topic: TopicName::new(format!("publish/{index}")).unwrap(),
+            payload: format!("payload-{index}").into_bytes(),
+            qos: Qos::AtMostOnce,
+            retain: false,
+        }));
+    }
+
+    let history = &model.snapshot().workbench.publish.history;
+    assert_eq!(history.len(), 500);
+    assert_eq!(history.first().map(|row| row.topic.as_str()), Some("publish/504"));
+    assert_eq!(history.last().map(|row| row.topic.as_str()), Some("publish/5"));
+    assert_eq!(model.snapshot().workbench.publish.selected_history_id, history.first().map(|row| row.id));
 }
 
 #[test]
