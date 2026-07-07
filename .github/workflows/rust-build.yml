@@ -178,7 +178,7 @@ jobs:
       - name: Install WiX for MSI packaging
         if: runner.os == 'Windows'
         run: |
-          dotnet tool install --global wix
+          dotnet tool install --global wix --version 6.0.2
           Add-Content $env:GITHUB_PATH "$env:USERPROFILE\.dotnet\tools"
           & "$env:USERPROFILE\.dotnet\tools\wix.exe" --version
 
