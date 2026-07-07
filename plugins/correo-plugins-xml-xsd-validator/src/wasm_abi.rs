@@ -24,6 +24,9 @@ pub extern "C" fn correomqtt_alloc(len: i32) -> i32 {
     ptr as i32
 }
 
+/// # Safety
+/// `ptr` and `len` must originate from a matching `correomqtt_alloc` call;
+/// the memory is reclaimed here and must not be accessed afterwards.
 #[cfg_attr(target_arch = "wasm32", unsafe(no_mangle))]
 pub unsafe extern "C" fn correomqtt_dealloc(ptr: i32, len: i32) {
     if ptr <= 0 || len < 0 {

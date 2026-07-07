@@ -20,10 +20,23 @@ pub(super) fn collect_script_paths(root: &Path, dir: &Path, out: &mut Vec<PathBu
             }
             collect_script_paths(root, &path, out)?;
         } else if path.extension() == Some(OsStr::new("js")) {
-            out.push(path.strip_prefix(root).unwrap_or(&path).to_path_buf());
+            out.push(relative_script_path(root, &path));
         }
     }
     Ok(())
+}
+
+fn relative_script_path(root: &Path, path: &Path) -> PathBuf {
+    let relative = path.strip_prefix(root).unwrap_or(path);
+    relative
+        .components()
+        .filter_map(|component| match component {
+            Component::Normal(name) => Some(name.to_string_lossy()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("/")
+        .into()
 }
 
 pub fn redact_script_log_text(input: &str) -> String {
