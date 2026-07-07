@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use rquickjs::{Ctx, Exception, Function, Promise};
 
@@ -14,7 +14,7 @@ use crate::{
 };
 
 pub(crate) fn finish_async_result<'js>(
-    state: &Arc<HostState>,
+    state: &Rc<HostState>,
     result: ScriptingResult<()>,
     on_success: Option<Function<'js>>,
     on_error: Option<Function<'js>>,
@@ -34,7 +34,7 @@ pub(crate) fn finish_async_result<'js>(
 }
 
 pub(crate) fn finish_publish_result<'js>(
-    state: &Arc<HostState>,
+    state: &Rc<HostState>,
     result: ScriptingResult<()>,
     operation: &MqttOperation,
     subscriptions: &MessageSubscriptions<'js>,
@@ -47,7 +47,7 @@ pub(crate) fn finish_publish_result<'js>(
 
 pub(crate) fn promise_adapter<'js>(
     ctx: Ctx<'js>,
-    state: Arc<HostState>,
+    state: Rc<HostState>,
     operation: MqttOperation,
     _name: &'static str,
     subscriptions: MessageSubscriptions<'js>,
@@ -62,7 +62,7 @@ pub(crate) fn promise_adapter<'js>(
 
 pub(crate) fn promise_subscribe_adapter<'js>(
     ctx: Ctx<'js>,
-    state: Arc<HostState>,
+    state: Rc<HostState>,
     subscribe: SubscribeInvocation,
     on_message: Option<Function<'js>>,
     subscriptions: MessageSubscriptions<'js>,
@@ -78,7 +78,7 @@ pub(crate) fn promise_subscribe_adapter<'js>(
 
 pub(crate) fn promise_connectivity_adapter<'js>(
     ctx: Ctx<'js>,
-    state: Arc<HostState>,
+    state: Rc<HostState>,
     operation: ConnectivityOperation,
     _name: &'static str,
     subscriptions: MessageSubscriptions<'js>,

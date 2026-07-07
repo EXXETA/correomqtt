@@ -27,7 +27,7 @@ fn repository_fixture_matches_generated_bundled_manifest_catalog() {
         .unwrap();
     }
 
-    assert_eq!(generated, FIXTURE);
+    assert!(generated.lines().eq(FIXTURE.lines()));
     assert_eq!(
         repository.repository_format_version,
         PLUGIN_REPOSITORY_FORMAT_VERSION

@@ -1,11 +1,11 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use base64::{engine::general_purpose::STANDARD, Engine};
 use rquickjs::{prelude::Rest, Ctx, Function, Object, Value};
 
 use crate::{client_bindings::build_client_factory, executor::HostState, ScriptLogLevel};
 
-pub(crate) fn install_bindings<'js>(ctx: Ctx<'js>, state: Arc<HostState>) -> rquickjs::Result<()> {
+pub(crate) fn install_bindings<'js>(ctx: Ctx<'js>, state: Rc<HostState>) -> rquickjs::Result<()> {
     let globals = ctx.globals();
     globals.set("logger", build_logger(ctx.clone(), state.clone())?)?;
 
@@ -40,7 +40,7 @@ pub(crate) fn install_bindings<'js>(ctx: Ctx<'js>, state: Arc<HostState>) -> rqu
     Ok(())
 }
 
-fn build_plugins<'js>(ctx: Ctx<'js>, state: Arc<HostState>) -> rquickjs::Result<Object<'js>> {
+fn build_plugins<'js>(ctx: Ctx<'js>, state: Rc<HostState>) -> rquickjs::Result<Object<'js>> {
     let plugins = Object::new(ctx.clone())?;
     let base64 = Object::new(ctx.clone())?;
     let decode_state = state.clone();
@@ -65,7 +65,7 @@ fn build_plugins<'js>(ctx: Ctx<'js>, state: Arc<HostState>) -> rquickjs::Result<
     Ok(plugins)
 }
 
-fn build_logger<'js>(ctx: Ctx<'js>, state: Arc<HostState>) -> rquickjs::Result<Object<'js>> {
+fn build_logger<'js>(ctx: Ctx<'js>, state: Rc<HostState>) -> rquickjs::Result<Object<'js>> {
     let logger = Object::new(ctx.clone())?;
     let debug_state = state.clone();
     logger.set(
@@ -149,7 +149,7 @@ fn value_string(value: &Value<'_>) -> rquickjs::Result<String> {
     }
 }
 
-fn build_queue<'js>(ctx: Ctx<'js>, state: Arc<HostState>) -> rquickjs::Result<Object<'js>> {
+fn build_queue<'js>(ctx: Ctx<'js>, state: Rc<HostState>) -> rquickjs::Result<Object<'js>> {
     let queue = Object::new(ctx.clone())?;
     let process_state = state.clone();
     queue.set(

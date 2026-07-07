@@ -14,7 +14,7 @@ pub(super) fn verify(output: &Option<PackageOutput>) -> Result<(), XtaskError> {
     };
 
     let file_name = artifact_file_name(&output.artifact)?;
-    let expected_line = format!("{}  {file_name}\n", output.checksum);
+    let expected_line = format!("{}  {file_name}", output.checksum);
     let checksum_path = output.out_dir.join(format!("{file_name}.sha256"));
     let sums_path = output.out_dir.join("SHA256SUMS");
 
@@ -49,7 +49,7 @@ pub(super) fn verify(output: &Option<PackageOutput>) -> Result<(), XtaskError> {
     let actual_sha = fs::read_to_string(&checksum_path)?;
     ensure(
         output,
-        actual_sha == expected_line,
+        actual_sha.lines().eq([expected_line.as_str()]),
         format!(
             "{} did not match expected `{}`",
             checksum_path.display(),
@@ -60,7 +60,7 @@ pub(super) fn verify(output: &Option<PackageOutput>) -> Result<(), XtaskError> {
     let actual_sums = fs::read_to_string(&sums_path)?;
     ensure(
         output,
-        actual_sums.contains(&expected_line),
+        actual_sums.lines().any(|line| line == expected_line),
         format!(
             "{} did not contain the expected package checksum line",
             sums_path.display()
@@ -102,7 +102,7 @@ pub(super) fn verify(output: &Option<PackageOutput>) -> Result<(), XtaskError> {
         let artifact_name = artifact_file_name(artifact)?;
         let sidecar_path = output.out_dir.join(format!("{artifact_name}.sha256"));
         let artifact_checksum = sha256_file(artifact)?;
-        let artifact_line = format!("{artifact_checksum}  {artifact_name}\n");
+        let artifact_line = format!("{artifact_checksum}  {artifact_name}");
         ensure(
             output,
             sidecar_path.exists(),
@@ -110,7 +110,9 @@ pub(super) fn verify(output: &Option<PackageOutput>) -> Result<(), XtaskError> {
         )?;
         ensure(
             output,
-            fs::read_to_string(&sidecar_path)? == artifact_line,
+            fs::read_to_string(&sidecar_path)?
+                .lines()
+                .eq([artifact_line.as_str()]),
             format!(
                 "checksum sidecar {} is stale or invalid",
                 sidecar_path.display()
@@ -118,7 +120,7 @@ pub(super) fn verify(output: &Option<PackageOutput>) -> Result<(), XtaskError> {
         )?;
         ensure(
             output,
-            actual_sums.contains(&artifact_line),
+            actual_sums.lines().any(|line| line == artifact_line),
             format!("SHA256SUMS does not contain {artifact_name}"),
         )?;
     }

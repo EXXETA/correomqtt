@@ -1,4 +1,5 @@
 use std::{
+    rc::Rc,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex,
@@ -98,7 +99,7 @@ impl ScriptRuntime {
             .build(&runtime)
             .map_err(|error| ScriptingError::Runtime(error.to_string()))?;
 
-        let state = Arc::new(HostState::new(self.host.clone(), cancellation.clone()));
+        let state = Rc::new(HostState::new(self.host.clone(), cancellation.clone()));
         context.with(|ctx| {
             let result = (|| {
                 install_bindings(ctx.clone(), state.clone())
