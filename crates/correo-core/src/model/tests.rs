@@ -35,7 +35,7 @@ fn user_connection_count(model: &AppModel) -> usize {
     user_connection_ids(model).len()
 }
 
-fn first_user_connection<'a>(model: &'a AppModel) -> &'a crate::ConnectionSummary {
+fn first_user_connection(model: &AppModel) -> &crate::ConnectionSummary {
     model
         .snapshot()
         .connections

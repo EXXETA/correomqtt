@@ -13,6 +13,8 @@ use super::{MqttCommand, MqttEvent, MqttFailure, MqttOperation};
 use crate::MessageDiagnosticRow;
 
 const DEFAULT_OPERATION_TIMEOUT: Duration = Duration::from_secs(10);
+type PendingPublishDiagnostics =
+    Arc<Mutex<HashMap<correo_mqtt::ConnectionId, VecDeque<Vec<MessageDiagnosticRow>>>>>;
 
 pub trait MqttSessionFactory: Send + Sync + 'static {
     fn create_session(&self, options: &MqttConnectionOptions) -> Box<dyn MqttSession>;
@@ -120,8 +122,7 @@ struct ServiceLoop {
     events: Sender<MqttEvent>,
     sessions: HashMap<correo_mqtt::ConnectionId, SessionEntry>,
     operation_timeout: Duration,
-    pending_publish_diagnostics:
-        Arc<Mutex<HashMap<correo_mqtt::ConnectionId, VecDeque<Vec<MessageDiagnosticRow>>>>>,
+    pending_publish_diagnostics: PendingPublishDiagnostics,
 }
 
 impl ServiceLoop {
@@ -376,9 +377,7 @@ fn spawn_event_monitor(
     connection_id: correo_mqtt::ConnectionId,
     mut events: futures::stream::BoxStream<'static, correo_mqtt::MqttSessionEvent>,
     sender: Sender<MqttEvent>,
-    pending_publish_diagnostics: Arc<
-        Mutex<HashMap<correo_mqtt::ConnectionId, VecDeque<Vec<MessageDiagnosticRow>>>>,
-    >,
+    pending_publish_diagnostics: PendingPublishDiagnostics,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
         while let Some(event) = events.next().await {
@@ -394,9 +393,7 @@ fn spawn_event_monitor(
 
 fn take_publish_diagnostics(
     connection_id: correo_mqtt::ConnectionId,
-    pending_publish_diagnostics: &Arc<
-        Mutex<HashMap<correo_mqtt::ConnectionId, VecDeque<Vec<MessageDiagnosticRow>>>>,
-    >,
+    pending_publish_diagnostics: &PendingPublishDiagnostics,
 ) -> Vec<MessageDiagnosticRow> {
     let Ok(mut pending) = pending_publish_diagnostics.lock() else {
         return Vec::new();

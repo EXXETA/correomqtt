@@ -218,7 +218,7 @@ pub fn builtin_broker_child_arg() -> &'static str {
 }
 
 pub fn built_in_broker_connection_id() -> ConnectionId {
-    ConnectionId::from_uuid(Uuid::from_u128(0xc011_e0b0_0000_4000_8000_000000000001))
+    ConnectionId::from_uuid(Uuid::from_u128(0xc011_e0b0_0000_4000_8000_0000_0000_0001))
 }
 
 pub fn is_built_in_broker_connection(id: ConnectionId) -> bool {

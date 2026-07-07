@@ -64,34 +64,33 @@ fn script_store_crud_tracks_dirty_state_and_redacts_logs() {
     let temp = tempfile::tempdir().unwrap();
     let store = ScriptStore::new(temp.path());
 
+    let script_path = "alerts/publish.js";
+    let renamed_script_path = "alerts/publish_renamed.js";
     let script = store
-        .create_script("alerts/publish.js", "logger.info('ok');")
+        .create_script(script_path, "logger.info('ok');")
         .unwrap();
     assert_eq!(script.name, "publish.js");
     assert_eq!(store.list_scripts().unwrap().len(), 1);
     assert!(
         !store
-            .dirty_state("alerts/publish.js", "logger.info('ok');")
+            .dirty_state(script_path, "logger.info('ok');")
             .unwrap()
             .dirty
     );
     assert!(
         store
-            .dirty_state("alerts/publish.js", "logger.info('changed');")
+            .dirty_state(script_path, "logger.info('changed');")
             .unwrap()
             .dirty
     );
 
     store
-        .update_script("alerts/publish.js", "logger.info('changed');")
+        .update_script(script_path, "logger.info('changed');")
         .unwrap();
     let renamed = store
-        .rename_script("alerts/publish.js", "alerts/publish_renamed.js")
+        .rename_script(script_path, renamed_script_path)
         .unwrap();
-    assert_eq!(
-        renamed.relative_path,
-        Path::new("alerts/publish_renamed.js")
-    );
+    assert_eq!(renamed.relative_path, Path::new(renamed_script_path));
     assert!(matches!(
         store.create_script("../escape.js", ""),
         Err(StorageError::InvalidScriptFileName(_))
@@ -100,7 +99,7 @@ fn script_store_crud_tracks_dirty_state_and_redacts_logs() {
     let execution = ScriptExecution {
         execution_id: "execution-002".to_owned(),
         script_name: "publish_renamed.js".to_owned(),
-        script_path: Path::new("alerts/publish_renamed.js").to_path_buf(),
+        script_path: Path::new(renamed_script_path).to_path_buf(),
         connection_id: Some("local-broker-01".to_owned()),
         status: ScriptExecutionStatus::Running,
         error: None,
@@ -111,11 +110,11 @@ fn script_store_crud_tracks_dirty_state_and_redacts_logs() {
         log_path: None,
     };
     store
-        .save_execution("alerts/publish_renamed.js", &execution)
+        .save_execution(renamed_script_path, &execution)
         .unwrap();
     assert_eq!(
         store
-            .load_executions("alerts/publish_renamed.js")
+            .load_executions(renamed_script_path)
             .unwrap()
             .first()
             .unwrap()
@@ -133,7 +132,7 @@ fn script_store_crud_tracks_dirty_state_and_redacts_logs() {
     {
         store
             .append_log_record(
-                "alerts/publish_renamed.js",
+                renamed_script_path,
                 &ScriptLogRecord {
                     execution_id: "execution-002".to_owned(),
                     sequence: sequence as u64,
@@ -145,7 +144,7 @@ fn script_store_crud_tracks_dirty_state_and_redacts_logs() {
             .unwrap();
     }
     let log = store
-        .load_log("alerts/publish_renamed.js", "execution-002", 2)
+        .load_log(renamed_script_path, "execution-002", 2)
         .unwrap();
     assert_eq!(log.records.len(), 2);
     assert_eq!(log.truncated_count, 1);
@@ -154,9 +153,9 @@ fn script_store_crud_tracks_dirty_state_and_redacts_logs() {
         .contains("synthetic-runtime-password")
         && !record.message.contains("synthetic-key-material")));
 
-    store.delete_script("alerts/publish_renamed.js").unwrap();
+    store.delete_script(renamed_script_path).unwrap();
     assert!(matches!(
-        store.load_script("alerts/publish_renamed.js"),
+        store.load_script(renamed_script_path),
         Err(StorageError::ScriptNotFound(_))
     ));
 }

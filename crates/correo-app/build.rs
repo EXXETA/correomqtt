@@ -153,7 +153,7 @@ fn stage_local_plugins(
         }));
     }
 
-    entries.sort_by(|left, right| manifest_entry_id(left).cmp(&manifest_entry_id(right)));
+    entries.sort_by_key(manifest_entry_id);
     let repository = serde_json::json!({
         "repository_format_version": PLUGIN_REPOSITORY_FORMAT_VERSION,
         "id": REPOSITORY_ID,
