@@ -21,17 +21,46 @@ fn storage_fixture(path: &str) -> PathBuf {
         .join(path)
 }
 
+fn user_connection_ids(model: &AppModel) -> Vec<correo_mqtt::ConnectionId> {
+    model
+        .snapshot()
+        .connections
+        .iter()
+        .filter(|connection| !connection.immutable)
+        .map(|connection| connection.id)
+        .collect()
+}
+
+fn user_connection_count(model: &AppModel) -> usize {
+    user_connection_ids(model).len()
+}
+
+fn first_user_connection<'a>(model: &'a AppModel) -> &'a crate::ConnectionSummary {
+    model
+        .snapshot()
+        .connections
+        .iter()
+        .find(|connection| !connection.immutable)
+        .expect("user connection exists")
+}
+
 #[test]
 fn applies_connection_events_to_snapshot() {
     let mut model = AppModel::default();
-    let connection_id = model.snapshot().connections[1].id;
+    let connection_id = user_connection_ids(&model)[1];
 
     model.apply_event(AppEvent::ConnectionOpened { connection_id });
 
     assert_eq!(model.snapshot().active_connection, Some(connection_id));
-    assert_eq!(model.snapshot().connection_count, 4);
+    assert_eq!(user_connection_count(&model), 4);
     assert_eq!(
-        model.snapshot().connections[1].state,
+        model
+            .snapshot()
+            .connections
+            .iter()
+            .find(|connection| connection.id == connection_id)
+            .expect("connection exists")
+            .state,
         ConnectionState::Connected
     );
 
@@ -39,7 +68,13 @@ fn applies_connection_events_to_snapshot() {
 
     assert_eq!(model.snapshot().active_connection, None);
     assert_eq!(
-        model.snapshot().connections[1].state,
+        model
+            .snapshot()
+            .connections
+            .iter()
+            .find(|connection| connection.id == connection_id)
+            .expect("connection exists")
+            .state,
         ConnectionState::Disconnected
     );
 }
@@ -101,35 +136,51 @@ fn publish_command_sets_feedback_without_recording_success_history() {
 #[test]
 fn incoming_messages_are_capped_and_subscription_counts_follow_retention() {
     let mut model = AppModel::default();
-    let connection_id = model.snapshot().connections[0].id;
+    let connection_id = user_connection_ids(&model)[0];
+    model.apply_command(AppCommand::SelectConnection(connection_id));
     model.apply_event(AppEvent::Mqtt(MqttEvent::Subscribed {
         connection_id,
         subscription: Subscription::new("sensors/#", Qos::AtLeastOnce).unwrap(),
     }));
 
     for index in 0..1_005 {
-        model.apply_event(AppEvent::Mqtt(MqttEvent::IncomingMessage(IncomingMessage {
-            connection_id,
-            topic: TopicName::new(format!("sensors/{index}")).unwrap(),
-            payload: format!("payload-{index}").into_bytes(),
-            qos: Qos::AtLeastOnce,
-            retain: false,
-            duplicate: false,
-            packet_id: None,
-        })));
+        model.apply_event(AppEvent::Mqtt(MqttEvent::IncomingMessage(
+            IncomingMessage {
+                connection_id,
+                topic: TopicName::new(format!("sensors/{index}")).unwrap(),
+                payload: format!("payload-{index}").into_bytes(),
+                qos: Qos::AtLeastOnce,
+                retain: false,
+                duplicate: false,
+                packet_id: None,
+            },
+        )));
     }
 
     let workbench = &model.snapshot().workbench;
     assert_eq!(workbench.messages.len(), 1_000);
-    assert_eq!(workbench.messages.first().map(|message| message.topic.as_str()), Some("sensors/1004"));
-    assert_eq!(workbench.messages.last().map(|message| message.topic.as_str()), Some("sensors/5"));
+    assert_eq!(
+        workbench
+            .messages
+            .first()
+            .map(|message| message.topic.as_str()),
+        Some("sensors/1004")
+    );
+    assert_eq!(
+        workbench
+            .messages
+            .last()
+            .map(|message| message.topic.as_str()),
+        Some("sensors/5")
+    );
     assert_eq!(workbench.subscribe.subscriptions[0].message_count, 1_000);
 }
 
 #[test]
 fn publish_history_is_capped_to_latest_rows() {
     let mut model = AppModel::default();
-    let connection_id = model.snapshot().connections[0].id;
+    let connection_id = user_connection_ids(&model)[0];
+    model.apply_command(AppCommand::SelectConnection(connection_id));
 
     for index in 0..505 {
         model.apply_event(AppEvent::Mqtt(MqttEvent::Published {
@@ -138,14 +189,24 @@ fn publish_history_is_capped_to_latest_rows() {
             payload: format!("payload-{index}").into_bytes(),
             qos: Qos::AtMostOnce,
             retain: false,
+            diagnostics: Vec::new(),
         }));
     }
 
     let history = &model.snapshot().workbench.publish.history;
     assert_eq!(history.len(), 500);
-    assert_eq!(history.first().map(|row| row.topic.as_str()), Some("publish/504"));
-    assert_eq!(history.last().map(|row| row.topic.as_str()), Some("publish/5"));
-    assert_eq!(model.snapshot().workbench.publish.selected_history_id, history.first().map(|row| row.id));
+    assert_eq!(
+        history.first().map(|row| row.topic.as_str()),
+        Some("publish/504")
+    );
+    assert_eq!(
+        history.last().map(|row| row.topic.as_str()),
+        Some("publish/5")
+    );
+    assert_eq!(
+        model.snapshot().workbench.publish.selected_history_id,
+        history.first().map(|row| row.id)
+    );
 }
 
 #[test]
@@ -275,8 +336,9 @@ fn publish_history_removal_builds_persistence_command_from_selected_row() {
 #[test]
 fn workbench_state_is_scoped_per_selected_connection() {
     let mut model = AppModel::default();
-    let first = model.snapshot().connections[0].id;
-    let second = model.snapshot().connections[1].id;
+    let user_ids = user_connection_ids(&model);
+    let first = user_ids[0];
+    let second = user_ids[1];
 
     model.apply_command(AppCommand::UpdatePublishTopic("first/topic".to_owned()));
     model.apply_command(AppCommand::UpdatePublishPayload("first payload".to_owned()));
@@ -362,7 +424,7 @@ fn selected_subscription_click_toggles_off_without_ctrl() {
 #[test]
 fn run_script_dispatches_connect_for_disconnected_script_connection() {
     let mut model = AppModel::default();
-    let disconnected_id = model.snapshot().connections[1].id;
+    let disconnected_id = user_connection_ids(&model)[1];
     model.apply_command(AppCommand::SelectScriptConnection(
         disconnected_id.to_string(),
     ));
@@ -456,16 +518,23 @@ fn global_settings_plugin_repository_commands_edit_rows() {
 #[test]
 fn connect_command_queues_service_work_without_marking_open() {
     let mut model = AppModel::default();
-    let connection_id = model.snapshot().connections[2].id;
+    let connection_id = user_connection_ids(&model)[2];
+    let initial_active_connection = model.snapshot().active_connection;
 
     model.apply_command(AppCommand::Connect(connection_id));
 
     assert_eq!(
         model.snapshot().active_connection,
-        model.snapshot().connections[0].id.into()
+        initial_active_connection
     );
     assert_eq!(
-        model.snapshot().connections[2].state,
+        model
+            .snapshot()
+            .connections
+            .iter()
+            .find(|connection| connection.id == connection_id)
+            .expect("connection exists")
+            .state,
         ConnectionState::Connecting
     );
 }
@@ -518,7 +587,7 @@ fn add_connection_opens_settings_draft_and_save_adds_profile() {
         .snapshot()
         .selected_connection()
         .expect("saved draft should be visible in launcher");
-    assert_eq!(model.snapshot().connection_count, 1);
+    assert_eq!(user_connection_count(&model), 1);
     assert_eq!(connection.name, "New connection");
     assert_eq!(connection.endpoint, "localhost:1883");
     assert_eq!(
@@ -620,9 +689,9 @@ fn migrated_fixture_opens_workbench_and_settings_without_secret_values() {
     let mut model = AppModel::with_startup_state(state);
 
     assert_eq!(model.snapshot().theme_mode, ThemeMode::Light);
-    assert_eq!(model.snapshot().connection_count, 2);
+    assert_eq!(user_connection_count(&model), 2);
 
-    let first = &model.snapshot().connections[0];
+    let first = first_user_connection(&model);
     assert_eq!(first.name, "Synthetic Local Broker");
     assert_eq!(first.endpoint, "localhost:1883");
     assert_eq!(first.mqtt_version, "MQTT v5");
@@ -648,7 +717,7 @@ fn migrated_fixture_opens_workbench_and_settings_without_secret_values() {
             .message
             .contains("Unsupported legacy field ignored")));
 
-    let first_id = model.snapshot().connections[0].id;
+    let first_id = first_user_connection(&model).id;
     model.apply_command(AppCommand::OpenConnectionSettings(first_id));
     let settings = &model.snapshot().connection_settings;
     assert_eq!(settings.profile_name, "Synthetic Local Broker");

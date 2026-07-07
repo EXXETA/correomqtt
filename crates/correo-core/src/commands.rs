@@ -4,11 +4,11 @@ use correo_mqtt::ConnectionId;
 use thiserror::Error;
 
 use crate::{
-    ConnectDisabledReason, ConnectionPluginDirection, ConnectionPluginWorkflowField,
-    ConnectionSecretField, ConnectionSettingField, ConnectionSettingFlag,
-    ConnectionSettingsSnapshot, ConnectionSettingsTab, ConnectionState, ConnectionSummary,
-    Diagnostic, GlobalSettingField, GlobalSettingFlag, GlobalSettingsSnapshot, MessageInspectorTab,
-    MigrationApplyStage, MigrationRecoveryCompletion, MigrationRecoveryCounts,
+    BuiltInBrokerEvent, ConnectDisabledReason, ConnectionPluginDirection,
+    ConnectionPluginWorkflowField, ConnectionSecretField, ConnectionSettingField,
+    ConnectionSettingFlag, ConnectionSettingsSnapshot, ConnectionSettingsTab, ConnectionState,
+    ConnectionSummary, Diagnostic, GlobalSettingField, GlobalSettingFlag, GlobalSettingsSnapshot,
+    MessageInspectorTab, MigrationApplyStage, MigrationRecoveryCompletion, MigrationRecoveryCounts,
     MigrationRecoveryDiagnostic, MigrationRecoveryFailure, MigrationRecoveryRow,
     MigrationRecoveryWarning, MqttCommand, MqttEvent, PluginHookKind, PluginSurfaceTab,
     PluginWorkflowEvent, QosLevel, ScriptDetailTab, ScriptExecutionError, ScriptExecutionStatus,
@@ -19,6 +19,13 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AppCommand {
     SelectWorkspace(Workspace),
+    StartBuiltInBroker,
+    StopBuiltInBroker,
+    UpdateBuiltInBrokerPort(String),
+    SetBuiltInBrokerCredentialsEnabled(bool),
+    UpdateBuiltInBrokerUsername(String),
+    UpdateBuiltInBrokerPassword(SecretInput),
+    ClearBuiltInBrokerLogs,
     SetThemeMode(ThemeMode),
     SearchConnections(String),
     SelectConnection(ConnectionId),
@@ -334,6 +341,7 @@ pub enum AppEvent {
     },
     MigrationRecovery(MigrationRecoveryEvent),
     Mqtt(MqttEvent),
+    BuiltInBroker(BuiltInBrokerEvent),
     PluginWorkflow(PluginWorkflowEvent),
 }
 

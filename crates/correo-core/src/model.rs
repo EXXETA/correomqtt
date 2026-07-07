@@ -11,6 +11,7 @@ use crate::{
     WorkbenchSnapshot,
 };
 
+mod broker;
 mod connections;
 mod history;
 mod migration_recovery;
@@ -88,6 +89,7 @@ impl AppModel {
             pending_connection_import_secrets: Vec::new(),
             pending_connection_import_persistence: None,
         };
+        model.sync_built_in_broker_connection();
         model.normalize_connection_surface();
         model
     }
@@ -143,6 +145,7 @@ impl AppModel {
             self.mark_workbench_dirty(current);
         }
         self.snapshot.selected_connection = Some(id);
+        self.load_connection_settings(id);
         self.snapshot.connection_surface = crate::ConnectionSurface::Workbench;
         self.snapshot.workbench = self.workbenches.get(&id).cloned().unwrap_or_default();
     }
@@ -182,6 +185,7 @@ impl AppModel {
     pub fn apply_command(&mut self, command: AppCommand) {
         if self.apply_migration_recovery_command(&command)
             || self.apply_scripting_command(&command)
+            || self.apply_broker_command(&command)
             || self.apply_plugin_command(&command)
         {
             return;
@@ -204,6 +208,13 @@ impl AppModel {
             AppCommand::OpenConnectionWorkbench(id) => self.select_connection_workbench(id),
             AppCommand::Connect(id) => self.connect(id),
             AppCommand::OpenConnectionSettings(id) | AppCommand::EditConnection(id) => {
+                if crate::is_built_in_broker_connection(id) {
+                    self.select_connection_workbench(id);
+                    self.push_diagnostic(Diagnostic::warning(
+                        "Correo Broker connection is managed automatically.",
+                    ));
+                    return;
+                }
                 self.select_connection_workbench(id);
                 self.load_connection_settings(id);
                 self.snapshot.connection_settings_overlay = Some(id);
@@ -399,6 +410,7 @@ impl AppModel {
             AppEvent::ConnectionListLoaded { connections } => {
                 self.snapshot.connection_count = connections.len();
                 self.snapshot.connections = connections;
+                self.sync_built_in_broker_connection();
                 if self
                     .snapshot
                     .selected_connection
@@ -482,6 +494,7 @@ impl AppModel {
                 error,
             } => self.update_script_execution(execution_id, status, duration, error),
             AppEvent::Mqtt(event) => self.apply_mqtt_event(event),
+            AppEvent::BuiltInBroker(event) => self.apply_broker_event(event),
             AppEvent::MigrationRecovery(event) => self.apply_migration_recovery_event(event),
             AppEvent::PluginWorkflow(event) => self.apply_plugin_workflow_event(event),
         }

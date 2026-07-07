@@ -57,7 +57,14 @@ fn show_body(
     ui.add_space(8.0);
     settings_content(ui, settings, tokens, commands, i18n);
     ui.add_space(8.0);
-    action_bar(ui, settings, commands, i18n, modal, true);
+    action_bar(
+        ui,
+        settings,
+        commands,
+        i18n,
+        modal,
+        !is_broker_settings(settings),
+    );
 
     if settings.delete_confirmation_open {
         delete_confirmation(ui, settings, tokens, commands, i18n);
@@ -149,7 +156,7 @@ pub fn overlay(
                     commands,
                     i18n,
                     true,
-                    !is_new_draft,
+                    !is_new_draft && !is_broker_settings(&snapshot.connection_settings),
                 );
                 if snapshot.connection_settings.delete_confirmation_open {
                     delete_confirmation(ui, &snapshot.connection_settings, tokens, commands, i18n);
@@ -515,6 +522,10 @@ fn lwt_tab(
 
 fn required_label(label: String) -> String {
     maybe_required_label(label, true)
+}
+
+fn is_broker_settings(settings: &ConnectionSettingsSnapshot) -> bool {
+    settings.profile_name == correo_core::BUILT_IN_BROKER_CONNECTION_NAME
 }
 
 fn maybe_required_label(label: String, required: bool) -> String {

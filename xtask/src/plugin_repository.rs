@@ -398,9 +398,9 @@ fn safe_plugin_id_component(value: &str) -> Result<&str, XtaskError> {
     let is_safe = !value.is_empty()
         && value != "."
         && value != ".."
-        && value
-            .chars()
-            .all(|character| matches!(character, 'a'..='z' | 'A'..='Z' | '0'..='9' | '.' | '-' | '_'));
+        && value.chars().all(
+            |character| matches!(character, 'a'..='z' | 'A'..='Z' | '0'..='9' | '.' | '-' | '_'),
+        );
     if is_safe {
         Ok(value)
     } else {

@@ -181,7 +181,15 @@ fn migration_worker_advances_recovery_flow_to_complete() {
         runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Complete
     });
 
-    assert_eq!(runtime.snapshot().connection_count, 2);
+    assert_eq!(
+        runtime
+            .snapshot()
+            .connections
+            .iter()
+            .filter(|connection| !connection.immutable)
+            .count(),
+        2
+    );
     assert!(temp.path().join("config.json").exists());
 }
 
@@ -231,7 +239,6 @@ fn migration_restore_command_restores_selected_backup() {
     drop(runtime);
     let mut runtime = AppRuntime::with_snapshot(restarted_snapshot);
     runtime.attach_migration_worker(MigrationPersistenceWorker::start(temp.path()));
-
 
     runtime
         .command_sender()

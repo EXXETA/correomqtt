@@ -126,6 +126,13 @@ impl ConfigStore {
         Ok(config)
     }
 
+    pub fn save_built_in_broker(&self, broker: BuiltInBrokerConfig) -> Result<AppConfig> {
+        let mut config = self.load_or_default()?;
+        config.built_in_broker = broker;
+        self.save(&config)?;
+        Ok(config)
+    }
+
     fn path(&self) -> PathBuf {
         self.root.join(CONFIG_FILE_NAME)
     }
@@ -193,6 +200,28 @@ pub struct AppConfig {
     pub theme_settings: Option<ThemeSettings>,
     #[serde(default)]
     pub settings: Settings,
+    #[serde(default)]
+    pub built_in_broker: BuiltInBrokerConfig,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct BuiltInBrokerConfig {
+    pub port: String,
+    pub credentials_enabled: bool,
+    pub username: String,
+    pub password: String,
+}
+
+impl Default for BuiltInBrokerConfig {
+    fn default() -> Self {
+        Self {
+            port: "1883".to_owned(),
+            credentials_enabled: false,
+            username: String::new(),
+            password: String::new(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

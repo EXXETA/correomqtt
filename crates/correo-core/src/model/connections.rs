@@ -17,7 +17,11 @@ const ZIP_ID: &str = "org.correomqtt.plugins.zip-manipulator";
 
 impl AppModel {
     pub(super) fn normalize_connection_surface(&mut self) {
+        self.sync_built_in_broker_connection();
         self.ensure_selected_connection();
+        if let Some(id) = self.snapshot.selected_connection {
+            self.load_connection_settings(id);
+        }
         if self.snapshot.connection_surface == crate::ConnectionSurface::Launcher {
             self.snapshot.connection_surface = crate::ConnectionSurface::Workbench;
         }
@@ -78,6 +82,7 @@ impl AppModel {
             "connect command queued".to_owned(),
         );
         self.snapshot.selected_connection = Some(id);
+        self.load_connection_settings(id);
         self.snapshot.connection_surface = crate::ConnectionSurface::Workbench;
         self.push_diagnostic(Diagnostic::info(format!("Connect requested for {name}.")));
     }
@@ -99,6 +104,16 @@ impl AppModel {
     }
 
     pub(super) fn save_connection_settings(&mut self) {
+        if self
+            .snapshot
+            .selected_connection
+            .is_some_and(crate::is_built_in_broker_connection)
+        {
+            self.push_diagnostic(Diagnostic::warning(
+                "Correo Broker connection is managed automatically.",
+            ));
+            return;
+        }
         refresh_connection_settings_validation(&mut self.snapshot.connection_settings);
         if !self.snapshot.connection_settings.valid {
             for error in self.snapshot.connection_settings.validation_errors.clone() {
@@ -340,6 +355,13 @@ impl AppModel {
             self.snapshot.connection_settings.delete_confirmation_open = false;
             return;
         };
+        if crate::is_built_in_broker_connection(id) {
+            self.snapshot.connection_settings.delete_confirmation_open = false;
+            self.push_diagnostic(Diagnostic::warning(
+                "Correo Broker connection can not be deleted.",
+            ));
+            return;
+        }
         if self.snapshot.connection_settings_overlay != Some(id)
             && self.snapshot.connection_surface != crate::ConnectionSurface::Settings
         {
@@ -403,6 +425,11 @@ impl AppModel {
         after: bool,
     ) {
         if connection_id == target_connection_id {
+            return;
+        }
+        if crate::is_built_in_broker_connection(connection_id)
+            || crate::is_built_in_broker_connection(target_connection_id)
+        {
             return;
         }
 
@@ -527,6 +554,9 @@ impl AppModel {
             .connections
             .first()
             .map(|connection| connection.id);
+        if let Some(id) = self.snapshot.selected_connection {
+            self.load_connection_settings(id);
+        }
     }
 
     pub(super) fn update_connection_state(
@@ -545,6 +575,9 @@ impl AppModel {
     }
 
     pub(super) fn load_connection_settings(&mut self, id: ConnectionId) {
+        if crate::is_built_in_broker_connection(id) {
+            self.sync_built_in_broker_connection();
+        }
         if let Some(settings) = self.connection_settings.get(&id) {
             self.snapshot.connection_settings = settings.clone();
         }
@@ -607,6 +640,41 @@ impl AppModel {
                 last_activity: self.snapshot.connections[index].last_activity.clone(),
                 ..connection_summary(id, settings)
             };
+        }
+    }
+}
+
+impl AppModel {
+    pub(super) fn sync_built_in_broker_connection(&mut self) {
+        let id = crate::built_in_broker_connection_id();
+        let mut summary = crate::built_in_broker_connection_summary(&self.snapshot.built_in_broker);
+        if let Some(existing) = self
+            .snapshot
+            .connections
+            .iter()
+            .find(|connection| connection.id == id)
+        {
+            summary.state = existing.state;
+            if existing.state != ConnectionState::Disconnected {
+                summary.disabled_reason = existing.disabled_reason;
+            }
+            summary.recent_subscriptions = existing.recent_subscriptions;
+            summary.recent_messages = existing.recent_messages;
+            summary.last_activity = existing.last_activity.clone();
+        }
+        self.snapshot
+            .connections
+            .retain(|connection| connection.id != id);
+        self.snapshot.connections.insert(0, summary);
+        self.connection_settings.insert(
+            id,
+            crate::built_in_broker_connection_settings(&self.snapshot.built_in_broker),
+        );
+        self.snapshot.connection_count = self.snapshot.connections.len();
+        if self.snapshot.selected_connection == Some(id) {
+            if let Some(settings) = self.connection_settings.get(&id) {
+                self.snapshot.connection_settings = settings.clone();
+            }
         }
     }
 }
@@ -738,6 +806,7 @@ fn connection_summary(
             .trim()
             .is_empty()
             .then_some(ConnectDisabledReason::MissingHost),
+        immutable: false,
         recent_subscriptions: 0,
         recent_messages: 0,
         last_activity: "Ready".to_owned(),

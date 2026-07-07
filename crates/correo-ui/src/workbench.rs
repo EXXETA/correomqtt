@@ -28,8 +28,8 @@ pub fn show(
         snapshot.workbench.narrow_tab,
         |ui| workbench_publish::editor(ui, snapshot, tokens, commands, payload_highlighter),
         |ui| workbench_subscribe::editor(ui, snapshot, tokens, commands),
-        |ui| workbench_publish::outgoing_messages(ui, snapshot, tokens, commands),
-        |ui| workbench_subscribe::incoming_messages(ui, snapshot, tokens, commands),
+        |ui| workbench_publish::outgoing_messages(ui, snapshot, tokens, commands, i18n),
+        |ui| workbench_subscribe::incoming_messages(ui, snapshot, tokens, commands, i18n),
     );
     workbench_messages::show(ui.ctx(), snapshot, tokens, commands, payload_highlighter);
     workbench_plugin_windows::show(ui.ctx(), snapshot, tokens, commands);

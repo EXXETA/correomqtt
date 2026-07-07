@@ -34,7 +34,25 @@ workspace-diagnostics = Dijagnostika
 workspace-import-export = Uvoz/izvoz
 workspace-plugins = Dodaci
 workspace-scripts = Skriptovanje
+workspace-broker = Broker
 workspace-settings = Podešavanja
+
+broker-detail = Start a local built-in MQTT broker for development and testing. The listener accepts MQTT 3.1.1 and MQTT 5 clients on the configured port.
+broker-status = Status
+broker-status-stopped = Stopped
+broker-status-starting = Starting
+broker-status-running = Running
+broker-status-stopping = Stopping
+broker-status-error = Error
+broker-port = Port
+broker-credentials-enabled = Require username and password
+broker-username = Username
+broker-password = Password
+broker-start = Start broker
+broker-stop = Stop broker
+broker-clear-logs = Clear logs
+broker-logs = Broker logs
+broker-no-logs = No broker logs yet.
 
 script-search = Pretraži skripte...
 script-new = Nova skripta
@@ -210,6 +228,8 @@ validators-strings-regex = Stringovi / regex, jedan po redu
 validators-save-folder = Fascikla za čuvanje
 validators-choose = Izaberi...
 validators-no-config = Za ovaj dodatak nije dostupna tipizirana konfiguracija.
+message-validation-validated = Validirano
+message-validation-invalid = Neispravno
 
 state-disconnected = Veza je prekinuta.
 state-connecting = Povezivanje ...
@@ -219,6 +239,7 @@ state-error = Greška
 
 disabled-already-connected = Već povezano
 disabled-missing-host = Host je obavezan
+disabled-broker-stopped = Built-in broker is stopped
 disabled-busy = Veza je zauzeta
 
 about-title = O programu CorreoMQTT

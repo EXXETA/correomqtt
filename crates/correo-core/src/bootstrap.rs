@@ -3,8 +3,9 @@ use std::collections::HashMap;
 
 use correo_mqtt::ConnectionId;
 use correo_storage::current::{
-    default_secret_store, AppConfig, Auth, ConnectionConfig, ConnectionHistorySnapshot,
-    ConnectionPluginDirection as StorageConnectionPluginDirection, ConnectionPluginWorkflowConfig,
+    default_secret_store, AppConfig, Auth, BuiltInBrokerConfig, ConnectionConfig,
+    ConnectionHistorySnapshot, ConnectionPluginDirection as StorageConnectionPluginDirection,
+    ConnectionPluginWorkflowConfig,
     ConnectionPluginWorkflowKind as StorageConnectionPluginWorkflowKind,
     HistoryPersistenceSnapshot, ImportedSecret, Lwt, MqttVersion,
     PluginHookKind as StoragePluginHookKind, PluginHookSettings, Proxy, Qos as StorageQos,
@@ -13,13 +14,13 @@ use correo_storage::current::{
 use correo_storage::migration::MigrationPreview;
 
 use crate::{
-    normalize_keyring_backend, AppSnapshot, ConnectDisabledReason, ConnectionBadge,
-    ConnectionPluginDirection, ConnectionPluginWorkflow, ConnectionPluginWorkflowKind,
-    ConnectionPluginWorkflowStatus, ConnectionSettingsSnapshot, ConnectionState, ConnectionSummary,
-    Diagnostic, GlobalSettingsSnapshot, KeyringState, LegacyMigrationStatus,
-    MigrationRecoverySnapshot, PluginHookSettingsSnapshot, PluginRepositoryRow,
-    PluginStateSnapshot, PublishHistoryRow, QosLevel, SecretInput, SubscribePaneSnapshot,
-    SubscriptionRow, ThemeMode, WorkbenchSnapshot,
+    normalize_keyring_backend, AppSnapshot, BuiltInBrokerSnapshot, ConnectDisabledReason,
+    ConnectionBadge, ConnectionPluginDirection, ConnectionPluginWorkflow,
+    ConnectionPluginWorkflowKind, ConnectionPluginWorkflowStatus, ConnectionSettingsSnapshot,
+    ConnectionState, ConnectionSummary, Diagnostic, GlobalSettingsSnapshot, KeyringState,
+    LegacyMigrationStatus, MigrationRecoverySnapshot, PluginHookSettingsSnapshot,
+    PluginRepositoryRow, PluginStateSnapshot, PublishHistoryRow, QosLevel, SecretInput,
+    SubscribePaneSnapshot, SubscriptionRow, ThemeMode, WorkbenchSnapshot,
 };
 
 #[path = "bootstrap_scripts.rs"]
@@ -157,6 +158,7 @@ pub fn startup_state_from_current_with_plugins(
     snapshot.selected_connection = mapped.first().map(|connection| connection.id);
     snapshot.connections = mapped;
     snapshot.theme_mode = theme_mode;
+    snapshot.built_in_broker = built_in_broker(&config.built_in_broker);
     snapshot.global_settings = global_settings(&config.settings);
     snapshot.plugins = plugin_surface(
         config.settings.install_bundled_plugins,
@@ -203,12 +205,23 @@ pub fn startup_state_from_migration(
             connections: preview.connections,
             theme_settings: preview.theme_settings,
             settings: preview.settings,
+            built_in_broker: BuiltInBrokerConfig::default(),
         },
         preview.histories,
         preview.scripts,
         warnings,
         fallback_theme,
     )
+}
+
+fn built_in_broker(config: &BuiltInBrokerConfig) -> BuiltInBrokerSnapshot {
+    BuiltInBrokerSnapshot {
+        port: config.port.clone(),
+        credentials_enabled: config.credentials_enabled,
+        username: config.username.clone(),
+        password: config.password.clone(),
+        ..BuiltInBrokerSnapshot::default()
+    }
 }
 
 fn summary(
@@ -226,6 +239,7 @@ fn summary(
             .plugin_workflows
             .iter()
             .any(|workflow| workflow.enabled),
+        immutable: false,
         state: ConnectionState::Disconnected,
         disabled_reason: connection
             .url
@@ -430,6 +444,7 @@ fn workbench_from_history(history: &ConnectionHistorySnapshot) -> WorkbenchSnaps
                 byte_size: payload.len(),
                 payload,
                 badges,
+                diagnostics: Vec::new(),
             }
         })
         .collect();

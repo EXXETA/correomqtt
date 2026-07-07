@@ -7,9 +7,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-
 use correo_mqtt::{MqttError, Qos};
-use rquickjs::{context::intrinsic, CatchResultExt, CaughtError, Context, Object, Persistent, Promise, Runtime};
+use rquickjs::{
+    context::intrinsic, CatchResultExt, CaughtError, Context, Object, Persistent, Promise, Runtime,
+};
 use time::OffsetDateTime;
 
 use crate::{
@@ -378,7 +379,11 @@ impl HostState {
             .lock()
             .expect("promise host error lock poisoned");
         host_errors.iter().find_map(|host_error| {
-            let registered = host_error.exception.clone().restore(exception.as_object().ctx()).ok()?;
+            let registered = host_error
+                .exception
+                .clone()
+                .restore(exception.as_object().ctx())
+                .ok()?;
             if registered == *exception.as_object() {
                 Some(host_error.error.clone())
             } else {
@@ -386,7 +391,6 @@ impl HostState {
             }
         })
     }
-
 
     pub(crate) fn throw_host_error(&self, error: ScriptingError) -> rquickjs::Error {
         *self
@@ -401,4 +405,3 @@ impl HostState {
         ScriptingError::MqttOperation(error.to_string())
     }
 }
-

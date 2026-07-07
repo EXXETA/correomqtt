@@ -4,6 +4,7 @@ use egui::{Button, Id, Rect, RichText, ScrollArea, Sense, Ui};
 use egui_phosphor::regular;
 
 use crate::{
+    i18n::I18n,
     theme::ThemeTokens,
     widgets::{
         clearable_search_edit, dotted_focus_outline, fill_remaining_tile_rows, menu_item,
@@ -11,7 +12,9 @@ use crate::{
         tile_scroll_bar_rect_with_height, tile_table_interactive_fill, tile_table_selected_fill,
         with_icon_button_padding,
     },
-    workbench_connection_messages_filters::{message_visible_for_subscriptions, row_matches},
+    workbench_connection_messages_filters::{
+        message_visible_for_subscriptions, row_matches, topic_matches_filter,
+    },
     workbench_connection_messages_text::{
         formatted_size, middle_ellipsis, right_aligned_text, text_width, truncated_text,
     },
@@ -39,8 +42,15 @@ struct ConnectionMessageRow<'a> {
     retained: bool,
     payload_preview: &'a str,
     plugin_diagnostic: Option<&'a correo_core::MessageDiagnosticRow>,
+    validation_status: Option<ValidationStatus>,
     byte_size: usize,
     selected: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ValidationStatus {
+    Validated,
+    Invalid,
 }
 
 pub(crate) fn show(
@@ -49,6 +59,7 @@ pub(crate) fn show(
     origin: MessageOrigin,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     toolbar(ui, snapshot, origin, tokens, commands);
     ui.add_space(4.0);
@@ -62,6 +73,7 @@ pub(crate) fn show(
         auto_scroll_enabled(ui, origin),
         tokens,
         commands,
+        i18n,
     );
 }
 
@@ -222,13 +234,26 @@ fn outgoing_row<'a>(
         qos: row.qos.label(),
         retained: row.retained,
         payload_preview: &row.payload_preview,
-        plugin_diagnostic: None,
+        plugin_diagnostic: row.diagnostics.iter().find(|diagnostic| {
+            diagnostic.plugin_id.is_some() && diagnostic_is_attention(diagnostic)
+        }),
+        validation_status: validation_status_for_row(
+            snapshot,
+            &row.topic,
+            &row.payload,
+            MessageOrigin::Outgoing,
+            &row.diagnostics,
+        ),
         byte_size: row.byte_size,
         selected: snapshot.workbench.publish.selected_history_id == Some(row.id),
     }
 }
 
 fn incoming_row<'a>(snapshot: &AppSnapshot, message: &'a MessageRow) -> ConnectionMessageRow<'a> {
+    let plugin_diagnostic = message
+        .diagnostics
+        .iter()
+        .find(|diagnostic| diagnostic.plugin_id.is_some() && diagnostic_is_attention(diagnostic));
     ConnectionMessageRow {
         key: MessageKey::Incoming(message.id),
         topic: &message.topic,
@@ -236,13 +261,117 @@ fn incoming_row<'a>(snapshot: &AppSnapshot, message: &'a MessageRow) -> Connecti
         qos: message.qos.label(),
         retained: message.retained,
         payload_preview: &message.payload_preview,
-        plugin_diagnostic: message
-            .diagnostics
-            .iter()
-            .find(|diagnostic| diagnostic.plugin_id.is_some()),
+        plugin_diagnostic,
+        validation_status: validation_status_for_row(
+            snapshot,
+            &message.topic,
+            &message.payload,
+            MessageOrigin::Incoming,
+            &message.diagnostics,
+        ),
         byte_size: message.byte_size,
         selected: snapshot.workbench.selected_message_id == Some(message.id),
     }
+}
+
+fn validation_status_for_row(
+    snapshot: &AppSnapshot,
+    topic: &str,
+    payload: &[u8],
+    origin: MessageOrigin,
+    diagnostics: &[correo_core::MessageDiagnosticRow],
+) -> Option<ValidationStatus> {
+    for diagnostic in diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.hook == Some(correo_core::PluginHookKind::Validator))
+    {
+        if diagnostic.severity == correo_core::PluginDiagnosticSeverity::Error {
+            return Some(ValidationStatus::Invalid);
+        }
+    }
+    let mut matched = false;
+    for workflow in snapshot
+        .connection_settings
+        .plugin_workflows
+        .iter()
+        .filter(|workflow| {
+            workflow.enabled
+                && workflow.kind == correo_core::ConnectionPluginWorkflowKind::Validator
+                && workflow_direction_matches(workflow.direction, origin)
+                && topic_matches_filter(topic, &workflow.topic_filter)
+        })
+    {
+        matched = true;
+        if !workflow_validates(workflow, payload) {
+            return Some(ValidationStatus::Invalid);
+        }
+    }
+    matched.then_some(ValidationStatus::Validated)
+}
+
+fn workflow_validates(workflow: &correo_core::ConnectionPluginWorkflow, payload: &[u8]) -> bool {
+    match workflow.plugin_id.as_str() {
+        "org.correomqtt.plugins.contains-string-validator" => {
+            contains_string_validator_validates(&workflow.config, payload)
+        }
+        "org.correomqtt.plugins.xml-xsd-validator" => {
+            let payload = String::from_utf8_lossy(payload);
+            let xsd_path = workflow
+                .config
+                .get("xsd_path")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default();
+            payload.trim_start().starts_with('<') && !xsd_path.trim().is_empty()
+        }
+        _ => true,
+    }
+}
+
+fn contains_string_validator_validates(config: &serde_json::Value, payload: &[u8]) -> bool {
+    let payload = String::from_utf8_lossy(payload);
+    let rules = config
+        .get("rules")
+        .and_then(serde_json::Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    rules.is_empty()
+        || rules.iter().any(|rule| {
+            let Some(needle) = rule.get("text").and_then(serde_json::Value::as_str) else {
+                return false;
+            };
+            if rule
+                .get("regex")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false)
+            {
+                regex::Regex::new(needle)
+                    .map(|regex| regex.is_match(&payload))
+                    .unwrap_or(false)
+            } else {
+                payload.contains(needle)
+            }
+        })
+}
+
+fn workflow_direction_matches(
+    direction: correo_core::ConnectionPluginDirection,
+    origin: MessageOrigin,
+) -> bool {
+    direction == correo_core::ConnectionPluginDirection::Both
+        || matches!(
+            (direction, origin),
+            (
+                correo_core::ConnectionPluginDirection::Outgoing,
+                MessageOrigin::Outgoing
+            ) | (
+                correo_core::ConnectionPluginDirection::Incoming,
+                MessageOrigin::Incoming
+            )
+        )
+}
+
+fn diagnostic_is_attention(diagnostic: &correo_core::MessageDiagnosticRow) -> bool {
+    diagnostic.severity != correo_core::PluginDiagnosticSeverity::Info
 }
 
 fn message_table(
@@ -253,6 +382,7 @@ fn message_table(
     auto_scroll: bool,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     ui.spacing_mut().item_spacing.y = 0.0;
     let table_height = ui
@@ -308,6 +438,7 @@ fn message_table(
                             commands,
                             table_response.has_focus(),
                             focused_index,
+                            i18n,
                         );
                     }
                 }
@@ -332,6 +463,7 @@ fn message_row(
     commands: &AppCommandSender,
     table_focused: bool,
     focused_index: usize,
+    i18n: &I18n,
 ) {
     let row_width = ui.available_width();
     let (rect, response) = ui.allocate_exact_size(
@@ -375,12 +507,19 @@ fn message_row(
     } else {
         format!("{} · {size}", row.qos)
     };
+    let validation_label = row.validation_status.map(|status| match status {
+        ValidationStatus::Validated => i18n.text("message-validation-validated"),
+        ValidationStatus::Invalid => i18n.text("message-validation-invalid"),
+    });
+    let bottom_meta = validation_label
+        .as_deref()
+        .map(|label| format!("{label} · {qos_and_size}"))
+        .unwrap_or_else(|| qos_and_size.clone());
+    let preview_meta_width = text_width(ui, &bottom_meta, meta_font.clone());
     let topic_left = rect.left() + layout::SUBSCRIPTION_ROW_PADDING_X;
     let topic_right =
         right - text_width(ui, &timestamp, meta_font.clone()) - layout::MESSAGE_ROW_TOPIC_META_GAP;
-    let preview_right = right
-        - text_width(ui, &qos_and_size, meta_font.clone())
-        - layout::MESSAGE_ROW_TOPIC_META_GAP;
+    let preview_right = right - preview_meta_width - layout::MESSAGE_ROW_TOPIC_META_GAP;
     let topic_width = (topic_right - topic_left).max(0.0);
     let preview_width = (preview_right - topic_left).max(0.0);
     let topic = middle_ellipsis(ui, row.topic, topic_font.clone(), topic_width);
@@ -397,7 +536,7 @@ fn message_row(
             egui::pos2(topic_left, preview_y),
             preview_width,
             &diagnostic.message,
-            meta_font,
+            meta_font.clone(),
             match diagnostic.severity {
                 correo_core::PluginDiagnosticSeverity::Info => tokens.success,
                 correo_core::PluginDiagnosticSeverity::Warning => tokens.warning,
@@ -410,7 +549,7 @@ fn message_row(
             egui::pos2(topic_left, preview_y),
             preview_width,
             row.payload_preview,
-            meta_font,
+            meta_font.clone(),
             tokens.text_secondary,
         );
     }
@@ -426,6 +565,26 @@ fn message_row(
         &qos_and_size,
         tokens.text_secondary,
     );
+    if let Some((status, label)) = row.validation_status.zip(validation_label.as_deref()) {
+        let dot_gap = text_width(ui, " · ", meta_font.clone());
+        let x = meta_rect.right() - text_width(ui, &qos_and_size, meta_font.clone()) - dot_gap;
+        right_aligned_text(
+            ui,
+            egui::pos2(x, meta_rect.top() + 28.0),
+            "·",
+            tokens.text_secondary,
+        );
+        let x = x - dot_gap;
+        right_aligned_text(
+            ui,
+            egui::pos2(x, meta_rect.top() + 28.0),
+            label,
+            match status {
+                ValidationStatus::Validated => tokens.success,
+                ValidationStatus::Invalid => tokens.danger,
+            },
+        );
+    }
 }
 
 fn handle_message_table_keyboard(

@@ -2,14 +2,13 @@ use correo_mqtt::{IncomingMessage, Qos, SessionState, TopicFilter, TopicName};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 use crate::{
-    AppModel, ConnectDisabledReason, ConnectionState, Diagnostic, MessageRow, MqttCommand,
-    MqttEvent, MqttFailure, MqttOperation, PublishHistoryRow, QosLevel, SubscriptionRow,
-    WorkbenchSnapshot, WorkflowFeedback,
+    AppModel, ConnectDisabledReason, ConnectionState, Diagnostic, MessageDiagnosticRow, MessageRow,
+    MqttCommand, MqttEvent, MqttFailure, MqttOperation, PublishHistoryRow, QosLevel,
+    SubscriptionRow, WorkbenchSnapshot, WorkflowFeedback,
 };
 
 const MAX_INCOMING_MESSAGES: usize = 1_000;
 const MAX_PUBLISH_HISTORY_ROWS: usize = 500;
-
 
 impl AppModel {
     pub(super) fn update_publish_topic(&mut self, topic: String) {
@@ -191,6 +190,7 @@ impl AppModel {
                 payload,
                 qos,
                 retain,
+                diagnostics,
             } => {
                 self.add_publish_success(
                     connection_id,
@@ -198,6 +198,7 @@ impl AppModel {
                     payload,
                     qos_level(qos),
                     retain,
+                    diagnostics,
                 );
                 self.push_diagnostic(Diagnostic::info(format!(
                     "MQTT publish completed for {} on {}.",
@@ -432,7 +433,10 @@ impl AppModel {
         };
 
         for topic in removed_topics {
-            decrement_matching_subscriptions(self.workbench_for_connection_mut(connection_id), &topic);
+            decrement_matching_subscriptions(
+                self.workbench_for_connection_mut(connection_id),
+                &topic,
+            );
         }
     }
 
@@ -529,6 +533,7 @@ impl AppModel {
         payload: Vec<u8>,
         qos: QosLevel,
         retained: bool,
+        diagnostics: Vec<MessageDiagnosticRow>,
     ) {
         let workbench = self.workbench_for_connection_mut(connection_id);
         let byte_size = payload.len();
@@ -550,6 +555,7 @@ impl AppModel {
                 payload,
                 byte_size,
                 badges,
+                diagnostics,
             },
         );
         workbench.publish.history.truncate(MAX_PUBLISH_HISTORY_ROWS);

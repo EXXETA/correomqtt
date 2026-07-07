@@ -123,7 +123,8 @@ impl MapBacked for EncryptedFileSecretStore {
         }
         let raw =
             serde_json::to_string(&file).map_err(|error| self.file_error("serialize", error))?;
-        write_file_atomic(&self.path, raw.as_bytes()).map_err(|error| self.file_error("write", error))
+        write_file_atomic(&self.path, raw.as_bytes())
+            .map_err(|error| self.file_error("write", error))
     }
 }
 

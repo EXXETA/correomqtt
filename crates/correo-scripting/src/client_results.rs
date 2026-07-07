@@ -116,7 +116,6 @@ fn promise_exception<'js>(
     Ok(exception)
 }
 
-
 fn finish_mqtt_operation<'js>(
     operation: &MqttOperation,
     subscriptions: &MessageSubscriptions<'js>,
@@ -148,4 +147,3 @@ pub(crate) fn call_optional_callback(callback: Option<Function<'_>>) -> rquickjs
         Ok(())
     }
 }
-

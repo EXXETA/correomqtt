@@ -1,4 +1,5 @@
 mod bootstrap;
+mod broker;
 mod commands;
 mod history;
 mod migration;
@@ -39,3 +40,4 @@ pub use bootstrap::{
     startup_state_from_current, startup_state_from_current_with_plugins,
     startup_state_from_current_with_workbenches, startup_state_from_migration, StartupState,
 };
+pub use broker::*;

@@ -1,4 +1,4 @@
-use crate::current::{AppConfig, ConfigStore, HistoryStore, ScriptStore};
+use crate::current::{AppConfig, BuiltInBrokerConfig, ConfigStore, HistoryStore, ScriptStore};
 use crate::{Result, StorageError};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -165,6 +165,7 @@ impl MigrationApplier {
             connections: preview.connections.clone(),
             theme_settings: preview.theme_settings.clone(),
             settings: preview.settings.clone(),
+            built_in_broker: BuiltInBrokerConfig::default(),
         })?;
         HistoryStore::new(&self.target_root).replace_all(&preview.histories)?;
         ScriptStore::new(&self.target_root).replace_all(&preview.scripts)

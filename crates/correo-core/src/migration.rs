@@ -3,7 +3,9 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
 
 use correo_diagnostics::redact_sensitive;
-use correo_storage::current::{default_secret_store, ImportedSecret, SecretMaterial, SecretReference, SecretStore};
+use correo_storage::current::{
+    default_secret_store, ImportedSecret, SecretMaterial, SecretReference, SecretStore,
+};
 use correo_storage::legacy::{
     passwords::{os_keyring_master_password, LegacyPasswords},
     LegacyProfile,
@@ -25,10 +27,16 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MigrationPersistenceCommand {
-    Prepare { legacy_path: String },
-    UnlockSecrets { master_password: SecretInput },
+    Prepare {
+        legacy_path: String,
+    },
+    UnlockSecrets {
+        master_password: SecretInput,
+    },
     SkipSecrets,
-    Apply { fallback_theme: ThemeMode },
+    Apply {
+        fallback_theme: ThemeMode,
+    },
     Restore {
         backup_name: String,
         backup_path_hint: String,
@@ -71,7 +79,9 @@ impl MigrationPersistenceWorker {
             let mut pending = None;
             let mut recoverable_backup = None;
             while let Ok(command) = receiver.recv() {
-                for event in handle_command(&applier, &mut pending, &mut recoverable_backup, command) {
+                for event in
+                    handle_command(&applier, &mut pending, &mut recoverable_backup, command)
+                {
                     let _ = events_sender.send(event);
                 }
             }

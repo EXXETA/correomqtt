@@ -231,6 +231,7 @@ impl AppModel {
         self.storage_connection_ids = state.storage_connection_ids;
         self.saved_global_settings = self.snapshot.global_settings.clone();
         self.saved_theme_mode = self.snapshot.theme_mode.clone();
+        self.sync_built_in_broker_connection();
         self.snapshot.migration_recovery = recovery;
         self.apply_completed(completion, diagnostics);
     }

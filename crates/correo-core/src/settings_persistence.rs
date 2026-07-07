@@ -4,7 +4,7 @@ use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use correo_storage::current::{
-    default_secret_store, Auth as StorageAuth, ConfigStore,
+    default_secret_store, Auth as StorageAuth, BuiltInBrokerConfig, ConfigStore,
     ConnectionConfig as StorageConnectionConfig,
     ConnectionPluginDirection as StorageConnectionPluginDirection, ConnectionPluginWorkflowConfig,
     ConnectionPluginWorkflowKind as StorageConnectionPluginWorkflowKind, ImportedSecret,
@@ -20,6 +20,14 @@ use crate::{
     ConnectionPluginWorkflowKind, ConnectionSettingsSnapshot, GlobalSettingsSnapshot,
     PluginHookKind, PluginHookSettingsSnapshot, PluginRepositoryRow, QosLevel, ThemeMode,
 };
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BuiltInBrokerPersistenceSnapshot {
+    pub port: String,
+    pub credentials_enabled: bool,
+    pub username: String,
+    pub password: String,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SettingsPersistenceCommand {
@@ -44,6 +52,9 @@ pub enum SettingsPersistenceCommand {
     },
     SaveConnectionOrder {
         connection_ids: Vec<String>,
+    },
+    SaveBuiltInBroker {
+        broker: BuiltInBrokerPersistenceSnapshot,
     },
 }
 
@@ -151,6 +162,9 @@ fn apply_settings_command(
         }
         SettingsPersistenceCommand::SaveConnectionOrder { connection_ids } => {
             store.save_connection_order(&connection_ids)
+        }
+        SettingsPersistenceCommand::SaveBuiltInBroker { broker } => {
+            store.save_built_in_broker(storage_built_in_broker(broker))
         }
     };
 
@@ -294,6 +308,15 @@ fn secret_was_configured(status: &str) -> bool {
     status.contains("managed by keyring") || status.contains("missing from keyring")
 }
 
+fn storage_built_in_broker(snapshot: BuiltInBrokerPersistenceSnapshot) -> BuiltInBrokerConfig {
+    BuiltInBrokerConfig {
+        port: snapshot.port,
+        credentials_enabled: snapshot.credentials_enabled,
+        username: snapshot.username,
+        password: snapshot.password,
+    }
+}
+
 pub(crate) fn storage_connection(
     connection_id: String,
     settings: ConnectionSettingsSnapshot,
@@ -380,6 +403,19 @@ fn storage_qos(value: QosLevel) -> StorageQos {
         QosLevel::One => StorageQos::AtLeastOnce,
         QosLevel::Two => StorageQos::ExactlyOnce,
     }
+}
+
+fn parse_port(value: &str, fallback: u16) -> u16 {
+    value
+        .trim()
+        .parse::<u16>()
+        .ok()
+        .filter(|port| *port > 0)
+        .unwrap_or(fallback)
+}
+
+fn parse_optional_port(value: &str) -> Option<u16> {
+    value.trim().parse::<u16>().ok().filter(|port| *port > 0)
 }
 
 fn storage_plugin_workflow(workflow: ConnectionPluginWorkflow) -> ConnectionPluginWorkflowConfig {
@@ -483,17 +519,6 @@ fn keyring_identifier(value: String) -> Option<String> {
 fn non_empty(value: String) -> Option<String> {
     let trimmed = value.trim();
     (!trimmed.is_empty()).then(|| trimmed.to_owned())
-}
-
-fn parse_port(value: &str, default: u16) -> u16 {
-    value.trim().parse().unwrap_or(default)
-}
-
-fn parse_optional_port(value: &str) -> Option<u16> {
-    let trimmed = value.trim();
-    (!trimmed.is_empty())
-        .then(|| trimmed.parse().ok())
-        .flatten()
 }
 
 fn non_unknown(value: String) -> Option<String> {

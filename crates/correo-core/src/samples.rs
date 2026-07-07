@@ -69,6 +69,7 @@ fn sample_connection(name: &str, endpoint: &str, state: ConnectionState) -> Conn
         .to_owned(),
         badges,
         active_plugin_workflows: name == "Local Broker",
+        immutable: false,
         state,
         disabled_reason,
         recent_subscriptions: if name == "Local Broker" { 5 } else { 2 },
@@ -409,6 +410,7 @@ fn history(
         payload_preview: payload_preview.to_owned(),
         byte_size,
         badges,
+        diagnostics: Vec::new(),
     }
 }
 

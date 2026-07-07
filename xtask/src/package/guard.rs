@@ -8,7 +8,6 @@ use super::PackageOutput;
 
 const RELEASE_ARTIFACT_EXTENSIONS: &[&str] = &["zip", "dmg", "deb", "rpm", "msi"];
 
-
 pub(super) fn verify(output: &Option<PackageOutput>) -> Result<(), XtaskError> {
     let Some(output) = output else {
         return Ok(());
@@ -80,7 +79,6 @@ pub(super) fn verify(output: &Option<PackageOutput>) -> Result<(), XtaskError> {
         ),
     )?;
 
-
     let release_artifacts = files_with_extensions(&output.out_dir, RELEASE_ARTIFACT_EXTENSIONS)?;
     let expected_sidecars = release_artifacts
         .iter()
@@ -113,7 +111,10 @@ pub(super) fn verify(output: &Option<PackageOutput>) -> Result<(), XtaskError> {
         ensure(
             output,
             fs::read_to_string(&sidecar_path)? == artifact_line,
-            format!("checksum sidecar {} is stale or invalid", sidecar_path.display()),
+            format!(
+                "checksum sidecar {} is stale or invalid",
+                sidecar_path.display()
+            ),
         )?;
         ensure(
             output,

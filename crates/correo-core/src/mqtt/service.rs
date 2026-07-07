@@ -1,5 +1,5 @@
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::collections::{HashMap, VecDeque};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use correo_mqtt::{MqttConnectionOptions, MqttError, MqttSession, RumqttSession};
@@ -10,6 +10,7 @@ use tokio::task::JoinHandle;
 use tokio::time::timeout;
 
 use super::{MqttCommand, MqttEvent, MqttFailure, MqttOperation};
+use crate::MessageDiagnosticRow;
 
 const DEFAULT_OPERATION_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -52,6 +53,7 @@ impl MqttService {
             events: event_sender,
             sessions: HashMap::new(),
             operation_timeout,
+            pending_publish_diagnostics: Arc::new(Mutex::new(HashMap::new())),
         };
         let task = tokio::spawn(service_loop.run());
 
@@ -118,6 +120,8 @@ struct ServiceLoop {
     events: Sender<MqttEvent>,
     sessions: HashMap<correo_mqtt::ConnectionId, SessionEntry>,
     operation_timeout: Duration,
+    pending_publish_diagnostics:
+        Arc<Mutex<HashMap<correo_mqtt::ConnectionId, VecDeque<Vec<MessageDiagnosticRow>>>>>,
 }
 
 impl ServiceLoop {
@@ -144,7 +148,8 @@ impl ServiceLoop {
             MqttCommand::Publish {
                 connection_id,
                 request,
-            } => self.publish(connection_id, request).await,
+                diagnostics,
+            } => self.publish(connection_id, request, diagnostics).await,
             MqttCommand::Subscribe {
                 connection_id,
                 subscription,
@@ -163,7 +168,12 @@ impl ServiceLoop {
 
         let mut session = self.factory.create_session(&options);
         let events = session.events();
-        let monitor = spawn_event_monitor(connection_id, events, self.events.clone());
+        let monitor = spawn_event_monitor(
+            connection_id,
+            events,
+            self.events.clone(),
+            Arc::clone(&self.pending_publish_diagnostics),
+        );
         self.accept(connection_id, operation);
 
         match session.connect(options).await {
@@ -210,22 +220,53 @@ impl ServiceLoop {
         &mut self,
         connection_id: correo_mqtt::ConnectionId,
         request: correo_mqtt::PublishRequest,
+        diagnostics: Vec<MessageDiagnosticRow>,
     ) {
         self.accept(connection_id, MqttOperation::Publish);
-        let Some(entry) = self.sessions.get_mut(&connection_id) else {
+        if !self.sessions.contains_key(&connection_id) {
             self.fail(
                 Some(connection_id),
                 MqttOperation::Publish,
                 MqttError::Disconnected,
             );
             return;
-        };
+        }
 
+        self.push_publish_diagnostics(connection_id, diagnostics);
+        let entry = self
+            .sessions
+            .get_mut(&connection_id)
+            .expect("session existence was checked before publishing");
         if let Err(error) = operation_result(
             timeout(self.operation_timeout, entry.session.publish(request)).await,
             MqttOperation::Publish,
         ) {
+            self.pop_publish_diagnostics(connection_id);
             self.fail(Some(connection_id), MqttOperation::Publish, error);
+        }
+    }
+
+    fn push_publish_diagnostics(
+        &self,
+        connection_id: correo_mqtt::ConnectionId,
+        diagnostics: Vec<MessageDiagnosticRow>,
+    ) {
+        if let Ok(mut pending) = self.pending_publish_diagnostics.lock() {
+            pending
+                .entry(connection_id)
+                .or_default()
+                .push_back(diagnostics);
+        }
+    }
+
+    fn pop_publish_diagnostics(&self, connection_id: correo_mqtt::ConnectionId) {
+        if let Ok(mut pending) = self.pending_publish_diagnostics.lock() {
+            if let Some(queue) = pending.get_mut(&connection_id) {
+                queue.pop_front();
+                if queue.is_empty() {
+                    pending.remove(&connection_id);
+                }
+            }
         }
     }
 
@@ -245,7 +286,11 @@ impl ServiceLoop {
         };
 
         if let Err(error) = operation_result(
-            timeout(self.operation_timeout, entry.session.subscribe(subscription)).await,
+            timeout(
+                self.operation_timeout,
+                entry.session.subscribe(subscription),
+            )
+            .await,
             MqttOperation::Subscribe,
         ) {
             self.fail(Some(connection_id), MqttOperation::Subscribe, error);
@@ -331,10 +376,37 @@ fn spawn_event_monitor(
     connection_id: correo_mqtt::ConnectionId,
     mut events: futures::stream::BoxStream<'static, correo_mqtt::MqttSessionEvent>,
     sender: Sender<MqttEvent>,
+    pending_publish_diagnostics: Arc<
+        Mutex<HashMap<correo_mqtt::ConnectionId, VecDeque<Vec<MessageDiagnosticRow>>>>,
+    >,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
         while let Some(event) = events.next().await {
-            let _ = sender.send(MqttEvent::from_session_event(connection_id, event));
+            let mut event = MqttEvent::from_session_event(connection_id, event);
+            if let MqttEvent::Published { diagnostics, .. } = &mut event {
+                *diagnostics =
+                    take_publish_diagnostics(connection_id, &pending_publish_diagnostics);
+            }
+            let _ = sender.send(event);
         }
     })
+}
+
+fn take_publish_diagnostics(
+    connection_id: correo_mqtt::ConnectionId,
+    pending_publish_diagnostics: &Arc<
+        Mutex<HashMap<correo_mqtt::ConnectionId, VecDeque<Vec<MessageDiagnosticRow>>>>,
+    >,
+) -> Vec<MessageDiagnosticRow> {
+    let Ok(mut pending) = pending_publish_diagnostics.lock() else {
+        return Vec::new();
+    };
+    let Some(queue) = pending.get_mut(&connection_id) else {
+        return Vec::new();
+    };
+    let diagnostics = queue.pop_front().unwrap_or_default();
+    if queue.is_empty() {
+        pending.remove(&connection_id);
+    }
+    diagnostics
 }

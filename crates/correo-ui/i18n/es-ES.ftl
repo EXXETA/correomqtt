@@ -34,7 +34,25 @@ workspace-diagnostics = Diagnóstico
 workspace-import-export = Importar/Exportar
 workspace-plugins = Plugins
 workspace-scripts = Scripting
+workspace-broker = Broker
 workspace-settings = Configuración
+
+broker-detail = Start a local built-in MQTT broker for development and testing. The listener accepts MQTT 3.1.1 and MQTT 5 clients on the configured port.
+broker-status = Status
+broker-status-stopped = Stopped
+broker-status-starting = Starting
+broker-status-running = Running
+broker-status-stopping = Stopping
+broker-status-error = Error
+broker-port = Port
+broker-credentials-enabled = Require username and password
+broker-username = Username
+broker-password = Password
+broker-start = Start broker
+broker-stop = Stop broker
+broker-clear-logs = Clear logs
+broker-logs = Broker logs
+broker-no-logs = No broker logs yet.
 
 script-search = Buscar scripts...
 script-new = Nuevo script
@@ -210,6 +228,8 @@ validators-strings-regex = Cadenas / regex, una por línea
 validators-save-folder = Carpeta de guardado
 validators-choose = Elegir...
 validators-no-config = No hay configuración tipada disponible para este plugin.
+message-validation-validated = Validado
+message-validation-invalid = No válido
 
 state-disconnected = Desconectado.
 state-connecting = Conectando ...
@@ -219,6 +239,7 @@ state-error = Error
 
 disabled-already-connected = Ya conectado
 disabled-missing-host = El host es obligatorio
+disabled-broker-stopped = Built-in broker is stopped
 disabled-busy = La conexión está ocupada
 
 about-title = Acerca de CorreoMQTT
