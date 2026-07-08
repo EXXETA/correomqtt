@@ -2,8 +2,8 @@ name: Rust Desktop Build
 
 on:
   push:
-    branches: ["**"]
-    tags: ["v*"]
+    branches: [ "**" ]
+    tags: [ "v*" ]
   pull_request:
   workflow_dispatch:
 
@@ -25,10 +25,10 @@ jobs:
       # exercised, not just Linux. fmt/clippy run once on Linux only.
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025]
+        os: [ ubuntu-26.04, macos-26, windows-2025 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Show Rust toolchain
         run: |
@@ -53,7 +53,7 @@ jobs:
             pkg-config
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/git
@@ -85,7 +85,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Start Mosquitto broker
         run: |
@@ -104,7 +104,7 @@ jobs:
           exit 1
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/git
@@ -152,7 +152,7 @@ jobs:
             artifact: correomqtt-macos-aarch64-unsigned-beta
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Linux desktop build dependencies
         if: runner.os == 'Linux'
@@ -198,7 +198,7 @@ jobs:
         run: rustup target add ${{ matrix.target }}
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/git
@@ -220,7 +220,7 @@ jobs:
         run: ls dist/beta/${{ matrix.target }}
 
       - name: Upload unsigned beta package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           if-no-files-found: error
@@ -246,7 +246,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Show plugin release provenance
         run: |
@@ -261,7 +261,7 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/git
@@ -281,7 +281,7 @@ jobs:
         run: ls dist/plugins
 
       - name: Upload plugin release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: correomqtt-plugin-release-artifacts
           if-no-files-found: error
