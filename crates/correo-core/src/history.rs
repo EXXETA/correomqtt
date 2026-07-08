@@ -74,10 +74,7 @@ impl HistoryPersistenceWorker {
 
         std::thread::spawn(move || {
             let mut deferred = VecDeque::new();
-            loop {
-                let Some(command) = deferred.pop_front().or_else(|| receiver.recv().ok()) else {
-                    break;
-                };
+            while let Some(command) = deferred.pop_front().or_else(|| receiver.recv().ok()) {
                 let command = coalesce_workbench_replacements(command, &receiver, &mut deferred);
                 let event = apply_history_command(&store, command);
                 let _ = events_sender.send(event);
