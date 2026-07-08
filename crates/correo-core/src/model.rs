@@ -36,6 +36,7 @@ pub struct AppModel {
     storage_connection_ids: HashMap<ConnectionId, String>,
     workbenches: HashMap<ConnectionId, WorkbenchSnapshot>,
     dirty_workbenches: HashSet<ConnectionId>,
+    revision: u64,
     saved_global_settings: crate::GlobalSettingsSnapshot,
     saved_theme_mode: crate::ThemeMode,
     pending_connection_imports: HashMap<String, StorageConnectionConfig>,
@@ -83,6 +84,7 @@ impl AppModel {
             storage_connection_ids,
             workbenches,
             dirty_workbenches: HashSet::new(),
+            revision: 0,
             saved_global_settings,
             saved_theme_mode,
             pending_connection_imports: HashMap::new(),
@@ -96,6 +98,14 @@ impl AppModel {
 
     pub fn snapshot(&self) -> &AppSnapshot {
         &self.snapshot
+    }
+
+    pub(crate) fn revision(&self) -> u64 {
+        self.revision
+    }
+
+    fn bump_revision(&mut self) {
+        self.revision = self.revision.wrapping_add(1);
     }
 
     pub(crate) fn connection_settings_for(
@@ -188,6 +198,7 @@ impl AppModel {
             || self.apply_broker_command(&command)
             || self.apply_plugin_command(&command)
         {
+            self.bump_revision();
             return;
         }
 
@@ -213,6 +224,7 @@ impl AppModel {
                     self.push_diagnostic(Diagnostic::warning(
                         "Correo Broker connection is managed automatically.",
                     ));
+                    self.bump_revision();
                     return;
                 }
                 self.select_connection_workbench(id);
@@ -403,6 +415,7 @@ impl AppModel {
         if dirty_active_workbench {
             self.mark_active_workbench_dirty();
         }
+        self.bump_revision();
     }
 
     pub fn apply_event(&mut self, event: AppEvent) {
@@ -498,6 +511,7 @@ impl AppModel {
             AppEvent::MigrationRecovery(event) => self.apply_migration_recovery_event(event),
             AppEvent::PluginWorkflow(event) => self.apply_plugin_workflow_event(event),
         }
+        self.bump_revision();
     }
 
     fn publish_from_snapshot(&mut self) {

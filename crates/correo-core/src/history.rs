@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
@@ -6,6 +7,8 @@ use correo_storage::current::{HistoryStore, Message};
 use thiserror::Error;
 
 use crate::WorkbenchSnapshot;
+
+const WORKBENCH_COALESCE_WINDOW: Duration = Duration::from_millis(20);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HistoryPersistenceCommand {
@@ -70,7 +73,12 @@ impl HistoryPersistenceWorker {
         let store = HistoryStore::new(root.into());
 
         std::thread::spawn(move || {
-            while let Ok(command) = receiver.recv() {
+            let mut deferred = VecDeque::new();
+            loop {
+                let Some(command) = deferred.pop_front().or_else(|| receiver.recv().ok()) else {
+                    break;
+                };
+                let command = coalesce_workbench_replacements(command, &receiver, &mut deferred);
                 let event = apply_history_command(&store, command);
                 let _ = events_sender.send(event);
             }
@@ -91,6 +99,46 @@ impl HistoryPersistenceWorker {
 
     pub fn recv_event_timeout(&self, timeout: Duration) -> Option<HistoryPersistenceEvent> {
         self.events.recv_timeout(timeout).ok()
+    }
+}
+
+fn coalesce_workbench_replacements(
+    command: HistoryPersistenceCommand,
+    receiver: &Receiver<HistoryPersistenceCommand>,
+    deferred: &mut VecDeque<HistoryPersistenceCommand>,
+) -> HistoryPersistenceCommand {
+    let HistoryPersistenceCommand::ReplaceWorkbench {
+        connection_id,
+        mut workbench,
+    } = command
+    else {
+        return command;
+    };
+
+    while let Ok(next) = receiver.recv_timeout(WORKBENCH_COALESCE_WINDOW) {
+        deferred.push_back(next);
+        while let Ok(ready) = receiver.try_recv() {
+            deferred.push_back(ready);
+        }
+    }
+
+    let mut retained = VecDeque::new();
+    while let Some(next) = deferred.pop_front() {
+        match next {
+            HistoryPersistenceCommand::ReplaceWorkbench {
+                connection_id: next_connection_id,
+                workbench: next_workbench,
+            } if next_connection_id == connection_id => {
+                workbench = next_workbench;
+            }
+            other => retained.push_back(other),
+        }
+    }
+    *deferred = retained;
+
+    HistoryPersistenceCommand::ReplaceWorkbench {
+        connection_id,
+        workbench,
     }
 }
 
@@ -157,7 +205,7 @@ fn apply_history_command(
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     use correo_storage::current::{HistoryStore, Message, MessageType, PublishStatus, Qos};
 
@@ -233,5 +281,59 @@ mod tests {
             .load_workbench::<crate::WorkbenchSnapshot>("connection-01")
             .unwrap();
         assert_eq!(restored.publish.topic, "alerts/status");
+    }
+
+    #[test]
+    fn worker_coalesces_duplicate_workbench_replacements_for_connection() {
+        let temp = tempfile::tempdir().unwrap();
+        let worker = HistoryPersistenceWorker::start(temp.path());
+
+        for topic in ["first/topic", "second/topic", "latest/topic"] {
+            let mut workbench = crate::WorkbenchSnapshot::default();
+            workbench.publish.topic = topic.to_owned();
+            worker
+                .dispatch(HistoryPersistenceCommand::ReplaceWorkbench {
+                    connection_id: "connection-01".to_owned(),
+                    workbench: Box::new(workbench),
+                })
+                .unwrap();
+        }
+
+        let store = HistoryStore::new(temp.path());
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let mut events = Vec::new();
+        loop {
+            while let Some(event) = worker.try_recv_event() {
+                events.push(event);
+            }
+            let restored = store
+                .load_workbench::<crate::WorkbenchSnapshot>("connection-01")
+                .unwrap();
+            if restored.publish.topic == "latest/topic" {
+                break;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "latest workbench replacement was not persisted"
+            );
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        while let Some(event) = worker.try_recv_event() {
+            events.push(event);
+        }
+
+        let workbench_events = events
+            .iter()
+            .filter(|event| {
+                matches!(
+                    event,
+                    HistoryPersistenceEvent::Changed {
+                        connection_id,
+                        kind: HistoryPersistenceKind::Workbench,
+                    } if connection_id == "connection-01"
+                )
+            })
+            .count();
+        assert_eq!(workbench_events, 1);
     }
 }

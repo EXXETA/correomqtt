@@ -23,6 +23,48 @@ fn pump_processes_commands_without_awaiting() {
 }
 
 #[test]
+fn pump_reports_changed_when_commands_restore_the_original_snapshot() {
+    let mut runtime = AppRuntime::new();
+    runtime
+        .command_sender()
+        .send(AppCommand::SearchConnections("mqtt".to_owned()))
+        .unwrap();
+    runtime
+        .command_sender()
+        .send(AppCommand::SearchConnections(String::new()))
+        .unwrap();
+
+    let report = runtime.pump();
+
+    assert_eq!(report.commands_processed, 2);
+    assert!(report.snapshot_changed);
+    assert!(runtime.snapshot().connection_filter.is_empty());
+}
+
+#[test]
+fn pump_reports_changed_for_built_in_broker_settings_warning() {
+    let mut runtime = AppRuntime::new();
+    runtime
+        .command_sender()
+        .send(AppCommand::OpenConnectionSettings(
+            crate::built_in_broker_connection_id(),
+        ))
+        .unwrap();
+
+    let report = runtime.pump();
+
+    assert_eq!(report.commands_processed, 1);
+    assert!(report.snapshot_changed);
+    assert!(runtime
+        .snapshot()
+        .diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic
+            .message
+            .contains("Correo Broker connection is managed automatically.")));
+}
+
+#[test]
 fn pump_redacts_service_diagnostics() {
     let mut runtime = AppRuntime::new();
     runtime

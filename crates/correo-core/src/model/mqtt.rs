@@ -391,10 +391,13 @@ impl AppModel {
             diagnostics: Vec::new(),
             formatted_detail: None,
         };
+        let message_id = row.id;
         {
             let workbench = self.workbench_for_connection_mut(connection_id);
             workbench.messages.insert(0, row);
-            workbench.selected_message_id = workbench.messages.first().map(|message| message.id);
+            if workbench.selected_message_id.is_none() {
+                workbench.selected_message_id = Some(message_id);
+            }
         }
         self.increment_matching_subscriptions(connection_id, &topic);
         self.update_recent_message_count(connection_id);

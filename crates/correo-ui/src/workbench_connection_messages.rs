@@ -12,9 +12,7 @@ use crate::{
         tile_scroll_bar_rect_with_height, tile_table_interactive_fill, tile_table_selected_fill,
         with_icon_button_padding,
     },
-    workbench_connection_messages_filters::{
-        message_visible_for_subscriptions, row_matches, topic_matches_filter,
-    },
+    workbench_connection_messages_filters::{message_visible_for_subscriptions, row_matches},
     workbench_connection_messages_text::{
         formatted_size, middle_ellipsis, right_aligned_text, text_width, truncated_text,
     },
@@ -237,13 +235,7 @@ fn outgoing_row<'a>(
         plugin_diagnostic: row.diagnostics.iter().find(|diagnostic| {
             diagnostic.plugin_id.is_some() && diagnostic_is_attention(diagnostic)
         }),
-        validation_status: validation_status_for_row(
-            snapshot,
-            &row.topic,
-            &row.payload,
-            MessageOrigin::Outgoing,
-            &row.diagnostics,
-        ),
+        validation_status: validation_status_for_row(&row.diagnostics),
         byte_size: row.byte_size,
         selected: snapshot.workbench.publish.selected_history_id == Some(row.id),
     }
@@ -262,112 +254,26 @@ fn incoming_row<'a>(snapshot: &AppSnapshot, message: &'a MessageRow) -> Connecti
         retained: message.retained,
         payload_preview: &message.payload_preview,
         plugin_diagnostic,
-        validation_status: validation_status_for_row(
-            snapshot,
-            &message.topic,
-            &message.payload,
-            MessageOrigin::Incoming,
-            &message.diagnostics,
-        ),
+        validation_status: validation_status_for_row(&message.diagnostics),
         byte_size: message.byte_size,
         selected: snapshot.workbench.selected_message_id == Some(message.id),
     }
 }
 
 fn validation_status_for_row(
-    snapshot: &AppSnapshot,
-    topic: &str,
-    payload: &[u8],
-    origin: MessageOrigin,
     diagnostics: &[correo_core::MessageDiagnosticRow],
 ) -> Option<ValidationStatus> {
+    let mut saw_validator_diagnostic = false;
     for diagnostic in diagnostics
         .iter()
         .filter(|diagnostic| diagnostic.hook == Some(correo_core::PluginHookKind::Validator))
     {
+        saw_validator_diagnostic = true;
         if diagnostic.severity == correo_core::PluginDiagnosticSeverity::Error {
             return Some(ValidationStatus::Invalid);
         }
     }
-    let mut matched = false;
-    for workflow in snapshot
-        .connection_settings
-        .plugin_workflows
-        .iter()
-        .filter(|workflow| {
-            workflow.enabled
-                && workflow.kind == correo_core::ConnectionPluginWorkflowKind::Validator
-                && workflow_direction_matches(workflow.direction, origin)
-                && topic_matches_filter(topic, &workflow.topic_filter)
-        })
-    {
-        matched = true;
-        if !workflow_validates(workflow, payload) {
-            return Some(ValidationStatus::Invalid);
-        }
-    }
-    matched.then_some(ValidationStatus::Validated)
-}
-
-fn workflow_validates(workflow: &correo_core::ConnectionPluginWorkflow, payload: &[u8]) -> bool {
-    match workflow.plugin_id.as_str() {
-        "org.correomqtt.plugins.contains-string-validator" => {
-            contains_string_validator_validates(&workflow.config, payload)
-        }
-        "org.correomqtt.plugins.xml-xsd-validator" => {
-            let payload = String::from_utf8_lossy(payload);
-            let xsd_path = workflow
-                .config
-                .get("xsd_path")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or_default();
-            payload.trim_start().starts_with('<') && !xsd_path.trim().is_empty()
-        }
-        _ => true,
-    }
-}
-
-fn contains_string_validator_validates(config: &serde_json::Value, payload: &[u8]) -> bool {
-    let payload = String::from_utf8_lossy(payload);
-    let rules = config
-        .get("rules")
-        .and_then(serde_json::Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    rules.is_empty()
-        || rules.iter().any(|rule| {
-            let Some(needle) = rule.get("text").and_then(serde_json::Value::as_str) else {
-                return false;
-            };
-            if rule
-                .get("regex")
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false)
-            {
-                regex::Regex::new(needle)
-                    .map(|regex| regex.is_match(&payload))
-                    .unwrap_or(false)
-            } else {
-                payload.contains(needle)
-            }
-        })
-}
-
-fn workflow_direction_matches(
-    direction: correo_core::ConnectionPluginDirection,
-    origin: MessageOrigin,
-) -> bool {
-    direction == correo_core::ConnectionPluginDirection::Both
-        || matches!(
-            (direction, origin),
-            (
-                correo_core::ConnectionPluginDirection::Outgoing,
-                MessageOrigin::Outgoing
-            ) | (
-                correo_core::ConnectionPluginDirection::Incoming,
-                MessageOrigin::Incoming
-            )
-        )
+    saw_validator_diagnostic.then_some(ValidationStatus::Validated)
 }
 
 fn diagnostic_is_attention(diagnostic: &correo_core::MessageDiagnosticRow) -> bool {
@@ -905,5 +811,26 @@ fn auto_scroll_id(origin: MessageOrigin) -> Id {
     match origin {
         MessageOrigin::Outgoing => Id::new("outgoing-messages-auto-scroll"),
         MessageOrigin::Incoming => Id::new("incoming-messages-auto-scroll"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn xml_validator_status_comes_from_diagnostics_not_workflow_config() {
+        assert_eq!(validation_status_for_row(&[]), None);
+
+        let diagnostics = vec![correo_core::MessageDiagnosticRow {
+            severity: correo_core::PluginDiagnosticSeverity::Info,
+            hook: Some(correo_core::PluginHookKind::Validator),
+            plugin_id: Some("org.correomqtt.plugins.xml-xsd-validator".to_owned()),
+            message: "XML payload validated".to_owned(),
+        }];
+        assert_eq!(
+            validation_status_for_row(&diagnostics),
+            Some(ValidationStatus::Validated)
+        );
     }
 }

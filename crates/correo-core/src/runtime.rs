@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use crate::{
     AppCommand, AppCommandSender, AppEvent, AppEventSender, AppModel, AppSnapshot,
-    BuiltInBrokerPersistenceSnapshot, BuiltInBrokerWorker, Diagnostic, HistoryPersistenceEvent,
-    HistoryPersistenceKind, HistoryPersistenceWorker, MigrationPersistenceCommand,
-    MigrationPersistenceWorker, MqttCommandSender, MqttService, NoopPluginHookExecutor,
-    PluginHookExecutor, PluginInstaller, ScriptingWorker, SettingsPersistenceCommand,
-    SettingsPersistenceEvent, SettingsPersistenceWorker, StartupState,
+    BuiltInBrokerPersistenceSnapshot, BuiltInBrokerSnapshot, BuiltInBrokerWorker, Diagnostic,
+    HistoryPersistenceEvent, HistoryPersistenceKind, HistoryPersistenceWorker,
+    MigrationPersistenceCommand, MigrationPersistenceWorker, MqttCommandSender, MqttService,
+    NoopPluginHookExecutor, PluginHookExecutor, PluginInstaller, ScriptingWorker,
+    SettingsPersistenceCommand, SettingsPersistenceEvent, SettingsPersistenceWorker, StartupState,
 };
 
 mod plugin_helpers;
@@ -119,7 +119,7 @@ impl AppRuntime {
     }
 
     pub fn pump(&mut self) -> PumpReport {
-        let before = self.model.snapshot().clone();
+        let revision_before = self.model.revision();
         let mut report = PumpReport::default();
 
         while let Some(event) = self.try_recv_mqtt_event() {
@@ -167,7 +167,11 @@ impl AppRuntime {
         }
 
         while let Ok(command) = self.command_receiver.try_recv() {
-            let command_before = self.model.snapshot().clone();
+            let built_in_broker_before = self
+                .should_persist_built_in_broker_for_command(&command)
+                .then(|| self.model.snapshot().built_in_broker.clone());
+            let scripting_before = command_needs_scripting_before_snapshot(&command)
+                .then(|| self.model.snapshot().clone());
             let deleted_connection_id = if matches!(command, AppCommand::ConfirmDeleteConnection) {
                 self.model
                     .snapshot()
@@ -226,15 +230,17 @@ impl AppRuntime {
             if matches!(command, AppCommand::SaveConnectionPlugins) {
                 self.dispatch_connection_plugin_workflows_save();
             }
-            if self.should_persist_built_in_broker_for_command(&command, &command_before) {
+            if self.should_persist_built_in_broker_change(built_in_broker_before.as_ref()) {
                 self.dispatch_built_in_broker_save();
             }
-            self.dispatch_scripting_command(&command, &command_before);
+            if let Some(scripting_before) = scripting_before.as_ref() {
+                self.dispatch_scripting_command(&command, scripting_before);
+            }
             self.dispatch_dirty_workbenches();
             report.commands_processed += 1;
         }
 
-        report.snapshot_changed = before != *self.model.snapshot();
+        report.snapshot_changed = revision_before != self.model.revision();
         report.shutdown_requested = self.shutdown_requested;
         report
     }
@@ -496,18 +502,21 @@ impl AppRuntime {
         }
     }
 
-    fn should_persist_built_in_broker_for_command(
-        &self,
-        command: &AppCommand,
-        before: &AppSnapshot,
-    ) -> bool {
+    fn should_persist_built_in_broker_for_command(&self, command: &AppCommand) -> bool {
         matches!(
             command,
             AppCommand::UpdateBuiltInBrokerPort(_)
                 | AppCommand::SetBuiltInBrokerCredentialsEnabled(_)
                 | AppCommand::UpdateBuiltInBrokerUsername(_)
                 | AppCommand::UpdateBuiltInBrokerPassword(_)
-        ) && before.built_in_broker != self.model.snapshot().built_in_broker
+        )
+    }
+
+    fn should_persist_built_in_broker_change(
+        &self,
+        before: Option<&BuiltInBrokerSnapshot>,
+    ) -> bool {
+        before.is_some_and(|before| before != &self.model.snapshot().built_in_broker)
     }
 
     fn dispatch_built_in_broker_save(&self) {
@@ -752,6 +761,19 @@ impl PluginFileCommandResult {
             installed_path: None,
         }
     }
+}
+
+fn command_needs_scripting_before_snapshot(command: &AppCommand) -> bool {
+    matches!(
+        command,
+        AppCommand::CreateScript
+            | AppCommand::SaveScript
+            | AppCommand::ConfirmRenameScript
+            | AppCommand::ConfirmDeleteScript
+            | AppCommand::RunScript
+            | AppCommand::CancelScript
+            | AppCommand::ClearFinishedScriptExecutions
+    )
 }
 
 fn history_kind_label(kind: HistoryPersistenceKind) -> &'static str {

@@ -177,6 +177,32 @@ fn incoming_messages_are_capped_and_subscription_counts_follow_retention() {
 }
 
 #[test]
+fn incoming_message_preserves_existing_selection() {
+    let mut model = AppModel::default();
+    let connection_id = user_connection_ids(&model)[0];
+    model.apply_command(AppCommand::SelectMessage(2));
+
+    model.apply_event(AppEvent::Mqtt(MqttEvent::IncomingMessage(
+        IncomingMessage {
+            connection_id,
+            topic: TopicName::new("telemetry/selection").unwrap(),
+            payload: b"newest payload".to_vec(),
+            qos: Qos::AtLeastOnce,
+            retain: false,
+            duplicate: false,
+            packet_id: None,
+        },
+    )));
+
+    let workbench = &model.snapshot().workbench;
+    assert_eq!(
+        workbench.messages.first().map(|message| message.id),
+        Some(5)
+    );
+    assert_eq!(workbench.selected_message_id, Some(2));
+}
+
+#[test]
 fn publish_history_is_capped_to_latest_rows() {
     let mut model = AppModel::default();
     let connection_id = user_connection_ids(&model)[0];
