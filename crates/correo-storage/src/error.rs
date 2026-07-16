@@ -99,6 +99,8 @@ pub enum StorageError {
         reference: String,
         message: String,
     },
+    #[error("refusing to persist a plaintext built-in broker password")]
+    PlaintextBuiltInBrokerPassword,
 }
 
 pub type Result<T> = std::result::Result<T, StorageError>;

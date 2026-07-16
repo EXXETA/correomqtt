@@ -6,7 +6,11 @@ use std::process::Command;
 
 use zip::{write::SimpleFileOptions, DateTime};
 
-use crate::{cargo_dynamic, XtaskError};
+use crate::{
+    cargo_dynamic,
+    file_io::{copy_file, write_file},
+    XtaskError,
+};
 
 pub(crate) mod checksums;
 mod guard;
@@ -49,7 +53,6 @@ fn package(command_base: &str, args: Vec<String>) -> Result<Option<PackageOutput
 
     if config.build {
         build_app(config.target.as_deref())?;
-        crate::plugin_repository::build_wasm_plugins()?;
     }
 
     let binary = release_binary_path(config.target.as_deref(), platform);
@@ -69,7 +72,16 @@ fn package(command_base: &str, args: Vec<String>) -> Result<Option<PackageOutput
         Platform::Macos => stage_macos(&binary, &stage_dir)?,
         Platform::Windows => stage_windows(&binary, &stage_dir)?,
     }
-    plugins::stage(platform, &stage_dir)?;
+    plugins::stage(
+        platform,
+        &stage_dir,
+        binary.parent().ok_or_else(|| {
+            XtaskError::MissingArtifact(format!(
+                "package binary has no parent: {}",
+                binary.display()
+            ))
+        })?,
+    )?;
 
     fs::create_dir_all(&plan.out_dir)?;
     let artifact = plan.artifact_path();
@@ -82,17 +94,35 @@ fn package(command_base: &str, args: Vec<String>) -> Result<Option<PackageOutput
     println!("package: {}", artifact.display());
     println!("sha256:  {checksum}");
     if platform == Platform::Macos {
-        if let Some(dmg) = create_dmg(&stage_dir, &plan)? {
+        let dmg = create_dmg(&stage_dir, &plan)?;
+        if config.require_installers && dmg.is_none() {
+            return Err(XtaskError::MissingArtifact(
+                "required macOS DMG installer".to_owned(),
+            ));
+        }
+        if let Some(dmg) = dmg {
             record_extra_artifact("dmg", &dmg, &plan)?;
         }
     }
     if platform == Platform::Linux {
-        for installer in create_linux_installers(&stage_dir, &plan)? {
+        let installers = create_linux_installers(&stage_dir, &plan)?;
+        if config.require_installers && installers.len() != 2 {
+            return Err(XtaskError::MissingArtifact(
+                "required Linux DEB and RPM installers".to_owned(),
+            ));
+        }
+        for installer in installers {
             record_extra_artifact("installer", &installer, &plan)?;
         }
     }
     if platform == Platform::Windows {
-        if let Some(msi) = create_msi(&stage_dir, &plan)? {
+        let msi = create_msi(&stage_dir, &plan)?;
+        if config.require_installers && msi.is_none() {
+            return Err(XtaskError::MissingArtifact(
+                "required Windows MSI installer".to_owned(),
+            ));
+        }
+        if let Some(msi) = msi {
             record_extra_artifact("msi", &msi, &plan)?;
         }
     }
@@ -204,37 +234,6 @@ fn host_triple() -> Result<String, XtaskError> {
     ))
 }
 
-fn copy_file(source: &Path, destination: &Path) -> Result<(), XtaskError> {
-    if let Some(parent) = destination.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::copy(source, destination)?;
-    Ok(())
-}
-
-fn write_file(path: &Path, content: &[u8]) -> Result<(), XtaskError> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let temporary = temporary_path(path);
-    fs::write(&temporary, content)?;
-    replace_file(&temporary, path)?;
-    Ok(())
-}
-
-fn temporary_path(path: &Path) -> PathBuf {
-    let suffix = format!("tmp.{}", std::process::id());
-    path.with_extension(suffix)
-}
-
-fn replace_file(source: &Path, destination: &Path) -> Result<(), XtaskError> {
-    if cfg!(windows) && destination.exists() {
-        fs::remove_file(destination)?;
-    }
-    fs::rename(source, destination)?;
-    Ok(())
-}
-
 fn zip_dir(source_dir: &Path, destination: &Path) -> Result<(), XtaskError> {
     let file = File::create(destination)?;
     let mut writer = zip::ZipWriter::new(BufWriter::new(file));
@@ -310,7 +309,9 @@ fn zip_path(path: &Path) -> String {
 }
 
 fn print_package_help() {
-    println!("Usage: cargo xtask package [--target <triple>] [--out-dir <dir>] [--no-build]");
+    println!(
+        "Usage: cargo xtask package [--target <triple>] [--out-dir <dir>] [--no-build] [--require-installers]"
+    );
     println!();
     println!("Builds correo-app release binary and writes an unsigned beta archive.");
     println!("Use `cargo xtask package-smoke` to build and validate artifact guardrails.");
@@ -357,6 +358,7 @@ struct PackageConfig {
     target: Option<String>,
     out_dir: PathBuf,
     build: bool,
+    require_installers: bool,
     show_help: bool,
 }
 
@@ -365,6 +367,7 @@ impl PackageConfig {
         let mut target = None;
         let mut out_dir = PathBuf::from("dist/beta");
         let mut build = true;
+        let mut require_installers = false;
         let mut show_help = false;
 
         let mut iter = args.into_iter();
@@ -383,6 +386,7 @@ impl PackageConfig {
                     out_dir = PathBuf::from(value);
                 }
                 "--no-build" => build = false,
+                "--require-installers" => require_installers = true,
                 "-h" | "--help" => show_help = true,
                 unknown => {
                     return Err(XtaskError::InvalidArguments(format!(
@@ -396,6 +400,7 @@ impl PackageConfig {
             target,
             out_dir,
             build,
+            require_installers,
             show_help,
         })
     }

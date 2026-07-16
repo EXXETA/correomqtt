@@ -40,7 +40,7 @@ fn bundled_repository_definition_lists_installable_replacements() {
         assert_eq!(plugin.manifest.provider, "CorreoMQTT");
         assert_eq!(
             plugin.manifest.compatible_correomqtt.to_string(),
-            ">=0.1.0, <1.0.0"
+            ">=1.0.0, <2.0.0"
         );
         assert!(matches!(
             &plugin.install_source,
@@ -64,7 +64,7 @@ version = "0.1.0"
 description = "Example local package."
 provider = "Workspace"
 license = "GPL-3.0-or-later"
-compatible_correomqtt = ">=0.1.0, <1.0.0"
+compatible_correomqtt = ">=1.0.0, <2.0.0"
 
 [capabilities]
 hooks = ["detail_formatter"]

@@ -1,4 +1,7 @@
-use crate::current::{AppConfig, BuiltInBrokerConfig, ConfigStore, HistoryStore, ScriptStore};
+use crate::current::{
+    atomic_file::write_file_atomic, AppConfig, BuiltInBrokerConfig, ConfigStore, HistoryStore,
+    ScriptStore,
+};
 use crate::{Result, StorageError};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -402,22 +405,7 @@ fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<()> {
         path: path.to_path_buf(),
         source,
     })?;
-    write_file_atomic(path, json.as_bytes())
-}
-
-fn write_file_atomic(path: &Path, content: &[u8]) -> Result<()> {
-    let temporary = path.with_extension(format!("tmp.{}", std::process::id()));
-    fs::write(&temporary, content).map_err(|source| StorageError::Write {
-        path: temporary.clone(),
-        source,
-    })?;
-    if cfg!(windows) && path.exists() {
-        fs::remove_file(path).map_err(|source| StorageError::Write {
-            path: path.to_path_buf(),
-            source,
-        })?;
-    }
-    fs::rename(&temporary, path).map_err(|source| StorageError::Write {
+    write_file_atomic(path, json.as_bytes()).map_err(|source| StorageError::Write {
         path: path.to_path_buf(),
         source,
     })

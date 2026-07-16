@@ -5,12 +5,12 @@ use std::path::Path;
 
 use sha2::{Digest, Sha256};
 
-use crate::XtaskError;
+use crate::{file_io::write_file, XtaskError};
 
 pub(crate) fn write_sidecar(artifact: &Path, out_dir: &Path) -> Result<String, XtaskError> {
     let checksum = sha256_file(artifact)?;
     let file_name = artifact_file_name(artifact)?;
-    write_file_atomic(
+    write_file(
         &out_dir.join(format!("{file_name}.sha256")),
         format!("{checksum}  {file_name}\n").as_bytes(),
     )?;
@@ -47,27 +47,7 @@ pub(crate) fn write_sha256sums(out_dir: &Path) -> Result<(), XtaskError> {
     for (file_name, checksum) in checksum_entries {
         writeln!(&mut summary, "{checksum}  {file_name}").expect("writing to a String cannot fail");
     }
-    write_file_atomic(&out_dir.join("SHA256SUMS"), summary.as_bytes())?;
-    Ok(())
-}
-
-fn write_file_atomic(path: &Path, content: &[u8]) -> Result<(), XtaskError> {
-    let temporary = temporary_path(path);
-    fs::write(&temporary, content)?;
-    replace_file(&temporary, path)?;
-    Ok(())
-}
-
-fn temporary_path(path: &Path) -> std::path::PathBuf {
-    let suffix = format!("tmp.{}", std::process::id());
-    path.with_extension(suffix)
-}
-
-fn replace_file(source: &Path, destination: &Path) -> Result<(), XtaskError> {
-    if cfg!(windows) && destination.exists() {
-        fs::remove_file(destination)?;
-    }
-    fs::rename(source, destination)?;
+    write_file(&out_dir.join("SHA256SUMS"), summary.as_bytes())?;
     Ok(())
 }
 

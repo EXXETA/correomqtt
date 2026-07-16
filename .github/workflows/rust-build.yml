@@ -2,13 +2,17 @@ name: Rust Desktop Build
 
 on:
   push:
-    branches: [ "**" ]
+    branches: [ rust, "release/**" ]
     tags: [ "v*" ]
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: rust-build-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   CARGO_INCREMENTAL: "0"
@@ -25,10 +29,10 @@ jobs:
       # exercised, not just Linux. fmt/clippy run once on Linux only.
       fail-fast: false
       matrix:
-        os: [ ubuntu-26.04, macos-26, windows-2025 ]
+        os: [ ubuntu-24.04, macos-26, windows-2025 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Show Rust toolchain
         run: |
@@ -53,7 +57,7 @@ jobs:
             pkg-config
 
       - name: Cache cargo
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cargo/git
@@ -62,7 +66,6 @@ jobs:
           key: cargo-${{ runner.os }}-${{ runner.arch }}-check-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             cargo-${{ runner.os }}-${{ runner.arch }}-check-
-            cargo-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Verify lockfile
         run: cargo fetch --locked
@@ -78,6 +81,53 @@ jobs:
       - name: Test workspace
         run: cargo test --workspace --locked
 
+  keyring-integration:
+    name: Native keyring integration (${{ matrix.os }})
+    needs: check
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-26, windows-2025]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Cache cargo
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            target
+          key: cargo-${{ runner.os }}-${{ runner.arch }}-keyring-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ runner.arch }}-keyring-
+
+      - name: Install Linux Secret Service
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            dbus-x11 \
+            gnome-keyring \
+            libdbus-1-dev \
+            pkg-config
+
+      - name: Run Linux keyring roundtrip
+        if: runner.os == 'Linux'
+        run: |
+          dbus-run-session -- bash -c '
+            eval "$(printf "" | gnome-keyring-daemon --unlock)"
+            cargo test -p correo-storage --test real_keychain --locked \
+              real_keyring_persists_across_store_instances -- --ignored
+          '
+
+      - name: Run native keyring roundtrip
+        if: runner.os != 'Linux'
+        run: cargo test -p correo-storage --test real_keychain --locked real_keyring_persists_across_store_instances -- --ignored
+
   mqtt-integration:
     name: MQTT broker integration tests
     needs: check
@@ -85,15 +135,40 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Generate TLS broker certificates
+        run: |
+          tls_dir="$RUNNER_TEMP/correomqtt-tls"
+          mkdir -p "$tls_dir"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -sha256 \
+            -subj "/CN=CorreoMQTT Test CA" \
+            -keyout "$tls_dir/ca.key" -out "$tls_dir/ca.pem"
+          openssl req -newkey rsa:2048 -nodes \
+            -subj "/CN=localhost" \
+            -keyout "$tls_dir/server.key" -out "$tls_dir/server.csr"
+          printf 'subjectAltName=DNS:localhost\n' > "$tls_dir/server.ext"
+          openssl x509 -req -days 1 -sha256 \
+            -in "$tls_dir/server.csr" \
+            -CA "$tls_dir/ca.pem" -CAkey "$tls_dir/ca.key" -CAcreateserial \
+            -extfile "$tls_dir/server.ext" \
+            -out "$tls_dir/server.pem"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -sha256 \
+            -subj "/CN=CorreoMQTT Untrusted Test CA" \
+            -keyout "$tls_dir/untrusted-ca.key" -out "$tls_dir/untrusted-ca.pem"
+          chmod 644 "$tls_dir/server.key"
+          echo "CORREO_MQTT_TLS_CA_PEM=$tls_dir/ca.pem" >> "$GITHUB_ENV"
+          echo "CORREO_MQTT_TLS_UNTRUSTED_CA_PEM=$tls_dir/untrusted-ca.pem" >> "$GITHUB_ENV"
 
       - name: Start Mosquitto broker
         run: |
-          docker run -d --name correo-mqtt-ci -p 1883:1883 \
+          docker run -d --name correo-mqtt-ci -p 1883:1883 -p 8883:8883 \
             -v "$PWD/crates/correo-mqtt/tests/mosquitto.ci.conf:/mosquitto/config/mosquitto.conf:ro" \
-            eclipse-mosquitto:2
+            -v "$RUNNER_TEMP/correomqtt-tls:/mosquitto/certs:ro" \
+            eclipse-mosquitto@sha256:6f8d8a947c506f8a2290ec65cd4bd2bc7cb4d43fb5f6271f861cb013e2ef9797
           for _ in $(seq 1 30); do
-            if (exec 3<>/dev/tcp/127.0.0.1/1883) 2>/dev/null; then
+            if (exec 3<>/dev/tcp/127.0.0.1/1883) 2>/dev/null \
+              && (exec 4<>/dev/tcp/127.0.0.1/8883) 2>/dev/null; then
               echo "broker ready"
               exit 0
             fi
@@ -104,7 +179,7 @@ jobs:
           exit 1
 
       - name: Cache cargo
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cargo/git
@@ -113,16 +188,14 @@ jobs:
           key: cargo-${{ runner.os }}-${{ runner.arch }}-mqtt-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             cargo-${{ runner.os }}-${{ runner.arch }}-mqtt-
-            cargo-${{ runner.os }}-${{ runner.arch }}-
 
-      # Plain broker roundtrip (connect/disconnect + publish→subscribe→receive
-      # for QoS 0/1/2 + retained, MQTT 3.1.1 and 5.0). The TLS variants stay
-      # skipped: they need CORREO_MQTT_TLS_CA_PEM + a TLS listener (follow-up).
       - name: Run broker roundtrip tests
         env:
           CORREO_MQTT_INTEGRATION_BROKER: "1"
           CORREO_MQTT_BROKER_HOST: 127.0.0.1
           CORREO_MQTT_BROKER_PORT: "1883"
+          CORREO_MQTT_TLS_HOST: localhost
+          CORREO_MQTT_TLS_BROKER_PORT: "8883"
         run: cargo test -p correo-mqtt --test local_broker --locked -- --ignored
 
       - name: Stop Mosquitto broker
@@ -152,7 +225,7 @@ jobs:
             artifact: correomqtt-macos-aarch64-unsigned-beta
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Install Linux desktop build dependencies
         if: runner.os == 'Linux'
@@ -189,7 +262,7 @@ jobs:
           echo "commit=${{ github.sha }}"
           echo "runner=${{ matrix.runner }}"
           echo "target=${{ matrix.target }}"
-          echo "command=cargo xtask package-smoke --target ${{ matrix.target }} --out-dir dist/beta/${{ matrix.target }}"
+          echo "command=cargo xtask package-smoke --target ${{ matrix.target }} --out-dir dist/beta/${{ matrix.target }} --require-installers"
           rustup show active-toolchain
           rustc -vV
           cargo --version
@@ -197,8 +270,11 @@ jobs:
       - name: Add Rust target
         run: rustup target add ${{ matrix.target }}
 
+      - name: Add validated WASM target
+        run: rustup target add wasm32-unknown-unknown
+
       - name: Cache cargo
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cargo/git
@@ -207,20 +283,18 @@ jobs:
           key: cargo-${{ runner.os }}-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             cargo-${{ runner.os }}-${{ runner.arch }}-${{ matrix.target }}-
-            cargo-${{ runner.os }}-${{ runner.arch }}-check-
-            cargo-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Verify target lockfile
         run: cargo fetch --locked --target ${{ matrix.target }}
 
       - name: Build and verify unsigned beta package
-        run: cargo xtask package-smoke --target ${{ matrix.target }} --out-dir dist/beta/${{ matrix.target }}
+        run: cargo xtask package-smoke --target ${{ matrix.target }} --out-dir dist/beta/${{ matrix.target }} --require-installers
 
       - name: List package outputs
         run: ls dist/beta/${{ matrix.target }}
 
       - name: Upload unsigned beta package
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ matrix.artifact }}
           if-no-files-found: error
@@ -240,19 +314,32 @@ jobs:
 
   plugin-release:
     name: Plugin release artifacts
-    needs: check
+    needs: [check, package, keyring-integration, mqtt-integration]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+
+    env:
+      RELEASE_ASSET_BASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Verify tag matches package version
+        shell: bash
+        run: |
+          package_version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "correo-app") | .version')"
+          test "$GITHUB_REF_NAME" = "v$package_version"
 
       - name: Show plugin release provenance
         run: |
           echo "commit=${{ github.sha }}"
           echo "tag=${{ github.ref_name }}"
-          echo "command=cargo xtask plugin-release --out-dir dist/plugins --asset-base-url https://github.com/EXXETA/correomqtt/releases/download/${{ github.ref_name }}"
+          echo "command=cargo xtask plugin-release --out-dir dist/plugins --asset-base-url $RELEASE_ASSET_BASE_URL"
           rustup show active-toolchain
           rustc -vV
           cargo --version
@@ -261,7 +348,7 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
 
       - name: Cache cargo
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cargo/git
@@ -275,17 +362,58 @@ jobs:
         run: cargo fetch --locked --target wasm32-unknown-unknown
 
       - name: Build plugin release artifacts
-        run: cargo xtask plugin-release --out-dir dist/plugins --asset-base-url https://github.com/EXXETA/correomqtt/releases/download/${{ github.ref_name }}
+        run: cargo xtask plugin-release --out-dir dist/plugins --asset-base-url "$RELEASE_ASSET_BASE_URL"
 
       - name: List plugin outputs
         run: ls dist/plugins
 
-      - name: Upload plugin release artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: correomqtt-plugin-release-artifacts
-          if-no-files-found: error
-          retention-days: 14
-          path: |
-            dist/plugins/*.zip
-            dist/plugins/default-repo.json
+      - name: Download verified package artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "$GITHUB_RUN_ID" --dir dist/packages
+
+      - name: Create draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            if [ "$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq '.isDraft')" != true ]; then
+              echo "refusing to replace assets on published release $GITHUB_REF_NAME" >&2
+              exit 1
+            fi
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --draft --generate-notes
+          fi
+
+      - name: Remove stale draft assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' |
+            while IFS= read -r asset; do
+              gh release delete-asset "$GITHUB_REF_NAME" "$asset" --yes
+            done
+
+      - name: Upload complete release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" \
+            dist/plugins/*.zip \
+            dist/plugins/default-repo.json \
+            dist/packages/*/*.{zip,zip.sha256,dmg,dmg.sha256,deb,deb.sha256,rpm,rpm.sha256,msi,msi.sha256}
+
+      - name: Smoke published plugin release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          release_dir="$(mktemp -d)"
+          profile_dir="$(mktemp -d)"
+          trap 'rm -rf "$release_dir" "$profile_dir"' EXIT
+          gh release download "$GITHUB_REF_NAME" --dir "$release_dir" --pattern '*.zip' --pattern default-repo.json
+          cargo xtask plugin-release-smoke --download-dir "$release_dir" --profile-dir "$profile_dir" --asset-base-url "$RELEASE_ASSET_BASE_URL"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --draft=false

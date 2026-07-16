@@ -4,6 +4,7 @@ correomqtt-logfile_IS_UNDEFINED*
 
 target/
 dist/
+graphify-out/
 
 hs_err*
 

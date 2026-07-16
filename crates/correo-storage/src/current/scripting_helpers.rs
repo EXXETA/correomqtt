@@ -1,6 +1,7 @@
 use crate::{Result, StorageError};
 use std::ffi::OsStr;
 use std::fs;
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 
 pub(super) fn collect_script_paths(root: &Path, dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
@@ -101,10 +102,30 @@ pub(super) fn remove_file_if_exists(path: PathBuf) -> Result<()> {
 }
 
 pub(super) fn write_text(path: &Path, text: &str) -> Result<()> {
-    fs::write(path, text).map_err(|source| StorageError::Write {
+    let mut file = fs::File::create(path).map_err(|source| StorageError::Write {
         path: path.to_path_buf(),
         source,
-    })
+    })?;
+    file.write_all(text.as_bytes())
+        .and_then(|()| file.sync_all())
+        .map_err(|source| StorageError::Write {
+            path: path.to_path_buf(),
+            source,
+        })
+}
+
+pub(super) fn sync_parent_dir(path: &Path) -> Result<()> {
+    #[cfg(not(windows))]
+    {
+        let parent = path.parent().unwrap_or(path);
+        fs::File::open(parent)
+            .and_then(|directory| directory.sync_all())
+            .map_err(|source| StorageError::Write {
+                path: parent.to_path_buf(),
+                source,
+            })?;
+    }
+    Ok(())
 }
 
 pub(super) fn display_path(path: &Path) -> String {

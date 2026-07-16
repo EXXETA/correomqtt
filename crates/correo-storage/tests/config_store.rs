@@ -147,3 +147,147 @@ fn form_save_preserves_migrated_ui_metadata() {
     assert!(ui.show_publish);
     assert_eq!(ui.main_divider_position, 0.42);
 }
+
+#[test]
+fn legacy_broker_password_is_readable_but_never_serialized_again() {
+    let temp = tempfile::tempdir().unwrap();
+    let store = ConfigStore::new(temp.path());
+    let legacy_password = "legacy-broker-password";
+    std::fs::write(
+        temp.path().join("config.json"),
+        format!(
+            r#"{{"built_in_broker":{{"port":"1883","credentials_enabled":true,"username":"broker","password":"{legacy_password}"}}}}"#
+        ),
+    )
+    .unwrap();
+
+    let config = store.load().unwrap();
+    assert_eq!(config.built_in_broker.password, legacy_password);
+
+    let serialized = serde_json::to_string(&config).unwrap();
+    assert!(
+        !serialized.contains(legacy_password),
+        "a reserialized legacy config must not expose its plaintext password"
+    );
+}
+
+#[test]
+fn direct_broker_save_rejects_a_plaintext_password() {
+    let temp = tempfile::tempdir().unwrap();
+    let store = ConfigStore::new(temp.path());
+    let result = store.save_built_in_broker(BuiltInBrokerConfig {
+        credentials_enabled: true,
+        username: "broker".to_owned(),
+        password: "plaintext-password".to_owned(),
+        ..BuiltInBrokerConfig::default()
+    });
+
+    assert!(matches!(
+        result,
+        Err(correo_storage::StorageError::PlaintextBuiltInBrokerPassword)
+    ));
+}
+
+#[test]
+fn unrelated_save_rejects_an_unmigrated_legacy_broker_password_without_loss() {
+    let temp = tempfile::tempdir().unwrap();
+    let store = ConfigStore::new(temp.path());
+    let legacy_password = "legacy-broker-password";
+    let config_path = temp.path().join("config.json");
+    std::fs::write(
+        &config_path,
+        format!(
+            r#"{{"built_in_broker":{{"port":"1883","credentials_enabled":true,"username":"broker","password":"{legacy_password}"}}}}"#
+        ),
+    )
+    .unwrap();
+
+    let result = store.save_global_settings("Dark", Settings::default());
+
+    assert!(matches!(
+        result,
+        Err(correo_storage::StorageError::PlaintextBuiltInBrokerPassword)
+    ));
+    assert!(std::fs::read_to_string(config_path)
+        .unwrap()
+        .contains(legacy_password));
+}
+
+#[test]
+fn unmanaged_broker_secret_reference_is_regenerated() {
+    use correo_storage::current::{SecretKind, SecretReference};
+
+    let temp = tempfile::tempdir().unwrap();
+    let store = ConfigStore::new(temp.path());
+    let config = AppConfig::default();
+    let mut persisted = serde_json::to_value(&config).unwrap();
+    persisted["built_in_broker"]["password_reference"] = serde_json::to_value(SecretReference {
+        connection_id: "arbitrary-owner".to_owned(),
+        kind: SecretKind::AuthPassword,
+    })
+    .unwrap();
+    std::fs::write(
+        temp.path().join("config.json"),
+        serde_json::to_string(&persisted).unwrap(),
+    )
+    .unwrap();
+
+    let reference = store.built_in_broker_secret_reference(&config).unwrap();
+
+    assert_eq!(reference.kind, SecretKind::Password);
+    assert_ne!(reference.connection_id, "arbitrary-owner");
+    assert!(reference.connection_id.starts_with("builtin-broker-"));
+}
+
+#[test]
+fn colliding_broker_secret_reference_is_regenerated() {
+    use correo_storage::current::{SecretKind, SecretReference};
+
+    let temp = tempfile::tempdir().unwrap();
+    let store = ConfigStore::new(temp.path());
+    let owner = "builtin-broker-00000000000000000000000000000000";
+    let config = AppConfig {
+        connections: vec![connection(owner)],
+        ..AppConfig::default()
+    };
+    let mut persisted = serde_json::to_value(&config).unwrap();
+    persisted["built_in_broker"]["password_reference"] = serde_json::to_value(SecretReference {
+        connection_id: owner.to_owned(),
+        kind: SecretKind::Password,
+    })
+    .unwrap();
+    std::fs::write(
+        temp.path().join("config.json"),
+        serde_json::to_string(&persisted).unwrap(),
+    )
+    .unwrap();
+
+    let reference = store.built_in_broker_secret_reference(&config).unwrap();
+
+    assert_eq!(reference.kind, SecretKind::Password);
+    assert_ne!(reference.connection_id, owner);
+    assert!(reference.connection_id.starts_with("builtin-broker-"));
+}
+
+#[test]
+fn unrelated_save_preserves_a_private_broker_secret_reference() {
+    let temp = tempfile::tempdir().unwrap();
+    let store = ConfigStore::new(temp.path());
+    let config = AppConfig::default();
+    let reference = store.built_in_broker_secret_reference(&config).unwrap();
+    store
+        .save_built_in_broker_with_secret_reference(
+            BuiltInBrokerConfig::default(),
+            reference.clone(),
+        )
+        .unwrap();
+
+    store
+        .save_global_settings("Dark", Settings::default())
+        .unwrap();
+
+    assert_eq!(
+        store.load_built_in_broker_secret_reference().unwrap(),
+        Some(reference)
+    );
+}

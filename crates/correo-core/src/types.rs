@@ -2,6 +2,9 @@ use correo_mqtt::ConnectionId;
 pub use correo_style::{ThemeId, ThemeSelection};
 use serde::{Deserialize, Serialize};
 
+#[path = "types/payload_bytes.rs"]
+mod payload_bytes;
+
 pub type ThemeMode = ThemeSelection;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -370,7 +373,7 @@ pub struct PublishHistoryRow {
     pub timestamp: String,
     pub qos: QosLevel,
     pub retained: bool,
-    #[serde(default)]
+    #[serde(default, with = "payload_bytes")]
     pub payload: Vec<u8>,
     #[serde(default)]
     pub payload_preview: String,
@@ -417,6 +420,7 @@ pub struct MessageRow {
     pub timestamp: String,
     pub qos: QosLevel,
     pub retained: bool,
+    #[serde(with = "payload_bytes")]
     pub payload: Vec<u8>,
     pub payload_preview: String,
     pub byte_size: usize,

@@ -23,7 +23,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 rust-version = "1.89"
 license = "GPL-3.0-or-later"
@@ -32,6 +32,7 @@ repository = "https://github.com/farion/correomqtt-rust"
 [workspace.dependencies]
 aes = "0.8"
 aes-gcm = "0.10"
+atomic-write-file = "0.3"
 async-trait = "0.1"
 base64 = "0.22"
 cbc = { version = "0.1", features = ["alloc"] }

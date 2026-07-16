@@ -119,6 +119,83 @@ fn encrypted_file_store_roundtrip_batching_and_wrong_password() {
 }
 
 #[test]
+fn encrypted_file_store_reads_legacy_kdf_and_writes_versioned_parameters() {
+    use aes_gcm::{aead::Aead, KeyInit};
+    use base64::Engine;
+
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("secrets.enc");
+    let salt = [7u8; 16];
+    let nonce = [9u8; 12];
+    let mut key = [0u8; 32];
+    pbkdf2::pbkdf2_hmac::<sha2::Sha256>(b"correct horse", &salt, 100_000, &mut key);
+    let plaintext = serde_json::to_vec(&BTreeMap::from([(
+        "connection:c1:password".to_owned(),
+        "legacy-secret".to_owned(),
+    )]))
+    .unwrap();
+    let ciphertext = aes_gcm::Aes256Gcm::new_from_slice(&key)
+        .unwrap()
+        .encrypt(aes_gcm::Nonce::from_slice(&nonce), plaintext.as_slice())
+        .unwrap();
+    let engine = base64::engine::general_purpose::STANDARD;
+    std::fs::write(
+        &path,
+        serde_json::json!({
+            "salt": engine.encode(salt),
+            "nonce": engine.encode(nonce),
+            "ciphertext": engine.encode(ciphertext),
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    let store = EncryptedFileSecretStore::new(&path, "correct horse");
+    let password = reference("c1", SecretKind::Password);
+    assert_eq!(
+        store.get(&password).unwrap(),
+        Some(SecretMaterial::new("legacy-secret"))
+    );
+
+    store
+        .put(&password, &SecretMaterial::new("current-secret"))
+        .unwrap();
+    let reopened = EncryptedFileSecretStore::new(&path, "correct horse");
+    assert_eq!(
+        reopened.get(&password).unwrap(),
+        Some(SecretMaterial::new("current-secret"))
+    );
+    let file: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    assert_eq!(file["version"], 2);
+    assert_eq!(file["kdf"]["algorithm"], "pbkdf2-hmac-sha256");
+    assert_eq!(file["kdf"]["iterations"], 600_000);
+}
+
+#[cfg(not(debug_assertions))]
+#[test]
+#[ignore = "release performance check; run explicitly with --release --ignored"]
+fn encrypted_file_store_release_roundtrip_stays_within_runtime_budget() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("secrets.enc");
+    let store = EncryptedFileSecretStore::new(&path, "correct horse");
+    let password = reference("c1", SecretKind::Password);
+    let started = std::time::Instant::now();
+
+    store
+        .put(&password, &SecretMaterial::new("current-secret"))
+        .unwrap();
+    assert_eq!(
+        store.get(&password).unwrap(),
+        Some(SecretMaterial::new("current-secret"))
+    );
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(10),
+        "representative release write/read must remain practical"
+    );
+}
+
+#[test]
 fn encrypted_file_store_rejects_corrupt_nonce_without_panicking() {
     let dir = tempfile::tempdir().expect("tempdir");
     let path = dir.path().join("secrets.enc");

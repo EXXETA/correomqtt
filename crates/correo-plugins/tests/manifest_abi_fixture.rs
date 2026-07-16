@@ -22,7 +22,7 @@ fn parses_plugin_manifest_with_config_schema_metadata() {
     assert_eq!(manifest.version, Version::new(0, 1, 0));
     assert!(manifest
         .compatible_correomqtt
-        .matches(&Version::new(0, 1, 0)));
+        .matches(&Version::new(1, 0, 0)));
     assert!(manifest
         .capabilities
         .grants_hook(HookKind::OutgoingMessageTransform));

@@ -1,6 +1,9 @@
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+
 use std::fmt;
 
+use super::config_root;
 use crate::{Result, StorageError};
 
 pub const KEYRING_SERVICE: &str = "org.correomqtt.CorreoMQTT";
@@ -47,7 +50,7 @@ pub struct ImportedSecret {
     pub value: SecretMaterial,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SecretReference {
     pub connection_id: String,
     pub kind: SecretKind,
@@ -59,7 +62,7 @@ impl SecretReference {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SecretKind {
     Password,
     AuthPassword,
@@ -366,19 +369,6 @@ pub fn default_secret_store() -> Box<dyn SecretStore> {
         )),
         _ => Box::new(OsKeyringSecretStore::default()),
     }
-}
-
-/// App config root (CORREOMQTT_CONFIG_DIR override, then platform dirs).
-/// An empty override is treated as unset.
-pub fn config_root() -> std::path::PathBuf {
-    if let Some(path) = std::env::var_os("CORREOMQTT_CONFIG_DIR") {
-        if !path.is_empty() {
-            return std::path::PathBuf::from(path);
-        }
-    }
-    directories::ProjectDirs::from("org", "CorreoMQTT", "CorreoMQTT")
-        .map(|project_dirs| project_dirs.data_dir().to_path_buf())
-        .unwrap_or_else(|| std::path::PathBuf::from(".correomqtt"))
 }
 
 #[cfg(test)]

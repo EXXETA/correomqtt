@@ -4,7 +4,10 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::{Result, StorageError};
 
-use super::{Message, PublishMessageHistory, PublishTopicHistory, SubscriptionHistory};
+use super::{
+    atomic_file::write_file_atomic, Message, PublishMessageHistory, PublishTopicHistory,
+    SubscriptionHistory,
+};
 
 pub const MAX_HISTORY_ENTRIES: usize = 100;
 
@@ -201,25 +204,8 @@ impl HistoryStore {
             source,
         })?;
         write_file_atomic(&path, text.as_bytes())
+            .map_err(|source| StorageError::Write { path, source })
     }
-}
-
-fn write_file_atomic(path: &Path, content: &[u8]) -> Result<()> {
-    let temporary = path.with_extension(format!("tmp.{}", std::process::id()));
-    std::fs::write(&temporary, content).map_err(|source| StorageError::Write {
-        path: temporary.clone(),
-        source,
-    })?;
-    if cfg!(windows) && path.exists() {
-        std::fs::remove_file(path).map_err(|source| StorageError::Write {
-            path: path.to_path_buf(),
-            source,
-        })?;
-    }
-    std::fs::rename(&temporary, path).map_err(|source| StorageError::Write {
-        path: path.to_path_buf(),
-        source,
-    })
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,6 +1,6 @@
-// Manual verification against the REAL OS keyring (no mock backend).
-// Ignored by default so CI and normal `cargo test` never touch a keychain;
-// run explicitly with: cargo test -p correo-storage --test real_keychain -- --ignored
+// Integration verification against the real OS keyring.
+// CI selects the persistence roundtrip explicitly; the legacy migration probe
+// remains manual because it reads a user-provided legacy credential.
 use correo_storage::current::{
     OsKeyringSecretStore, SecretKind, SecretMaterial, SecretReference, SecretStore,
 };
@@ -46,7 +46,6 @@ fn real_keyring_persists_across_store_instances() {
         None,
         "secret must be gone after delete"
     );
-    println!("REAL KEYCHAIN ROUNDTRIP OK");
 }
 
 #[test]
@@ -58,5 +57,4 @@ fn migration_reads_java_master_password_from_real_keychain() {
         Some("session-test-master"),
         "migration must read the Java master password from the real keychain"
     );
-    println!("REAL MASTER-PASSWORD READ OK: {master:?}");
 }

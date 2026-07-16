@@ -9,6 +9,8 @@ use rumqttd::{Broker, Config, ConnectionSettings, RouterConfig, ServerSettings};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener as TokioTcpListener, TcpStream};
 
+const CONNECT_PREFIX_TIMEOUT: Duration = Duration::from_secs(5);
+
 pub fn run_child() -> i32 {
     match run_child_inner() {
         Ok(()) => 0,
@@ -20,7 +22,7 @@ pub fn run_child() -> i32 {
 }
 
 fn run_child_inner() -> Result<(), String> {
-    let config: BuiltInBrokerProcessConfig = serde_json::from_reader(io::stdin())
+    let config = BuiltInBrokerProcessConfig::read_from_child(io::stdin())
         .map_err(|error| format!("broker configuration could not be read: {error}"))?;
     let v4_port = reserve_loopback_port()?;
     let v5_port = reserve_loopback_port()?;
@@ -125,7 +127,10 @@ async fn proxy_loop(public_port: u16, v4_port: u16, v5_port: u16) -> Result<(), 
 }
 
 async fn proxy_client(mut client: TcpStream, v4_port: u16, v5_port: u16) -> Result<(), String> {
-    let (prefix, version) = read_connect_prefix(&mut client).await?;
+    let (prefix, version) =
+        tokio::time::timeout(CONNECT_PREFIX_TIMEOUT, read_connect_prefix(&mut client))
+            .await
+            .map_err(|_| "MQTT CONNECT header timed out".to_owned())??;
     let target_port = match version {
         MqttConnectVersion::V5 => v5_port,
         MqttConnectVersion::V3 => v4_port,

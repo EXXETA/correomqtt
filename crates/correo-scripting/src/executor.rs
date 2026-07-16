@@ -23,7 +23,7 @@ use crate::{
 const SCRIPT_MEMORY_LIMIT_BYTES: usize = 64 * 1024 * 1024;
 const SCRIPT_STACK_LIMIT_BYTES: usize = 1024 * 1024;
 const SCRIPT_GC_THRESHOLD_BYTES: usize = 4 * 1024 * 1024;
-const SCRIPT_DEFAULT_DEADLINE: Duration = Duration::from_secs(1);
+const SCRIPT_DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[derive(Clone)]
 pub struct ScriptRuntime {
@@ -39,6 +39,15 @@ impl ScriptRuntime {
         request: ScriptExecutionRequest,
         cancellation: ScriptCancellationToken,
     ) -> ScriptExecutionOutcome {
+        self.execute_with_timeout(request, cancellation, SCRIPT_DEFAULT_TIMEOUT)
+    }
+
+    pub fn execute_with_timeout(
+        &self,
+        request: ScriptExecutionRequest,
+        cancellation: ScriptCancellationToken,
+        timeout: Duration,
+    ) -> ScriptExecutionOutcome {
         let mut metadata = ScriptExecutionMetadata {
             id: request.id,
             script_name: request.script_name,
@@ -47,7 +56,9 @@ impl ScriptRuntime {
         };
         self.host.execution_metadata_changed(&metadata);
 
-        let error = self.run_source(&request.source, &cancellation).err();
+        let error = self
+            .run_source(&request.source, &cancellation, timeout)
+            .err();
         metadata.status = match error {
             None => ScriptExecutionStatus::Succeeded,
             Some(ScriptingError::Cancelled) => ScriptExecutionStatus::Cancelled,
@@ -66,6 +77,7 @@ impl ScriptRuntime {
         &self,
         source: &str,
         cancellation: &ScriptCancellationToken,
+        timeout: Duration,
     ) -> ScriptingResult<()> {
         if cancellation.is_cancelled() {
             return Err(ScriptingError::Cancelled);
@@ -78,7 +90,7 @@ impl ScriptRuntime {
         let interrupt_token = cancellation.clone();
         let deadline_cancelled = Arc::new(AtomicBool::new(false));
         let interrupt_deadline_cancelled = deadline_cancelled.clone();
-        let deadline = Instant::now() + SCRIPT_DEFAULT_DEADLINE;
+        let deadline = Instant::now() + timeout;
         runtime.set_interrupt_handler(Some(Box::new(move || {
             if interrupt_token.is_cancelled() {
                 return true;
@@ -99,7 +111,11 @@ impl ScriptRuntime {
             .build(&runtime)
             .map_err(|error| ScriptingError::Runtime(error.to_string()))?;
 
-        let state = Rc::new(HostState::new(self.host.clone(), cancellation.clone()));
+        let state = Rc::new(HostState::new(
+            self.host.clone(),
+            cancellation.clone(),
+            deadline,
+        ));
         context.with(|ctx| {
             let result = (|| {
                 install_bindings(ctx.clone(), state.clone())
@@ -188,15 +204,21 @@ struct PromiseHostError {
 pub(crate) struct HostState {
     host: Arc<dyn ScriptHost>,
     cancellation: ScriptCancellationToken,
+    deadline: Instant,
     last_host_error: Mutex<Option<ScriptingError>>,
     queue_processing: AtomicBool,
     promise_host_errors: Mutex<Vec<PromiseHostError>>,
 }
 impl HostState {
-    fn new(host: Arc<dyn ScriptHost>, cancellation: ScriptCancellationToken) -> Self {
+    fn new(
+        host: Arc<dyn ScriptHost>,
+        cancellation: ScriptCancellationToken,
+        deadline: Instant,
+    ) -> Self {
         Self {
             host,
             cancellation,
+            deadline,
             last_host_error: Mutex::new(None),
             queue_processing: AtomicBool::new(true),
             promise_host_errors: Mutex::new(Vec::new()),
@@ -204,6 +226,9 @@ impl HostState {
     }
 
     pub(crate) fn check_cancelled(&self) -> ScriptingResult<()> {
+        if Instant::now() >= self.deadline {
+            self.cancellation.cancel();
+        }
         if self.cancellation.is_cancelled() {
             Err(ScriptingError::Cancelled)
         } else {
@@ -218,12 +243,19 @@ impl HostState {
             ));
         }
 
-        let deadline = Duration::from_millis(millis as u64);
+        let requested = Duration::from_millis(millis as u64);
         let step = Duration::from_millis(10);
         let mut slept = Duration::ZERO;
-        while slept < deadline {
+        while slept < requested {
             self.check_cancelled()?;
-            let current = deadline.saturating_sub(slept).min(step);
+            let current = requested
+                .saturating_sub(slept)
+                .min(self.deadline.saturating_duration_since(Instant::now()))
+                .min(step);
+            if current.is_zero() {
+                self.cancellation.cancel();
+                return Err(ScriptingError::Cancelled);
+            }
             thread::sleep(current);
             slept += current;
         }

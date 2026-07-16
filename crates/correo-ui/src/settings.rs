@@ -175,6 +175,17 @@ fn keyring(
             None,
         );
     });
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        ui.add_space(6.0);
+        ui.label(
+            RichText::new(i18n.text("settings-keyring-fallback-title"))
+                .strong()
+                .color(_tokens.warning),
+        );
+        ui.label(i18n.text("settings-keyring-fallback-detail"));
+        ui.monospace("CORREOMQTT_MASTER_PASSWORD");
+    }
 }
 
 fn updates(

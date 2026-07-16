@@ -56,7 +56,7 @@ fn json_format_wasm_plugin_formats_detail_payloads() {
 
     let package = PluginPackage::load(package_dir.path()).unwrap();
     let plugin = WasmtimePluginRuntime::default()
-        .compile_package(package, &Version::new(0, 1, 0))
+        .compile_package(package, &Version::new(1, 0, 0))
         .unwrap();
 
     let formatted = plugin

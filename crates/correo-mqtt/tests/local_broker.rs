@@ -49,6 +49,23 @@ async fn mqtt5_tls_connect_disconnect() {
 }
 
 #[tokio::test]
+#[ignore = "requires a TLS broker; see crates/correo-mqtt/docs/local-broker-integration.md"]
+async fn tls_rejects_untrusted_certificates_and_hostname_mismatches() {
+    let Some(broker) = BrokerConfig::tls() else {
+        return;
+    };
+    let Some(untrusted_broker) = broker.with_ca_from_env("CORREO_MQTT_TLS_UNTRUSTED_CA_PEM") else {
+        return;
+    };
+    let hostname_mismatch_broker = broker.with_host("127.0.0.2");
+
+    for protocol in [MqttProtocolVersion::Mqtt3_1_1, MqttProtocolVersion::Mqtt5] {
+        assert_connect_fails(protocol, &untrusted_broker, "untrusted CA").await;
+        assert_connect_fails(protocol, &hostname_mismatch_broker, "hostname mismatch").await;
+    }
+}
+
+#[tokio::test]
 #[ignore = "uses a local disconnect probe for reconnect reporting"]
 async fn reconnect_reporting_uses_local_disconnect_probe() {
     assert_reconnect_reporting(MqttProtocolVersion::Mqtt3_1_1).await;
@@ -85,6 +102,28 @@ async fn assert_connect_disconnect(
         .await
         .unwrap_or_else(|error| panic!("disconnect failed for {protocol}: {error}"));
     assert_eq!(session.current_state(), SessionState::Disconnected);
+}
+
+async fn assert_connect_fails(protocol: MqttProtocolVersion, broker: &BrokerConfig, purpose: &str) {
+    tokio::time::timeout(
+        TEST_TIMEOUT,
+        TcpStream::connect((broker.host.as_str(), broker.port)),
+    )
+    .await
+    .unwrap_or_else(|_| panic!("TLS listener was unreachable for {purpose}"))
+    .unwrap_or_else(|error| panic!("TLS listener was unreachable for {purpose}: {error}"));
+
+    let mut session = new_session(protocol);
+    let result = tokio::time::timeout(
+        TEST_TIMEOUT,
+        session.connect(options(protocol, broker, purpose)),
+    )
+    .await
+    .unwrap_or_else(|_| panic!("TLS {purpose} connection timed out for {protocol}"));
+    assert!(
+        result.is_err(),
+        "TLS {purpose} connection unexpectedly succeeded for {protocol}"
+    );
 }
 
 async fn assert_publish_subscribe(
@@ -363,6 +402,38 @@ impl BrokerConfig {
                 client_identity: None,
             }),
         })
+    }
+
+    fn with_ca_from_env(&self, name: &str) -> Option<Self> {
+        let ca_path = match env::var(name) {
+            Ok(path) if !path.trim().is_empty() => path,
+            _ => {
+                skip(&format!("set {name} to a synthetic CA certificate"));
+                return None;
+            }
+        };
+        let ca_pem = fs::read(&ca_path)
+            .unwrap_or_else(|error| panic!("failed to read {name}={ca_path}: {error}"));
+        Some(Self {
+            host: self.host.clone(),
+            port: self.port,
+            tls: TlsConfig::Enabled(TlsOptions {
+                host_verification: TlsHostVerification::Enabled,
+                trust_roots: TlsTrustRoots::PemBundle {
+                    path: Some(ca_path),
+                    pem: Some(SecretBytes::new(ca_pem)),
+                },
+                client_identity: None,
+            }),
+        })
+    }
+
+    fn with_host(&self, host: impl Into<String>) -> Self {
+        Self {
+            host: host.into(),
+            port: self.port,
+            tls: self.tls.clone(),
+        }
     }
 }
 

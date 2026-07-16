@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use crate::{
     AppCommand, AppEvent, AppRuntime, Diagnostic, MigrationPersistenceWorker,
-    MigrationRecoveryCommand, MigrationRecoveryCompletion, MigrationRecoveryState, StartupState,
-    ThemeMode,
+    MigrationRecoveryCommand, MigrationRecoveryCompletion, MigrationRecoveryState,
+    SettingsPersistenceEvent, StartupState, ThemeMode,
 };
 
 #[test]
@@ -104,22 +104,19 @@ fn saved_new_connection_reaches_config_store() {
         .send(AppCommand::SaveConnectionSettings)
         .unwrap();
 
-    let deadline = Instant::now() + Duration::from_secs(3);
-    loop {
-        runtime.pump();
-        if let Ok(config) = correo_storage::current::ConfigStore::new(temp.path()).load() {
-            if config.connections.len() == 1 {
-                assert_eq!(config.connections[0].url, "broker.local");
-                assert_eq!(config.connections[0].name, "New connection");
-                break;
-            }
-        }
-        assert!(
-            Instant::now() < deadline,
-            "new connection was not persisted to the config store"
-        );
-        std::thread::sleep(Duration::from_millis(20));
-    }
+    runtime.pump();
+    assert_eq!(
+        runtime.recv_settings_event_timeout(Duration::from_secs(3)),
+        Some(SettingsPersistenceEvent::Saved)
+    );
+    runtime.pump();
+
+    let config = correo_storage::current::ConfigStore::new(temp.path())
+        .load()
+        .expect("saved connection config");
+    assert_eq!(config.connections.len(), 1);
+    assert_eq!(config.connections[0].url, "broker.local");
+    assert_eq!(config.connections[0].name, "New connection");
 }
 
 #[test]
@@ -195,9 +192,16 @@ fn migration_worker_advances_recovery_flow_to_complete() {
         MigrationRecoveryState::CreatingBackup
     );
 
-    pump_until(&mut runtime, |runtime| {
-        runtime.snapshot().migration_recovery.state == MigrationRecoveryState::NeedsPassword
-    });
+    assert!(
+        runtime.wait_for_migration(Duration::from_secs(3), |runtime| {
+            runtime.snapshot().migration_recovery.state == MigrationRecoveryState::NeedsPassword
+        }),
+        "migration backup completion"
+    );
+    assert_eq!(
+        runtime.snapshot().migration_recovery.state,
+        MigrationRecoveryState::NeedsPassword
+    );
     assert!(runtime.snapshot().migration_recovery.backup_name.is_some());
 
     runtime
@@ -207,10 +211,18 @@ fn migration_worker_advances_recovery_flow_to_complete() {
         ))
         .unwrap();
     runtime.pump();
-    pump_until(&mut runtime, |runtime| {
-        let recovery = &runtime.snapshot().migration_recovery;
-        recovery.state == MigrationRecoveryState::Reviewing && recovery.counts.connections == 2
-    });
+    assert!(
+        runtime.wait_for_migration(Duration::from_secs(3), |runtime| {
+            let recovery = &runtime.snapshot().migration_recovery;
+            recovery.state == MigrationRecoveryState::Reviewing && recovery.counts.connections == 2
+        }),
+        "migration preview completion"
+    );
+    assert_eq!(
+        runtime.snapshot().migration_recovery.state,
+        MigrationRecoveryState::Reviewing
+    );
+    assert_eq!(runtime.snapshot().migration_recovery.counts.connections, 2);
 
     runtime
         .command_sender()
@@ -219,9 +231,16 @@ fn migration_worker_advances_recovery_flow_to_complete() {
         ))
         .unwrap();
     runtime.pump();
-    pump_until(&mut runtime, |runtime| {
-        runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Complete
-    });
+    assert!(
+        runtime.wait_for_migration(Duration::from_secs(3), |runtime| {
+            runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Complete
+        }),
+        "migration apply completion"
+    );
+    assert_eq!(
+        runtime.snapshot().migration_recovery.state,
+        MigrationRecoveryState::Complete
+    );
 
     assert_eq!(
         runtime
@@ -253,9 +272,16 @@ fn migration_restore_command_restores_selected_backup() {
         ))
         .unwrap();
     runtime.pump();
-    pump_until(&mut runtime, |runtime| {
-        runtime.snapshot().migration_recovery.state == MigrationRecoveryState::NeedsPassword
-    });
+    assert!(
+        runtime.wait_for_migration(Duration::from_secs(3), |runtime| {
+            runtime.snapshot().migration_recovery.state == MigrationRecoveryState::NeedsPassword
+        }),
+        "migration backup completion"
+    );
+    assert_eq!(
+        runtime.snapshot().migration_recovery.state,
+        MigrationRecoveryState::NeedsPassword
+    );
     runtime
         .command_sender()
         .send(AppCommand::MigrationRecovery(
@@ -263,9 +289,17 @@ fn migration_restore_command_restores_selected_backup() {
         ))
         .unwrap();
     runtime.pump();
-    pump_until(&mut runtime, |runtime| {
-        runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Reviewing
-    });
+    assert!(
+        runtime.wait_for_migration(Duration::from_secs(3), |runtime| {
+            let recovery = &runtime.snapshot().migration_recovery;
+            recovery.state == MigrationRecoveryState::Reviewing && recovery.counts.connections == 2
+        }),
+        "migration preview completion"
+    );
+    assert_eq!(
+        runtime.snapshot().migration_recovery.state,
+        MigrationRecoveryState::Reviewing
+    );
     runtime
         .command_sender()
         .send(AppCommand::MigrationRecovery(
@@ -273,9 +307,16 @@ fn migration_restore_command_restores_selected_backup() {
         ))
         .unwrap();
     runtime.pump();
-    pump_until(&mut runtime, |runtime| {
-        runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Complete
-    });
+    assert!(
+        runtime.wait_for_migration(Duration::from_secs(3), |runtime| {
+            runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Complete
+        }),
+        "migration apply completion"
+    );
+    assert_eq!(
+        runtime.snapshot().migration_recovery.state,
+        MigrationRecoveryState::Complete
+    );
     assert!(temp.path().join("config.json").exists());
     let restarted_snapshot = runtime.snapshot().clone();
     drop(runtime);
@@ -295,30 +336,99 @@ fn migration_restore_command_restores_selected_backup() {
         ))
         .unwrap();
     runtime.pump();
-    pump_until(&mut runtime, |runtime| {
-        runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Complete
-            && runtime.snapshot().migration_recovery.completion
-                == Some(MigrationRecoveryCompletion::RestoreSuccess)
-    });
+    assert!(
+        runtime.wait_for_migration(Duration::from_secs(3), |runtime| {
+            let recovery = &runtime.snapshot().migration_recovery;
+            recovery.state == MigrationRecoveryState::Complete
+                && recovery.completion == Some(MigrationRecoveryCompletion::RestoreSuccess)
+        }),
+        "migration restore completion"
+    );
+    assert_eq!(
+        runtime.snapshot().migration_recovery.state,
+        MigrationRecoveryState::Complete
+    );
+    assert_eq!(
+        runtime.snapshot().migration_recovery.completion,
+        Some(MigrationRecoveryCompletion::RestoreSuccess)
+    );
 
     assert!(!temp.path().join("config.json").exists());
+}
+
+#[test]
+fn command_sender_returns_backpressure_without_losing_the_command() {
+    let runtime = AppRuntime::new();
+    let sender = runtime.command_sender();
+    for _ in 0..256 {
+        sender
+            .send(AppCommand::SetThemeMode(ThemeMode::Dark))
+            .expect("commands within the fixed capacity are accepted");
+    }
+
+    let error = sender
+        .send(AppCommand::SetThemeMode(ThemeMode::Light))
+        .unwrap_err();
+    assert!(matches!(
+        error,
+        crate::CommandSendError::CommandFull(command)
+            if matches!(*command, AppCommand::SetThemeMode(ThemeMode::Light))
+    ));
+}
+
+#[test]
+fn event_sender_returns_backpressure_without_silent_loss() {
+    let runtime = AppRuntime::new();
+    let sender = runtime.event_sender();
+    for index in 0..256 {
+        sender
+            .emit(AppEvent::DiagnosticRaised(Diagnostic::info(format!(
+                "event {index}"
+            ))))
+            .expect("events within the fixed capacity are accepted");
+    }
+
+    let error = sender
+        .emit(AppEvent::DiagnosticRaised(Diagnostic::info("overflow")))
+        .unwrap_err();
+    assert!(matches!(
+        error,
+        crate::CommandSendError::EventFull(event)
+            if matches!(*event, AppEvent::DiagnosticRaised(_))
+    ));
+}
+
+#[test]
+fn bounded_pump_yields_to_a_queued_ui_command_under_event_ingress() {
+    let mut runtime = AppRuntime::new();
+    let events = runtime.event_sender();
+    for index in 0..65 {
+        events
+            .emit(AppEvent::DiagnosticRaised(Diagnostic::info(format!(
+                "event {index}"
+            ))))
+            .unwrap();
+    }
+    runtime
+        .command_sender()
+        .send(AppCommand::SetThemeMode(ThemeMode::Dark))
+        .unwrap();
+
+    let report = runtime.pump();
+
+    assert!(
+        report.events_processed < 65,
+        "the per-frame event budget must yield before draining ingress"
+    );
+    assert_eq!(
+        runtime.snapshot().theme_mode,
+        ThemeMode::Dark,
+        "an available UI command must progress despite ingress backlog"
+    );
 }
 
 fn storage_fixture(path: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../correo-storage/tests/fixtures")
         .join(path)
-}
-
-fn pump_until(runtime: &mut AppRuntime, mut predicate: impl FnMut(&AppRuntime) -> bool) {
-    let deadline = Instant::now() + Duration::from_secs(2);
-    while Instant::now() < deadline {
-        runtime.pump();
-        if predicate(runtime) {
-            return;
-        }
-        std::thread::sleep(Duration::from_millis(10));
-    }
-    runtime.pump();
-    assert!(predicate(runtime));
 }

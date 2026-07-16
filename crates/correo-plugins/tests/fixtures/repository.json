@@ -12,7 +12,7 @@
         "description": "Composes configured validator rules with AND and OR groups.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "message_validator"
@@ -143,7 +143,7 @@
         "description": "Encodes outgoing payloads and decodes incoming payloads with Base64.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "outgoing_message_transform",
@@ -190,7 +190,7 @@
         "description": "Validates text payloads by checking for configured text.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "message_validator"
@@ -244,7 +244,7 @@
         "description": "Formats valid JSON payloads for the message detail view.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "detail_formatter",
@@ -291,7 +291,7 @@
         "description": "Requests that CorreoMQTT save the selected message payload.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "detail_byte_transform"
@@ -333,7 +333,7 @@
         "description": "Adds a connection header action that opens live $SYS broker metrics.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [],
           "host": {
@@ -376,7 +376,7 @@
         "description": "Formats XML-like payloads for the message detail view.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "detail_formatter",
@@ -423,7 +423,7 @@
         "description": "Validates XML payloads against configured inline XSD schema text.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "message_validator"
@@ -506,7 +506,7 @@
         "description": "Compresses or decompresses message detail bytes with GZIP.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "detail_byte_transform"

@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use super::super::atomic_file::write_file_atomic_private;
 use super::{ImportedSecret, MapBacked, SecretMaterial, SecretReference, SecretStore};
 use crate::{Result, StorageError};
 
@@ -11,15 +12,33 @@ pub struct EncryptedFileSecretStore {
     master_password: SecretMaterial,
 }
 
-const FILE_KDF_ITERATIONS: u32 = 100_000;
+const LEGACY_FILE_VERSION: u16 = 1;
+const CURRENT_FILE_VERSION: u16 = 2;
+const LEGACY_KDF_ITERATIONS: u32 = 100_000;
+const CURRENT_KDF_ITERATIONS: u32 = 600_000;
+const KDF_ALGORITHM: &str = "pbkdf2-hmac-sha256";
 const SALT_BYTES: usize = 16;
 const NONCE_BYTES: usize = 12;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct EncryptedSecretsFile {
+    #[serde(default = "legacy_file_version")]
+    version: u16,
+    #[serde(default)]
+    kdf: Option<KdfParameters>,
     salt: String,
     nonce: String,
     ciphertext: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct KdfParameters {
+    algorithm: String,
+    iterations: u32,
+}
+
+const fn legacy_file_version() -> u16 {
+    LEGACY_FILE_VERSION
 }
 
 impl EncryptedFileSecretStore {
@@ -30,15 +49,33 @@ impl EncryptedFileSecretStore {
         }
     }
 
-    fn derive_key(&self, salt: &[u8]) -> [u8; 32] {
+    fn derive_key(&self, salt: &[u8], iterations: u32) -> [u8; 32] {
         let mut key = [0u8; 32];
         pbkdf2::pbkdf2_hmac::<sha2::Sha256>(
             self.master_password.expose_secret().as_bytes(),
             salt,
-            FILE_KDF_ITERATIONS,
+            iterations,
             &mut key,
         );
         key
+    }
+
+    fn file_kdf_iterations(&self, file: &EncryptedSecretsFile) -> Result<u32> {
+        match (file.version, file.kdf.as_ref()) {
+            (LEGACY_FILE_VERSION, None) => Ok(LEGACY_KDF_ITERATIONS),
+            (CURRENT_FILE_VERSION, Some(kdf))
+                if kdf.algorithm == KDF_ALGORITHM && kdf.iterations == CURRENT_KDF_ITERATIONS =>
+            {
+                Ok(kdf.iterations)
+            }
+            _ => Err(self.file_error(
+                "parse",
+                format!(
+                    "unsupported encrypted secrets format version {}",
+                    file.version
+                ),
+            )),
+        }
     }
 
     fn file_error(&self, operation: &'static str, message: impl ToString) -> StorageError {
@@ -78,7 +115,7 @@ impl MapBacked for EncryptedFileSecretStore {
         let ciphertext = engine
             .decode(&file.ciphertext)
             .map_err(|error| self.file_error("parse", error))?;
-        let key = self.derive_key(&salt);
+        let key = self.derive_key(&salt, self.file_kdf_iterations(&file)?);
         let cipher = aes_gcm::Aes256Gcm::new_from_slice(&key)
             .map_err(|error| self.file_error("decrypt", error))?;
         let plaintext = cipher
@@ -106,7 +143,7 @@ impl MapBacked for EncryptedFileSecretStore {
         let mut nonce = [0u8; NONCE_BYTES];
         rand::thread_rng().fill_bytes(&mut salt);
         rand::thread_rng().fill_bytes(&mut nonce);
-        let key = self.derive_key(&salt);
+        let key = self.derive_key(&salt, CURRENT_KDF_ITERATIONS);
         let cipher = aes_gcm::Aes256Gcm::new_from_slice(&key)
             .map_err(|error| self.file_error("encrypt", error))?;
         let ciphertext = cipher
@@ -114,6 +151,11 @@ impl MapBacked for EncryptedFileSecretStore {
             .map_err(|error| self.file_error("encrypt", error))?;
         let engine = base64::engine::general_purpose::STANDARD;
         let file = EncryptedSecretsFile {
+            version: CURRENT_FILE_VERSION,
+            kdf: Some(KdfParameters {
+                algorithm: KDF_ALGORITHM.to_owned(),
+                iterations: CURRENT_KDF_ITERATIONS,
+            }),
             salt: engine.encode(salt),
             nonce: engine.encode(nonce),
             ciphertext: engine.encode(ciphertext),
@@ -123,18 +165,9 @@ impl MapBacked for EncryptedFileSecretStore {
         }
         let raw =
             serde_json::to_string(&file).map_err(|error| self.file_error("serialize", error))?;
-        write_file_atomic(&self.path, raw.as_bytes())
+        write_file_atomic_private(&self.path, raw.as_bytes())
             .map_err(|error| self.file_error("write", error))
     }
-}
-
-fn write_file_atomic(path: &std::path::Path, content: &[u8]) -> std::io::Result<()> {
-    let temporary = path.with_extension(format!("tmp.{}", std::process::id()));
-    std::fs::write(&temporary, content)?;
-    if cfg!(windows) && path.exists() {
-        std::fs::remove_file(path)?;
-    }
-    std::fs::rename(temporary, path)
 }
 
 impl SecretStore for EncryptedFileSecretStore {

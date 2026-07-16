@@ -13,6 +13,9 @@ mod scripting_mqtt;
 mod scripting_tests;
 mod settings_persistence;
 mod surfaces;
+mod transport;
+#[cfg(test)]
+mod transport_tests;
 mod types;
 
 pub use commands::*;
@@ -27,6 +30,7 @@ pub use scripting::*;
 pub use settings_persistence::*;
 pub use surfaces::*;
 use thiserror::Error;
+pub use transport::*;
 pub use types::*;
 
 use correo_mqtt::ConnectionId;

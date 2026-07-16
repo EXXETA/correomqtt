@@ -23,6 +23,7 @@ pub struct BuiltInBrokerSnapshot {
     pub port: String,
     pub credentials_enabled: bool,
     pub username: String,
+    #[serde(skip_serializing, default)]
     pub password: String,
     pub status: BuiltInBrokerStatus,
     pub logs: Vec<BuiltInBrokerLogEntry>,
@@ -75,11 +76,18 @@ pub struct BuiltInBrokerLogEntry {
     pub message: String,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct BuiltInBrokerProcessConfig {
     pub port: u16,
     pub username: Option<String>,
     pub password: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct BrokerChildRequest {
+    port: u16,
+    username: Option<String>,
+    password: Option<String>,
 }
 
 impl fmt::Debug for BuiltInBrokerProcessConfig {
@@ -98,6 +106,25 @@ pub enum BuiltInBrokerEvent {
     Stopped { message: String },
     Failed { message: String },
     Log { message: String },
+}
+
+impl BuiltInBrokerProcessConfig {
+    pub fn encode_for_child(&self) -> Result<Vec<u8>, serde_json::Error> {
+        serde_json::to_vec(&BrokerChildRequest {
+            port: self.port,
+            username: self.username.clone(),
+            password: self.password.clone(),
+        })
+    }
+
+    pub fn read_from_child(reader: impl std::io::Read) -> Result<Self, serde_json::Error> {
+        let request: BrokerChildRequest = serde_json::from_reader(reader)?;
+        Ok(Self {
+            port: request.port,
+            username: request.username,
+            password: request.password,
+        })
+    }
 }
 
 #[derive(Debug)]
@@ -122,11 +149,12 @@ impl BuiltInBrokerWorker {
             });
             return;
         }
+        let port = config.port;
 
-        match self.spawn_child(config.clone()) {
+        match self.spawn_child(config) {
             Ok(child) => {
                 self.child = Some(child);
-                self.emit(BuiltInBrokerEvent::Started { port: config.port });
+                self.emit(BuiltInBrokerEvent::Started { port });
             }
             Err(error) => self.emit(BuiltInBrokerEvent::Failed { message: error }),
         }
@@ -166,7 +194,9 @@ impl BuiltInBrokerWorker {
             .map_err(|error| format!("Built-in broker could not be started: {error}"))?;
 
         if let Some(mut stdin) = child.stdin.take() {
-            let json = serde_json::to_vec(&config).map_err(|error| error.to_string())?;
+            let json = config
+                .encode_for_child()
+                .map_err(|error| error.to_string())?;
             stdin.write_all(&json).map_err(|error| error.to_string())?;
         }
         if let Some(stdout) = child.stdout.take() {
@@ -177,7 +207,6 @@ impl BuiltInBrokerWorker {
         }
         Ok(child)
     }
-
     fn reap_finished_child(&mut self) {
         let Some(child) = self.child.as_mut() else {
             return;
@@ -338,4 +367,33 @@ fn timestamp() -> String {
         .unwrap_or_else(|_| OffsetDateTime::now_utc())
         .format(FORMAT)
         .unwrap_or_else(|_| "--:--:--".to_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn broker_snapshot_serialization_never_exposes_password() {
+        let snapshot = BuiltInBrokerSnapshot {
+            credentials_enabled: true,
+            username: "broker".to_owned(),
+            password: "snapshot-broker-password".to_owned(),
+            ..BuiltInBrokerSnapshot::default()
+        };
+
+        let serialized = serde_json::to_string(&snapshot).unwrap();
+
+        assert!(!serialized.contains("snapshot-broker-password"));
+        assert!(serde_json::from_str::<serde_json::Value>(&serialized)
+            .unwrap()
+            .get("password")
+            .is_none());
+
+        let mut app_snapshot = crate::AppSnapshot::empty();
+        app_snapshot.built_in_broker = snapshot;
+        assert!(!serde_json::to_string(&app_snapshot)
+            .unwrap()
+            .contains("snapshot-broker-password"));
+    }
 }

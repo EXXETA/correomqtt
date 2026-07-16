@@ -1,8 +1,9 @@
 use correo_core::{
-    AppRuntime, Diagnostic, HistoryPersistenceWorker, MigrationPersistenceWorker, MqttService,
-    PluginHookExecutor, RumqttSessionFactory, ScriptingWorker, SettingsPersistenceWorker,
+    AppEvent, AppRuntime, Diagnostic, HistoryPersistenceWorker, MigrationPersistenceWorker,
+    MqttService, PluginHookExecutor, RumqttSessionFactory, ScriptingWorker,
+    SettingsPersistenceWorker,
 };
-use std::{sync::Arc, time::Duration};
+use std::{path::Path, sync::Arc, time::Duration};
 
 const IDLE_REPAINT_INTERVAL: Duration = Duration::from_millis(100);
 
@@ -10,7 +11,6 @@ use crate::plugins::{InstalledPluginExecutor, PluginFileInstaller};
 use crate::startup::{history_root, load_startup_state};
 
 pub fn run() -> eframe::Result {
-    prefer_x11_when_wayland_is_unstable();
     let tracing_guard = correo_diagnostics::install_tracing(Some(history_root().join("logs")));
     tracing::info!("starting CorreoMQTT desktop shell");
 
@@ -34,20 +34,6 @@ pub fn run() -> eframe::Result {
             )))
         }),
     )
-}
-
-fn prefer_x11_when_wayland_is_unstable() {
-    #[cfg(target_os = "linux")]
-    {
-        let user_selected_backend = std::env::var_os("WINIT_UNIX_BACKEND").is_some();
-        let allow_wayland = std::env::var_os("CORREOMQTT_ALLOW_WAYLAND").is_some();
-        let wayland_available = std::env::var_os("WAYLAND_DISPLAY").is_some();
-        let x11_available = std::env::var_os("DISPLAY").is_some();
-
-        if !user_selected_backend && !allow_wayland && wayland_available && x11_available {
-            std::env::set_var("WINIT_UNIX_BACKEND", "x11");
-        }
-    }
 }
 
 fn app_icon() -> eframe::egui::IconData {
@@ -105,16 +91,95 @@ impl CorreoDesktopApp {
     }
 
     fn pump_runtime(&mut self, context: &eframe::egui::Context) {
-        let report = self.runtime.pump();
+        let mut report = self.runtime.pump();
+        let save_feedback = self.drain_plugin_save_payloads();
+        if save_feedback {
+            let feedback_report = self.runtime.pump();
+            report.snapshot_changed |= feedback_report.snapshot_changed;
+            report.backlog_remaining |= feedback_report.backlog_remaining;
+        }
         if report.snapshot_changed {
             self.ui.set_snapshot(self.runtime.snapshot().clone());
-            context.request_repaint();
         }
-        context.request_repaint_after(IDLE_REPAINT_INTERVAL);
+        if report.snapshot_changed || report.backlog_remaining || save_feedback {
+            context.request_repaint();
+        } else {
+            context.request_repaint_after(IDLE_REPAINT_INTERVAL);
+        }
         if report.shutdown_requested {
             context.send_viewport_cmd(eframe::egui::ViewportCommand::Close);
         }
     }
+
+    fn drain_plugin_save_payloads(&mut self) -> bool {
+        let Some(payload) = self.runtime.take_plugin_save_payload() else {
+            return false;
+        };
+        if !valid_plugin_save_file_name(&payload.suggested_file_name) {
+            let message = self.ui.plugin_save_invalid_file_name_message();
+            self.record_plugin_save_error(&message);
+            return true;
+        }
+
+        let path = rfd::FileDialog::new()
+            .set_file_name(&payload.suggested_file_name)
+            .save_file();
+        let Some(path) = path else {
+            return false;
+        };
+
+        let events = self.runtime.event_sender();
+        let failed_prefix = self.ui.plugin_save_failed_prefix();
+        let worker_prefix = failed_prefix.clone();
+        let spawn = std::thread::Builder::new()
+            .name("correo-plugin-payload-save".to_owned())
+            .spawn(move || {
+                if let Err(error) =
+                    correo_storage::current::write_file_atomic(&path, &payload.bytes)
+                {
+                    let _ = events.emit(AppEvent::DiagnosticRaised(Diagnostic::error(format!(
+                        "{worker_prefix} {error}"
+                    ))));
+                }
+            });
+        if let Err(error) = spawn {
+            self.record_plugin_save_error(&format!("{failed_prefix} {error}"));
+        }
+        true
+    }
+
+    fn record_plugin_save_error(&mut self, message: &str) {
+        let _ = self
+            .runtime
+            .event_sender()
+            .emit(AppEvent::DiagnosticRaised(Diagnostic::error(message)));
+    }
+}
+
+fn valid_plugin_save_file_name(file_name: &str) -> bool {
+    let path = Path::new(file_name);
+    let stem = file_name.split('.').next().unwrap_or_default();
+    let reserved_windows_name = [
+        "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
+        "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    ]
+    .iter()
+    .any(|reserved| reserved.eq_ignore_ascii_case(stem));
+
+    !file_name.is_empty()
+        && file_name == file_name.trim()
+        && !file_name.ends_with('.')
+        && !matches!(file_name, "." | "..")
+        && !reserved_windows_name
+        && path.is_relative()
+        && path.components().count() == 1
+        && !file_name.chars().any(|character| {
+            character.is_control()
+                || matches!(
+                    character,
+                    '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|'
+                )
+        })
 }
 
 fn attach_plugin_executor(
@@ -215,5 +280,28 @@ impl eframe::App for CorreoDesktopApp {
             correo_ui::THEME_KEY,
             &self.runtime.snapshot().theme_mode,
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::valid_plugin_save_file_name;
+
+    #[test]
+    fn plugin_save_file_names_are_portable_basenames() {
+        assert!(valid_plugin_save_file_name("transformed-payload.bin"));
+        for invalid in [
+            "",
+            "../payload.bin",
+            "nested/payload.bin",
+            "nested\\payload.bin",
+            "payload.bin ",
+            "payload.",
+            "CON",
+            "aux.txt",
+            "LPT9.bin",
+        ] {
+            assert!(!valid_plugin_save_file_name(invalid), "{invalid}");
+        }
     }
 }
