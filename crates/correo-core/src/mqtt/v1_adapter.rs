@@ -2,11 +2,11 @@ use serde_json::json;
 
 use correo_mqtt::{IncomingMessage, PublishRequest, Qos};
 
-use crate::{
-    ConnectionCommand, DeliveryGuarantee, DeliverySemantics, MessageEnvelope, MqttCommand,
-    MqttEvent, NamespacedName, TransportConnectionId, TransportEvent,
-};
+#[cfg(test)]
+use crate::{ConnectionCommand, MqttCommand, MqttEvent, TransportConnectionId, TransportEvent};
+use crate::{DeliveryGuarantee, DeliverySemantics, MessageEnvelope, NamespacedName};
 
+#[cfg(test)]
 pub(super) fn from_mqtt_command(command: &MqttCommand) -> Option<ConnectionCommand> {
     let MqttCommand::Publish {
         connection_id,
@@ -23,6 +23,7 @@ pub(super) fn from_mqtt_command(command: &MqttCommand) -> Option<ConnectionComma
     })
 }
 
+#[cfg(test)]
 pub(super) fn from_mqtt_event(event: &MqttEvent) -> Option<TransportEvent> {
     let MqttEvent::IncomingMessage(message) = event else {
         return None;
@@ -72,6 +73,7 @@ fn message_from_parts(address: String, body: Vec<u8>, qos: Qos, retained: bool) 
     message
 }
 
+#[cfg(test)]
 fn transport_connection_id(value: String) -> TransportConnectionId {
     TransportConnectionId::new(value).expect("MQTT connection IDs are never empty")
 }

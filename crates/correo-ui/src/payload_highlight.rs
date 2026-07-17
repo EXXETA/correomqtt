@@ -102,9 +102,7 @@ impl HighlightCache {
         if let Some(result) = self.results.get(&key) {
             return result.clone();
         }
-        let Some(highlighter) = highlighter else {
-            return None;
-        };
+        let highlighter = highlighter?;
         if self.pending.len() < HIGHLIGHT_WORKER_CAPACITY
             && self
                 .jobs

@@ -167,7 +167,7 @@ mod tests {
                 let replacement = producer_count.fetch_add(1, Ordering::Relaxed) + 1;
                 let mut workbench = crate::WorkbenchSnapshot::default();
                 workbench.publish.topic = format!("latest/{replacement}");
-                let connection_id = if replacement % 2 == 0 {
+                let connection_id = if replacement.is_multiple_of(2) {
                     "connection-02"
                 } else {
                     "connection-01"
@@ -240,7 +240,7 @@ mod tests {
         );
 
         let latest_replacement = replacement_count.load(Ordering::Relaxed);
-        let latest_first = if latest_replacement % 2 == 0 {
+        let latest_first = if latest_replacement.is_multiple_of(2) {
             latest_replacement - 1
         } else {
             latest_replacement

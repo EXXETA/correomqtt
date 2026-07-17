@@ -45,6 +45,7 @@ impl MqttService {
         Self::spawn_with_timeouts(factory, DEFAULT_OPERATION_TIMEOUT, DEFAULT_SHUTDOWN_TIMEOUT)
     }
 
+    #[cfg(test)]
     pub(crate) fn spawn_with_operation_timeout(
         factory: impl MqttSessionFactory,
         operation_timeout: Duration,

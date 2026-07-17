@@ -370,8 +370,7 @@ fn message_table(
                             row,
                             tokens,
                             commands,
-                            table_response.has_focus(),
-                            focused_index,
+                            table_response.has_focus() && index == focused_index,
                             i18n,
                             row_metrics,
                         );

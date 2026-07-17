@@ -115,8 +115,9 @@ fn plugin_release_smoke_help_does_not_require_directories() {
 #[test]
 fn tag_release_workflow_publishes_generated_repository_assets() {
     let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
-    let workflow =
-        fs::read_to_string(workspace_root.join(".github/workflows/rust-build.yml")).unwrap();
+    let workflow = fs::read_to_string(workspace_root.join(".github/workflows/rust-build.yml"))
+        .unwrap()
+        .replace("\r\n", "\n");
     let plugin_release = workflow.split("  plugin-release:\n").nth(1).unwrap();
 
     assert_eq!(workflow.matches("contents: write").count(), 1);

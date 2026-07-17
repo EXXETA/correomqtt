@@ -6,15 +6,13 @@ fn message_row(
     row: &ConnectionMessageRow<'_>,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
-    table_focused: bool,
-    focused_index: usize,
+    row_focused: bool,
     i18n: &I18n,
     metrics: MessageRowMetrics,
 ) {
     let row_width = ui.available_width();
     let (rect, response) =
         ui.allocate_exact_size(egui::vec2(row_width, metrics.height), Sense::CLICK);
-    let row_focused = table_focused && index == focused_index;
     let fill = tile_table_interactive_fill(
         index,
         tokens,
