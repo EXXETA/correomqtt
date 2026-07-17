@@ -119,7 +119,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           dbus-run-session -- bash -c '
-            eval "$(printf "" | gnome-keyring-daemon --unlock)"
+            eval "$(printf %s ci-keyring-password | gnome-keyring-daemon --unlock --components=secrets)"
             cargo test -p correo-storage --test real_keychain --locked \
               real_keyring_persists_across_store_instances -- --ignored
           '
