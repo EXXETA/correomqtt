@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::sync::Arc;
 
 use crate::{
@@ -13,6 +14,8 @@ mod plugin_helpers;
 mod plugins;
 mod scripting;
 
+const PLUGIN_SAVE_PAYLOAD_CAPACITY: usize = 1;
+
 #[derive(Debug)]
 pub struct AppRuntime {
     model: AppModel,
@@ -26,6 +29,7 @@ pub struct AppRuntime {
     migration_worker: Option<MigrationPersistenceWorker>,
     plugin_hooks: Arc<dyn PluginHookExecutor>,
     plugin_installer: Option<Arc<dyn PluginInstaller>>,
+    pending_plugin_save_payloads: VecDeque<crate::PluginSavePayload>,
     settings_worker: Option<SettingsPersistenceWorker>,
     scripting_worker: Option<ScriptingWorker>,
     shutdown_requested: bool,
@@ -60,6 +64,7 @@ impl AppRuntime {
             migration_worker: None,
             plugin_hooks: Arc::new(NoopPluginHookExecutor),
             plugin_installer: None,
+            pending_plugin_save_payloads: VecDeque::new(),
             settings_worker: None,
             scripting_worker: None,
             shutdown_requested: false,
@@ -96,6 +101,10 @@ impl AppRuntime {
 
     pub fn attach_plugin_installer(&mut self, installer: impl PluginInstaller) {
         self.plugin_installer = Some(Arc::new(installer));
+    }
+
+    pub fn take_plugin_save_payload(&mut self) -> Option<crate::PluginSavePayload> {
+        self.pending_plugin_save_payloads.pop_front()
     }
 
     pub fn attach_settings_worker(&mut self, worker: SettingsPersistenceWorker) {

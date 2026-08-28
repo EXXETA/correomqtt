@@ -362,3 +362,160 @@ pub enum HookDiagnosticSeverityDto {
     Warning,
     Error,
 }
+
+pub const ABI_VERSION_V2: u16 = 2;
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[serde(transparent)]
+pub struct NamespacedNameDto(String);
+
+impl NamespacedNameDto {
+    pub fn new(value: impl Into<String>) -> Result<Self, String> {
+        let value = value.into();
+        if value
+            .split_once('.')
+            .is_some_and(|(namespace, name)| !namespace.is_empty() && !name.is_empty())
+        {
+            Ok(Self(value))
+        } else {
+            Err(format!("transport value requires a namespace: {value}"))
+        }
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl<'de> Deserialize<'de> for NamespacedNameDto {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        String::deserialize(deserializer)
+            .and_then(|value| Self::new(value).map_err(serde::de::Error::custom))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DeliveryGuaranteeDto {
+    AtMostOnce,
+    AtLeastOnce,
+    ExactlyOnce,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TransportMessageDto {
+    pub address: String,
+    pub body: Vec<u8>,
+    pub delivery: DeliveryGuaranteeDto,
+    #[serde(default)]
+    pub metadata: BTreeMap<NamespacedNameDto, Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum ConsumerSelectionDto {
+    Address { address: String },
+    Group { address: String, group: String },
+    Queue { name: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TransportHookInputDto {
+    pub message: TransportMessageDto,
+    #[serde(default)]
+    pub consumer: Option<ConsumerSelectionDto>,
+    #[serde(default)]
+    pub capabilities: std::collections::BTreeSet<NamespacedNameDto>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OutgoingTransportMessageTransformRequest {
+    pub abi_version: u16,
+    pub context: HookContextDto,
+    #[serde(default)]
+    pub config: Value,
+    pub input: TransportHookInputDto,
+}
+
+impl VersionedDto for OutgoingTransportMessageTransformRequest {
+    fn abi_version(&self) -> u16 {
+        self.abi_version
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct IncomingTransportMessageTransformRequest {
+    pub abi_version: u16,
+    pub context: HookContextDto,
+    #[serde(default)]
+    pub config: Value,
+    pub input: TransportHookInputDto,
+}
+
+impl VersionedDto for IncomingTransportMessageTransformRequest {
+    fn abi_version(&self) -> u16 {
+        self.abi_version
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TransportMessageValidatorRequest {
+    pub abi_version: u16,
+    pub context: HookContextDto,
+    #[serde(default)]
+    pub config: Value,
+    pub input: TransportHookInputDto,
+}
+
+impl VersionedDto for TransportMessageValidatorRequest {
+    fn abi_version(&self) -> u16 {
+        self.abi_version
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum TransportMessageTransformOutcomeDto {
+    Unchanged,
+    Replace { input: TransportHookInputDto },
+    Drop { reason: Option<String> },
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OutgoingTransportMessageTransformResponse {
+    pub abi_version: u16,
+    pub outcome: TransportMessageTransformOutcomeDto,
+}
+
+impl VersionedDto for OutgoingTransportMessageTransformResponse {
+    fn abi_version(&self) -> u16 {
+        self.abi_version
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct IncomingTransportMessageTransformResponse {
+    pub abi_version: u16,
+    pub outcome: TransportMessageTransformOutcomeDto,
+}
+
+impl VersionedDto for IncomingTransportMessageTransformResponse {
+    fn abi_version(&self) -> u16 {
+        self.abi_version
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TransportMessageValidatorResponse {
+    pub abi_version: u16,
+    pub result: ValidationResultDto,
+}
+
+impl VersionedDto for TransportMessageValidatorResponse {
+    fn abi_version(&self) -> u16 {
+        self.abi_version
+    }
+}

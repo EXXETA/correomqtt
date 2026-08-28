@@ -19,7 +19,7 @@ use super::plugin_helpers::*;
 use super::AppRuntime;
 
 impl AppRuntime {
-    pub(super) fn apply_plugin_connection_command(&self, command: &AppCommand) {
+    pub(super) fn apply_plugin_connection_command(&mut self, command: &AppCommand) {
         match command {
             AppCommand::InvokeConnectionPluginAction {
                 plugin_id,
@@ -41,7 +41,7 @@ impl AppRuntime {
                 };
                 match self.plugin_hooks.connection_action(request) {
                     Ok(response) => {
-                        self.forward_plugin_host_actions(response.host_actions);
+                        self.forward_plugin_host_actions(response.host_actions, false);
                         if let Some(window) = response.open_window {
                             self.open_plugin_window(window);
                         }
@@ -60,7 +60,7 @@ impl AppRuntime {
                     connection_id: *connection_id,
                 };
                 match self.plugin_hooks.close_window(request) {
-                    Ok(response) => self.forward_plugin_host_actions(response.host_actions),
+                    Ok(response) => self.forward_plugin_host_actions(response.host_actions, false),
                     Err(error) => self.emit_plugin_action_error(plugin_id, error),
                 }
                 self.emit_plugin_event(PluginWorkflowEvent::PluginWindowClosed {
@@ -156,15 +156,32 @@ impl AppRuntime {
         }
     }
 
-    fn forward_plugin_host_actions(&self, actions: Vec<PluginHostAction>) {
+    fn forward_plugin_host_actions(
+        &mut self,
+        actions: Vec<PluginHostAction>,
+        allow_save_payload: bool,
+    ) {
         for action in actions {
-            match plugin_host_action_to_mqtt(action) {
-                Ok(command) => self.forward_plugin_mqtt_command(command),
-                Err(error) => {
-                    let _ = self
-                        .event_sender()
-                        .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::error(error)));
+            match action {
+                PluginHostAction::SavePayload(payload) if allow_save_payload => {
+                    if self.pending_plugin_save_payloads.len()
+                        == super::PLUGIN_SAVE_PAYLOAD_CAPACITY
+                    {
+                        let _ = self.event_sender().emit(AppEvent::DiagnosticRaised(
+                            crate::Diagnostic::error("Plugin save request was rejected because another save is awaiting confirmation."),
+                        ));
+                    } else {
+                        self.pending_plugin_save_payloads.push_back(payload);
+                    }
                 }
+                action => match plugin_host_action_to_mqtt(action) {
+                    Ok(command) => self.forward_plugin_mqtt_command(command),
+                    Err(error) => {
+                        let _ = self
+                            .event_sender()
+                            .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::error(error)));
+                    }
+                },
             }
         }
     }
@@ -374,8 +391,8 @@ impl AppRuntime {
         )
     }
 
-    pub(super) fn refresh_message_detail(&self) {
-        let snapshot = self.model.snapshot();
+    pub(super) fn refresh_message_detail(&mut self) {
+        let snapshot = self.model.snapshot().clone();
         let Some(message) = snapshot.workbench.selected_message() else {
             return;
         };
@@ -389,7 +406,8 @@ impl AppRuntime {
                 self.selected_detail_hook(plugin_id, PluginHookKind::DetailTransform)
             {
                 match self.run_detail_transform(&hook, bytes.clone(), content_type.clone()) {
-                    Ok(output) => {
+                    Ok((output, host_actions)) => {
+                        self.forward_plugin_host_actions(host_actions, true);
                         bytes = output.bytes;
                         content_type = output.content_type;
                     }
@@ -551,7 +569,7 @@ impl AppRuntime {
         hook: &ActiveHook,
         bytes: Vec<u8>,
         content_type: Option<String>,
-    ) -> Result<DetailBytesOutput, PluginHookError> {
+    ) -> Result<(DetailBytesOutput, Vec<PluginHostAction>), PluginHookError> {
         let Some(config) = self.parse_hook_config(hook, false) else {
             return Err(PluginHookError::failed(
                 "detail transform config is invalid",
@@ -567,8 +585,9 @@ impl AppRuntime {
                 content_type,
             },
         };
-        match self.plugin_hooks.execute(call)? {
-            PluginHookOutput::DetailBytes(output) => Ok(output),
+        let execution = self.plugin_hooks.execute_with_host_actions(call)?;
+        match execution.output {
+            PluginHookOutput::DetailBytes(output) => Ok((output, execution.host_actions)),
             output => Err(PluginHookError::failed(format!(
                 "detail transform returned incompatible output: {output:?}"
             ))),
@@ -823,6 +842,9 @@ fn plugin_host_action_to_mqtt(action: PluginHostAction) -> Result<MqttCommand, S
             request: UnsubscribeRequest::new(topic_filter.as_str())
                 .map_err(|source| source.to_report().message)?,
         }),
+        PluginHostAction::SavePayload(_) => {
+            Err("Plugin save requests are only supported by detail transforms.".to_owned())
+        }
     }
 }
 

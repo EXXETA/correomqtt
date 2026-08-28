@@ -6,8 +6,8 @@ use crate::mqtt::test_support::{connection_options, connection_state, pump_until
 use crate::{
     sample_snapshot, AppCommand, AppRuntime, ConnectionState, FormattedMessageDetail,
     MessageDetailFormat, MessageTransform, MqttCommand, PluginHookCall, PluginHookError,
-    PluginHookExecutor, PluginHookInput, PluginHookKind, PluginHookOutput, PluginHookStatus,
-    PluginMessage, PluginStatus, PluginValidation, ThemeMode,
+    PluginHookExecution, PluginHookExecutor, PluginHookInput, PluginHookKind, PluginHookOutput,
+    PluginHookStatus, PluginMessage, PluginSavePayload, PluginStatus, PluginValidation, ThemeMode,
 };
 
 #[tokio::test]
@@ -334,6 +334,36 @@ fn detail_formatter_selection_renders_and_cancellation_falls_back() {
     assert!(!detail.diagnostics.is_empty());
 }
 
+#[test]
+fn detail_transform_queues_one_save_payload() {
+    let mut snapshot = sample_snapshot(ThemeMode::System);
+    enable_hook(
+        &mut snapshot,
+        "org.correomqtt.plugins.json-format",
+        PluginHookKind::DetailTransform,
+        "#",
+    );
+    let mut runtime = AppRuntime::with_snapshot(snapshot);
+    runtime.attach_plugin_hook_executor(MockHooks::new(MockBehavior::DetailSave, Arc::default()));
+    runtime
+        .command_sender()
+        .send(AppCommand::SelectDetailTransform(Some(
+            "org.correomqtt.plugins.json-format".to_owned(),
+        )))
+        .unwrap();
+    runtime.pump();
+
+    assert_eq!(
+        runtime.take_plugin_save_payload(),
+        Some(PluginSavePayload {
+            suggested_file_name: "transformed.bin".to_owned(),
+            bytes: b"saved".to_vec(),
+            content_type: Some("application/octet-stream".to_owned()),
+        })
+    );
+    assert_eq!(runtime.take_plugin_save_payload(), None);
+}
+
 #[derive(Debug)]
 struct MockHooks {
     behavior: MockBehavior,
@@ -347,6 +377,25 @@ impl MockHooks {
 }
 
 impl PluginHookExecutor for MockHooks {
+    fn execute_with_host_actions(
+        &self,
+        call: PluginHookCall,
+    ) -> Result<PluginHookExecution, PluginHookError> {
+        let host_actions = matches!(&self.behavior, MockBehavior::DetailSave)
+            .then(|| {
+                vec![crate::PluginHostAction::SavePayload(PluginSavePayload {
+                    suggested_file_name: "transformed.bin".to_owned(),
+                    bytes: b"saved".to_vec(),
+                    content_type: Some("application/octet-stream".to_owned()),
+                })]
+            })
+            .unwrap_or_default();
+        self.execute(call).map(|output| PluginHookExecution {
+            output,
+            host_actions,
+        })
+    }
+
     fn execute(&self, call: PluginHookCall) -> Result<PluginHookOutput, PluginHookError> {
         self.calls.lock().unwrap().push(call.clone());
         match (&self.behavior, call.hook, call.input) {
@@ -424,6 +473,11 @@ impl PluginHookExecutor for MockHooks {
                 content_type,
                 diagnostics: Vec::new(),
             })),
+            (_, _, PluginHookInput::TransportMessage(_)) => {
+                Ok(PluginHookOutput::TransportMessageTransform(
+                    crate::TransportMessageTransform::Unchanged,
+                ))
+            }
         }
     }
 }
@@ -436,6 +490,7 @@ enum MockBehavior {
     IncomingError(String),
     DetailFormat(String),
     DetailCancel(String),
+    DetailSave,
 }
 
 fn enable_hook(
