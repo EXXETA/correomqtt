@@ -121,9 +121,9 @@ fn tag_release_workflow_publishes_generated_repository_assets() {
     let plugin_release = workflow.split("  plugin-release:\n").nth(1).unwrap();
 
     assert_eq!(workflow.matches("contents: write").count(), 1);
-    assert!(plugin_release.contains(
-        "needs: [check, package, keyring-integration, mqtt-integration]"
-    ));
+    assert!(
+        plugin_release.contains("needs: [check, package, keyring-integration, mqtt-integration]")
+    );
     assert!(plugin_release.contains("permissions:\n      contents: write\n      actions: read"));
     assert!(plugin_release.contains(
         "RELEASE_ASSET_BASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}"
@@ -144,7 +144,9 @@ fn tag_release_workflow_publishes_generated_repository_assets() {
         "cargo xtask plugin-release --out-dir dist/plugins --asset-base-url \"$RELEASE_ASSET_BASE_URL\""
     ));
     assert!(plugin_release.contains("gh run download \"$GITHUB_RUN_ID\" --dir dist/packages"));
-    assert!(plugin_release.contains("gh release delete-asset \"$GITHUB_REF_NAME\" \"$asset\" --yes"));
+    assert!(
+        plugin_release.contains("gh release delete-asset \"$GITHUB_REF_NAME\" \"$asset\" --yes")
+    );
     assert!(plugin_release.contains(
         "gh release download \"$GITHUB_REF_NAME\" --dir \"$release_dir\" --pattern '*.zip' --pattern default-repo.json"
     ));
