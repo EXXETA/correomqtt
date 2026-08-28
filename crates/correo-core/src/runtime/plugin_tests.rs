@@ -499,6 +499,41 @@ async fn incoming_hooks_are_ordered_nonblocking_and_cancellable() {
 
 #[test]
 fn full_incoming_plugin_queue_returns_message_for_fallback_processing() {
+    let (_, dispatch) = saturated_incoming_plugin_dispatch(false, "bridge/fallback");
+    let super::plugins::IncomingPluginDispatch::Continue { event, diagnostics } = dispatch else {
+        panic!("full queue must return the message for normal processing");
+    };
+    let crate::MqttEvent::IncomingMessage(message) = event else {
+        panic!("expected incoming MQTT message");
+    };
+    assert_eq!(message.topic.as_str(), "bridge/fallback");
+    assert!(diagnostics.iter().any(|diagnostic| diagnostic
+        .message
+        .contains("continued without topic plugin hooks")));
+}
+
+#[test]
+fn full_incoming_plugin_queue_rejects_message_when_validator_cannot_run() {
+    let (mut runtime, dispatch) = saturated_incoming_plugin_dispatch(true, "bridge/rejected");
+    assert!(matches!(
+        dispatch,
+        super::plugins::IncomingPluginDispatch::Rejected
+    ));
+
+    runtime.pump();
+    assert!(runtime
+        .snapshot()
+        .diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic
+            .message
+            .contains("rejected because the plugin validator queue is full")));
+}
+
+fn saturated_incoming_plugin_dispatch(
+    with_validator: bool,
+    third_topic: &str,
+) -> (AppRuntime, super::plugins::IncomingPluginDispatch) {
     let mut snapshot = sample_snapshot(ThemeMode::System);
     enable_hook(
         &mut snapshot,
@@ -506,6 +541,14 @@ fn full_incoming_plugin_queue_returns_message_for_fallback_processing() {
         PluginHookKind::IncomingTransform,
         "bridge/#",
     );
+    if with_validator {
+        enable_hook(
+            &mut snapshot,
+            "user.advanced-validator",
+            PluginHookKind::Validator,
+            "bridge/#",
+        );
+    }
     let calls = Arc::new(Mutex::new(Vec::new()));
     let executor = Arc::new(MockHooks::new(
         MockBehavior::IncomingSlow(Duration::from_secs(1)),
@@ -517,9 +560,8 @@ fn full_incoming_plugin_queue_returns_message_for_fallback_processing() {
         Some(super::incoming_plugins::IncomingPluginWorker::start_with_capacity(executor, 1));
     let connection_id = runtime.snapshot().connections[2].id;
 
-    let first = incoming_event(connection_id, "bridge/first");
     assert!(matches!(
-        runtime.queue_incoming_hook_job(&first),
+        runtime.queue_incoming_hook_job(&incoming_event(connection_id, "bridge/first")),
         super::plugins::IncomingPluginDispatch::Queued
     ));
     let deadline = Instant::now() + Duration::from_secs(1);
@@ -527,25 +569,12 @@ fn full_incoming_plugin_queue_returns_message_for_fallback_processing() {
         std::thread::sleep(Duration::from_millis(1));
     }
     assert!(!calls.lock().unwrap().is_empty());
-
-    let second = incoming_event(connection_id, "bridge/second");
     assert!(matches!(
-        runtime.queue_incoming_hook_job(&second),
+        runtime.queue_incoming_hook_job(&incoming_event(connection_id, "bridge/second")),
         super::plugins::IncomingPluginDispatch::Queued
     ));
-    let third = incoming_event(connection_id, "bridge/fallback");
-    let super::plugins::IncomingPluginDispatch::Continue { event, diagnostics } =
-        runtime.queue_incoming_hook_job(&third)
-    else {
-        panic!("full queue must return the message for normal processing");
-    };
-    let crate::MqttEvent::IncomingMessage(message) = event else {
-        panic!("expected incoming MQTT message");
-    };
-    assert_eq!(message.topic.as_str(), "bridge/fallback");
-    assert!(diagnostics.iter().any(|diagnostic| diagnostic
-        .message
-        .contains("continued without topic plugin hooks")));
+    let dispatch = runtime.queue_incoming_hook_job(&incoming_event(connection_id, third_topic));
+    (runtime, dispatch)
 }
 
 fn incoming_event(connection_id: correo_mqtt::ConnectionId, topic: &str) -> crate::MqttEvent {

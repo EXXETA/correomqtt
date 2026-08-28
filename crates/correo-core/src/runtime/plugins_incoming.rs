@@ -256,10 +256,13 @@ impl AppRuntime {
         };
         let mut hooks = self.active_topic_hooks(PluginHookKind::IncomingTransform, &original_topic);
         hooks.extend(self.active_topic_hooks(PluginHookKind::Validator, &validator_topic));
+        let requires_validation = hooks
+            .iter()
+            .any(|hook| hook.hook == PluginHookKind::Validator);
         match worker.enqueue(message, hooks, diagnostics) {
             Ok(()) => IncomingPluginDispatch::Queued,
             Err(error) => {
-                let (message, mut diagnostics, detail) = match error {
+                let (message, mut diagnostics, detail, validation_detail) = match error {
                     super::incoming_plugins::IncomingPluginQueueError::Full {
                         message,
                         diagnostics,
@@ -267,6 +270,7 @@ impl AppRuntime {
                         message,
                         diagnostics,
                         "Incoming plugin queue is full; message continued without topic plugin hooks.",
+                        "Incoming message rejected because the plugin validator queue is full.",
                     ),
                     super::incoming_plugins::IncomingPluginQueueError::Disconnected {
                         message,
@@ -275,8 +279,15 @@ impl AppRuntime {
                         message,
                         diagnostics,
                         "Incoming plugin worker is unavailable; message continued without topic plugin hooks.",
+                        "Incoming message rejected because the plugin validator worker is unavailable.",
                     ),
                 };
+                if requires_validation {
+                    let _ = self.event_sender.emit(AppEvent::DiagnosticRaised(
+                        crate::Diagnostic::error(validation_detail),
+                    ));
+                    return IncomingPluginDispatch::Rejected;
+                }
                 diagnostics.push(MessageDiagnosticRow {
                     severity: PluginDiagnosticSeverity::Warning,
                     hook: None,
