@@ -18,6 +18,16 @@ use crate::{
 use super::plugin_helpers::*;
 use super::AppRuntime;
 
+pub(super) enum IncomingPluginDispatch {
+    NotApplicable,
+    Queued,
+    Continue {
+        event: MqttEvent,
+        diagnostics: Vec<MessageDiagnosticRow>,
+    },
+    Rejected,
+}
+
 impl AppRuntime {
     pub(super) fn apply_plugin_connection_command(&self, command: &AppCommand) {
         match command {
@@ -198,6 +208,76 @@ impl AppRuntime {
                 mark_hook_failed: false,
             },
         ));
+    }
+
+    pub(super) fn queue_incoming_hook_job(&self, event: &MqttEvent) -> IncomingPluginDispatch {
+        let Some(worker) = &self.incoming_plugin_worker else {
+            return IncomingPluginDispatch::NotApplicable;
+        };
+        let MqttEvent::IncomingMessage(message) = event else {
+            return IncomingPluginDispatch::NotApplicable;
+        };
+        let original_topic = message.topic.as_str().to_owned();
+        let mut plugin_message = plugin_message_from_incoming(message);
+        let diagnostics = self.apply_connection_workflows(
+            message.connection_id,
+            &mut plugin_message,
+            ConnectionPluginDirection::Incoming,
+        );
+        let message = match incoming_from_plugin_message(message.clone(), plugin_message.clone()) {
+            Ok(message) => message,
+            Err(error) => {
+                self.emit_hook_diagnostic(
+                    &ActiveHook {
+                        plugin_id: "plugin-workflow".to_owned(),
+                        hook: PluginHookKind::IncomingTransform,
+                        target: original_topic,
+                        config_json: "{}".to_owned(),
+                    },
+                    PluginDiagnosticSeverity::Error,
+                    "Incoming transform returned an invalid topic.",
+                    error,
+                    false,
+                );
+                return IncomingPluginDispatch::Rejected;
+            }
+        };
+        let transforms =
+            self.active_topic_hooks(PluginHookKind::IncomingTransform, &original_topic);
+        let validators = self.active_topic_hooks(PluginHookKind::Validator, &plugin_message.topic);
+        let requires_validation = !validators.is_empty();
+        match worker.enqueue(message, transforms, validators, diagnostics) {
+            Ok(()) => IncomingPluginDispatch::Queued,
+            Err(error) => {
+                let detail = error.detail();
+                let job = error.into_job();
+                if requires_validation {
+                    let _ = self.event_sender.emit(AppEvent::DiagnosticRaised(
+                        crate::Diagnostic::error(format!(
+                            "Incoming message rejected because the plugin validator cannot run: {detail}."
+                        )),
+                    ));
+                    return IncomingPluginDispatch::Rejected;
+                }
+                let detail = format!("{detail}; message continued without topic plugin hooks.");
+                let mut diagnostics = job.diagnostics;
+                diagnostics.push(MessageDiagnosticRow {
+                    severity: PluginDiagnosticSeverity::Warning,
+                    hook: None,
+                    plugin_id: None,
+                    message: detail.clone(),
+                });
+                let _ =
+                    self.event_sender
+                        .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::warning(
+                            detail,
+                        )));
+                IncomingPluginDispatch::Continue {
+                    event: MqttEvent::IncomingMessage(job.message),
+                    diagnostics,
+                }
+            }
+        }
     }
 
     pub(super) fn apply_incoming_hooks(

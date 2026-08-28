@@ -9,6 +9,7 @@ use crate::{
     SettingsPersistenceEvent, SettingsPersistenceWorker, StartupState,
 };
 
+mod incoming_plugins;
 mod plugin_helpers;
 mod plugins;
 mod scripting;
@@ -25,6 +26,7 @@ pub struct AppRuntime {
     history_worker: Option<HistoryPersistenceWorker>,
     migration_worker: Option<MigrationPersistenceWorker>,
     plugin_hooks: Arc<dyn PluginHookExecutor>,
+    incoming_plugin_worker: Option<incoming_plugins::IncomingPluginWorker>,
     plugin_installer: Option<Arc<dyn PluginInstaller>>,
     settings_worker: Option<SettingsPersistenceWorker>,
     scripting_worker: Option<ScriptingWorker>,
@@ -59,6 +61,7 @@ impl AppRuntime {
             history_worker: None,
             migration_worker: None,
             plugin_hooks: Arc::new(NoopPluginHookExecutor),
+            incoming_plugin_worker: None,
             plugin_installer: None,
             settings_worker: None,
             scripting_worker: None,
@@ -91,7 +94,11 @@ impl AppRuntime {
     }
 
     pub fn attach_plugin_hook_executor(&mut self, executor: impl PluginHookExecutor) {
-        self.plugin_hooks = Arc::new(executor);
+        let executor: Arc<dyn PluginHookExecutor> = Arc::new(executor);
+        self.incoming_plugin_worker = Some(incoming_plugins::IncomingPluginWorker::start(
+            executor.clone(),
+        ));
+        self.plugin_hooks = executor;
     }
 
     pub fn attach_plugin_installer(&mut self, installer: impl PluginInstaller) {
@@ -116,20 +123,32 @@ impl AppRuntime {
         let before = self.model.snapshot().clone();
         let mut report = PumpReport::default();
 
+        while let Some(result) = self.try_recv_incoming_hook_result() {
+            if let Some(event) = result.event {
+                self.apply_incoming_mqtt_event(event, result.diagnostics);
+            } else {
+                self.emit_incoming_plugin_diagnostics(result.diagnostics);
+            }
+            report.events_processed += 1;
+        }
+
         while let Some(event) = self.try_recv_mqtt_event() {
-            let Some((event, incoming_diagnostics)) = self.apply_incoming_hooks(event) else {
+            let incoming = match self.queue_incoming_hook_job(&event) {
+                plugins::IncomingPluginDispatch::Queued
+                | plugins::IncomingPluginDispatch::Rejected => {
+                    report.events_processed += 1;
+                    continue;
+                }
+                plugins::IncomingPluginDispatch::Continue { event, diagnostics } => {
+                    Some((event, diagnostics))
+                }
+                plugins::IncomingPluginDispatch::NotApplicable => self.apply_incoming_hooks(event),
+            };
+            let Some((event, diagnostics)) = incoming else {
                 report.events_processed += 1;
                 continue;
             };
-            let refresh_detail = matches!(event, crate::MqttEvent::IncomingMessage(_));
-            self.dispatch_history_for_mqtt_event(&event);
-            self.model.apply_event(AppEvent::Mqtt(event));
-            self.append_incoming_diagnostics(incoming_diagnostics);
-            if refresh_detail {
-                self.refresh_message_detail();
-                self.refresh_plugin_windows();
-            }
-            self.dispatch_dirty_workbenches();
+            self.apply_incoming_mqtt_event(event, diagnostics);
             report.events_processed += 1;
         }
 
@@ -209,6 +228,40 @@ impl AppRuntime {
         report.snapshot_changed = before != *self.model.snapshot();
         report.shutdown_requested = self.shutdown_requested;
         report
+    }
+
+    fn apply_incoming_mqtt_event(
+        &mut self,
+        event: crate::MqttEvent,
+        diagnostics: Vec<crate::MessageDiagnosticRow>,
+    ) {
+        self.dispatch_history_for_mqtt_event(&event);
+        self.model.apply_event(AppEvent::Mqtt(event));
+        self.append_incoming_diagnostics(diagnostics);
+        self.refresh_message_detail();
+        self.refresh_plugin_windows();
+        self.dispatch_dirty_workbenches();
+    }
+
+    fn emit_incoming_plugin_diagnostics(&self, diagnostics: Vec<crate::MessageDiagnosticRow>) {
+        let message = if diagnostics.is_empty() {
+            "Incoming plugin processing dropped a message.".to_owned()
+        } else {
+            diagnostics
+                .into_iter()
+                .map(|diagnostic| crate::redact_sensitive(&diagnostic.message))
+                .collect::<Vec<_>>()
+                .join("; ")
+        };
+        let _ = self
+            .event_sender
+            .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(message)));
+    }
+
+    fn try_recv_incoming_hook_result(&self) -> Option<incoming_plugins::IncomingPluginResult> {
+        self.incoming_plugin_worker
+            .as_ref()
+            .and_then(incoming_plugins::IncomingPluginWorker::try_recv)
     }
 
     fn try_recv_mqtt_event(&self) -> Option<crate::MqttEvent> {

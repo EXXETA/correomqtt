@@ -1,6 +1,9 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
 
-use correo_mqtt::{PublishRequest, Qos};
+use correo_mqtt::{IncomingMessage, PublishRequest, Qos, TopicName};
 
 use crate::mqtt::test_support::{connection_options, connection_state, pump_until, FakeFactory};
 use crate::{
@@ -225,7 +228,10 @@ async fn incoming_validator_result_is_recorded_on_message() {
     );
     let mut runtime = AppRuntime::with_snapshot(snapshot);
     runtime.attach_plugin_hook_executor(MockHooks::new(
-        MockBehavior::ValidatorBlock("payload missing required text".to_owned()),
+        MockBehavior::ValidatorBlockAfterFirst {
+            message: "payload missing required text".to_owned(),
+            calls: Mutex::new(0),
+        },
         Arc::default(),
     ));
     runtime.attach_mqtt_service(
@@ -272,6 +278,98 @@ async fn incoming_validator_result_is_recorded_on_message() {
             })
     })
     .await;
+}
+
+#[test]
+fn full_incoming_plugin_queue_continues_transform_only_message() {
+    let (_, dispatch) = saturated_incoming_plugin_dispatch(false, "bridge/fallback");
+    let super::plugins::IncomingPluginDispatch::Continue { event, diagnostics } = dispatch else {
+        panic!("full queue must continue transform-only messages");
+    };
+    let crate::MqttEvent::IncomingMessage(message) = event else {
+        panic!("expected incoming MQTT message");
+    };
+    assert_eq!(message.topic.as_str(), "bridge/fallback");
+    assert!(diagnostics.iter().any(|diagnostic| diagnostic
+        .message
+        .contains("continued without topic plugin hooks")));
+}
+
+#[test]
+fn full_incoming_plugin_queue_rejects_message_when_validator_cannot_run() {
+    let (mut runtime, dispatch) = saturated_incoming_plugin_dispatch(true, "bridge/rejected");
+    assert!(matches!(
+        dispatch,
+        super::plugins::IncomingPluginDispatch::Rejected
+    ));
+
+    runtime.pump();
+    assert!(runtime
+        .snapshot()
+        .diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic
+            .message
+            .contains("plugin validator cannot run: Incoming plugin queue is full")));
+}
+
+fn saturated_incoming_plugin_dispatch(
+    with_validator: bool,
+    third_topic: &str,
+) -> (AppRuntime, super::plugins::IncomingPluginDispatch) {
+    let mut snapshot = sample_snapshot(ThemeMode::System);
+    enable_hook(
+        &mut snapshot,
+        "org.correomqtt.plugins.base64",
+        PluginHookKind::IncomingTransform,
+        "bridge/#",
+    );
+    if with_validator {
+        enable_hook(
+            &mut snapshot,
+            "user.advanced-validator",
+            PluginHookKind::Validator,
+            "bridge/#",
+        );
+    }
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let executor = Arc::new(MockHooks::new(
+        MockBehavior::IncomingSlow(Duration::from_secs(1)),
+        calls.clone(),
+    ));
+    let mut runtime = AppRuntime::with_snapshot(snapshot);
+    runtime.attach_plugin_hook_executor(executor.clone());
+    runtime.incoming_plugin_worker =
+        Some(super::incoming_plugins::IncomingPluginWorker::start_with_capacity(executor, 1));
+    let connection_id = runtime.snapshot().connections[2].id;
+
+    assert!(matches!(
+        runtime.queue_incoming_hook_job(&incoming_event(connection_id, "bridge/first")),
+        super::plugins::IncomingPluginDispatch::Queued
+    ));
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while calls.lock().unwrap().is_empty() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(1));
+    }
+    assert!(!calls.lock().unwrap().is_empty());
+    assert!(matches!(
+        runtime.queue_incoming_hook_job(&incoming_event(connection_id, "bridge/second")),
+        super::plugins::IncomingPluginDispatch::Queued
+    ));
+    let dispatch = runtime.queue_incoming_hook_job(&incoming_event(connection_id, third_topic));
+    (runtime, dispatch)
+}
+
+fn incoming_event(connection_id: correo_mqtt::ConnectionId, topic: &str) -> crate::MqttEvent {
+    crate::MqttEvent::IncomingMessage(IncomingMessage {
+        connection_id,
+        topic: TopicName::new(topic).unwrap(),
+        payload: b"payload".to_vec(),
+        qos: Qos::AtMostOnce,
+        retain: false,
+        duplicate: false,
+        packet_id: None,
+    })
 }
 
 #[test]
@@ -349,6 +447,22 @@ impl MockHooks {
 impl PluginHookExecutor for MockHooks {
     fn execute(&self, call: PluginHookCall) -> Result<PluginHookOutput, PluginHookError> {
         self.calls.lock().unwrap().push(call.clone());
+        if let MockBehavior::IncomingSlow(delay) = &self.behavior {
+            std::thread::sleep(*delay);
+        }
+        if let MockBehavior::ValidatorBlockAfterFirst { message, calls } = &self.behavior {
+            if call.hook == PluginHookKind::Validator {
+                let mut validation_calls = calls.lock().unwrap();
+                *validation_calls += 1;
+                return if *validation_calls == 1 {
+                    Ok(PluginHookOutput::Validation(PluginValidation::Valid))
+                } else {
+                    Ok(PluginHookOutput::Validation(PluginValidation::Block {
+                        message: message.clone(),
+                    }))
+                };
+            }
+        }
         match (&self.behavior, call.hook, call.input) {
             (
                 MockBehavior::OutgoingReplace(payload),
@@ -432,8 +546,13 @@ impl PluginHookExecutor for MockHooks {
 enum MockBehavior {
     OutgoingReplace(Vec<u8>),
     ValidatorBlock(String),
+    ValidatorBlockAfterFirst {
+        message: String,
+        calls: Mutex<usize>,
+    },
     ValidatorWarning(String),
     IncomingError(String),
+    IncomingSlow(Duration),
     DetailFormat(String),
     DetailCancel(String),
 }
