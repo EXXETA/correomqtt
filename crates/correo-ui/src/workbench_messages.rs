@@ -1,7 +1,7 @@
 use correo_core::{AppCommandSender, AppSnapshot};
 use egui::{CentralPanel, Context, Frame, Id, ViewportBuilder, ViewportClass, ViewportId, Window};
 
-use crate::{theme::ThemeTokens, workbench_detail, PayloadHighlighter};
+use crate::{i18n::I18n, theme::ThemeTokens, workbench_detail, PayloadHighlighter};
 
 pub(crate) fn open_incoming_message(ctx: &Context, message_id: u32) {
     let mut ids = incoming_ids(ctx);
@@ -30,10 +30,11 @@ pub(crate) fn show(
     snapshot: &AppSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
     payload_highlighter: Option<&PayloadHighlighter>,
 ) {
-    show_outgoing(ctx, snapshot, tokens, commands, payload_highlighter);
-    show_incoming(ctx, snapshot, tokens, commands, payload_highlighter);
+    show_outgoing(ctx, snapshot, tokens, commands, i18n, payload_highlighter);
+    show_incoming(ctx, snapshot, tokens, commands, i18n, payload_highlighter);
 }
 
 fn show_incoming(
@@ -41,6 +42,7 @@ fn show_incoming(
     snapshot: &AppSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
     payload_highlighter: Option<&PayloadHighlighter>,
 ) {
     let focused = ctx
@@ -56,7 +58,10 @@ fn show_incoming(
         else {
             continue;
         };
-        let title = format!("Message {}", message.topic);
+        let title = i18n.text_with_args(
+            "message-window-incoming",
+            &[("topic", message.topic.clone())],
+        );
         let close_requested = show_message_viewport(
             ctx,
             viewport_id("workbench-message-viewport", message_id),
@@ -73,6 +78,7 @@ fn show_incoming(
                     tokens,
                     commands,
                     payload_highlighter,
+                    i18n,
                 );
             },
         );
@@ -91,6 +97,7 @@ fn show_outgoing(
     snapshot: &AppSnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
     payload_highlighter: Option<&PayloadHighlighter>,
 ) {
     let focused = ctx
@@ -107,7 +114,7 @@ fn show_outgoing(
         else {
             continue;
         };
-        let title = format!("Published {}", row.topic);
+        let title = i18n.text_with_args("message-window-outgoing", &[("topic", row.topic.clone())]);
         let close_requested = show_message_viewport(
             ctx,
             viewport_id("workbench-outgoing-message-viewport", message_id),
@@ -124,6 +131,7 @@ fn show_outgoing(
                     tokens,
                     commands,
                     payload_highlighter,
+                    i18n,
                 );
             },
         );
