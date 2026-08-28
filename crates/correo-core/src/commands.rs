@@ -59,7 +59,9 @@ pub enum AppCommand {
     },
     SetConnectionExportEncrypted(bool),
     UpdateConnectionExportPath(String),
-    StartConnectionExport,
+    StartConnectionExport {
+        password: crate::SecretInput,
+    },
     ImportMessages,
     ImportMessagesFromPath(PathBuf),
     ExportMessages,

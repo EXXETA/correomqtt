@@ -1,6 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
 use correo_mqtt::ConnectionId;
+use correo_storage::current::{
+    ConnectionConfig as StorageConnectionConfig, ImportedSecret as StorageImportedSecret,
+};
 
 use crate::{
     AppCommand, AppEvent, AppSnapshot, ConnectDisabledReason, ConnectionSettingsSnapshot,
@@ -23,6 +26,8 @@ mod scripting_tests;
 mod settings;
 mod subscriptions;
 mod transfer;
+mod transfer_connection_export;
+mod transfer_connections;
 
 #[derive(Debug, Clone)]
 pub struct AppModel {
@@ -33,6 +38,10 @@ pub struct AppModel {
     dirty_workbenches: HashSet<ConnectionId>,
     saved_global_settings: crate::GlobalSettingsSnapshot,
     saved_theme_mode: crate::ThemeMode,
+    pending_connection_imports: HashMap<String, StorageConnectionConfig>,
+    pending_connection_import_secrets: Vec<StorageImportedSecret>,
+    pending_connection_import_persistence:
+        Option<(Vec<StorageConnectionConfig>, Vec<StorageImportedSecret>)>,
 }
 
 impl AppModel {
@@ -76,6 +85,9 @@ impl AppModel {
             dirty_workbenches: HashSet::new(),
             saved_global_settings,
             saved_theme_mode,
+            pending_connection_imports: HashMap::new(),
+            pending_connection_import_secrets: Vec::new(),
+            pending_connection_import_persistence: None,
         };
         model.sync_built_in_broker_connection();
         model.normalize_connection_surface();
@@ -111,6 +123,12 @@ impl AppModel {
                 })
             })
             .collect()
+    }
+
+    pub(crate) fn drain_connection_import_persistence(
+        &mut self,
+    ) -> Option<(Vec<StorageConnectionConfig>, Vec<StorageImportedSecret>)> {
+        self.pending_connection_import_persistence.take()
     }
 
     pub(crate) fn mqtt_commands_for_app_command(
@@ -227,7 +245,9 @@ impl AppModel {
             AppCommand::UpdateConnectionExportPath(path) => {
                 self.update_connection_export_path(path)
             }
-            AppCommand::StartConnectionExport => self.start_connection_export(),
+            AppCommand::StartConnectionExport { password } => {
+                self.start_connection_export(&password)
+            }
             AppCommand::ImportMessages => self.import_messages(),
             AppCommand::ImportMessagesFromPath(path) => self.import_messages_from_path(&path),
             AppCommand::ExportMessages => self.export_messages(),
@@ -379,7 +399,9 @@ impl AppModel {
             self.mark_active_workbench_dirty();
         }
     }
+}
 
+impl AppModel {
     pub fn apply_event(&mut self, event: AppEvent) {
         match event {
             AppEvent::ConnectionListLoaded { connections } => {

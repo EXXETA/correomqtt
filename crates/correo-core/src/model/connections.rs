@@ -1,4 +1,5 @@
 use correo_mqtt::ConnectionId;
+use correo_storage::current::{ConnectionConfig as StorageConnectionConfig, ImportedSecret};
 
 use crate::{
     AppModel, ConnectDisabledReason, ConnectionBadge, ConnectionPluginDirection,
@@ -40,6 +41,22 @@ impl AppModel {
         self.snapshot.connection_plugins_overlay = None;
         self.snapshot.connection_settings = new_connection_settings();
         self.push_diagnostic(Diagnostic::info("New connection draft opened."));
+    }
+
+    pub(super) fn add_imported_connection(
+        &mut self,
+        connection: StorageConnectionConfig,
+        _secrets: &[ImportedSecret],
+    ) -> ConnectionId {
+        let id = ConnectionId::new();
+        let settings = crate::bootstrap::settings_snapshot(&connection, &[]);
+        self.connection_settings.insert(id, settings.clone());
+        self.storage_connection_ids.insert(id, connection.id);
+        self.snapshot
+            .connections
+            .push(connection_summary(id, &settings));
+        self.snapshot.connection_count = self.snapshot.connections.len();
+        id
     }
 
     pub(super) fn connect(&mut self, id: ConnectionId) {

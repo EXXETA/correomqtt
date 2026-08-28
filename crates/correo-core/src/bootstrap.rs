@@ -255,7 +255,7 @@ fn summary(
     }
 }
 
-fn settings_snapshot(
+pub(crate) fn settings_snapshot(
     connection: &ConnectionConfig,
     warnings: &[String],
 ) -> ConnectionSettingsSnapshot {

@@ -196,6 +196,9 @@ impl AppRuntime {
             if self.should_refresh_detail_for_command(&command) {
                 self.refresh_message_detail();
             }
+            if matches!(command, AppCommand::StartConnectionImport) {
+                self.dispatch_connection_import_save();
+            }
             if should_persist_settings {
                 self.dispatch_global_settings_save();
             }
@@ -399,6 +402,24 @@ impl AppRuntime {
             settings: Box::new(settings),
         };
         let _ = worker.dispatch(command);
+    }
+
+    fn dispatch_connection_import_save(&mut self) {
+        let Some((connections, secrets)) = self.model.drain_connection_import_persistence() else {
+            return;
+        };
+        let Some(worker) = &self.settings_worker else {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    "Settings persistence worker is not running.",
+                )));
+            return;
+        };
+        let _ = worker.dispatch(SettingsPersistenceCommand::SaveImportedConnections {
+            connections,
+            secrets,
+        });
     }
 
     fn dispatch_connection_delete(&self, connection_id: String) {
