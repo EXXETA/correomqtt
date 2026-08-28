@@ -71,7 +71,8 @@ impl MqttSession for Mqtt311Session {
             Arc::new(move |error| error_channels.report_error(error));
         let mut transport =
             PreparedTransport::open_with_reporter(&options, Some(error_reporter)).await?;
-        let mqtt_options = build_options(&options, &transport.endpoint)?;
+        let mqtt_options =
+            build_options(&options, &transport.endpoint, &transport.socket_endpoint)?;
         let (client, eventloop) = rumqtt::AsyncClient::builder(mqtt_options).build();
         let (startup_tx, startup_rx) = oneshot::channel();
         let channels = self.channels.clone();
@@ -259,6 +260,7 @@ fn handle_event(
 fn build_options(
     options: &MqttConnectionOptions,
     endpoint: &MqttEndpoint,
+    socket_endpoint: &MqttEndpoint,
 ) -> MqttResult<rumqtt::MqttOptions> {
     if options.protocol_version != MqttProtocolVersion::Mqtt3_1_1 {
         return Err(MqttError::invalid_options(
@@ -278,8 +280,30 @@ fn build_options(
         mqtt_options.set_last_will(to_last_will(will));
     }
     apply_tls(&mut mqtt_options, options)?;
+    apply_socket_endpoint(&mut mqtt_options, endpoint, socket_endpoint);
 
     Ok(mqtt_options)
+}
+
+/// Dials the actual TCP socket against `socket_endpoint` (e.g. an SSH tunnel's local
+/// forwarded port) while `endpoint` continues to drive TLS SNI/hostname verification,
+/// since rumqttc otherwise derives both from the same value.
+fn apply_socket_endpoint(
+    mqtt_options: &mut rumqtt::MqttOptions,
+    endpoint: &MqttEndpoint,
+    socket_endpoint: &MqttEndpoint,
+) {
+    if socket_endpoint == endpoint {
+        return;
+    }
+    let socket_endpoint = socket_endpoint.clone();
+    mqtt_options.set_socket_connector(move |_host, _network_options| {
+        let socket_endpoint = socket_endpoint.clone();
+        async move {
+            tokio::net::TcpStream::connect((socket_endpoint.host.as_str(), socket_endpoint.port))
+                .await
+        }
+    });
 }
 
 fn apply_tls(
@@ -405,7 +429,8 @@ mod tests {
     #[test]
     fn build_options_rejects_non_v3_protocol() {
         let options = options(MqttProtocolVersion::Mqtt5);
-        let error = build_options(&options, &options.endpoint).expect_err("invalid");
+        let error =
+            build_options(&options, &options.endpoint, &options.endpoint).expect_err("invalid");
         assert!(matches!(error, MqttError::InvalidOptions { .. }));
     }
 
@@ -417,9 +442,39 @@ mod tests {
             password: SecretString::new("synthetic-password"),
         };
 
-        let error = build_options(&options, &options.endpoint).expect_err("invalid");
+        let error =
+            build_options(&options, &options.endpoint, &options.endpoint).expect_err("invalid");
         assert!(matches!(error, MqttError::InvalidOptions { .. }));
         assert!(!error.to_string().contains("synthetic-password"));
+    }
+
+    #[test]
+    fn build_options_keeps_broker_hostname_when_tunneled() {
+        let options = options(MqttProtocolVersion::Mqtt3_1_1);
+        let socket_endpoint = MqttEndpoint::new("127.0.0.1", 21883).expect("valid endpoint");
+
+        let mqtt_options = build_options(&options, &options.endpoint, &socket_endpoint)
+            .expect("valid options with tunnel socket endpoint");
+
+        assert_eq!(
+            mqtt_options.broker().tcp_address(),
+            Some(("localhost", 1883)),
+            "TLS SNI/hostname verification must target the real broker, not the tunnel socket"
+        );
+        assert!(
+            mqtt_options.has_socket_connector(),
+            "a tunneled socket endpoint must install a custom socket connector"
+        );
+    }
+
+    #[test]
+    fn build_options_skips_socket_connector_without_tunnel() {
+        let options = options(MqttProtocolVersion::Mqtt3_1_1);
+
+        let mqtt_options = build_options(&options, &options.endpoint, &options.endpoint)
+            .expect("valid options without tunnel");
+
+        assert!(!mqtt_options.has_socket_connector());
     }
 
     #[test]

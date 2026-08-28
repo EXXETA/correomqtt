@@ -7,16 +7,10 @@ use crate::{
     TlsTrustRoots,
 };
 
-pub(crate) fn validate(config: &TlsConfig, ssh_enabled: bool) -> MqttResult<()> {
+pub(crate) fn validate(config: &TlsConfig) -> MqttResult<()> {
     let TlsConfig::Enabled(options) = config else {
         return Ok(());
     };
-
-    if ssh_enabled {
-        return Err(MqttError::tls(
-            "TLS over SSH is not supported by the current rumqtt endpoint mapping",
-        ));
-    }
 
     if matches!(
         options.host_verification,
@@ -35,7 +29,7 @@ pub(crate) fn rustls_client_config(config: &TlsConfig) -> MqttResult<Option<Clie
         return Ok(None);
     };
 
-    validate(config, false)?;
+    validate(config)?;
     let roots = root_store(options)?;
     let builder =
         ClientConfig::builder_with_provider(rustls::crypto::ring::default_provider().into())
@@ -158,7 +152,7 @@ oaQ31k55+MyS0LvD2dJIcPD6vtubQ9P/uTq0l7vOAkNrREc=
     #[test]
     fn native_tls_options_preserve_host_verification_by_default() {
         let options = TlsConfig::Enabled(TlsOptions::default());
-        assert!(validate(&options, false).is_ok());
+        assert!(validate(&options).is_ok());
     }
 
     #[test]
@@ -168,17 +162,9 @@ oaQ31k55+MyS0LvD2dJIcPD6vtubQ9P/uTq0l7vOAkNrREc=
             ..TlsOptions::default()
         });
 
-        let error = validate(&options, false).expect_err("unsupported");
+        let error = validate(&options).expect_err("unsupported");
         assert!(matches!(error, MqttError::Tls { .. }));
         assert!(error.to_string().contains("insecure"));
-    }
-
-    #[test]
-    fn tls_over_ssh_is_rejected_before_localhost_rewrite() {
-        let options = TlsConfig::Enabled(TlsOptions::default());
-        let error = validate(&options, true).expect_err("unsupported");
-        assert!(matches!(error, MqttError::Tls { .. }));
-        assert!(error.to_string().contains("TLS over SSH"));
     }
 
     #[test]

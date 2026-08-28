@@ -10,7 +10,13 @@ use crate::{MqttConnectionOptions, MqttEndpoint, MqttError, MqttResult};
 pub(crate) use ssh::RusshTunnelDriver;
 
 pub(crate) struct PreparedTransport {
+    /// The broker's logical endpoint. Always the real remote host/port, even when
+    /// tunneled over SSH, so TLS SNI and hostname verification target the real broker.
     pub(crate) endpoint: MqttEndpoint,
+    /// The endpoint a raw TCP socket should actually be dialed against. Equal to
+    /// `endpoint` unless an SSH tunnel is active, in which case it is the tunnel's
+    /// local forwarded address.
+    pub(crate) socket_endpoint: MqttEndpoint,
     tunnel: Option<Box<dyn OpenTunnel>>,
 }
 
@@ -27,11 +33,12 @@ impl PreparedTransport {
         driver: &dyn SshTunnelDriver,
         error_reporter: Option<TransportErrorReporter>,
     ) -> MqttResult<Self> {
-        tls::validate(&options.tls, options.ssh_tunnel.is_some())?;
+        tls::validate(&options.tls)?;
 
         let Some(ssh_options) = &options.ssh_tunnel else {
             return Ok(Self {
                 endpoint: options.endpoint.clone(),
+                socket_endpoint: options.endpoint.clone(),
                 tunnel: None,
             });
         };
@@ -42,9 +49,10 @@ impl PreparedTransport {
             error_reporter,
         };
         let tunnel = driver.open(request).await?;
-        let endpoint = tunnel.local_endpoint();
+        let socket_endpoint = tunnel.local_endpoint();
         Ok(Self {
-            endpoint,
+            endpoint: options.endpoint.clone(),
+            socket_endpoint,
             tunnel: Some(tunnel),
         })
     }
@@ -90,7 +98,7 @@ mod tests {
     };
 
     #[tokio::test]
-    async fn ssh_driver_rewrites_endpoint_and_closes_tunnel() {
+    async fn ssh_driver_keeps_logical_endpoint_and_rewrites_socket_endpoint() {
         let state = Arc::new(Mutex::new(FakeState::default()));
         let driver = FakeDriver {
             state: Arc::clone(&state),
@@ -101,8 +109,10 @@ mod tests {
             .await
             .expect("prepared");
 
-        assert_eq!(prepared.endpoint.host, "127.0.0.1");
-        assert_eq!(prepared.endpoint.port, 21883);
+        assert_eq!(prepared.endpoint.host, "broker.example");
+        assert_eq!(prepared.endpoint.port, 1883);
+        assert_eq!(prepared.socket_endpoint.host, "127.0.0.1");
+        assert_eq!(prepared.socket_endpoint.port, 21883);
 
         prepared.close().await.expect("closed");
         let state = state.lock().expect("state");
