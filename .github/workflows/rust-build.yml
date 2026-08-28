@@ -86,6 +86,8 @@ jobs:
     needs: check
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    env:
+      CORREO_KEYRING_CI_SEED_LEGACY: "1"
     strategy:
       fail-fast: false
       matrix:
@@ -115,18 +117,18 @@ jobs:
             libdbus-1-dev \
             pkg-config
 
-      - name: Run Linux keyring roundtrip
+      - name: Run Linux keyring integration tests
         if: runner.os == 'Linux'
         run: |
           dbus-run-session -- bash -c '
             eval "$(printf %s ci-keyring-password | gnome-keyring-daemon --unlock --components=secrets)"
             cargo test -p correo-storage --test real_keychain --locked \
-              real_keyring_persists_across_store_instances -- --ignored
+              -- --ignored --test-threads=1
           '
 
-      - name: Run native keyring roundtrip
+      - name: Run native keyring integration tests
         if: runner.os != 'Linux'
-        run: cargo test -p correo-storage --test real_keychain --locked real_keyring_persists_across_store_instances -- --ignored
+        run: cargo test -p correo-storage --test real_keychain --locked -- --ignored --test-threads=1
 
   mqtt-integration:
     name: MQTT broker integration tests

@@ -1,6 +1,4 @@
 // Integration verification against the real OS keyring.
-// CI selects the persistence roundtrip explicitly; the legacy migration probe
-// remains manual because it reads a user-provided legacy credential.
 use correo_storage::current::{
     OsKeyringSecretStore, SecretKind, SecretMaterial, SecretReference, SecretStore,
 };
@@ -15,6 +13,31 @@ fn reference() -> SecretReference {
         connection_id: "real-keychain-probe".to_owned(),
         kind: SecretKind::Password,
     }
+}
+
+struct CiLegacyCredential(keyring::Entry);
+
+impl Drop for CiLegacyCredential {
+    fn drop(&mut self) {
+        let _ = self.0.delete_credential();
+    }
+}
+
+fn seed_ci_legacy_credential() -> Option<CiLegacyCredential> {
+    if std::env::var("CORREO_KEYRING_CI_SEED_LEGACY").as_deref() != Ok("1") {
+        return None;
+    }
+    let entry = keyring::Entry::new("CorreoMQTT", "CorreoMQTT_MasterPassword")
+        .expect("create legacy keyring entry");
+    match entry.get_password() {
+        Err(keyring::Error::NoEntry) => {}
+        Ok(_) => panic!("refusing to overwrite an existing legacy keyring credential"),
+        Err(error) => panic!("could not verify legacy keyring state: {error}"),
+    }
+    entry
+        .set_password("session-test-master")
+        .expect("seed legacy keyring credential");
+    Some(CiLegacyCredential(entry))
 }
 
 #[test]
@@ -49,8 +72,9 @@ fn real_keyring_persists_across_store_instances() {
 }
 
 #[test]
-#[ignore = "reads the real OS keyring; seed CorreoMQTT/CorreoMQTT_MasterPassword first, run with --ignored"]
+#[ignore = "reads the real OS keyring; CI seeds a disposable credential, or seed CorreoMQTT/CorreoMQTT_MasterPassword manually"]
 fn migration_reads_java_master_password_from_real_keychain() {
+    let _ci_credential = seed_ci_legacy_credential();
     let master = correo_storage::legacy::passwords::os_keyring_master_password();
     assert_eq!(
         master.as_deref(),
