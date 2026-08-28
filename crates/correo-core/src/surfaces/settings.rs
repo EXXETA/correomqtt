@@ -2,6 +2,8 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::PluginHookKind;
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SettingsSection {
     #[default]
@@ -120,6 +122,7 @@ pub struct GlobalSettingsSnapshot {
     pub bundled_plugins_url: String,
     pub plugin_repositories: Vec<PluginRepositoryRow>,
     pub plugin_states: BTreeMap<String, PluginStateSnapshot>,
+    pub plugin_hooks: BTreeMap<String, Vec<PluginHookSettingsSnapshot>>,
     pub first_start: bool,
     pub config_version: String,
     pub window_geometry: String,
@@ -147,6 +150,7 @@ impl Default for GlobalSettingsSnapshot {
             bundled_plugins_url: String::new(),
             plugin_repositories: Vec::new(),
             plugin_states: BTreeMap::new(),
+            plugin_hooks: BTreeMap::new(),
             first_start: true,
             config_version: "unknown".to_owned(),
             window_geometry: "No saved window geometry".to_owned(),
@@ -161,6 +165,14 @@ impl Default for GlobalSettingsSnapshot {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PluginStateSnapshot {
     pub enabled: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginHookSettingsSnapshot {
+    pub hook: PluginHookKind,
+    pub enabled: bool,
+    pub target: String,
+    pub config_json: String,
 }
 
 pub fn normalize_keyring_backend(value: impl AsRef<str>) -> String {
@@ -242,10 +254,12 @@ fn default_language_options() -> Vec<SettingsOption> {
     ])
 }
 
+// No "UserInput" prompt option: the headless fallback is the encrypted file
+// store activated via CORREOMQTT_MASTER_PASSWORD. Java configs that carry
+// keyringIdentifier=UserInput normalize to "os".
 pub fn available_keyring_options() -> Vec<SettingsOption> {
     let mut values = vec![("os", "OS keyring")];
     values.extend_from_slice(platform_keyring_options());
-    values.push(("UserInput", "Prompt on startup"));
     options(&values)
 }
 
@@ -288,7 +302,7 @@ mod tests {
         let options = available_keyring_options();
         let ids: Vec<_> = options.iter().map(|option| option.id.as_str()).collect();
         assert!(ids.contains(&"os"));
-        assert!(ids.contains(&"UserInput"));
+        assert!(!ids.contains(&"UserInput"));
 
         #[cfg(target_os = "windows")]
         {
@@ -324,6 +338,6 @@ mod tests {
         };
 
         assert_eq!(normalize_keyring_backend(unavailable), "os");
-        assert_eq!(normalize_keyring_backend("UserInput"), "UserInput");
+        assert_eq!(normalize_keyring_backend("UserInput"), "os");
     }
 }

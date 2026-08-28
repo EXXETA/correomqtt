@@ -3,7 +3,7 @@ use std::{
     path::PathBuf,
     sync::{
         atomic::{AtomicU64, Ordering},
-        mpsc::{self, Receiver, RecvTimeoutError, Sender},
+        mpsc::{self, Receiver, Sender},
         Arc,
     },
     time::{Duration, Instant},
@@ -22,8 +22,8 @@ use thiserror::Error;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 use crate::{
-    MqttCommandSender, ScriptExecutionError, ScriptExecutionErrorKind, ScriptExecutionStatus,
-    ScriptLogLevel,
+    MqttCommand, MqttCommandSender, ScriptExecutionError, ScriptExecutionErrorKind,
+    ScriptExecutionStatus, ScriptLogLevel,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -52,6 +52,7 @@ pub enum ScriptingCommand {
         script_path: String,
         source: String,
         connection_id: Option<String>,
+        connect_command: Option<Box<MqttCommand>>,
     },
     Cancel {
         execution_id: String,
@@ -147,10 +148,7 @@ impl ScriptingWorker {
     }
 
     pub fn recv_event_timeout(&self, timeout: Duration) -> Option<ScriptingEvent> {
-        match self.events.recv_timeout(timeout) {
-            Ok(event) => Some(event),
-            Err(RecvTimeoutError::Timeout | RecvTimeoutError::Disconnected) => None,
-        }
+        self.events.recv_timeout(timeout).ok()
     }
 }
 
@@ -202,6 +200,7 @@ fn run_worker(
                 script_path,
                 source,
                 connection_id,
+                connect_command,
             } => {
                 let cancellation = ScriptCancellationToken::new();
                 cancellations.insert(execution_id.clone(), cancellation.clone());
@@ -213,6 +212,7 @@ fn run_worker(
                     script_path,
                     source,
                     connection_id,
+                    connect_command.map(|command| *command),
                     mqtt_sender.clone(),
                     cancellation,
                 );
@@ -238,6 +238,7 @@ fn spawn_script_run(
     script_path: String,
     source: String,
     connection_id: Option<String>,
+    connect_command: Option<MqttCommand>,
     mqtt_sender: Option<MqttCommandSender>,
     cancellation: ScriptCancellationToken,
 ) {
@@ -263,7 +264,7 @@ fn spawn_script_run(
             events.clone(),
             execution_id.clone(),
             script_path.clone(),
-            crate::scripting_mqtt::client(connection_id.clone(), mqtt_sender),
+            crate::scripting_mqtt::client(connection_id.clone(), mqtt_sender, connect_command),
         ));
         let outcome = ScriptRuntime::new(host).execute(
             ScriptExecutionRequest::new(script_name.clone(), source),
@@ -474,11 +475,11 @@ fn format_duration(duration_ms: u64) -> String {
 }
 
 trait StoredStatusExt {
-    fn is_terminal(self) -> bool;
+    fn is_terminal(&self) -> bool;
 }
 
 impl StoredStatusExt for StoredExecutionStatus {
-    fn is_terminal(self) -> bool {
+    fn is_terminal(&self) -> bool {
         matches!(
             self,
             StoredExecutionStatus::Succeeded

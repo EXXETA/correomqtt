@@ -162,6 +162,13 @@ impl AppRuntime {
 
         while let Ok(command) = self.command_receiver.try_recv() {
             let command_before = self.model.snapshot().clone();
+            let deleted_connection_id = matches!(command, AppCommand::ConfirmDeleteConnection)
+                .then(|| {
+                    command_before
+                        .selected_connection
+                        .map(|connection_id| self.model.storage_connection_id(connection_id))
+                })
+                .flatten();
             let should_persist_settings = (matches!(command, AppCommand::SaveGlobalSettings)
                 && self.model.snapshot().global_settings.dirty)
                 || matches!(
@@ -196,7 +203,13 @@ impl AppRuntime {
                 self.dispatch_connection_plugin_workflows_save();
             }
             if self.should_persist_connections_for_command(&command, &command_before) {
-                self.dispatch_connections_save();
+                self.dispatch_connection_settings_save();
+            }
+            if let Some(connection_id) = deleted_connection_id {
+                self.dispatch_connection_delete(connection_id);
+            }
+            if matches!(command, AppCommand::MoveConnection { .. }) {
+                self.dispatch_connection_order_save();
             }
             if self.should_persist_built_in_broker_for_command(&command, &command_before) {
                 self.dispatch_built_in_broker_save();
@@ -329,7 +342,7 @@ impl AppRuntime {
         };
         if let Err(error) = worker.dispatch(SettingsPersistenceCommand::Save {
             theme_mode: self.model.snapshot().theme_mode.clone(),
-            settings: self.model.snapshot().global_settings.clone(),
+            settings: Box::new(self.model.snapshot().global_settings.clone()),
         }) {
             let _ = self
                 .event_sender
@@ -371,23 +384,34 @@ impl AppRuntime {
         }
     }
 
-    fn dispatch_connections_save(&self) {
-        let Some(worker) = &self.settings_worker else {
-            let _ = self
-                .event_sender
-                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
-                    "Settings persistence worker is not running.",
-                )));
+    fn dispatch_connection_settings_save(&self) {
+        let Some(connection_id) = self.model.snapshot().selected_connection else {
             return;
         };
-        if let Err(error) = worker.dispatch(SettingsPersistenceCommand::SaveConnections {
-            connections: self.model.connection_persistence_snapshot(),
-        }) {
-            let _ = self
-                .event_sender
-                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
-                    error.to_string(),
-                )));
+        let Some(worker) = &self.settings_worker else {
+            return;
+        };
+        let Some(settings) = self.model.connection_settings_for(connection_id).cloned() else {
+            return;
+        };
+        let command = SettingsPersistenceCommand::SaveConnectionSettings {
+            connection_id: self.model.storage_connection_id(connection_id),
+            settings: Box::new(settings),
+        };
+        let _ = worker.dispatch(command);
+    }
+
+    fn dispatch_connection_delete(&self, connection_id: String) {
+        if let Some(worker) = &self.settings_worker {
+            let _ = worker.dispatch(SettingsPersistenceCommand::DeleteConnection { connection_id });
+        }
+    }
+
+    fn dispatch_connection_order_save(&self) {
+        if let Some(worker) = &self.settings_worker {
+            let _ = worker.dispatch(SettingsPersistenceCommand::SaveConnectionOrder {
+                connection_ids: self.model.connection_storage_ids(),
+            });
         }
     }
 
@@ -498,9 +522,13 @@ impl AppRuntime {
                 .map(|legacy_path| MigrationPersistenceCommand::Prepare {
                     legacy_path: legacy_path.clone(),
                 }),
-            crate::MigrationRecoveryCommand::SubmitPassword
-            | crate::MigrationRecoveryCommand::SkipSecrets => {
-                Some(MigrationPersistenceCommand::LoadReview)
+            crate::MigrationRecoveryCommand::SubmitPassword { password } => {
+                Some(MigrationPersistenceCommand::UnlockSecrets {
+                    master_password: password.clone(),
+                })
+            }
+            crate::MigrationRecoveryCommand::SkipSecrets => {
+                Some(MigrationPersistenceCommand::SkipSecrets)
             }
             crate::MigrationRecoveryCommand::ApplyMigration => {
                 Some(MigrationPersistenceCommand::Apply {

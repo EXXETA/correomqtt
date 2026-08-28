@@ -82,6 +82,15 @@ impl AppModel {
             .cloned()
             .unwrap_or_else(|| connection_id.to_string())
     }
+
+    pub(crate) fn connection_storage_ids(&self) -> Vec<String> {
+        self.snapshot
+            .connections
+            .iter()
+            .filter(|connection| !connection.immutable)
+            .map(|connection| self.storage_connection_id(connection.id))
+            .collect()
+    }
 }
 
 fn published_message_from_row(row: &PublishHistoryRow) -> Message {

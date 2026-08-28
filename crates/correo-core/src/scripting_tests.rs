@@ -36,6 +36,7 @@ fn worker_runs_reported_promise_sample_and_persists_logs() {
             script_path: "new_script.js".to_owned(),
             source: source.to_owned(),
             connection_id: Some("connection-1".to_owned()),
+            connect_command: None,
         })
         .unwrap();
 
@@ -128,6 +129,7 @@ fn worker_script_mqtt_bridge_queues_commands_and_runs_callbacks() {
             script_path: "mqtt.js".to_owned(),
             source: source.to_owned(),
             connection_id: Some(connection_id.to_string()),
+            connect_command: None,
         })
         .unwrap();
 

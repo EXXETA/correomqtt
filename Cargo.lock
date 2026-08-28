@@ -653,6 +653,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
+name = "atomic-write-file"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84790c55b5704b0d35130bf16a4ce22a8e70eb0ea773522557524d9a4852663d"
+dependencies = [
+ "nix 0.30.1",
+ "rand 0.9.4",
+]
+
+[[package]]
 name = "atspi"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1432,7 +1442,7 @@ dependencies = [
 
 [[package]]
 name = "correo-app"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "correo-core",
  "correo-diagnostics",
@@ -1457,7 +1467,7 @@ dependencies = [
 
 [[package]]
 name = "correo-core"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -1469,6 +1479,7 @@ dependencies = [
  "flate2",
  "flume 0.11.1",
  "futures",
+ "keyring",
  "regex",
  "serde",
  "serde_json",
@@ -1481,7 +1492,7 @@ dependencies = [
 
 [[package]]
 name = "correo-diagnostics"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "serde",
  "thiserror 1.0.69",
@@ -1492,7 +1503,7 @@ dependencies = [
 
 [[package]]
 name = "correo-mqtt"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "async-trait",
  "futures",
@@ -1510,7 +1521,7 @@ dependencies = [
 
 [[package]]
 name = "correo-plugin-base64"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "base64 0.22.1",
  "serde",
@@ -1520,7 +1531,7 @@ dependencies = [
 
 [[package]]
 name = "correo-plugin-save-manipulator"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1528,7 +1539,7 @@ dependencies = [
 
 [[package]]
 name = "correo-plugin-xml-format"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1536,7 +1547,7 @@ dependencies = [
 
 [[package]]
 name = "correo-plugin-zip-manipulator"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "flate2",
  "serde",
@@ -1546,7 +1557,7 @@ dependencies = [
 
 [[package]]
 name = "correo-plugins"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "base64 0.22.1",
  "correo-plugin-xml-format",
@@ -1568,7 +1579,7 @@ dependencies = [
 
 [[package]]
 name = "correo-plugins-advanced-validator"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1577,7 +1588,7 @@ dependencies = [
 
 [[package]]
 name = "correo-plugins-contains-string-validator"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1585,7 +1596,7 @@ dependencies = [
 
 [[package]]
 name = "correo-plugins-json-format"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1593,7 +1604,7 @@ dependencies = [
 
 [[package]]
 name = "correo-plugins-systopic"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1601,7 +1612,7 @@ dependencies = [
 
 [[package]]
 name = "correo-plugins-xml-xsd-validator"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1610,7 +1621,7 @@ dependencies = [
 
 [[package]]
 name = "correo-scripting"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "base64 0.22.1",
  "correo-mqtt",
@@ -1623,12 +1634,15 @@ dependencies = [
 
 [[package]]
 name = "correo-storage"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "aes 0.8.4",
  "aes-gcm 0.10.3",
+ "atomic-write-file",
  "base64 0.22.1",
  "cbc 0.1.2",
+ "directories",
+ "keyring",
  "pbkdf2 0.12.2",
  "rand 0.8.6",
  "serde",
@@ -1641,7 +1655,7 @@ dependencies = [
 
 [[package]]
 name = "correo-style"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "egui",
  "egui-phosphor",
@@ -1650,7 +1664,7 @@ dependencies = [
 
 [[package]]
 name = "correo-ui"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "correo-core",
  "correo-style",
@@ -2004,6 +2018,27 @@ name = "data-url"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
+
+[[package]]
+name = "dbus"
+version = "0.9.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b942602992bb7acfd1f51c49811c58a610ef9181b6e66f3e519d79b540a3bf73"
+dependencies = [
+ "libc",
+ "libdbus-sys",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "dbus-secret-service"
+version = "4.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "708b509edf7889e53d7efb0ffadd994cc6c2345ccb62f55cfd6b0682165e4fa6"
+dependencies = [
+ "dbus",
+ "zeroize",
+]
 
 [[package]]
 name = "debugid"
@@ -3915,6 +3950,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "keyring"
+version = "3.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eebcc3aff044e5944a8fbaf69eb277d11986064cba30c468730e8b9909fb551c"
+dependencies = [
+ "byteorder",
+ "dbus-secret-service",
+ "log",
+ "security-framework 2.11.1",
+ "security-framework 3.7.0",
+ "windows-sys 0.60.2",
+ "zeroize",
+]
+
+[[package]]
 name = "khronos-egl"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3974,6 +4024,15 @@ name = "libc"
 version = "0.2.186"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
+
+[[package]]
+name = "libdbus-sys"
+version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "328c4789d42200f1eeec05bd86c9c13c7f091d2ba9a6ea35acdf51f31bc0f043"
+dependencies = [
+ "pkg-config",
+]
 
 [[package]]
 name = "libfuzzer-sys"
@@ -4398,6 +4457,18 @@ dependencies = [
  "cfg_aliases",
  "libc",
  "memoffset",
+]
+
+[[package]]
+name = "nix"
+version = "0.30.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74523f3a35e05aba87a1d978330aef40f67b0304ac79c1c00b294c9830543db6"
+dependencies = [
+ "bitflags 2.13.0",
+ "cfg-if",
+ "cfg_aliases",
+ "libc",
 ]
 
 [[package]]
@@ -6250,7 +6321,7 @@ dependencies = [
  "openssl-probe",
  "rustls-pki-types",
  "schannel",
- "security-framework",
+ "security-framework 3.7.0",
 ]
 
 [[package]]
@@ -6358,6 +6429,19 @@ dependencies = [
  "hybrid-array",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "security-framework"
+version = "2.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "897b2245f0b511c87893af39b033e5ca9cce68824c4d7e7630b5a1d339658d02"
+dependencies = [
+ "bitflags 2.13.0",
+ "core-foundation 0.9.4",
+ "core-foundation-sys",
+ "libc",
+ "security-framework-sys",
 ]
 
 [[package]]
@@ -9036,7 +9120,7 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 
 [[package]]
 name = "xtask"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "correo-plugins",
  "serde_json",

@@ -46,6 +46,55 @@ jobs:
       - name: Test packaging automation
         run: cargo test --locked -p xtask
 
+  keyring-integration:
+    name: Native keyring integration (${{ matrix.os }})
+    needs: check
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      CORREO_KEYRING_CI_SEED_LEGACY: "1"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-26, windows-2025]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            target
+          key: cargo-${{ runner.os }}-${{ runner.arch }}-keyring-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ runner.arch }}-keyring-
+
+      - name: Install Linux Secret Service
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            dbus-x11 \
+            gnome-keyring \
+            libdbus-1-dev \
+            pkg-config
+
+      - name: Run Linux keyring integration tests
+        if: runner.os == 'Linux'
+        run: |
+          dbus-run-session -- bash -c '
+            eval "$(printf %s ci-keyring-password | gnome-keyring-daemon --unlock --components=secrets)"
+            cargo test -p correo-storage --test real_keychain --locked \
+              -- --ignored --test-threads=1
+          '
+
+      - name: Run native keyring integration tests
+        if: runner.os != 'Linux'
+        run: cargo test -p correo-storage --test real_keychain --locked -- --ignored --test-threads=1
+
   package:
     name: Package ${{ matrix.platform }} (${{ matrix.target }})
     needs: check

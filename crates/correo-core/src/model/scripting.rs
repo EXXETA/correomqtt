@@ -108,9 +108,7 @@ impl AppModel {
         let script = &mut self.snapshot.scripts.scripts[index];
         script.source = source;
         if script.status != ScriptFileStatus::Running {
-            script.status = if script.is_dirty() {
-                ScriptFileStatus::Dirty
-            } else if !script.persisted {
+            script.status = if script.is_dirty() || !script.persisted {
                 ScriptFileStatus::Dirty
             } else {
                 ScriptFileStatus::Ready
