@@ -18,6 +18,16 @@ use crate::{
 use super::plugin_helpers::*;
 use super::AppRuntime;
 
+pub(super) enum IncomingPluginDispatch {
+    NotApplicable,
+    Queued,
+    Continue {
+        event: MqttEvent,
+        diagnostics: Vec<MessageDiagnosticRow>,
+    },
+    Rejected,
+}
+
 impl AppRuntime {
     pub(super) fn apply_plugin_connection_command(&mut self, command: &AppCommand) {
         match command {
@@ -217,12 +227,15 @@ impl AppRuntime {
         ));
     }
 
-    pub(super) fn queue_incoming_hook_job(&self, event: &MqttEvent) -> bool {
+    pub(super) fn queue_incoming_hook_job(
+        &self,
+        event: &MqttEvent,
+    ) -> IncomingPluginDispatch {
         let Some(worker) = &self.incoming_plugin_worker else {
-            return false;
+            return IncomingPluginDispatch::NotApplicable;
         };
         let MqttEvent::IncomingMessage(message) = event else {
-            return false;
+            return IncomingPluginDispatch::NotApplicable;
         };
         let message = message.clone();
         let original_topic = message.topic.as_str().to_owned();
@@ -239,24 +252,46 @@ impl AppRuntime {
                 .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::error(
                     "Incoming plugin workflow returned an invalid topic.",
                 )));
-            return true;
+            return IncomingPluginDispatch::Rejected;
         };
         let mut hooks = self.active_topic_hooks(PluginHookKind::IncomingTransform, &original_topic);
         hooks.extend(self.active_topic_hooks(PluginHookKind::Validator, &validator_topic));
-        if let Err(error) = worker.enqueue(message, hooks, diagnostics) {
-            let detail = match error {
-                super::incoming_plugins::IncomingPluginQueueError::Full => {
-                    "Incoming plugin queue is full; MQTT ingress was not silently dropped."
+        match worker.enqueue(message, hooks, diagnostics) {
+            Ok(()) => IncomingPluginDispatch::Queued,
+            Err(error) => {
+                let (message, mut diagnostics, detail) = match error {
+                    super::incoming_plugins::IncomingPluginQueueError::Full {
+                        message,
+                        diagnostics,
+                    } => (
+                        message,
+                        diagnostics,
+                        "Incoming plugin queue is full; message continued without topic plugin hooks.",
+                    ),
+                    super::incoming_plugins::IncomingPluginQueueError::Disconnected {
+                        message,
+                        diagnostics,
+                    } => (
+                        message,
+                        diagnostics,
+                        "Incoming plugin worker is unavailable; message continued without topic plugin hooks.",
+                    ),
+                };
+                diagnostics.push(MessageDiagnosticRow {
+                    severity: PluginDiagnosticSeverity::Warning,
+                    hook: None,
+                    plugin_id: None,
+                    message: detail.to_owned(),
+                });
+                let _ = self
+                    .event_sender
+                    .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::warning(detail)));
+                IncomingPluginDispatch::Continue {
+                    event: MqttEvent::IncomingMessage(message),
+                    diagnostics,
                 }
-                super::incoming_plugins::IncomingPluginQueueError::Disconnected => {
-                    "Incoming plugin worker is unavailable; MQTT ingress was not silently dropped."
-                }
-            };
-            let _ = self
-                .event_sender
-                .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::error(detail)));
+            }
         }
-        true
     }
 
     pub(super) fn try_recv_incoming_hook_result(

@@ -187,12 +187,19 @@ impl AppRuntime {
             let Some(event) = self.try_recv_mqtt_event() else {
                 break;
             };
-            if self.queue_incoming_hook_job(&event) {
-                report.events_processed += 1;
-                event_budget -= 1;
-                continue;
-            }
-            let Some((event, incoming_diagnostics)) = self.apply_incoming_hooks(event) else {
+            let incoming = match self.queue_incoming_hook_job(&event) {
+                plugins::IncomingPluginDispatch::Queued
+                | plugins::IncomingPluginDispatch::Rejected => {
+                    report.events_processed += 1;
+                    event_budget -= 1;
+                    continue;
+                }
+                plugins::IncomingPluginDispatch::Continue { event, diagnostics } => {
+                    Some((event, diagnostics))
+                }
+                plugins::IncomingPluginDispatch::NotApplicable => self.apply_incoming_hooks(event),
+            };
+            let Some((event, incoming_diagnostics)) = incoming else {
                 report.events_processed += 1;
                 event_budget -= 1;
                 continue;

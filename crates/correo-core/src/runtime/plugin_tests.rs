@@ -4,7 +4,7 @@ use std::sync::{
 };
 use std::time::{Duration, Instant};
 
-use correo_mqtt::{PublishRequest, Qos};
+use correo_mqtt::{IncomingMessage, PublishRequest, Qos, TopicName};
 
 use crate::mqtt::test_support::{connection_options, connection_state, pump_until, FakeFactory};
 use crate::{
@@ -496,6 +496,70 @@ async fn incoming_hooks_are_ordered_nonblocking_and_cancellable() {
             .contains("Incoming plugin processing cancelled")
     }));
 }
+
+#[test]
+fn full_incoming_plugin_queue_returns_message_for_fallback_processing() {
+    let mut snapshot = sample_snapshot(ThemeMode::System);
+    enable_hook(
+        &mut snapshot,
+        "org.correomqtt.plugins.base64",
+        PluginHookKind::IncomingTransform,
+        "bridge/#",
+    );
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let executor = Arc::new(MockHooks::new(
+        MockBehavior::IncomingSlow(Duration::from_secs(1)),
+        calls.clone(),
+    ));
+    let mut runtime = AppRuntime::with_snapshot(snapshot);
+    runtime.plugin_hooks = executor.clone();
+    runtime.incoming_plugin_worker =
+        Some(super::incoming_plugins::IncomingPluginWorker::start_with_capacity(executor, 1));
+    let connection_id = runtime.snapshot().connections[2].id;
+
+    let first = incoming_event(connection_id, "bridge/first");
+    assert!(matches!(
+        runtime.queue_incoming_hook_job(&first),
+        super::plugins::IncomingPluginDispatch::Queued
+    ));
+    let deadline = Instant::now() + Duration::from_secs(1);
+    while calls.lock().unwrap().is_empty() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(1));
+    }
+    assert!(!calls.lock().unwrap().is_empty());
+
+    let second = incoming_event(connection_id, "bridge/second");
+    assert!(matches!(
+        runtime.queue_incoming_hook_job(&second),
+        super::plugins::IncomingPluginDispatch::Queued
+    ));
+    let third = incoming_event(connection_id, "bridge/fallback");
+    let super::plugins::IncomingPluginDispatch::Continue { event, diagnostics } =
+        runtime.queue_incoming_hook_job(&third)
+    else {
+        panic!("full queue must return the message for normal processing");
+    };
+    let crate::MqttEvent::IncomingMessage(message) = event else {
+        panic!("expected incoming MQTT message");
+    };
+    assert_eq!(message.topic.as_str(), "bridge/fallback");
+    assert!(diagnostics.iter().any(|diagnostic| diagnostic
+        .message
+        .contains("continued without topic plugin hooks")));
+}
+
+fn incoming_event(connection_id: correo_mqtt::ConnectionId, topic: &str) -> crate::MqttEvent {
+    crate::MqttEvent::IncomingMessage(IncomingMessage {
+        connection_id,
+        topic: TopicName::new(topic).unwrap(),
+        payload: b"payload".to_vec(),
+        qos: Qos::AtMostOnce,
+        retain: false,
+        duplicate: false,
+        packet_id: None,
+    })
+}
+
 #[derive(Debug)]
 struct MockHooks {
     behavior: MockBehavior,

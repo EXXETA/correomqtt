@@ -28,8 +28,15 @@ pub(super) struct IncomingPluginWorker {
 
 impl IncomingPluginWorker {
     pub(super) fn start(executor: Arc<dyn PluginHookExecutor>) -> Self {
-        let (requests, request_receiver) = flume::bounded(INCOMING_PLUGIN_CAPACITY);
-        let (result_sender, results) = flume::bounded(INCOMING_PLUGIN_CAPACITY);
+        Self::start_with_capacity(executor, INCOMING_PLUGIN_CAPACITY)
+    }
+
+    pub(super) fn start_with_capacity(
+        executor: Arc<dyn PluginHookExecutor>,
+        capacity: usize,
+    ) -> Self {
+        let (requests, request_receiver) = flume::bounded(capacity);
+        let (result_sender, results) = flume::bounded(capacity);
         let cancelled = Arc::new(AtomicBool::new(false));
         let worker_cancelled = Arc::clone(&cancelled);
         let worker_executor = Arc::clone(&executor);
@@ -65,8 +72,14 @@ impl IncomingPluginWorker {
                 diagnostics,
             })
             .map_err(|error| match error {
-                flume::TrySendError::Full(_) => IncomingPluginQueueError::Full,
-                flume::TrySendError::Disconnected(_) => IncomingPluginQueueError::Disconnected,
+                flume::TrySendError::Full(job) => IncomingPluginQueueError::Full {
+                    message: job.message,
+                    diagnostics: job.diagnostics,
+                },
+                flume::TrySendError::Disconnected(job) => IncomingPluginQueueError::Disconnected {
+                    message: job.message,
+                    diagnostics: job.diagnostics,
+                },
             })
     }
 
@@ -92,8 +105,14 @@ impl Drop for IncomingPluginWorker {
 
 #[derive(Debug)]
 pub(super) enum IncomingPluginQueueError {
-    Full,
-    Disconnected,
+    Full {
+        message: IncomingMessage,
+        diagnostics: Vec<MessageDiagnosticRow>,
+    },
+    Disconnected {
+        message: IncomingMessage,
+        diagnostics: Vec<MessageDiagnosticRow>,
+    },
 }
 
 pub(super) struct IncomingPluginResult {
