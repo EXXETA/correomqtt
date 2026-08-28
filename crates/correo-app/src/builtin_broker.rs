@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::io::{self, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
+use std::sync::mpsc;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use correo_core::BuiltInBrokerProcessConfig;
 use rumqttd::{Broker, Config, ConnectionSettings, RouterConfig, ServerSettings};
@@ -10,6 +11,8 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener as TokioTcpListener, TcpStream};
 
 const CONNECT_PREFIX_TIMEOUT: Duration = Duration::from_secs(5);
+const BROKER_START_TIMEOUT: Duration = Duration::from_secs(5);
+const BROKER_START_RETRY_DELAY: Duration = Duration::from_millis(20);
 
 pub fn run_child() -> i32 {
     match run_child_inner() {
@@ -28,28 +31,31 @@ fn run_child_inner() -> Result<(), String> {
     let v5_port = reserve_loopback_port()?;
     let broker_config = broker_config(&config, v4_port, v5_port);
 
+    let (engine_status_sender, engine_status_receiver) = mpsc::channel();
     thread::Builder::new()
         .name("correo-builtin-rumqttd".to_owned())
         .spawn(move || {
             let mut broker = Broker::new(broker_config);
-            if let Err(error) = broker.start() {
-                eprintln!("broker engine stopped: {error}");
-            }
+            let result = broker
+                .start()
+                .map_err(|error| format!("broker engine stopped: {error}"));
+            let _ = engine_status_sender.send(result);
         })
         .map_err(|error| format!("broker engine could not be spawned: {error}"))?;
-
-    thread::sleep(Duration::from_millis(200));
-    println!(
-        "broker engine ready; MQTT 3.1.1 and MQTT 5 are available on 127.0.0.1:{}",
-        config.port
-    );
-    flush_stdout();
 
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .map_err(|error| format!("broker proxy runtime could not be started: {error}"))?;
-    runtime.block_on(proxy_loop(config.port, v4_port, v5_port))
+    runtime.block_on(async move {
+        let listener = TokioTcpListener::bind(loopback(config.port))
+            .await
+            .map_err(|error| format!("broker could not bind 127.0.0.1:{}: {error}", config.port))?;
+        wait_for_broker_listeners(v4_port, v5_port, &engine_status_receiver).await?;
+        println!("{}", correo_core::builtin_broker_ready_message(config.port));
+        flush_stdout();
+        proxy_loop(listener, v4_port, v5_port).await
+    })
 }
 
 fn broker_config(config: &BuiltInBrokerProcessConfig, v4_port: u16, v5_port: u16) -> Config {
@@ -106,13 +112,7 @@ fn server_settings(name: &str, port: u16, connections: ConnectionSettings) -> Se
     }
 }
 
-async fn proxy_loop(public_port: u16, v4_port: u16, v5_port: u16) -> Result<(), String> {
-    let listener = TokioTcpListener::bind(loopback(public_port))
-        .await
-        .map_err(|error| format!("broker could not bind 127.0.0.1:{public_port}: {error}"))?;
-    println!("broker proxy listening on 127.0.0.1:{public_port}");
-    flush_stdout();
-
+async fn proxy_loop(listener: TokioTcpListener, v4_port: u16, v5_port: u16) -> Result<(), String> {
     loop {
         let (client, peer) = listener
             .accept()
@@ -124,6 +124,40 @@ async fn proxy_loop(public_port: u16, v4_port: u16, v5_port: u16) -> Result<(), 
             }
         });
     }
+}
+
+async fn wait_for_broker_listeners(
+    v4_port: u16,
+    v5_port: u16,
+    engine_status: &mpsc::Receiver<Result<(), String>>,
+) -> Result<(), String> {
+    let deadline = Instant::now() + BROKER_START_TIMEOUT;
+    loop {
+        match engine_status.try_recv() {
+            Ok(Ok(())) => return Err("broker engine stopped before reporting readiness".to_owned()),
+            Ok(Err(error)) => return Err(error),
+            Err(mpsc::TryRecvError::Disconnected) => {
+                return Err("broker engine stopped before reporting readiness".to_owned())
+            }
+            Err(mpsc::TryRecvError::Empty) => {}
+        }
+
+        if listener_is_ready(v4_port).await && listener_is_ready(v5_port).await {
+            return Ok(());
+        }
+        if Instant::now() >= deadline {
+            return Err(
+                "broker protocol listeners did not become ready within 5 seconds".to_owned(),
+            );
+        }
+        tokio::time::sleep(BROKER_START_RETRY_DELAY).await;
+    }
+}
+
+async fn listener_is_ready(port: u16) -> bool {
+    tokio::time::timeout(BROKER_START_RETRY_DELAY, TcpStream::connect(loopback(port)))
+        .await
+        .is_ok_and(|result| result.is_ok())
 }
 
 async fn proxy_client(mut client: TcpStream, v4_port: u16, v5_port: u16) -> Result<(), String> {

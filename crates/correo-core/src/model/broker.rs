@@ -67,7 +67,12 @@ impl AppModel {
 
     pub(crate) fn broker_start_config(&self) -> Option<BuiltInBrokerProcessConfig> {
         let broker = &self.snapshot.built_in_broker;
-        let port = broker.port.trim().parse::<u16>().ok()?;
+        let port = broker
+            .port
+            .trim()
+            .parse::<u16>()
+            .ok()
+            .filter(|port| *port > 0)?;
         let (username, password) = if broker.credentials_enabled {
             let username = broker.username.trim();
             if username.is_empty() || broker.password.is_empty() {

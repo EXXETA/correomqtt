@@ -206,6 +206,22 @@ mod tests {
         assert!(serialized.pointer("/built_in_broker/password").is_none());
     }
     #[test]
+    fn zero_broker_port_blocks_start() {
+        let mut model = crate::AppModel::new();
+        model.apply_command(crate::AppCommand::UpdateBuiltInBrokerPort("0".to_owned()));
+        model.apply_command(crate::AppCommand::StartBuiltInBroker);
+
+        assert_eq!(
+            model.snapshot().built_in_broker.status,
+            crate::BuiltInBrokerStatus::Error
+        );
+        assert!(model.broker_start_config().is_none());
+        assert!(model.snapshot().built_in_broker.logs[0]
+            .message
+            .contains("port between 1 and 65535"));
+    }
+
+    #[test]
     fn connection_secrets_from_hydrates_matching_imported_values() {
         use correo_storage::current::SecretMaterial;
         let secret = |connection_id: &str, kind, value: &str| ImportedSecret {
