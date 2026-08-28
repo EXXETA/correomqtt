@@ -193,6 +193,7 @@ fn sample_import() -> ConnectionImport {
             connection_ui_settings: None,
             publish_list_view_config: None,
             subscribe_list_view_config: None,
+            plugin_workflows: Vec::new(),
         }],
         secrets: vec![
             imported_secret(SecretKind::Password, "synthetic-mqtt-secret"),
