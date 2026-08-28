@@ -297,6 +297,9 @@ pub enum SshAuth {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SshHostKeyPolicy {
     AcceptAnyInsecure,
+    TrustOnFirstUse {
+        known_hosts_path: std::path::PathBuf,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

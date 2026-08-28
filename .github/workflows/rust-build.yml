@@ -46,6 +46,80 @@ jobs:
       - name: Test packaging automation
         run: cargo test --locked -p xtask
 
+  mqtt-integration:
+    name: MQTT broker integration tests
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Generate TLS broker certificates
+        run: |
+          tls_dir="$RUNNER_TEMP/correomqtt-tls"
+          mkdir -p "$tls_dir"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -sha256 \
+            -subj "/CN=CorreoMQTT Test CA" \
+            -keyout "$tls_dir/ca.key" -out "$tls_dir/ca.pem"
+          openssl req -newkey rsa:2048 -nodes \
+            -subj "/CN=localhost" \
+            -keyout "$tls_dir/server.key" -out "$tls_dir/server.csr"
+          printf 'subjectAltName=DNS:localhost\n' > "$tls_dir/server.ext"
+          openssl x509 -req -days 1 -sha256 \
+            -in "$tls_dir/server.csr" \
+            -CA "$tls_dir/ca.pem" -CAkey "$tls_dir/ca.key" -CAcreateserial \
+            -extfile "$tls_dir/server.ext" \
+            -out "$tls_dir/server.pem"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -sha256 \
+            -subj "/CN=CorreoMQTT Untrusted Test CA" \
+            -keyout "$tls_dir/untrusted-ca.key" -out "$tls_dir/untrusted-ca.pem"
+          chmod 644 "$tls_dir/server.key"
+          echo "CORREO_MQTT_TLS_CA_PEM=$tls_dir/ca.pem" >> "$GITHUB_ENV"
+          echo "CORREO_MQTT_TLS_UNTRUSTED_CA_PEM=$tls_dir/untrusted-ca.pem" >> "$GITHUB_ENV"
+
+      - name: Start Mosquitto broker
+        run: |
+          docker run -d --name correo-mqtt-ci -p 1883:1883 -p 8883:8883 \
+            -v "$PWD/crates/correo-mqtt/tests/mosquitto.ci.conf:/mosquitto/config/mosquitto.conf:ro" \
+            -v "$RUNNER_TEMP/correomqtt-tls:/mosquitto/certs:ro" \
+            eclipse-mosquitto@sha256:6f8d8a947c506f8a2290ec65cd4bd2bc7cb4d43fb5f6271f861cb013e2ef9797
+          for _ in $(seq 1 30); do
+            if (exec 3<>/dev/tcp/127.0.0.1/1883) 2>/dev/null \
+              && (exec 4<>/dev/tcp/127.0.0.1/8883) 2>/dev/null; then
+              echo "broker ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "broker did not become ready"
+          docker logs correo-mqtt-ci
+          exit 1
+
+      - name: Cache cargo
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            target
+          key: cargo-${{ runner.os }}-${{ runner.arch }}-mqtt-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ runner.arch }}-mqtt-
+
+      - name: Run broker roundtrip tests
+        env:
+          CORREO_MQTT_INTEGRATION_BROKER: "1"
+          CORREO_MQTT_BROKER_HOST: 127.0.0.1
+          CORREO_MQTT_BROKER_PORT: "1883"
+          CORREO_MQTT_TLS_HOST: localhost
+          CORREO_MQTT_TLS_BROKER_PORT: "8883"
+        run: cargo test -p correo-mqtt --test local_broker --locked -- --ignored
+
+      - name: Stop Mosquitto broker
+        if: always()
+        run: docker rm -f correo-mqtt-ci || true
+
   package:
     name: Package ${{ matrix.platform }} (${{ matrix.target }})
     needs: check

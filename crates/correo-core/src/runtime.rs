@@ -82,6 +82,12 @@ impl AppRuntime {
         self.mqtt_service = Some(service);
     }
 
+    pub async fn shutdown_mqtt(&mut self) {
+        if let Some(service) = self.mqtt_service.take() {
+            service.shutdown().await;
+        }
+    }
+
     pub fn attach_history_worker(&mut self, worker: HistoryPersistenceWorker) {
         self.history_worker = Some(worker);
     }

@@ -19,5 +19,8 @@ thiserror.workspace = true
 tokio = { workspace = true, features = ["fs", "io-util", "net"] }
 uuid.workspace = true
 
+[dev-dependencies]
+tempfile.workspace = true
+
 [lints]
 workspace = true
