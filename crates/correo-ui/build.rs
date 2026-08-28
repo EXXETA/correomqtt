@@ -1,7 +1,6 @@
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 fn main() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("manifest dir"));
@@ -12,18 +11,9 @@ fn main() {
 
     println!("cargo:rerun-if-changed={}", lock_path.display());
     println!("cargo:rerun-if-changed={}", cargo_path.display());
-    println!(
-        "cargo:rerun-if-changed={}",
-        workspace_root.join(".git/HEAD").display()
-    );
-    println!(
-        "cargo:rerun-if-changed={}",
-        workspace_root.join(".git/refs/tags").display()
-    );
 
     let libraries = read_libraries(&lock_path);
-    let version =
-        git_tag(&workspace_root).unwrap_or_else(|| env::var("CARGO_PKG_VERSION").unwrap());
+    let version = env::var("CARGO_PKG_VERSION").expect("package version");
     let mut generated = String::new();
     generated.push_str("pub const APP_VERSION: &str = ");
     push_quoted(&mut generated, &version);
@@ -45,20 +35,6 @@ fn workspace_root(start: &Path) -> Option<PathBuf> {
         .ancestors()
         .find(|path| path.join("Cargo.lock").is_file())
         .map(Path::to_path_buf)
-}
-
-fn git_tag(root: &Path) -> Option<String> {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(root)
-        .args(["describe", "--tags", "--exact-match", "HEAD"])
-        .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    let tag = String::from_utf8(output.stdout).ok()?.trim().to_owned();
-    (!tag.is_empty()).then_some(tag)
 }
 
 fn read_libraries(lock_path: &Path) -> Vec<(String, String)> {

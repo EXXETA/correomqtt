@@ -475,8 +475,8 @@ fn plugin_flyout_expanded_controls(ui: &mut Ui, handle_rect: egui::Rect, panel_r
         responsive::close_plugin_flyout(ui.ctx());
     }
 
-    if !(responsive::forced_plugin_flyout_mode(ui.ctx())
-        && !responsive::plugin_context_requires_flyout(ui.ctx()))
+    if !responsive::forced_plugin_flyout_mode(ui.ctx())
+        || responsive::plugin_context_requires_flyout(ui.ctx())
     {
         return;
     }

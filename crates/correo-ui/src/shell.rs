@@ -98,9 +98,17 @@ impl CorreoUi {
         self.snapshot.theme_mode.clone()
     }
 
+    pub fn plugin_save_invalid_file_name_message(&self) -> String {
+        self.i18n.text("plugin-save-invalid-file-name")
+    }
+
+    pub fn plugin_save_failed_prefix(&self) -> String {
+        self.i18n.text("plugin-save-failed-prefix")
+    }
+
     pub fn draw(&mut self, context: &egui::Context) {
         self.ensure_icons_installed(context);
-        let snapshot = self.snapshot.clone();
+        let snapshot = &self.snapshot;
         apply_theme(context, &snapshot.theme_mode);
         motion::apply_preference(context, snapshot.global_settings.reduce_motion);
         let tokens = tokens(context, &snapshot.theme_mode);
@@ -140,20 +148,20 @@ impl CorreoUi {
             .show(context, |ui| {
                 command_bar::command_bar_title(ui, i18n);
             });
-        let klingon_unlocked = self.klingon_language_visible(&snapshot);
+        let klingon_unlocked = self.klingon_language_visible(snapshot);
 
         SidePanel::left("correo-rail")
             .exact_width(layout::RAIL_WIDTH)
             .resizable(false)
             .frame(rail_frame(tokens))
             .show(context, |ui| {
-                nav::rail(ui, &snapshot, tokens, commands, i18n);
+                nav::rail(ui, snapshot, tokens, commands, i18n);
             });
 
         let compact_connections_context =
             responsive::connections_context_is_compact(context, snapshot.active_workspace);
 
-        if context_panel_visible(&snapshot) && !compact_connections_context {
+        if context_panel_visible(snapshot) && !compact_connections_context {
             if snapshot.active_workspace == Workspace::Connections {
                 SidePanel::left("correo-context")
                     .default_width(layout::CONNECTION_FLYOUT_WIDTH)
@@ -163,7 +171,7 @@ impl CorreoUi {
                     .resizable(true)
                     .frame(sidebar_frame(tokens))
                     .show(context, |ui| {
-                        connection_launcher::panel(ui, &snapshot, tokens, commands, i18n);
+                        connection_launcher::panel(ui, snapshot, tokens, commands, i18n);
                     });
             } else {
                 SidePanel::left("correo-context")
@@ -174,7 +182,7 @@ impl CorreoUi {
                     .show(context, |ui| {
                         workspace::sidebar(
                             ui,
-                            &snapshot,
+                            snapshot,
                             snapshot.active_workspace,
                             tokens,
                             commands,
@@ -190,7 +198,7 @@ impl CorreoUi {
             .show(context, |ui| {
                 workspace::show(
                     ui,
-                    &snapshot,
+                    snapshot,
                     tokens,
                     commands,
                     i18n,
@@ -202,27 +210,27 @@ impl CorreoUi {
         if about_logo_triggered {
             self.klingon_easter_egg_clicks = self.klingon_easter_egg_clicks.saturating_add(1);
         }
-        let klingon_unlocked = self.klingon_language_visible(&snapshot);
+        let klingon_unlocked = self.klingon_language_visible(snapshot);
         if compact_connections_context {
-            connection_flyout(context, &snapshot, tokens, commands, i18n);
+            connection_flyout(context, snapshot, tokens, commands, i18n);
         }
         command_bar::command_bar_controls(
             context,
             header.response.rect,
-            &snapshot,
+            snapshot,
             commands,
             i18n,
             klingon_unlocked,
         );
         transfer_wizard::show(
             context,
-            &snapshot,
+            snapshot,
             tokens,
             commands,
             i18n,
             &mut self.transfer_wizard,
         );
-        toasts::show(context, &snapshot, tokens);
+        toasts::show(context, snapshot, tokens);
     }
 
     fn ensure_icons_installed(&mut self, context: &egui::Context) {
@@ -386,8 +394,8 @@ fn connection_flyout_expanded_controls(
         responsive::close_connection_flyout(ui.ctx());
     }
 
-    if !(responsive::forced_connection_flyout_mode(ui.ctx())
-        && !responsive::connections_context_requires_flyout(ui.ctx()))
+    if !responsive::forced_connection_flyout_mode(ui.ctx())
+        || responsive::connections_context_requires_flyout(ui.ctx())
     {
         return;
     }

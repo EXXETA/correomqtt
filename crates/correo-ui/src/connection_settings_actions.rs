@@ -22,17 +22,16 @@ pub(super) fn action_bar(
         Layout::left_to_right(Align::Center),
         |ui| {
             ui.set_width(width);
-            if allow_delete {
-                if ui
+            if allow_delete
+                && ui
                     .button(format!(
                         "{}  {}...",
                         regular::TRASH,
                         i18n.text("common-delete")
                     ))
                     .clicked()
-                {
-                    send(commands, AppCommand::RequestDeleteConnection);
-                }
+            {
+                send(commands, AppCommand::RequestDeleteConnection);
             }
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                 let cancel_label = if modal {

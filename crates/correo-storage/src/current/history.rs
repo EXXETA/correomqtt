@@ -4,7 +4,10 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::{Result, StorageError};
 
-use super::{Message, PublishMessageHistory, PublishTopicHistory, SubscriptionHistory};
+use super::{
+    atomic_file::write_file_atomic, Message, PublishMessageHistory, PublishTopicHistory,
+    SubscriptionHistory,
+};
 
 pub const MAX_HISTORY_ENTRIES: usize = 100;
 
@@ -200,7 +203,8 @@ impl HistoryStore {
             path: path.clone(),
             source,
         })?;
-        std::fs::write(&path, text).map_err(|source| StorageError::Write { path, source })
+        write_file_atomic(&path, text.as_bytes())
+            .map_err(|source| StorageError::Write { path, source })
     }
 }
 

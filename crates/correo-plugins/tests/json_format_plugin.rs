@@ -56,7 +56,7 @@ fn json_format_wasm_plugin_formats_detail_payloads() {
 
     let package = PluginPackage::load(package_dir.path()).unwrap();
     let plugin = WasmtimePluginRuntime::default()
-        .compile_package(package, &Version::new(0, 1, 0))
+        .compile_package(package, &Version::new(1, 0, 0))
         .unwrap();
 
     let formatted = plugin
@@ -75,7 +75,7 @@ fn json_format_wasm_plugin_formats_detail_payloads() {
 }
 
 fn build_json_format_wasm(workspace: &Path) -> PathBuf {
-    let target_dir = TempDir::new().unwrap().into_path();
+    let target_dir = TempDir::new().unwrap().keep();
     let status = Command::new(env!("CARGO"))
         .current_dir(workspace)
         .env("CARGO_TARGET_DIR", &target_dir)

@@ -41,9 +41,15 @@ fn bundled_manifests_cover_mvp_replacements_with_config_schemas() {
         assert!(!manifest
             .capabilities
             .grants_host_surface(correo_plugins::HostSurface::Secrets));
-        assert!(!manifest
-            .capabilities
-            .grants_host_surface(correo_plugins::HostSurface::Mqtt));
+        // The system-topic plugin opens live $SYS metric windows and is the
+        // only bundled plugin allowed on the MQTT host surface.
+        let mqtt_allowed = manifest.id == "org.correomqtt.plugins.system-topic";
+        assert_eq!(
+            manifest
+                .capabilities
+                .grants_host_surface(correo_plugins::HostSurface::Mqtt),
+            mqtt_allowed
+        );
     }
 }
 
@@ -166,33 +172,6 @@ fn detail_formatters_return_pretty_json_and_xml_text() {
         ))
         .unwrap();
     assert_formatted(output, DetailFormatDto::Xml, "  <item id=\"1\">");
-}
-
-#[test]
-fn system_topic_formatter_labels_known_broker_metrics() {
-    let plugin = bundled_plugin_by_id("org.correomqtt.plugins.system-topic").unwrap();
-    let mut request = DetailFormatterRequest::new(b"7".to_vec());
-    request.context.subscription_topic = Some("$SYS/broker/clients/connected".to_owned());
-
-    let output = plugin
-        .dispatch(HookInvocation::DetailFormatter(request))
-        .unwrap();
-
-    assert_formatted(output, DetailFormatDto::PlainText, "Connected clients");
-}
-
-#[test]
-fn system_topic_formatter_reports_aggregated_windows() {
-    let plugin = bundled_plugin_by_id("org.correomqtt.plugins.system-topic").unwrap();
-    let mut request = DetailFormatterRequest::new(b"42".to_vec());
-    request.context.subscription_topic =
-        Some("$SYS/broker/load/messages/received/15min".to_owned());
-
-    let output = plugin
-        .dispatch(HookInvocation::DetailFormatter(request))
-        .unwrap();
-
-    assert_formatted(output, DetailFormatDto::PlainText, "Window: 15min");
 }
 
 #[test]

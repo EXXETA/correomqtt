@@ -516,6 +516,10 @@ impl FeatureIcon {
     }
 }
 
+fn send(commands: &AppCommandSender, command: AppCommand) {
+    let _ = commands.send(command);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -554,8 +558,4 @@ mod tests {
         );
         assert!(badge_feature_icon(ConnectionBadge::Lwt).is_none());
     }
-}
-
-fn send(commands: &AppCommandSender, command: AppCommand) {
-    let _ = commands.send(command);
 }

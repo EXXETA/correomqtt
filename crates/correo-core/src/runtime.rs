@@ -1,17 +1,30 @@
-use std::sync::Arc;
+use std::{collections::VecDeque, sync::Arc};
 
 use crate::{
     AppCommand, AppCommandSender, AppEvent, AppEventSender, AppModel, AppSnapshot,
-    BuiltInBrokerPersistenceSnapshot, BuiltInBrokerWorker, Diagnostic, HistoryPersistenceEvent,
-    HistoryPersistenceKind, HistoryPersistenceWorker, MigrationPersistenceCommand,
-    MigrationPersistenceWorker, MqttCommandSender, MqttService, NoopPluginHookExecutor,
-    PluginHookExecutor, PluginInstaller, ScriptingWorker, SettingsPersistenceCommand,
-    SettingsPersistenceEvent, SettingsPersistenceWorker, StartupState,
+    BuiltInBrokerPersistenceSnapshot, BuiltInBrokerSnapshot, BuiltInBrokerWorker, Diagnostic,
+    HistoryPersistenceEvent, HistoryPersistenceKind, HistoryPersistenceWorker,
+    MigrationPersistenceCommand, MigrationPersistenceWorker, MqttCommandSender, MqttService,
+    NoopPluginHookExecutor, PluginHookExecutor, PluginInstaller, ScriptingWorker,
+    SettingsPersistenceCommand, SettingsPersistenceEvent, SettingsPersistenceWorker, StartupState,
 };
 
+#[path = "runtime/incoming_plugins.rs"]
+mod incoming_plugins;
+#[path = "runtime/plugin_helpers.rs"]
 mod plugin_helpers;
+#[path = "runtime/plugins.rs"]
 mod plugins;
+#[path = "runtime/scripting.rs"]
 mod scripting;
+#[cfg(test)]
+#[path = "runtime_test_support.rs"]
+mod test_support;
+
+const APP_COMMAND_CAPACITY: usize = 256;
+const PLUGIN_SAVE_PAYLOAD_CAPACITY: usize = 1;
+const APP_EVENT_CAPACITY: usize = 256;
+const PUMP_BUDGET: usize = 64;
 
 #[derive(Debug)]
 pub struct AppRuntime {
@@ -25,6 +38,8 @@ pub struct AppRuntime {
     history_worker: Option<HistoryPersistenceWorker>,
     migration_worker: Option<MigrationPersistenceWorker>,
     plugin_hooks: Arc<dyn PluginHookExecutor>,
+    pending_plugin_save_payloads: VecDeque<crate::PluginSavePayload>,
+    incoming_plugin_worker: Option<incoming_plugins::IncomingPluginWorker>,
     plugin_installer: Option<Arc<dyn PluginInstaller>>,
     settings_worker: Option<SettingsPersistenceWorker>,
     scripting_worker: Option<ScriptingWorker>,
@@ -45,8 +60,8 @@ impl AppRuntime {
     }
 
     fn with_model(model: AppModel) -> Self {
-        let (command_sender, command_receiver) = flume::unbounded();
-        let (event_sender, event_receiver) = flume::unbounded();
+        let (command_sender, command_receiver) = flume::bounded(APP_COMMAND_CAPACITY);
+        let (event_sender, event_receiver) = flume::bounded(APP_EVENT_CAPACITY);
         let app_event_sender = AppEventSender::new(event_sender);
         Self {
             model,
@@ -59,6 +74,8 @@ impl AppRuntime {
             history_worker: None,
             migration_worker: None,
             plugin_hooks: Arc::new(NoopPluginHookExecutor),
+            pending_plugin_save_payloads: VecDeque::new(),
+            incoming_plugin_worker: None,
             plugin_installer: None,
             settings_worker: None,
             scripting_worker: None,
@@ -68,6 +85,10 @@ impl AppRuntime {
 
     pub fn snapshot(&self) -> &AppSnapshot {
         self.model.snapshot()
+    }
+
+    pub fn take_plugin_save_payload(&mut self) -> Option<crate::PluginSavePayload> {
+        self.pending_plugin_save_payloads.pop_front()
     }
 
     pub fn command_sender(&self) -> AppCommandSender {
@@ -82,6 +103,12 @@ impl AppRuntime {
         self.mqtt_service = Some(service);
     }
 
+    pub async fn shutdown_mqtt(&mut self) {
+        if let Some(service) = self.mqtt_service.take() {
+            service.shutdown().await;
+        }
+    }
+
     pub fn attach_history_worker(&mut self, worker: HistoryPersistenceWorker) {
         self.history_worker = Some(worker);
     }
@@ -91,7 +118,11 @@ impl AppRuntime {
     }
 
     pub fn attach_plugin_hook_executor(&mut self, executor: impl PluginHookExecutor) {
-        self.plugin_hooks = Arc::new(executor);
+        let executor = Arc::new(executor);
+        self.incoming_plugin_worker = Some(incoming_plugins::IncomingPluginWorker::start(
+            executor.clone(),
+        ));
+        self.plugin_hooks = executor;
     }
 
     pub fn attach_plugin_installer(&mut self, installer: impl PluginInstaller) {
@@ -101,6 +132,7 @@ impl AppRuntime {
     pub fn attach_settings_worker(&mut self, worker: SettingsPersistenceWorker) {
         self.settings_worker = Some(worker);
     }
+
     pub fn attach_scripting_worker(&mut self, worker: ScriptingWorker) {
         self.scripting_worker = Some(worker);
     }
@@ -113,12 +145,63 @@ impl AppRuntime {
     }
 
     pub fn pump(&mut self) -> PumpReport {
-        let before = self.model.snapshot().clone();
+        let revision_before = self.model.revision();
         let mut report = PumpReport::default();
+        let mut event_budget = if self.command_receiver.is_empty() {
+            PUMP_BUDGET
+        } else {
+            PUMP_BUDGET - 1
+        };
 
-        while let Some(event) = self.try_recv_mqtt_event() {
-            let Some((event, incoming_diagnostics)) = self.apply_incoming_hooks(event) else {
+        while event_budget > 0 {
+            let Some(result) = self.try_recv_incoming_hook_result() else {
+                break;
+            };
+            if let Some(event) = result.event {
+                self.dispatch_history_for_mqtt_event(&event);
+                self.model.apply_event(AppEvent::Mqtt(event));
+                self.append_incoming_diagnostics(result.diagnostics);
+                self.refresh_message_detail(false);
+                self.refresh_plugin_windows();
+                self.dispatch_dirty_workbenches();
+            } else {
+                let message = if result.diagnostics.is_empty() {
+                    "Incoming plugin processing cancelled or dropped a message.".to_owned()
+                } else {
+                    result
+                        .diagnostics
+                        .into_iter()
+                        .map(|diagnostic| crate::redact_sensitive(&diagnostic.message))
+                        .collect::<Vec<_>>()
+                        .join("; ")
+                };
+                let _ = self
+                    .event_sender
+                    .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(message)));
+            }
+            report.events_processed += 1;
+            event_budget -= 1;
+        }
+
+        while event_budget > 0 {
+            let Some(event) = self.try_recv_mqtt_event() else {
+                break;
+            };
+            let incoming = match self.queue_incoming_hook_job(&event) {
+                plugins::IncomingPluginDispatch::Queued
+                | plugins::IncomingPluginDispatch::Rejected => {
+                    report.events_processed += 1;
+                    event_budget -= 1;
+                    continue;
+                }
+                plugins::IncomingPluginDispatch::Continue { event, diagnostics } => {
+                    Some((event, diagnostics))
+                }
+                plugins::IncomingPluginDispatch::NotApplicable => self.apply_incoming_hooks(event),
+            };
+            let Some((event, incoming_diagnostics)) = incoming else {
                 report.events_processed += 1;
+                event_budget -= 1;
                 continue;
             };
             let refresh_detail = matches!(event, crate::MqttEvent::IncomingMessage(_));
@@ -126,50 +209,92 @@ impl AppRuntime {
             self.model.apply_event(AppEvent::Mqtt(event));
             self.append_incoming_diagnostics(incoming_diagnostics);
             if refresh_detail {
-                self.refresh_message_detail();
+                self.refresh_message_detail(false);
                 self.refresh_plugin_windows();
             }
             self.dispatch_dirty_workbenches();
             report.events_processed += 1;
+            event_budget -= 1;
         }
 
         self.broker_worker.poll();
 
-        while let Some(event) = self.try_recv_history_event() {
+        while event_budget > 0 {
+            let Some(event) = self.try_recv_history_event() else {
+                break;
+            };
             self.apply_history_event(event);
             report.events_processed += 1;
+            event_budget -= 1;
         }
 
-        while let Some(event) = self.try_recv_settings_event() {
+        while event_budget > 0 {
+            let Some(event) = self.try_recv_settings_event() else {
+                break;
+            };
             self.apply_settings_event(event);
             report.events_processed += 1;
+            event_budget -= 1;
         }
 
-        while let Some(event) = self.try_recv_scripting_event() {
+        while event_budget > 0 {
+            let Some(event) = self.try_recv_scripting_event() else {
+                break;
+            };
             self.apply_scripting_event(event);
             report.events_processed += 1;
+            event_budget -= 1;
         }
 
-        while let Some(event) = self.try_recv_migration_event() {
+        while event_budget > 0 {
+            let Some(event) = self.try_recv_migration_event() else {
+                break;
+            };
             self.model.apply_event(event);
             report.events_processed += 1;
+            event_budget -= 1;
         }
 
-        while let Ok(event) = self.event_receiver.try_recv() {
+        while event_budget > 0 {
+            let Ok(event) = self.event_receiver.try_recv() else {
+                break;
+            };
             self.model.apply_event(event);
             report.events_processed += 1;
+            event_budget -= 1;
         }
 
-        while let Ok(command) = self.command_receiver.try_recv() {
-            let command_before = self.model.snapshot().clone();
+        while report.commands_processed + report.events_processed < PUMP_BUDGET {
+            let Ok(command) = self.command_receiver.try_recv() else {
+                break;
+            };
+            let built_in_broker_before = self
+                .should_persist_built_in_broker_for_command(&command)
+                .then(|| self.model.snapshot().built_in_broker.clone());
+            let scripting_before = command_needs_scripting_before_snapshot(&command)
+                .then(|| self.model.snapshot().clone());
+            let deleted_connection_id = if matches!(command, AppCommand::ConfirmDeleteConnection) {
+                self.model
+                    .snapshot()
+                    .selected_connection
+                    .map(|connection_id| self.model.storage_connection_id(connection_id))
+            } else {
+                None
+            };
             let should_persist_settings = (matches!(command, AppCommand::SaveGlobalSettings)
                 && self.model.snapshot().global_settings.dirty)
                 || matches!(
                     command,
-                    AppCommand::SetPluginEnabled { .. } | AppCommand::ConfirmPluginDisable
+                    AppCommand::SetPluginEnabled { .. }
+                        | AppCommand::ConfirmPluginDisable
+                        | AppCommand::SetPluginHookEnabled { .. }
+                        | AppCommand::ApplyPluginHookEdit
                 );
             if matches!(command, AppCommand::Shutdown) {
                 self.shutdown_requested = true;
+                if let Some(worker) = &self.incoming_plugin_worker {
+                    worker.cancel();
+                }
             }
             self.forward_mqtt_commands(&command);
             self.forward_broker_command(&command);
@@ -186,31 +311,58 @@ impl AppRuntime {
                 self.model
                     .set_plugin_installed_path(&plugin_id, installed_path);
             }
+            let allow_detail_host_actions =
+                matches!(&command, AppCommand::SelectDetailTransform(Some(_)));
             if self.should_refresh_detail_for_command(&command) {
-                self.refresh_message_detail();
+                self.refresh_message_detail(allow_detail_host_actions);
             }
             if should_persist_settings {
                 self.dispatch_global_settings_save();
             }
+            if matches!(command, AppCommand::SaveConnectionSettings)
+                && !self.model.snapshot().connection_settings.dirty
+            {
+                self.dispatch_connection_settings_save();
+            }
+            if matches!(command, AppCommand::StartConnectionImport) {
+                self.dispatch_connection_import_save();
+            }
+            if let Some(connection_id) = deleted_connection_id {
+                self.dispatch_connection_delete(connection_id);
+            }
+            if matches!(command, AppCommand::MoveConnection { .. }) {
+                self.dispatch_connection_order_save();
+            }
             if matches!(command, AppCommand::SaveConnectionPlugins) {
                 self.dispatch_connection_plugin_workflows_save();
             }
-            if self.should_persist_connections_for_command(&command, &command_before) {
-                self.dispatch_connections_save();
-            }
-            if self.should_persist_built_in_broker_for_command(&command, &command_before) {
+            if self.should_persist_built_in_broker_change(built_in_broker_before.as_ref()) {
                 self.dispatch_built_in_broker_save();
             }
-            self.dispatch_scripting_command(&command, &command_before);
+            if let Some(scripting_before) = scripting_before.as_ref() {
+                self.dispatch_scripting_command(&command, scripting_before);
+            }
             self.dispatch_dirty_workbenches();
             report.commands_processed += 1;
         }
 
-        report.snapshot_changed = before != *self.model.snapshot();
+        report.snapshot_changed = revision_before != self.model.revision();
+        report.backlog_remaining = !self.command_receiver.is_empty()
+            || !self.event_receiver.is_empty()
+            || self
+                .incoming_plugin_worker
+                .as_ref()
+                .is_some_and(incoming_plugins::IncomingPluginWorker::has_pending_results)
+            || self
+                .mqtt_service
+                .as_ref()
+                .is_some_and(MqttService::has_pending_events);
         report.shutdown_requested = self.shutdown_requested;
         report
     }
+}
 
+impl AppRuntime {
     fn try_recv_mqtt_event(&self) -> Option<crate::MqttEvent> {
         self.mqtt_service
             .as_ref()
@@ -329,7 +481,7 @@ impl AppRuntime {
         };
         if let Err(error) = worker.dispatch(SettingsPersistenceCommand::Save {
             theme_mode: self.model.snapshot().theme_mode.clone(),
-            settings: self.model.snapshot().global_settings.clone(),
+            settings: Box::new(self.model.snapshot().global_settings.clone()),
         }) {
             let _ = self
                 .event_sender
@@ -371,7 +523,10 @@ impl AppRuntime {
         }
     }
 
-    fn dispatch_connections_save(&self) {
+    fn dispatch_connection_settings_save(&self) {
+        let Some(connection_id) = self.model.snapshot().selected_connection else {
+            return;
+        };
         let Some(worker) = &self.settings_worker else {
             let _ = self
                 .event_sender
@@ -380,8 +535,10 @@ impl AppRuntime {
                 )));
             return;
         };
-        if let Err(error) = worker.dispatch(SettingsPersistenceCommand::SaveConnections {
-            connections: self.model.connection_persistence_snapshot(),
+        let storage_connection_id = self.model.storage_connection_id(connection_id);
+        if let Err(error) = worker.dispatch(SettingsPersistenceCommand::SaveConnectionSettings {
+            connection_id: storage_connection_id,
+            settings: Box::new(self.model.snapshot().connection_settings.clone()),
         }) {
             let _ = self
                 .event_sender
@@ -389,6 +546,97 @@ impl AppRuntime {
                     error.to_string(),
                 )));
         }
+    }
+
+    fn dispatch_connection_delete(&self, connection_id: String) {
+        let Some(worker) = &self.settings_worker else {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    "Settings persistence worker is not running.",
+                )));
+            return;
+        };
+        if let Err(error) =
+            worker.dispatch(SettingsPersistenceCommand::DeleteConnection { connection_id })
+        {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    error.to_string(),
+                )));
+        }
+    }
+
+    fn dispatch_connection_order_save(&self) {
+        let Some(worker) = &self.settings_worker else {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    "Settings persistence worker is not running.",
+                )));
+            return;
+        };
+        let connection_ids = self
+            .model
+            .snapshot()
+            .connections
+            .iter()
+            .map(|connection| self.model.storage_connection_id(connection.id))
+            .collect();
+        if let Err(error) =
+            worker.dispatch(SettingsPersistenceCommand::SaveConnectionOrder { connection_ids })
+        {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    error.to_string(),
+                )));
+        }
+    }
+
+    fn dispatch_connection_import_save(&mut self) {
+        if self.settings_worker.is_none() {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    "Settings persistence worker is not running.",
+                )));
+            return;
+        }
+        let Some((connections, secrets)) = self.model.drain_connection_import_persistence() else {
+            return;
+        };
+        let worker = self.settings_worker.as_ref().expect("checked above");
+        if let Err(error) = worker.dispatch(SettingsPersistenceCommand::SaveImportedConnections {
+            connections,
+            secrets,
+        }) {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                    error.to_string(),
+                )));
+        }
+    }
+}
+
+impl AppRuntime {
+    fn should_persist_built_in_broker_for_command(&self, command: &AppCommand) -> bool {
+        matches!(
+            command,
+            AppCommand::UpdateBuiltInBrokerPort(_)
+                | AppCommand::SetBuiltInBrokerCredentialsEnabled(_)
+                | AppCommand::UpdateBuiltInBrokerUsername(_)
+                | AppCommand::UpdateBuiltInBrokerPassword(_)
+        )
+    }
+
+    fn should_persist_built_in_broker_change(
+        &self,
+        before: Option<&BuiltInBrokerSnapshot>,
+    ) -> bool {
+        before.is_some_and(|before| before != &self.model.snapshot().built_in_broker)
     }
 
     fn dispatch_built_in_broker_save(&self) {
@@ -417,42 +665,11 @@ impl AppRuntime {
         }
     }
 
-    fn should_persist_connections_for_command(
-        &self,
-        command: &AppCommand,
-        before: &AppSnapshot,
-    ) -> bool {
-        match command {
-            AppCommand::SaveConnectionSettings | AppCommand::SaveConnectionPlugins => {
-                before.connection_settings.dirty && before.connection_settings.valid
-            }
-            AppCommand::ConfirmDeleteConnection => {
-                before.connection_count != self.model.snapshot().connection_count
-            }
-            AppCommand::MoveConnection { .. } => true,
-            _ => false,
-        }
-    }
-
-    fn should_persist_built_in_broker_for_command(
-        &self,
-        command: &AppCommand,
-        before: &AppSnapshot,
-    ) -> bool {
-        matches!(
-            command,
-            AppCommand::UpdateBuiltInBrokerPort(_)
-                | AppCommand::SetBuiltInBrokerCredentialsEnabled(_)
-                | AppCommand::UpdateBuiltInBrokerUsername(_)
-                | AppCommand::UpdateBuiltInBrokerPassword(_)
-        ) && before.built_in_broker != self.model.snapshot().built_in_broker
-    }
-
     fn apply_settings_event(&self, event: SettingsPersistenceEvent) {
         let diagnostic = match event {
             SettingsPersistenceEvent::Saved => Diagnostic::info("Settings persisted."),
             SettingsPersistenceEvent::Failed { error } => {
-                Diagnostic::error(format!("Global settings persistence failed: {error}"))
+                Diagnostic::error(format!("Settings persistence failed: {error}"))
             }
         };
         let _ = self
@@ -498,13 +715,24 @@ impl AppRuntime {
                 .map(|legacy_path| MigrationPersistenceCommand::Prepare {
                     legacy_path: legacy_path.clone(),
                 }),
-            crate::MigrationRecoveryCommand::SubmitPassword
-            | crate::MigrationRecoveryCommand::SkipSecrets => {
-                Some(MigrationPersistenceCommand::LoadReview)
+            crate::MigrationRecoveryCommand::SubmitPassword { password } => {
+                Some(MigrationPersistenceCommand::UnlockSecrets {
+                    master_password: password.clone(),
+                })
+            }
+            crate::MigrationRecoveryCommand::SkipSecrets => {
+                Some(MigrationPersistenceCommand::SkipSecrets)
             }
             crate::MigrationRecoveryCommand::ApplyMigration => {
                 Some(MigrationPersistenceCommand::Apply {
                     fallback_theme: self.model.snapshot().theme_mode.clone(),
+                })
+            }
+            crate::MigrationRecoveryCommand::ConfirmRestoreBackup => {
+                let recovery = &self.model.snapshot().migration_recovery;
+                Some(MigrationPersistenceCommand::Restore {
+                    backup_name: recovery.backup_name.clone()?,
+                    backup_path_hint: recovery.backup_path_hint.clone()?,
                 })
             }
             _ => None,
@@ -512,6 +740,12 @@ impl AppRuntime {
     }
 
     fn forward_mqtt_commands(&self, command: &AppCommand) {
+        // RunScript's connect command belongs to the script MQTT bridge, which
+        // sends it when the script calls client.connect(). Forwarding it here
+        // too would connect the same connection twice.
+        if matches!(command, AppCommand::RunScript) {
+            return;
+        }
         let commands = match self.mqtt_commands_for_app_command_with_plugins(command) {
             Ok(commands) => commands,
             Err(error) => {
@@ -649,6 +883,19 @@ impl PluginFileCommandResult {
     }
 }
 
+fn command_needs_scripting_before_snapshot(command: &AppCommand) -> bool {
+    matches!(
+        command,
+        AppCommand::CreateScript
+            | AppCommand::SaveScript
+            | AppCommand::ConfirmRenameScript
+            | AppCommand::ConfirmDeleteScript
+            | AppCommand::RunScript
+            | AppCommand::CancelScript
+            | AppCommand::ClearFinishedScriptExecutions
+    )
+}
+
 fn history_kind_label(kind: HistoryPersistenceKind) -> &'static str {
     match kind {
         HistoryPersistenceKind::Publish => "Publish",
@@ -667,125 +914,15 @@ impl Default for AppRuntime {
 pub struct PumpReport {
     pub commands_processed: usize,
     pub events_processed: usize,
+    pub backlog_remaining: bool,
     pub snapshot_changed: bool,
     pub shutdown_requested: bool,
 }
 
 #[cfg(test)]
-mod tests {
-    use std::path::{Path, PathBuf};
-    use std::time::{Duration, Instant};
-
-    use crate::{
-        AppCommand, AppEvent, AppRuntime, Diagnostic, MigrationPersistenceWorker,
-        MigrationRecoveryCommand, MigrationRecoveryState, StartupState, ThemeMode,
-    };
-
-    #[test]
-    fn pump_processes_commands_without_awaiting() {
-        let mut runtime = AppRuntime::new();
-        runtime
-            .command_sender()
-            .send(AppCommand::SetThemeMode(ThemeMode::Dark))
-            .unwrap();
-
-        let report = runtime.pump();
-
-        assert_eq!(report.commands_processed, 1);
-        assert!(report.snapshot_changed);
-        assert_eq!(runtime.snapshot().theme_mode, ThemeMode::Dark);
-    }
-
-    #[test]
-    fn pump_redacts_service_diagnostics() {
-        let mut runtime = AppRuntime::new();
-        runtime
-            .event_sender()
-            .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
-                "auth failed: password:open-sesame",
-            )))
-            .unwrap();
-
-        runtime.pump();
-
-        let message = &runtime.snapshot().diagnostics[0].message;
-        assert!(!message.contains("open-sesame"));
-        assert!(message.contains("[REDACTED]"));
-    }
-
-    #[test]
-    fn migration_worker_advances_recovery_flow_to_complete() {
-        let temp = tempfile::tempdir().unwrap();
-        let legacy_path = storage_fixture("legacy_profile").display().to_string();
-        let mut runtime = AppRuntime::with_startup_state(StartupState::legacy_migration_detected(
-            ThemeMode::Dark,
-            legacy_path,
-        ));
-        runtime.attach_migration_worker(MigrationPersistenceWorker::start(temp.path()));
-
-        runtime
-            .command_sender()
-            .send(AppCommand::MigrationRecovery(
-                MigrationRecoveryCommand::ChooseMigrate,
-            ))
-            .unwrap();
-        runtime.pump();
-        assert_eq!(
-            runtime.snapshot().migration_recovery.state,
-            MigrationRecoveryState::CreatingBackup
-        );
-
-        pump_until(&mut runtime, |runtime| {
-            runtime.snapshot().migration_recovery.state == MigrationRecoveryState::NeedsPassword
-        });
-        assert!(runtime.snapshot().migration_recovery.backup_name.is_some());
-
-        runtime
-            .command_sender()
-            .send(AppCommand::MigrationRecovery(
-                MigrationRecoveryCommand::SkipSecrets,
-            ))
-            .unwrap();
-        runtime.pump();
-        pump_until(&mut runtime, |runtime| {
-            let recovery = &runtime.snapshot().migration_recovery;
-            recovery.state == MigrationRecoveryState::Reviewing && recovery.counts.connections == 2
-        });
-
-        runtime
-            .command_sender()
-            .send(AppCommand::MigrationRecovery(
-                MigrationRecoveryCommand::ApplyMigration,
-            ))
-            .unwrap();
-        runtime.pump();
-        pump_until(&mut runtime, |runtime| {
-            runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Complete
-        });
-
-        assert_eq!(runtime.snapshot().connection_count, 2);
-        assert!(temp.path().join("config.json").exists());
-    }
-
-    fn storage_fixture(path: &str) -> PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../correo-storage/tests/fixtures")
-            .join(path)
-    }
-
-    fn pump_until(runtime: &mut AppRuntime, mut predicate: impl FnMut(&AppRuntime) -> bool) {
-        let deadline = Instant::now() + Duration::from_secs(2);
-        while Instant::now() < deadline {
-            runtime.pump();
-            if predicate(runtime) {
-                return;
-            }
-            std::thread::sleep(Duration::from_millis(10));
-        }
-        runtime.pump();
-        assert!(predicate(runtime));
-    }
-}
+#[path = "runtime_tests.rs"]
+mod tests;
 
 #[cfg(test)]
+#[path = "runtime/plugin_tests.rs"]
 mod plugin_tests;

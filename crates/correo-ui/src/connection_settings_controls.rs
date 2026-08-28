@@ -230,7 +230,7 @@ pub(super) fn row(ui: &mut Ui, label: &str, add: impl FnOnce(&mut Ui)) {
 }
 
 pub(super) fn control_width(ui: &Ui) -> f32 {
-    ui.available_width().min(CONTROL_MAX_WIDTH).max(0.0)
+    ui.available_width().clamp(0.0, CONTROL_MAX_WIDTH)
 }
 
 fn label_width(ui: &Ui) -> f32 {

@@ -17,15 +17,11 @@ pub const DEFAULT_MAX_OUTPUT_BYTES: usize = 4 * 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum ZipOperation {
     Zip,
+    #[default]
     Unzip,
-}
-
-impl Default for ZipOperation {
-    fn default() -> Self {
-        Self::Unzip
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

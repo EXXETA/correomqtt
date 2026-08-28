@@ -26,7 +26,7 @@ impl AppModel {
                     .empty_profile_confirmation_open = false;
             }
             MigrationRecoveryCommand::ConfirmStartEmptyProfile => self.start_empty_profile(),
-            MigrationRecoveryCommand::SubmitPassword => self.unlock_secrets(),
+            MigrationRecoveryCommand::SubmitPassword { .. } => self.unlock_secrets(),
             MigrationRecoveryCommand::SkipSecrets => self.skip_secrets(),
             MigrationRecoveryCommand::SelectMigrationItem { item_id, selected } => {
                 self.select_migration_item(item_id, *selected);
@@ -84,10 +84,12 @@ impl AppModel {
                 self.snapshot.migration_recovery.state = MigrationRecoveryState::NeedsPassword;
             }
             MigrationRecoveryEvent::PasswordRejected => {
+                self.snapshot.migration_recovery.state = MigrationRecoveryState::NeedsPassword;
                 self.snapshot.migration_recovery.password_error =
                     Some(MigrationPasswordError::WrongPassword);
             }
             MigrationRecoveryEvent::UnsupportedEncryption => {
+                self.snapshot.migration_recovery.state = MigrationRecoveryState::NeedsPassword;
                 self.snapshot.migration_recovery.password_error =
                     Some(MigrationPasswordError::UnsupportedEncryption);
             }
@@ -170,7 +172,6 @@ impl AppModel {
     }
 
     fn unlock_secrets(&mut self) {
-        self.snapshot.migration_recovery.state = MigrationRecoveryState::Reviewing;
         self.snapshot.migration_recovery.password_error = None;
     }
 
@@ -260,17 +261,18 @@ impl AppModel {
         }
         let settings = &self.snapshot.global_settings.legacy_migration;
         if settings.restore_available {
-            let mut recovery = MigrationRecoverySnapshot::default();
-            recovery.state = MigrationRecoveryState::RestoreConfirm;
-            recovery.legacy_path = settings.legacy_path_hint.clone();
-            recovery.backup_name = settings.backup_name.clone();
-            recovery.backup_path_hint = settings.backup_path_hint.clone();
-            recovery.backup_status = settings
-                .backup_name
-                .as_ref()
-                .map(|name| format!("Backup created: {name}"))
-                .unwrap_or_else(|| "Backup selected".to_owned());
-            self.snapshot.migration_recovery = recovery;
+            self.snapshot.migration_recovery = MigrationRecoverySnapshot {
+                state: MigrationRecoveryState::RestoreConfirm,
+                legacy_path: settings.legacy_path_hint.clone(),
+                backup_name: settings.backup_name.clone(),
+                backup_path_hint: settings.backup_path_hint.clone(),
+                backup_status: settings
+                    .backup_name
+                    .as_ref()
+                    .map(|name| format!("Backup created: {name}"))
+                    .unwrap_or_else(|| "Backup selected".to_owned()),
+                ..Default::default()
+            };
         }
     }
 

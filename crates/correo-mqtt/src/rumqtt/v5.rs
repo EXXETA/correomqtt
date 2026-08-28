@@ -1,3 +1,4 @@
+use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -6,6 +7,7 @@ use futures::stream::BoxStream;
 use rumqttc_v5 as rumqtt;
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
+use tokio::time::timeout;
 
 use super::common::{
     client_id, finish_startup, keep_alive_seconds, SessionChannels, StartupSignal,
@@ -16,6 +18,8 @@ use crate::{
     MqttError, MqttProtocolVersion, MqttResult, MqttSession, MqttSessionEvent, PublishRequest, Qos,
     SessionState, Subscription, TopicName, UnsubscribeRequest,
 };
+
+const CLIENT_ACK_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub struct Mqtt5Session {
     channels: SessionChannels,
@@ -71,8 +75,7 @@ impl MqttSession for Mqtt5Session {
             Arc::new(move |error| error_channels.report_error(error));
         let mut transport =
             PreparedTransport::open_with_reporter(&options, Some(error_reporter)).await?;
-        let mqtt_options =
-            build_options(&options, &transport.endpoint, &transport.socket_endpoint)?;
+        let mqtt_options = build_options(&options, &transport.endpoint)?;
         let (client, eventloop) = rumqtt::AsyncClient::builder(mqtt_options).build();
         let (startup_tx, startup_rx) = oneshot::channel();
         let channels = self.channels.clone();
@@ -113,11 +116,27 @@ impl MqttSession for Mqtt5Session {
             return Ok(());
         };
 
-        client.disconnect().await.map_err(map_client_error)?;
-        if let Some(mut transport) = self.transport.take() {
-            transport.close().await?;
+        let disconnect_result = match timeout(CLIENT_ACK_TIMEOUT, client.disconnect()).await {
+            Ok(result) => result.map_err(map_client_error),
+            Err(_) => Err(MqttError::protocol("disconnect timed out")),
+        };
+        if let Some(mut task) = self.task.take() {
+            if disconnect_result.is_ok() {
+                if timeout(CLIENT_ACK_TIMEOUT, &mut task).await.is_err() {
+                    task.abort();
+                }
+            } else {
+                task.abort();
+            }
         }
+        let transport_result = if let Some(mut transport) = self.transport.take() {
+            transport.close().await
+        } else {
+            Ok(())
+        };
         self.channels.set_state(SessionState::Disconnected);
+        disconnect_result?;
+        transport_result?;
         Ok(())
     }
 
@@ -132,10 +151,7 @@ impl MqttSession for Mqtt5Session {
             )
             .await
             .map_err(map_client_error)?;
-        notice
-            .wait_completion_async()
-            .await
-            .map_err(|error| MqttError::protocol(error.to_string()))?;
+        wait_for_ack(notice.wait_completion_async(), "publish").await?;
         self.channels.report_published(MqttSessionEvent::Published {
             topic: request.topic,
             payload: request.payload,
@@ -151,10 +167,7 @@ impl MqttSession for Mqtt5Session {
             .subscribe_tracked(subscription.topic_filter.as_str(), to_qos(subscription.qos))
             .await
             .map_err(map_client_error)?;
-        notice
-            .wait_completion_async()
-            .await
-            .map_err(|error| MqttError::protocol(error.to_string()))?;
+        wait_for_ack(notice.wait_completion_async(), "subscribe").await?;
         self.channels
             .report_published(MqttSessionEvent::Subscribed(subscription));
         Ok(())
@@ -166,10 +179,7 @@ impl MqttSession for Mqtt5Session {
             .unsubscribe_tracked(request.topic_filter.as_str())
             .await
             .map_err(map_client_error)?;
-        notice
-            .wait_completion_async()
-            .await
-            .map_err(|error| MqttError::protocol(error.to_string()))?;
+        wait_for_ack(notice.wait_completion_async(), "unsubscribe").await?;
         self.channels
             .report_published(MqttSessionEvent::Unsubscribed(request));
         Ok(())
@@ -186,6 +196,17 @@ impl MqttSession for Mqtt5Session {
     fn incoming(&mut self) -> BoxStream<'static, Result<IncomingMessage, MqttError>> {
         self.channels.incoming_stream()
     }
+}
+
+async fn wait_for_ack<F, E>(future: F, operation: &'static str) -> MqttResult<()>
+where
+    F: Future<Output = Result<(), E>>,
+    E: std::fmt::Display,
+{
+    timeout(CLIENT_ACK_TIMEOUT, future)
+        .await
+        .map_err(|_| MqttError::protocol(format!("{operation} timed out")))?
+        .map_err(|error| MqttError::protocol(error.to_string()))
 }
 
 async fn run_loop(
@@ -260,7 +281,6 @@ fn handle_event(
 fn build_options(
     options: &MqttConnectionOptions,
     endpoint: &MqttEndpoint,
-    socket_endpoint: &MqttEndpoint,
 ) -> MqttResult<rumqtt::MqttOptions> {
     if options.protocol_version != MqttProtocolVersion::Mqtt5 {
         return Err(MqttError::invalid_options(
@@ -280,30 +300,8 @@ fn build_options(
         mqtt_options.set_last_will(to_last_will(will));
     }
     apply_tls(&mut mqtt_options, options)?;
-    apply_socket_endpoint(&mut mqtt_options, endpoint, socket_endpoint);
 
     Ok(mqtt_options)
-}
-
-/// Dials the actual TCP socket against `socket_endpoint` (e.g. an SSH tunnel's local
-/// forwarded port) while `endpoint` continues to drive TLS SNI/hostname verification,
-/// since rumqttc otherwise derives both from the same value.
-fn apply_socket_endpoint(
-    mqtt_options: &mut rumqtt::MqttOptions,
-    endpoint: &MqttEndpoint,
-    socket_endpoint: &MqttEndpoint,
-) {
-    if socket_endpoint == endpoint {
-        return;
-    }
-    let socket_endpoint = socket_endpoint.clone();
-    mqtt_options.set_socket_connector(move |_host, _network_options| {
-        let socket_endpoint = socket_endpoint.clone();
-        async move {
-            tokio::net::TcpStream::connect((socket_endpoint.host.as_str(), socket_endpoint.port))
-                .await
-        }
-    });
 }
 
 fn apply_tls(
@@ -462,8 +460,7 @@ mod tests {
     #[test]
     fn build_options_rejects_non_v5_protocol() {
         let options = options(MqttProtocolVersion::Mqtt3_1_1);
-        let error =
-            build_options(&options, &options.endpoint, &options.endpoint).expect_err("invalid");
+        let error = build_options(&options, &options.endpoint).expect_err("invalid");
         assert!(matches!(error, MqttError::InvalidOptions { .. }));
     }
 
@@ -475,43 +472,13 @@ mod tests {
             password: SecretString::new("synthetic-password"),
         };
 
-        let mqtt_options =
-            build_options(&options, &options.endpoint, &options.endpoint).expect("valid");
+        let mqtt_options = build_options(&options, &options.endpoint).expect("valid");
         match mqtt_options.auth() {
             rumqtt::ConnectAuth::Password { password } => {
                 assert_eq!(password.as_ref(), b"synthetic-password");
             }
             other => panic!("unexpected auth variant: {other:?}"),
         }
-    }
-
-    #[test]
-    fn build_options_keeps_broker_hostname_when_tunneled() {
-        let options = options(MqttProtocolVersion::Mqtt5);
-        let socket_endpoint = MqttEndpoint::new("127.0.0.1", 21883).expect("valid endpoint");
-
-        let mqtt_options = build_options(&options, &options.endpoint, &socket_endpoint)
-            .expect("valid options with tunnel socket endpoint");
-
-        assert_eq!(
-            mqtt_options.broker().tcp_address(),
-            Some(("localhost", 1883)),
-            "TLS SNI/hostname verification must target the real broker, not the tunnel socket"
-        );
-        assert!(
-            mqtt_options.has_socket_connector(),
-            "a tunneled socket endpoint must install a custom socket connector"
-        );
-    }
-
-    #[test]
-    fn build_options_skips_socket_connector_without_tunnel() {
-        let options = options(MqttProtocolVersion::Mqtt5);
-
-        let mqtt_options = build_options(&options, &options.endpoint, &options.endpoint)
-            .expect("valid options without tunnel");
-
-        assert!(!mqtt_options.has_socket_connector());
     }
 
     #[test]

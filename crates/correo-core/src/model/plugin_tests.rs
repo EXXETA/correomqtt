@@ -313,11 +313,11 @@ fn plugin_denials_legacy_plugins_and_diagnostics_stay_visible() {
     assert!(model.snapshot().diagnostics.len() > diagnostic_count);
 
     model.apply_command(AppCommand::SelectPluginDiagnostic(
-        "diag-systopic-hook-failed".to_owned(),
+        "diag-validator-rejected".to_owned(),
     ));
     assert_eq!(
         model.snapshot().plugins.selected_diagnostic_id.as_deref(),
-        Some("diag-systopic-hook-failed")
+        Some("diag-validator-rejected")
     );
     model.apply_command(AppCommand::ClearPluginDiagnostics);
     assert!(model.snapshot().plugins.diagnostics().is_empty());

@@ -173,6 +173,19 @@ fn hook_label(hook: &str) -> &str {
         "message_validator" => "Validator",
         "detail_byte_transform" => "Detail transform",
         "detail_formatter" => "Detail formatter",
+        "payload_highlighter" => "Payload highlighter",
         _ => "Plugin hook",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::hook_label;
+
+    #[test]
+    fn payload_highlighter_hook_has_a_specific_label() {
+        assert_eq!(hook_label("payload_highlighter"), "Payload highlighter");
+        assert_eq!(hook_label("detail_formatter"), "Detail formatter");
+        assert_eq!(hook_label("something_unknown"), "Plugin hook");
     }
 }

@@ -46,7 +46,7 @@ impl WasmFixtureHarness {
     }
 
     pub fn load_all_noop_fixtures(&self) -> Result<Vec<NoopHookFixture>, FixtureError> {
-        HookKind::ALL
+        HookKind::WASM_DISPATCHED
             .into_iter()
             .map(|hook| self.load_noop_fixture(hook))
             .collect()

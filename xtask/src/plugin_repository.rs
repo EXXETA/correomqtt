@@ -1,11 +1,21 @@
+use std::ffi::OsString;
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use correo_plugins::{
-    PluginInstallSource, PluginManifest, PluginRepositoryDefinition, PluginRepositoryEntry,
+    PluginInstallSource, PluginManifest, PluginPackage, PluginRepositoryDefinition,
+    PluginRepositoryEntry,
 };
 
-use crate::{cargo_dynamic, package, XtaskError};
+use crate::{
+    cargo_dynamic,
+    file_io::{copy_dir_recursive, copy_file, write_file},
+    package,
+    plugin_specs::{PluginBuildSpec, PLUGIN_SPECS},
+    XtaskError,
+};
 
 pub(crate) const LOCAL_PLUGIN_REPOSITORY_FILE: &str = "local-repo.json";
 pub(crate) const RELEASE_PLUGIN_REPOSITORY_FILE: &str = "default-repo.json";
@@ -14,63 +24,10 @@ const REPOSITORY_ID: &str = "local-packaged-plugins";
 const REPOSITORY_NAME: &str = "Local Packaged Plugins";
 const RELEASE_REPOSITORY_ID: &str = "default-plugin-repository";
 const RELEASE_REPOSITORY_NAME: &str = "Default CorreoMQTT Plugins";
+// GitHub's stable "newest release" asset form is /releases/latest/download/<asset>.
+// (/releases/download/latest/ would instead resolve a literal tag named "latest".)
 const DEFAULT_RELEASE_ASSET_BASE_URL: &str =
-    "https://github.com/EXXETA/correomqtt/releases/download/latest";
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct PluginBuildSpec {
-    pub package: &'static str,
-    pub manifest_path: &'static str,
-    pub wasm_stem: &'static str,
-}
-
-pub(crate) const PLUGIN_SPECS: &[PluginBuildSpec] = &[
-    PluginBuildSpec {
-        package: "correo-plugin-base64",
-        manifest_path: "crates/correo-plugin-base64/plugin.toml",
-        wasm_stem: "correo_plugin_base64",
-    },
-    PluginBuildSpec {
-        package: "correo-plugin-zip-manipulator",
-        manifest_path: "crates/correo-plugin-zip-manipulator/plugin.toml",
-        wasm_stem: "correo_plugin_zip_manipulator",
-    },
-    PluginBuildSpec {
-        package: "correo-plugins-advanced-validator",
-        manifest_path: "plugins/correo-plugins-advanced-validator/plugin.toml",
-        wasm_stem: "correo_plugins_advanced_validator",
-    },
-    PluginBuildSpec {
-        package: "correo-plugins-contains-string-validator",
-        manifest_path: "plugins/correo-plugins-contains-string-validator/plugin.toml",
-        wasm_stem: "correo_plugins_contains_string_validator",
-    },
-    PluginBuildSpec {
-        package: "correo-plugins-json-format",
-        manifest_path: "plugins/correo-plugins-json-format/plugin.toml",
-        wasm_stem: "correo_plugins_json_format",
-    },
-    PluginBuildSpec {
-        package: "correo-plugins-systopic",
-        manifest_path: "plugins/correo-plugins-systopic/plugin.toml",
-        wasm_stem: "correo_plugins_systopic",
-    },
-    PluginBuildSpec {
-        package: "correo-plugins-xml-xsd-validator",
-        manifest_path: "plugins/correo-plugins-xml-xsd-validator/plugin.toml",
-        wasm_stem: "correo_plugins_xml_xsd_validator",
-    },
-    PluginBuildSpec {
-        package: "correo-plugin-xml-format",
-        manifest_path: "plugins/xml-format/plugin.toml",
-        wasm_stem: "correo_plugin_xml_format",
-    },
-    PluginBuildSpec {
-        package: "correo-plugin-save-manipulator",
-        manifest_path: "plugins/save-manipulator/plugin.toml",
-        wasm_stem: "correo_plugin_save_manipulator",
-    },
-];
+    "https://github.com/EXXETA/correomqtt/releases/latest/download";
 
 pub(crate) fn run(args: Vec<String>) -> Result<(), XtaskError> {
     let config = PluginRepositoryConfig::from_args(args)?;
@@ -109,7 +66,111 @@ pub(crate) fn release(args: Vec<String>) -> Result<(), XtaskError> {
     Ok(())
 }
 
+pub(crate) fn smoke(args: Vec<String>) -> Result<(), XtaskError> {
+    let config = PluginReleaseSmokeConfig::from_args(args)?;
+    if config.show_help {
+        print_release_smoke_help();
+        return Ok(());
+    }
+
+    smoke_release_artifacts(
+        &config.download_dir,
+        &config.profile_dir,
+        &config.asset_base_url,
+    )?;
+    println!(
+        "plugin-release-smoke: {}",
+        config.profile_dir.join("plugins").display()
+    );
+    Ok(())
+}
+
+fn smoke_release_artifacts(
+    download_dir: &Path,
+    profile_dir: &Path,
+    asset_base_url: &str,
+) -> Result<(), XtaskError> {
+    let repository: PluginRepositoryDefinition = serde_json::from_slice(&fs::read(
+        download_dir.join(RELEASE_PLUGIN_REPOSITORY_FILE),
+    )?)?;
+    repository.validate()?;
+
+    for entry in &repository.plugins {
+        let PluginInstallSource::Archive { url, sha256 } = &entry.install_source else {
+            return Err(XtaskError::InvalidArguments(format!(
+                "release repository entry `{}` is not an archive",
+                entry.manifest.id
+            )));
+        };
+        let archive_name = plugin_archive_file_name(&entry.manifest)?;
+        let expected_url = release_asset_url(asset_base_url, &archive_name);
+        if url != &expected_url {
+            return Err(XtaskError::InvalidArguments(format!(
+                "release repository URL for `{}` is `{url}`, expected `{expected_url}`",
+                entry.manifest.id
+            )));
+        }
+
+        let archive_path = download_dir.join(&archive_name);
+        if package::checksums::sha256_file(&archive_path)? != *sha256 {
+            return Err(XtaskError::InvalidArguments(format!(
+                "release archive checksum mismatch for `{archive_name}`"
+            )));
+        }
+
+        let install_dir = profile_dir
+            .join("plugins")
+            .join(safe_plugin_id_component(&entry.manifest.id)?);
+        if install_dir.exists() {
+            fs::remove_dir_all(&install_dir)?;
+        }
+        fs::create_dir_all(&install_dir)?;
+        extract_release_archive(&archive_path, &install_dir)?;
+
+        let package = PluginPackage::load(&install_dir)
+            .map_err(|error| XtaskError::InvalidArguments(error.to_string()))?;
+        if package.manifest().id != entry.manifest.id {
+            return Err(XtaskError::InvalidArguments(format!(
+                "installed archive manifest does not match `{}`",
+                entry.manifest.id
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn extract_release_archive(archive_path: &Path, install_dir: &Path) -> Result<(), XtaskError> {
+    let file = fs::File::open(archive_path)?;
+    let mut archive = zip::ZipArchive::new(file)?;
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index)?;
+        let path = entry.enclosed_name().ok_or_else(|| {
+            XtaskError::InvalidArguments(format!(
+                "release archive `{}` contains an unsafe path",
+                archive_path.display()
+            ))
+        })?;
+        let destination = install_dir.join(path);
+        if entry.is_dir() {
+            fs::create_dir_all(destination)?;
+        } else {
+            let parent = destination.parent().ok_or_else(|| {
+                XtaskError::InvalidArguments(format!(
+                    "release archive `{}` has an invalid path",
+                    archive_path.display()
+                ))
+            })?;
+            fs::create_dir_all(parent)?;
+            let mut output = fs::File::create(destination)?;
+            io::copy(&mut entry, &mut output)?;
+        }
+    }
+    Ok(())
+}
+
 pub(crate) fn build_wasm_plugins() -> Result<(), XtaskError> {
+    ensure_wasm_target_available()?;
+
     let mut args = vec![
         "build".to_owned(),
         "--release".to_owned(),
@@ -123,6 +184,50 @@ pub(crate) fn build_wasm_plugins() -> Result<(), XtaskError> {
     cargo_dynamic(&args)
 }
 
+fn ensure_wasm_target_available() -> Result<(), XtaskError> {
+    if wasm_target_available()? {
+        Ok(())
+    } else {
+        missing_wasm_target()
+    }
+}
+
+fn wasm_target_available() -> Result<bool, XtaskError> {
+    let rustc = std::env::var_os("RUSTC").unwrap_or_else(|| OsString::from("rustc"));
+    let output = match Command::new(rustc)
+        .args(["--print", "target-libdir", "--target", WASM_TARGET])
+        .output()
+    {
+        Ok(output) => output,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => return Err(error.into()),
+    };
+
+    if !output.status.success() {
+        return Ok(false);
+    }
+
+    let lib_dir = PathBuf::from(String::from_utf8_lossy(&output.stdout).trim());
+    let mut entries = match fs::read_dir(&lib_dir) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => return Err(error.into()),
+    };
+    Ok(entries.any(|entry| {
+        entry
+            .ok()
+            .and_then(|entry| entry.file_name().into_string().ok())
+            .is_some_and(|name| name.starts_with("libcore-") && name.ends_with(".rlib"))
+    }))
+}
+
+fn missing_wasm_target() -> Result<(), XtaskError> {
+    Err(XtaskError::MissingRustTarget {
+        target: WASM_TARGET.to_owned(),
+        install_command: format!("rustup target add {WASM_TARGET}"),
+    })
+}
+
 pub(crate) fn stage_local_plugins(executable_dir: &Path) -> Result<(), XtaskError> {
     let plugin_root = executable_dir.join("plugins");
     if plugin_root.exists() {
@@ -133,7 +238,8 @@ pub(crate) fn stage_local_plugins(executable_dir: &Path) -> Result<(), XtaskErro
     let mut entries = Vec::new();
     for spec in PLUGIN_SPECS {
         let manifest = read_manifest(spec.manifest_path)?;
-        let relative_package_path = PathBuf::from("plugins").join(&manifest.id);
+        let package_component = safe_plugin_id_component(&manifest.id)?;
+        let relative_package_path = PathBuf::from("plugins").join(package_component);
         let package_dir = executable_dir.join(&relative_package_path);
         stage_plugin_package(spec, &package_dir)?;
         entries.push(PluginRepositoryEntry::local_package(
@@ -176,10 +282,10 @@ fn write_release_artifacts_for_specs(
     let mut entries = Vec::new();
     for spec in specs {
         let manifest = read_manifest(spec.manifest_path)?;
-        let package_dir = stage_root.join(safe_file_component(&manifest.id));
+        let package_dir = stage_root.join(safe_plugin_id_component(&manifest.id)?);
         stage_plugin_package(spec, &package_dir)?;
 
-        let archive_file_name = plugin_archive_file_name(&manifest);
+        let archive_file_name = plugin_archive_file_name(&manifest)?;
         let archive_path = out_dir.join(&archive_file_name);
         if archive_path.exists() {
             fs::remove_file(&archive_path)?;
@@ -260,58 +366,32 @@ fn write_repository(
     write_file(path, &json)
 }
 
-fn copy_file(source: &Path, destination: &Path) -> Result<(), XtaskError> {
-    if let Some(parent) = destination.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::copy(source, destination)?;
-    Ok(())
-}
-
-fn write_file(path: &Path, content: &[u8]) -> Result<(), XtaskError> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::write(path, content)?;
-    Ok(())
-}
-
-fn copy_dir_recursive(source: &Path, destination: &Path) -> Result<(), XtaskError> {
-    fs::create_dir_all(destination)?;
-    let mut entries = fs::read_dir(source)?.collect::<Result<Vec<_>, _>>()?;
-    entries.sort_by_key(|entry| entry.path());
-    for entry in entries {
-        let from = entry.path();
-        let to = destination.join(entry.file_name());
-        if from.is_dir() {
-            copy_dir_recursive(&from, &to)?;
-        } else {
-            copy_file(&from, &to)?;
-        }
-    }
-    Ok(())
-}
-
-fn plugin_archive_file_name(manifest: &PluginManifest) -> String {
-    format!(
+fn plugin_archive_file_name(manifest: &PluginManifest) -> Result<String, XtaskError> {
+    Ok(format!(
         "{}-{}.zip",
-        safe_file_component(&manifest.id),
+        safe_plugin_id_component(&manifest.id)?,
         manifest.version
-    )
+    ))
 }
 
 fn release_asset_url(base_url: &str, file_name: &str) -> String {
     format!("{}/{}", base_url.trim_end_matches('/'), file_name)
 }
 
-fn safe_file_component(value: &str) -> String {
-    value
-        .chars()
-        .map(|character| match character {
-            'a'..='z' | 'A'..='Z' | '0'..='9' | '.' | '-' | '_' => character,
-            _ => '_',
-        })
-        .collect()
+fn safe_plugin_id_component(value: &str) -> Result<&str, XtaskError> {
+    let is_safe = !value.is_empty()
+        && value != "."
+        && value != ".."
+        && value.chars().all(
+            |character| matches!(character, 'a'..='z' | 'A'..='Z' | '0'..='9' | '.' | '-' | '_'),
+        );
+    if is_safe {
+        Ok(value)
+    } else {
+        Err(XtaskError::InvalidArguments(format!(
+            "plugin id `{value}` is not a safe single path component"
+        )))
+    }
 }
 
 fn print_help() {
@@ -328,6 +408,14 @@ fn print_release_help() {
     println!();
     println!("Builds plugin WASM archives plus default-repo.json for GitHub release assets.");
     println!("Default --out-dir is dist/plugins.");
+}
+
+fn print_release_smoke_help() {
+    println!(
+        "Usage: cargo xtask plugin-release-smoke --download-dir <dir> --profile-dir <dir> --asset-base-url <url>"
+    );
+    println!();
+    println!("Verifies downloaded release ZIPs and installs them into a clean profile.");
 }
 
 #[derive(Debug)]
@@ -389,7 +477,74 @@ impl PluginReleaseConfig {
     }
 }
 
+#[derive(Debug)]
+struct PluginReleaseSmokeConfig {
+    download_dir: PathBuf,
+    profile_dir: PathBuf,
+    asset_base_url: String,
+    show_help: bool,
+}
+
+impl PluginReleaseSmokeConfig {
+    fn from_args(args: Vec<String>) -> Result<Self, XtaskError> {
+        let mut download_dir = None;
+        let mut profile_dir = None;
+        let mut asset_base_url = None;
+        let mut show_help = false;
+
+        let mut iter = args.into_iter();
+        while let Some(arg) = iter.next() {
+            match arg.as_str() {
+                "--download-dir" => {
+                    download_dir = Some(PathBuf::from(iter.next().ok_or_else(|| {
+                        XtaskError::InvalidArguments("--download-dir requires a value".to_owned())
+                    })?))
+                }
+                "--profile-dir" => {
+                    profile_dir = Some(PathBuf::from(iter.next().ok_or_else(|| {
+                        XtaskError::InvalidArguments("--profile-dir requires a value".to_owned())
+                    })?))
+                }
+                "--asset-base-url" => {
+                    asset_base_url = Some(iter.next().ok_or_else(|| {
+                        XtaskError::InvalidArguments("--asset-base-url requires a value".to_owned())
+                    })?)
+                }
+                "-h" | "--help" => show_help = true,
+                unknown => {
+                    return Err(XtaskError::InvalidArguments(format!(
+                        "unknown plugin-release-smoke option: {unknown}"
+                    )));
+                }
+            }
+        }
+
+        if show_help {
+            return Ok(Self {
+                download_dir: PathBuf::new(),
+                profile_dir: PathBuf::new(),
+                asset_base_url: String::new(),
+                show_help,
+            });
+        }
+
+        Ok(Self {
+            download_dir: download_dir.ok_or_else(|| {
+                XtaskError::InvalidArguments("--download-dir is required".to_owned())
+            })?,
+            profile_dir: profile_dir.ok_or_else(|| {
+                XtaskError::InvalidArguments("--profile-dir is required".to_owned())
+            })?,
+            asset_base_url: asset_base_url.ok_or_else(|| {
+                XtaskError::InvalidArguments("--asset-base-url is required".to_owned())
+            })?,
+            show_help,
+        })
+    }
+}
+
 #[cfg(test)]
+#[path = "plugin_repository/tests.rs"]
 mod tests;
 
 impl PluginRepositoryConfig {

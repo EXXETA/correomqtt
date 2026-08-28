@@ -1,11 +1,22 @@
 use super::AppModel;
-use crate::{AppCommand, ConnectionSurface};
+use crate::{AppCommand, ConnectionId, ConnectionSurface};
+
+fn user_connection_ids(model: &AppModel) -> Vec<ConnectionId> {
+    model
+        .snapshot()
+        .connections
+        .iter()
+        .filter(|connection| !connection.immutable)
+        .map(|connection| connection.id)
+        .collect()
+}
 
 #[test]
 fn connection_selection_opens_workbench_and_preserves_pending_editor() {
     let mut model = AppModel::default();
-    let first_id = model.snapshot().connections[0].id;
-    let second_id = model.snapshot().connections[1].id;
+    let user_ids = user_connection_ids(&model);
+    let first_id = user_ids[0];
+    let second_id = user_ids[1];
 
     model.apply_command(AppCommand::OpenConnectionSettings(first_id));
 
@@ -52,11 +63,18 @@ fn launcher_command_selects_first_connection_workbench() {
 #[test]
 fn delete_connection_removes_it_and_selects_first_available() {
     let mut model = AppModel::default();
-    let first_id = model.snapshot().connections[0].id;
-    let second_id = model.snapshot().connections[1].id;
+    let user_ids = user_connection_ids(&model);
+    let second_id = user_ids[1];
     let original_count = model.snapshot().connection_count;
 
-    let second_name = model.snapshot().connections[1].name.clone();
+    let second_name = model
+        .snapshot()
+        .connections
+        .iter()
+        .find(|connection| connection.id == second_id)
+        .expect("second user connection exists")
+        .name
+        .clone();
 
     model.apply_command(AppCommand::SelectConnection(second_id));
     model.apply_command(AppCommand::RequestDeleteConnection);
@@ -79,7 +97,10 @@ fn delete_connection_removes_it_and_selects_first_available() {
         .connections
         .iter()
         .any(|connection| connection.id == second_id));
-    assert_eq!(model.snapshot().selected_connection, Some(first_id));
+    assert_eq!(
+        model.snapshot().selected_connection,
+        Some(model.snapshot().connections[0].id)
+    );
     assert_eq!(
         model.snapshot().connection_surface,
         ConnectionSurface::Workbench
@@ -96,12 +117,7 @@ fn delete_connection_removes_it_and_selects_first_available() {
 #[test]
 fn move_connection_reorders_visible_connections() {
     let mut model = AppModel::default();
-    let original: Vec<_> = model
-        .snapshot()
-        .connections
-        .iter()
-        .map(|connection| connection.id)
-        .collect();
+    let original = user_connection_ids(&model);
 
     model.apply_command(AppCommand::MoveConnection {
         connection_id: original[0],
@@ -109,12 +125,7 @@ fn move_connection_reorders_visible_connections() {
         after: true,
     });
 
-    let reordered: Vec<_> = model
-        .snapshot()
-        .connections
-        .iter()
-        .map(|connection| connection.id)
-        .collect();
+    let reordered = user_connection_ids(&model);
     assert_eq!(
         reordered,
         [original[1], original[2], original[0], original[3]]
@@ -126,11 +137,6 @@ fn move_connection_reorders_visible_connections() {
         after: false,
     });
 
-    let restored_front: Vec<_> = model
-        .snapshot()
-        .connections
-        .iter()
-        .map(|connection| connection.id)
-        .collect();
+    let restored_front = user_connection_ids(&model);
     assert_eq!(restored_front, original);
 }

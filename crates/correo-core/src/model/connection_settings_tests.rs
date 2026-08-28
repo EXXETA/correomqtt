@@ -5,7 +5,8 @@ use correo_storage::migration::MigrationPreview;
 
 use super::AppModel;
 use crate::{
-    startup_state_from_migration, AppCommand, ConnectionSecretField, SecretInput, ThemeMode,
+    startup_state_from_migration, AppCommand, ConnectionId, ConnectionSecretField, SecretInput,
+    ThemeMode,
 };
 
 fn storage_fixture(path: &str) -> PathBuf {
@@ -14,13 +15,23 @@ fn storage_fixture(path: &str) -> PathBuf {
         .join(path)
 }
 
+fn first_user_connection_id(model: &AppModel) -> ConnectionId {
+    model
+        .snapshot()
+        .connections
+        .iter()
+        .find(|connection| !connection.immutable)
+        .expect("user connection exists")
+        .id
+}
+
 #[test]
 fn migrated_connection_settings_expose_legacy_form_fields() {
     let profile = LegacyProfile::read_from(storage_fixture("legacy_profile")).unwrap();
     let preview = MigrationPreview::from_legacy_profile(profile).unwrap();
     let state = startup_state_from_migration(preview, ThemeMode::Dark);
     let mut model = AppModel::with_startup_state(state);
-    let first_id = model.snapshot().connections[0].id;
+    let first_id = first_user_connection_id(&model);
 
     model.apply_command(AppCommand::OpenConnectionSettings(first_id));
     let settings = &model.snapshot().connection_settings;

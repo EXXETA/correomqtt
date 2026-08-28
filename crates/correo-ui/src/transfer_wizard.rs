@@ -1,6 +1,6 @@
 use correo_core::{
     AppCommand, AppCommandSender, AppSnapshot, ConnectionExportSnapshot, ConnectionImportSnapshot,
-    ConnectionSurface, TransferSection, TransferStep,
+    ConnectionSurface, SecretInput, TransferSection, TransferStep,
 };
 use egui::{Button, Id, Modal, RichText, TextEdit, Ui};
 use egui_phosphor::regular;
@@ -317,8 +317,9 @@ fn export_wizard(
                         commands,
                         AppCommand::UpdateConnectionExportPath(path.display().to_string()),
                     );
+                    let password = SecretInput::new(state.export_password.clone());
                     state.export_password.clear();
-                    send(commands, AppCommand::StartConnectionExport);
+                    send(commands, AppCommand::StartConnectionExport { password });
                 }
             }
         });

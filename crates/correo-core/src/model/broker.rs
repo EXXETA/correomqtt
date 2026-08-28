@@ -67,10 +67,15 @@ impl AppModel {
 
     pub(crate) fn broker_start_config(&self) -> Option<BuiltInBrokerProcessConfig> {
         let broker = &self.snapshot.built_in_broker;
-        let port = broker.port.trim().parse::<u16>().ok()?;
+        let port = broker
+            .port
+            .trim()
+            .parse::<u16>()
+            .ok()
+            .filter(|port| *port > 0)?;
         let (username, password) = if broker.credentials_enabled {
             let username = broker.username.trim();
-            if username.is_empty() {
+            if username.is_empty() || broker.password.is_empty() {
                 return None;
             }
             (Some(username.to_owned()), Some(broker.password.clone()))
@@ -96,7 +101,7 @@ impl AppModel {
             self.snapshot.built_in_broker.status = BuiltInBrokerStatus::Error;
             append_broker_log(
                 &mut self.snapshot.built_in_broker.logs,
-                "Broker configuration is invalid. Use a port between 1 and 65535 and a username when credentials are enabled.",
+                "Broker configuration is invalid. Use a port between 1 and 65535 with a username and password when credentials are enabled.",
             );
             return;
         }
