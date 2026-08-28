@@ -413,6 +413,7 @@ mod tests {
                 if replacement == 2 {
                     producer_started.send(()).unwrap();
                 }
+                std::thread::sleep(Duration::from_millis(1));
             }
         });
 

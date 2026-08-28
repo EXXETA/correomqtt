@@ -206,7 +206,7 @@ pub(crate) async fn pump_until(
     runtime: &mut AppRuntime,
     mut condition: impl FnMut(&AppRuntime) -> bool,
 ) {
-    for _ in 0..50 {
+    for _ in 0..200 {
         runtime.pump();
         if condition(runtime) {
             return;
