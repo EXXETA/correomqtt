@@ -65,7 +65,10 @@ fn package(command_base: &str, args: Vec<String>) -> Result<Option<PackageOutput
         Platform::Macos => stage_macos(&binary, &stage_dir)?,
         Platform::Windows => stage_windows(&binary, &stage_dir)?,
     }
-    plugins::stage(platform, &stage_dir)?;
+    let source_executable_dir = binary
+        .parent()
+        .ok_or_else(|| XtaskError::MissingArtifact(binary.display().to_string()))?;
+    plugins::stage(platform, &stage_dir, source_executable_dir)?;
 
     fs::create_dir_all(&plan.out_dir)?;
     let artifact = plan.artifact_path();

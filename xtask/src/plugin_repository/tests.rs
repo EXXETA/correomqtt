@@ -19,6 +19,7 @@ fn release_artifacts_point_repository_entries_at_archives() {
     let wasm_stem = Box::leak(wasm_stem.into_boxed_str());
     let spec = PluginBuildSpec {
         package: "release-test-plugin",
+        crate_path: "source",
         manifest_path,
         wasm_stem,
     };
@@ -37,7 +38,7 @@ fn release_artifacts_point_repository_entries_at_archives() {
 
     assert_eq!(repository.plugins.len(), 1);
     let entry = &repository.plugins[0];
-    let archive_file_name = plugin_archive_file_name(&entry.manifest);
+    let archive_file_name = plugin_archive_file_name(&entry.manifest).unwrap();
     let archive_path = out_dir.join(&archive_file_name);
     let expected_sha256 = package::checksums::sha256_file(&archive_path).unwrap();
     assert_eq!(
