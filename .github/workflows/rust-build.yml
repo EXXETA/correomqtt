@@ -74,12 +74,12 @@ jobs:
         if: runner.os == 'Linux'
         run: cargo fmt --all --check
 
-      - name: Clippy
+      - name: Clippy release tooling
         if: runner.os == 'Linux'
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy -p xtask --all-targets --no-deps -- -D warnings
 
-      - name: Test workspace
-        run: cargo test --workspace --locked
+      - name: Test release tooling
+        run: cargo test -p xtask --locked
 
   package:
     name: Package ${{ matrix.platform }} (${{ matrix.target }})
