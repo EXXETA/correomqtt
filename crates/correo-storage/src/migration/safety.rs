@@ -212,15 +212,20 @@ impl MigrationApplier {
                 reason: "backup manifest does not match the migration target".to_owned(),
             });
         }
-        remove_path_if_exists(&self.target_root)?;
-        if !manifest.source_existed {
-            return Ok(());
-        }
-        fs::create_dir_all(&self.target_root).map_err(|source| StorageError::CreateDir {
-            path: self.target_root.clone(),
-            source,
-        })?;
-        copy_dir_contents(&backup.path, &self.target_root, &[BACKUP_MANIFEST_FILE])
+
+        let staged_restore = if manifest.source_existed {
+            let staging_path = create_sibling_directory(&self.target_root, "rollback-staging")?;
+            if let Err(error) =
+                copy_dir_contents(&backup.path, &staging_path, &[BACKUP_MANIFEST_FILE])
+            {
+                let _ = remove_path_if_exists(&staging_path);
+                return Err(error);
+            }
+            Some(staging_path)
+        } else {
+            None
+        };
+        replace_target(&self.target_root, staged_restore.as_deref())
     }
 
     fn read_rollback_marker(&self) -> Result<RollbackMarker> {
@@ -366,6 +371,72 @@ fn collect_files(root: &Path, dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> 
         }
     }
     Ok(())
+}
+
+fn create_sibling_directory(target: &Path, purpose: &str) -> Result<PathBuf> {
+    let path = replacement_path(target, purpose);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|source| StorageError::CreateDir {
+            path: parent.to_path_buf(),
+            source,
+        })?;
+    }
+    fs::create_dir(&path).map_err(|source| StorageError::CreateDir {
+        path: path.clone(),
+        source,
+    })?;
+    Ok(path)
+}
+
+fn replace_target(target: &Path, staged_restore: Option<&Path>) -> Result<()> {
+    let displaced_target = if target.exists() {
+        let path = replacement_path(target, "rollback-previous");
+        fs::rename(target, &path).map_err(|source| StorageError::Rename {
+            from: target.to_path_buf(),
+            to: path.clone(),
+            source,
+        })?;
+        Some(path)
+    } else {
+        None
+    };
+
+    if let Some(staged_restore) = staged_restore {
+        if let Err(source) = fs::rename(staged_restore, target) {
+            if let Some(displaced_target) = &displaced_target {
+                if let Err(restore_error) = fs::rename(displaced_target, target) {
+                    return Err(StorageError::MigrationRollbackSafety {
+                        reason: format!(
+                            "staged rollback could not replace the target ({source}); the previous target could not be restored ({restore_error})"
+                        ),
+                    });
+                }
+            }
+            let _ = remove_path_if_exists(staged_restore);
+            return Err(StorageError::Rename {
+                from: staged_restore.to_path_buf(),
+                to: target.to_path_buf(),
+                source,
+            });
+        }
+    }
+
+    if let Some(displaced_target) = displaced_target {
+        remove_path_if_exists(&displaced_target)?;
+    }
+    Ok(())
+}
+
+fn replacement_path(target: &Path, purpose: &str) -> PathBuf {
+    let target_name = target
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("correomqtt-data");
+    target.with_file_name(format!(
+        ".{target_name}-{purpose}-{}-{}",
+        std::process::id(),
+        rand::random::<u64>()
+    ))
 }
 
 fn remove_path_if_exists(path: &Path) -> Result<()> {

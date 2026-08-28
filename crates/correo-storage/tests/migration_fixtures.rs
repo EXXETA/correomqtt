@@ -329,6 +329,22 @@ fn migration_apply_creates_backup_and_rolls_back_from_temp_fixture() {
 }
 
 #[test]
+fn migration_rollback_removes_target_when_backup_represents_missing_source() {
+    let preview = legacy_preview();
+    let temp = tempfile::tempdir().unwrap();
+    let target = temp.path().join("current");
+    let backup_root = temp.path().join("backups");
+    let applier = MigrationApplier::with_backup_root(&target, &backup_root);
+
+    let outcome = applier.apply_preview(&preview).unwrap();
+    assert!(target.exists());
+
+    applier.rollback(&outcome.backup).unwrap();
+
+    assert!(!target.exists());
+}
+
+#[test]
 fn migration_apply_restores_backup_when_write_fails() {
     let mut preview = legacy_preview();
     preview.scripts.files[0].relative_path = PathBuf::from("../escape.js");
@@ -366,6 +382,34 @@ fn migration_rollback_refuses_after_target_changes() {
         StorageError::MigrationRollbackSafety { .. }
     ));
     assert!(target.join("newer-data.txt").exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn migration_rollback_keeps_live_target_when_backup_staging_fails() {
+    let preview = legacy_preview();
+    let temp = tempfile::tempdir().unwrap();
+    let target = temp.path().join("current");
+    let backup_root = temp.path().join("backups");
+    seed_existing_target(&target);
+
+    let applier = MigrationApplier::with_backup_root(&target, &backup_root);
+    let outcome = applier.apply_preview(&preview).unwrap();
+    let backup_config = outcome.backup.path.join("config.json");
+    std::fs::remove_file(&backup_config).unwrap();
+    std::os::unix::fs::symlink("missing-config.json", &backup_config).unwrap();
+
+    let error = applier.rollback(&outcome.backup).unwrap_err();
+
+    assert!(matches!(error, StorageError::Copy { .. }));
+    let live_config = ConfigStore::new(&target).load().unwrap();
+    assert_eq!(live_config.settings.saved_locale.as_deref(), Some("de_DE"));
+    assert!(target.join("scripts/publish_heartbeat.js").exists());
+    assert!(!std::fs::read_dir(temp.path()).unwrap().any(|entry| entry
+        .unwrap()
+        .file_name()
+        .to_string_lossy()
+        .contains("rollback-staging")));
 }
 
 #[test]
