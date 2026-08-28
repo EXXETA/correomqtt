@@ -47,7 +47,7 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 fluent-bundle = "0.16"
 futures = "0.3"
 image = "0.25"
-keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service", "vendored"] }
 pbkdf2 = "0.12"
 rand = "0.8"
 rquickjs = "0.8.1"
