@@ -330,11 +330,7 @@ mod tests {
 
         let store = HistoryStore::new(temp.path());
         let deadline = Instant::now() + Duration::from_secs(2);
-        let mut events = Vec::new();
         loop {
-            while let Some(event) = worker.try_recv_event() {
-                events.push(event);
-            }
             let restored = store
                 .load_workbench::<crate::WorkbenchSnapshot>("connection-01")
                 .unwrap();
@@ -347,23 +343,15 @@ mod tests {
             );
             std::thread::sleep(Duration::from_millis(10));
         }
-        while let Some(event) = worker.try_recv_event() {
-            events.push(event);
-        }
 
-        let workbench_events = events
-            .iter()
-            .filter(|event| {
-                matches!(
-                    event,
-                    HistoryPersistenceEvent::Changed {
-                        connection_id,
-                        kind: HistoryPersistenceKind::Workbench,
-                    } if connection_id == "connection-01"
-                )
+        assert_eq!(
+            worker.recv_event_timeout(Duration::from_secs(2)),
+            Some(HistoryPersistenceEvent::Changed {
+                connection_id: "connection-01".to_owned(),
+                kind: HistoryPersistenceKind::Workbench,
             })
-            .count();
-        assert_eq!(workbench_events, 1);
+        );
+        assert_eq!(worker.recv_event_timeout(Duration::from_millis(50)), None);
     }
 
     #[test]
