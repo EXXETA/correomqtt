@@ -162,6 +162,13 @@ impl AppRuntime {
 
         while let Ok(command) = self.command_receiver.try_recv() {
             let command_before = self.model.snapshot().clone();
+            let deleted_connection_id = if matches!(command, AppCommand::ConfirmDeleteConnection) {
+                command_before
+                    .selected_connection
+                    .map(|connection_id| self.model.storage_connection_id(connection_id))
+            } else {
+                None
+            };
             let should_persist_settings = (matches!(command, AppCommand::SaveGlobalSettings)
                 && self.model.snapshot().global_settings.dirty)
                 || matches!(
@@ -192,11 +199,23 @@ impl AppRuntime {
             if should_persist_settings {
                 self.dispatch_global_settings_save();
             }
+            if matches!(command, AppCommand::SaveConnectionSettings)
+                && command_before.connection_settings.dirty
+                && command_before.connection_settings.valid
+                && !self.model.snapshot().connection_settings.dirty
+            {
+                self.dispatch_connection_settings_save();
+            }
             if matches!(command, AppCommand::SaveConnectionPlugins) {
                 self.dispatch_connection_plugin_workflows_save();
             }
-            if self.should_persist_connections_for_command(&command, &command_before) {
-                self.dispatch_connections_save();
+            if let Some(connection_id) = deleted_connection_id {
+                if command_before.connection_count != self.model.snapshot().connection_count {
+                    self.dispatch_connection_delete(connection_id);
+                }
+            }
+            if matches!(command, AppCommand::MoveConnection { .. }) {
+                self.dispatch_connection_order_save();
             }
             if self.should_persist_built_in_broker_for_command(&command, &command_before) {
                 self.dispatch_built_in_broker_save();
@@ -329,7 +348,7 @@ impl AppRuntime {
         };
         if let Err(error) = worker.dispatch(SettingsPersistenceCommand::Save {
             theme_mode: self.model.snapshot().theme_mode.clone(),
-            settings: self.model.snapshot().global_settings.clone(),
+            settings: Box::new(self.model.snapshot().global_settings.clone()),
         }) {
             let _ = self
                 .event_sender
@@ -371,24 +390,68 @@ impl AppRuntime {
         }
     }
 
-    fn dispatch_connections_save(&self) {
-        let Some(worker) = &self.settings_worker else {
-            let _ = self
-                .event_sender
-                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
-                    "Settings persistence worker is not running.",
-                )));
+    fn dispatch_connection_settings_save(&self) {
+        let Some(connection_id) = self.model.snapshot().selected_connection else {
             return;
         };
-        if let Err(error) = worker.dispatch(SettingsPersistenceCommand::SaveConnections {
-            connections: self.model.connection_persistence_snapshot(),
+        let Some(worker) = &self.settings_worker else {
+            self.warn_settings_worker_missing();
+            return;
+        };
+        if let Err(error) = worker.dispatch(SettingsPersistenceCommand::SaveConnectionSettings {
+            connection_id: self.model.storage_connection_id(connection_id),
+            settings: Box::new(self.model.snapshot().connection_settings.clone()),
         }) {
-            let _ = self
-                .event_sender
-                .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
-                    error.to_string(),
-                )));
+            self.warn_settings_dispatch(error);
         }
+    }
+
+    fn dispatch_connection_delete(&self, connection_id: String) {
+        let Some(worker) = &self.settings_worker else {
+            self.warn_settings_worker_missing();
+            return;
+        };
+        if let Err(error) =
+            worker.dispatch(SettingsPersistenceCommand::DeleteConnection { connection_id })
+        {
+            self.warn_settings_dispatch(error);
+        }
+    }
+
+    fn dispatch_connection_order_save(&self) {
+        let Some(worker) = &self.settings_worker else {
+            self.warn_settings_worker_missing();
+            return;
+        };
+        let connection_ids = self
+            .model
+            .snapshot()
+            .connections
+            .iter()
+            .filter(|connection| !connection.immutable)
+            .map(|connection| self.model.storage_connection_id(connection.id))
+            .collect();
+        if let Err(error) =
+            worker.dispatch(SettingsPersistenceCommand::SaveConnectionOrder { connection_ids })
+        {
+            self.warn_settings_dispatch(error);
+        }
+    }
+
+    fn warn_settings_worker_missing(&self) {
+        let _ = self
+            .event_sender
+            .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                "Settings persistence worker is not running.",
+            )));
+    }
+
+    fn warn_settings_dispatch(&self, error: impl std::fmt::Display) {
+        let _ = self
+            .event_sender
+            .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
+                error.to_string(),
+            )));
     }
 
     fn dispatch_built_in_broker_save(&self) {
@@ -414,23 +477,6 @@ impl AppRuntime {
                 .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(
                     error.to_string(),
                 )));
-        }
-    }
-
-    fn should_persist_connections_for_command(
-        &self,
-        command: &AppCommand,
-        before: &AppSnapshot,
-    ) -> bool {
-        match command {
-            AppCommand::SaveConnectionSettings | AppCommand::SaveConnectionPlugins => {
-                before.connection_settings.dirty && before.connection_settings.valid
-            }
-            AppCommand::ConfirmDeleteConnection => {
-                before.connection_count != self.model.snapshot().connection_count
-            }
-            AppCommand::MoveConnection { .. } => true,
-            _ => false,
         }
     }
 
@@ -498,13 +544,24 @@ impl AppRuntime {
                 .map(|legacy_path| MigrationPersistenceCommand::Prepare {
                     legacy_path: legacy_path.clone(),
                 }),
-            crate::MigrationRecoveryCommand::SubmitPassword
-            | crate::MigrationRecoveryCommand::SkipSecrets => {
-                Some(MigrationPersistenceCommand::LoadReview)
+            crate::MigrationRecoveryCommand::SubmitPassword { password } => {
+                Some(MigrationPersistenceCommand::UnlockSecrets {
+                    master_password: password.clone(),
+                })
+            }
+            crate::MigrationRecoveryCommand::SkipSecrets => {
+                Some(MigrationPersistenceCommand::SkipSecrets)
             }
             crate::MigrationRecoveryCommand::ApplyMigration => {
                 Some(MigrationPersistenceCommand::Apply {
                     fallback_theme: self.model.snapshot().theme_mode.clone(),
+                })
+            }
+            crate::MigrationRecoveryCommand::ConfirmRestoreBackup => {
+                let recovery = &self.model.snapshot().migration_recovery;
+                Some(MigrationPersistenceCommand::Restore {
+                    backup_name: recovery.backup_name.clone()?,
+                    backup_path_hint: recovery.backup_path_hint.clone()?,
                 })
             }
             _ => None,
@@ -678,7 +735,8 @@ mod tests {
 
     use crate::{
         AppCommand, AppEvent, AppRuntime, Diagnostic, MigrationPersistenceWorker,
-        MigrationRecoveryCommand, MigrationRecoveryState, StartupState, ThemeMode,
+        MigrationRecoveryCommand, MigrationRecoveryCompletion, MigrationRecoveryState,
+        StartupState, ThemeMode,
     };
 
     #[test]
@@ -714,7 +772,89 @@ mod tests {
     }
 
     #[test]
+    fn saved_new_connection_reaches_config_store() {
+        keyring::set_default_credential_builder(keyring::mock::default_credential_builder());
+        let temp = tempfile::tempdir().unwrap();
+        let mut runtime = AppRuntime::with_startup_state(StartupState::empty(
+            ThemeMode::Dark,
+            Diagnostic::info("test"),
+        ));
+        runtime.attach_settings_worker(crate::SettingsPersistenceWorker::start(temp.path()));
+
+        runtime
+            .command_sender()
+            .send(AppCommand::AddConnection)
+            .unwrap();
+        runtime
+            .command_sender()
+            .send(AppCommand::UpdateConnectionSetting {
+                field: crate::ConnectionSettingField::Host,
+                value: "broker.local".to_owned(),
+            })
+            .unwrap();
+        runtime
+            .command_sender()
+            .send(AppCommand::SaveConnectionSettings)
+            .unwrap();
+        runtime.pump();
+
+        let deadline = Instant::now() + Duration::from_secs(3);
+        while !temp.path().join("config.json").exists() && Instant::now() < deadline {
+            runtime.pump();
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let config = correo_storage::current::ConfigStore::new(temp.path())
+            .load()
+            .expect("saved connection config");
+        assert_eq!(config.connections.len(), 1);
+        assert_eq!(config.connections[0].url, "broker.local");
+    }
+
+    #[test]
+    fn rejected_connection_settings_save_is_not_dispatched() {
+        let mut runtime = AppRuntime::with_startup_state(StartupState::empty(
+            ThemeMode::Dark,
+            Diagnostic::info("test"),
+        ));
+        runtime
+            .command_sender()
+            .send(AppCommand::AddConnection)
+            .unwrap();
+        runtime
+            .command_sender()
+            .send(AppCommand::SaveConnectionSettings)
+            .unwrap();
+        runtime.pump();
+        runtime.pump();
+        assert!(!runtime.snapshot().diagnostics.iter().any(|diagnostic| {
+            diagnostic
+                .message
+                .contains("Settings persistence worker is not running")
+        }));
+
+        runtime
+            .command_sender()
+            .send(AppCommand::UpdateConnectionSetting {
+                field: crate::ConnectionSettingField::Host,
+                value: "broker.local".to_owned(),
+            })
+            .unwrap();
+        runtime
+            .command_sender()
+            .send(AppCommand::SaveConnectionSettings)
+            .unwrap();
+        runtime.pump();
+        runtime.pump();
+        assert!(runtime.snapshot().diagnostics.iter().any(|diagnostic| {
+            diagnostic
+                .message
+                .contains("Settings persistence worker is not running")
+        }));
+    }
+
+    #[test]
     fn migration_worker_advances_recovery_flow_to_complete() {
+        keyring::set_default_credential_builder(keyring::mock::default_credential_builder());
         let temp = tempfile::tempdir().unwrap();
         let legacy_path = storage_fixture("legacy_profile").display().to_string();
         let mut runtime = AppRuntime::with_startup_state(StartupState::legacy_migration_detected(
@@ -763,8 +903,84 @@ mod tests {
             runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Complete
         });
 
-        assert_eq!(runtime.snapshot().connection_count, 2);
+        assert_eq!(
+            runtime
+                .snapshot()
+                .connections
+                .iter()
+                .filter(|connection| !connection.immutable)
+                .count(),
+            2
+        );
         assert!(temp.path().join("config.json").exists());
+    }
+
+    #[test]
+    fn migration_restore_command_restores_selected_backup() {
+        keyring::set_default_credential_builder(keyring::mock::default_credential_builder());
+        let temp = tempfile::tempdir().unwrap();
+        let legacy_path = storage_fixture("legacy_profile").display().to_string();
+        let mut runtime = AppRuntime::with_startup_state(StartupState::legacy_migration_detected(
+            ThemeMode::Dark,
+            legacy_path,
+        ));
+        runtime.attach_migration_worker(MigrationPersistenceWorker::start(temp.path()));
+
+        runtime
+            .command_sender()
+            .send(AppCommand::MigrationRecovery(
+                MigrationRecoveryCommand::ChooseMigrate,
+            ))
+            .unwrap();
+        runtime.pump();
+        pump_until(&mut runtime, |runtime| {
+            runtime.snapshot().migration_recovery.state == MigrationRecoveryState::NeedsPassword
+        });
+        runtime
+            .command_sender()
+            .send(AppCommand::MigrationRecovery(
+                MigrationRecoveryCommand::SkipSecrets,
+            ))
+            .unwrap();
+        runtime.pump();
+        pump_until(&mut runtime, |runtime| {
+            runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Reviewing
+        });
+        runtime
+            .command_sender()
+            .send(AppCommand::MigrationRecovery(
+                MigrationRecoveryCommand::ApplyMigration,
+            ))
+            .unwrap();
+        runtime.pump();
+        pump_until(&mut runtime, |runtime| {
+            runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Complete
+        });
+
+        let restarted_snapshot = runtime.snapshot().clone();
+        drop(runtime);
+        let mut runtime = AppRuntime::with_snapshot(restarted_snapshot);
+        runtime.attach_migration_worker(MigrationPersistenceWorker::start(temp.path()));
+        runtime
+            .command_sender()
+            .send(AppCommand::MigrationRecovery(
+                MigrationRecoveryCommand::RequestRestoreBackup,
+            ))
+            .unwrap();
+        runtime
+            .command_sender()
+            .send(AppCommand::MigrationRecovery(
+                MigrationRecoveryCommand::ConfirmRestoreBackup,
+            ))
+            .unwrap();
+        runtime.pump();
+        pump_until(&mut runtime, |runtime| {
+            let recovery = &runtime.snapshot().migration_recovery;
+            recovery.state == MigrationRecoveryState::Complete
+                && recovery.completion == Some(MigrationRecoveryCompletion::RestoreSuccess)
+        });
+
+        assert!(!temp.path().join("config.json").exists());
     }
 
     fn storage_fixture(path: &str) -> PathBuf {

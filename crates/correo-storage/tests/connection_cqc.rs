@@ -4,8 +4,8 @@ use correo_storage::current::ImportedSecret;
 use correo_storage::current::{
     connection_export_encrypted_json, connection_export_plain_json, decrypt_connection_export,
     import_connection_export_json, read_connection_export, write_plain_connection_export, Auth,
-    ConnectionConfig, ConnectionExport, ConnectionImport, Lwt, MqttVersion, Proxy, Qos, SecretKind,
-    SecretMaterial, SecretReference, TlsSsl,
+    ConnectionConfig, ConnectionExport, ConnectionImport, Lwt, MqttVersion, Protocol, Proxy, Qos,
+    SecretKind, SecretMaterial, SecretReference, TlsSsl,
 };
 use correo_storage::StorageError;
 use serde_json::Value;
@@ -169,6 +169,7 @@ fn sample_import() -> ConnectionImport {
         connections: vec![ConnectionConfig {
             id: "roundtrip-broker".to_owned(),
             name: "Round-trip Broker".to_owned(),
+            protocol: Protocol::Mqtt,
             url: "mqtt.example.invalid".to_owned(),
             port: 8883,
             client_id: Some("correo-roundtrip".to_owned()),
@@ -193,6 +194,7 @@ fn sample_import() -> ConnectionImport {
             connection_ui_settings: None,
             publish_list_view_config: None,
             subscribe_list_view_config: None,
+            plugin_workflows: Vec::new(),
         }],
         secrets: vec![
             imported_secret(SecretKind::Password, "synthetic-mqtt-secret"),

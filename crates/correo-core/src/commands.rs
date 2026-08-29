@@ -274,7 +274,7 @@ pub enum MigrationRecoveryCommand {
     StartEmptyProfile,
     CancelEmptyProfile,
     ConfirmStartEmptyProfile,
-    SubmitPassword,
+    SubmitPassword { password: SecretInput },
     SkipSecrets,
     SelectMigrationItem { item_id: String, selected: bool },
     ApplyMigration,

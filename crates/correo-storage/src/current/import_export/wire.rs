@@ -10,8 +10,8 @@ use super::{
     ConnectionExport, ConnectionImport, ConnectionImportWarning, EncryptedConnectionExport, AES_GCM,
 };
 use crate::current::{
-    Auth, ConnectionConfig, ImportedSecret, Lwt, MqttVersion, PasswordEncryption, Proxy, Qos,
-    SecretKind, SecretMaterial, SecretReference, TlsSsl,
+    Auth, ConnectionConfig, ImportedSecret, Lwt, MqttVersion, PasswordEncryption, Protocol, Proxy,
+    Qos, SecretKind, SecretMaterial, SecretReference, TlsSsl,
 };
 
 pub(super) fn parse_connection_export_json(json: &str) -> Result<ConnectionExport> {
@@ -157,6 +157,10 @@ fn connection_from_wire(
     Ok(ConnectionConfig {
         id: require(connection.id, "connection export", "id")?,
         name: require(connection.name, "connection export", "name")?,
+        // Only MQTT exists today; the .cqc wire format can carry protocol
+        // when a second protocol lands (adding an optional field is
+        // non-breaking).
+        protocol: Protocol::Mqtt,
         url: require(connection.url, "connection export", "url")?,
         port: connection.port.unwrap_or(1883),
         client_id: connection.client_id,

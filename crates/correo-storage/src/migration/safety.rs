@@ -1,4 +1,7 @@
-use crate::current::{AppConfig, BuiltInBrokerConfig, ConfigStore, HistoryStore, ScriptStore};
+use crate::current::{
+    atomic_file::write_file_atomic, AppConfig, BuiltInBrokerConfig, ConfigStore, HistoryStore,
+    ScriptStore,
+};
 use crate::{Result, StorageError};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -70,6 +73,18 @@ impl MigrationApplier {
         }
     }
 
+    pub fn backup_from_path(
+        &self,
+        id: impl Into<String>,
+        path: impl Into<PathBuf>,
+    ) -> MigrationBackup {
+        MigrationBackup {
+            id: id.into(),
+            path: path.into(),
+            target_root: self.target_root.clone(),
+        }
+    }
+
     pub fn apply_preview(&self, preview: &MigrationPreview) -> Result<MigrationApplyOutcome> {
         let backup = self.create_backup()?;
         let diagnostics = self.apply_preview_with_backup(preview, &backup)?;
@@ -100,20 +115,14 @@ impl MigrationApplier {
                 reason: "rollback marker does not match the selected backup".to_owned(),
             });
         }
-        let expected =
-            marker
-                .state_fingerprint
-                .ok_or_else(|| StorageError::MigrationRollbackSafety {
-                    reason:
-                        "migration is still in progress and cannot be rolled back by user action"
-                            .to_owned(),
-                })?;
-        let actual = directory_fingerprint(&self.target_root)?;
-        if actual != expected {
-            return Err(StorageError::MigrationRollbackSafety {
-                reason: "target data changed after migration; refusing to overwrite newer data"
-                    .to_owned(),
-            });
+        if let Some(expected) = marker.state_fingerprint {
+            let actual = directory_fingerprint(&self.target_root)?;
+            if actual != expected {
+                return Err(StorageError::MigrationRollbackSafety {
+                    reason: "target data changed after migration; refusing to overwrite newer data"
+                        .to_owned(),
+                });
+            }
         }
         self.restore_backup_contents(backup)?;
         Ok(MigrationDiagnostics::rollback_complete(backup))
@@ -203,15 +212,20 @@ impl MigrationApplier {
                 reason: "backup manifest does not match the migration target".to_owned(),
             });
         }
-        remove_path_if_exists(&self.target_root)?;
-        if !manifest.source_existed {
-            return Ok(());
-        }
-        fs::create_dir_all(&self.target_root).map_err(|source| StorageError::CreateDir {
-            path: self.target_root.clone(),
-            source,
-        })?;
-        copy_dir_contents(&backup.path, &self.target_root, &[BACKUP_MANIFEST_FILE])
+
+        let staged_restore = if manifest.source_existed {
+            let staging_path = create_sibling_directory(&self.target_root, "rollback-staging")?;
+            if let Err(error) =
+                copy_dir_contents(&backup.path, &staging_path, &[BACKUP_MANIFEST_FILE])
+            {
+                let _ = remove_path_if_exists(&staging_path);
+                return Err(error);
+            }
+            Some(staging_path)
+        } else {
+            None
+        };
+        replace_target(&self.target_root, staged_restore.as_deref())
     }
 
     fn read_rollback_marker(&self) -> Result<RollbackMarker> {
@@ -359,6 +373,72 @@ fn collect_files(root: &Path, dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> 
     Ok(())
 }
 
+fn create_sibling_directory(target: &Path, purpose: &str) -> Result<PathBuf> {
+    let path = replacement_path(target, purpose);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|source| StorageError::CreateDir {
+            path: parent.to_path_buf(),
+            source,
+        })?;
+    }
+    fs::create_dir(&path).map_err(|source| StorageError::CreateDir {
+        path: path.clone(),
+        source,
+    })?;
+    Ok(path)
+}
+
+fn replace_target(target: &Path, staged_restore: Option<&Path>) -> Result<()> {
+    let displaced_target = if target.exists() {
+        let path = replacement_path(target, "rollback-previous");
+        fs::rename(target, &path).map_err(|source| StorageError::Rename {
+            from: target.to_path_buf(),
+            to: path.clone(),
+            source,
+        })?;
+        Some(path)
+    } else {
+        None
+    };
+
+    if let Some(staged_restore) = staged_restore {
+        if let Err(source) = fs::rename(staged_restore, target) {
+            if let Some(displaced_target) = &displaced_target {
+                if let Err(restore_error) = fs::rename(displaced_target, target) {
+                    return Err(StorageError::MigrationRollbackSafety {
+                        reason: format!(
+                            "staged rollback could not replace the target ({source}); the previous target could not be restored ({restore_error})"
+                        ),
+                    });
+                }
+            }
+            let _ = remove_path_if_exists(staged_restore);
+            return Err(StorageError::Rename {
+                from: staged_restore.to_path_buf(),
+                to: target.to_path_buf(),
+                source,
+            });
+        }
+    }
+
+    if let Some(displaced_target) = displaced_target {
+        remove_path_if_exists(&displaced_target)?;
+    }
+    Ok(())
+}
+
+fn replacement_path(target: &Path, purpose: &str) -> PathBuf {
+    let target_name = target
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("correomqtt-data");
+    target.with_file_name(format!(
+        ".{target_name}-{purpose}-{}-{}",
+        std::process::id(),
+        rand::random::<u64>()
+    ))
+}
+
 fn remove_path_if_exists(path: &Path) -> Result<()> {
     if !path.exists() {
         return Ok(());
@@ -396,7 +476,7 @@ fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<()> {
         path: path.to_path_buf(),
         source,
     })?;
-    fs::write(path, json).map_err(|source| StorageError::Write {
+    write_file_atomic(path, json.as_bytes()).map_err(|source| StorageError::Write {
         path: path.to_path_buf(),
         source,
     })

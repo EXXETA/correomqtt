@@ -93,6 +93,14 @@ pub enum StorageError {
     },
     #[error("migration rollback safety check failed: {reason}")]
     MigrationRollbackSafety { reason: String },
+    #[error("failed to {operation} secret {reference} in OS keyring: {message}")]
+    SecretStore {
+        operation: &'static str,
+        reference: String,
+        message: String,
+    },
+    #[error("refusing to persist a plaintext built-in broker password")]
+    PlaintextBuiltInBrokerPassword,
 }
 
 pub type Result<T> = std::result::Result<T, StorageError>;

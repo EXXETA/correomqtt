@@ -9,7 +9,7 @@ use crate::theme::ThemeTokens;
 
 #[path = "migration_recovery/actions.rs"]
 mod actions;
-use actions::{action_bar, button, handle_keyboard, send};
+use actions::{action_bar, button, handle_keyboard, send, send_submit_password};
 
 pub fn top_bar(ui: &mut Ui, snapshot: &MigrationRecoverySnapshot) {
     ui.horizontal_centered(|ui| {
@@ -61,7 +61,8 @@ pub fn show(
     tokens: ThemeTokens,
     commands: &AppCommandSender,
 ) {
-    handle_keyboard(ui, snapshot, commands);
+    let mut legacy_master_password = legacy_master_password(ui);
+    handle_keyboard(ui, snapshot, commands, &mut legacy_master_password);
     let scroll_height = (ui.available_height() - 48.0).max(180.0);
     ScrollArea::vertical()
         .max_height(scroll_height)
@@ -74,7 +75,9 @@ pub fn show(
                 MigrationRecoveryState::Detecting => detecting(ui, tokens),
                 MigrationRecoveryState::NeedsDecision => detection(ui, snapshot, tokens),
                 MigrationRecoveryState::CreatingBackup => creating_backup(ui, snapshot, tokens),
-                MigrationRecoveryState::NeedsPassword => unlock(ui, snapshot, tokens, commands),
+                MigrationRecoveryState::NeedsPassword => {
+                    unlock(ui, snapshot, tokens, commands, &mut legacy_master_password)
+                }
                 MigrationRecoveryState::Reviewing => review(ui, snapshot, tokens, commands),
                 MigrationRecoveryState::Applying => applying(ui, snapshot, tokens),
                 MigrationRecoveryState::Complete => complete(ui, snapshot, tokens),
@@ -84,7 +87,8 @@ pub fn show(
             }
         });
     ui.separator();
-    action_bar(ui, snapshot, commands);
+    action_bar(ui, snapshot, commands, &mut legacy_master_password);
+    store_legacy_master_password(ui, snapshot, legacy_master_password);
     empty_profile_confirmation(ui, snapshot, commands);
 }
 
@@ -141,20 +145,20 @@ fn unlock(
     snapshot: &MigrationRecoverySnapshot,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    legacy_master_password: &mut String,
 ) {
     ui.heading("Unlock legacy secrets");
     ui.label("Enter the legacy master password to import saved connection secrets into the OS keyring. The password is not stored.");
     ui.add_space(8.0);
-    let mut password = String::new();
     ui.horizontal(|ui| {
         ui.add_sized(
             [260.0, crate::theme::CONTROL_HEIGHT],
-            crate::widgets::padded_text_edit(TextEdit::singleline(&mut password))
+            crate::widgets::padded_text_edit(TextEdit::singleline(legacy_master_password))
                 .password(true)
                 .hint_text("Legacy master password"),
         );
         if ui.button("Unlock secrets").clicked() {
-            send(commands, MigrationRecoveryCommand::SubmitPassword);
+            send_submit_password(commands, legacy_master_password);
         }
     });
     if let Some(error) = snapshot.password_error {
@@ -343,6 +347,33 @@ fn password_error(error: MigrationPasswordError) -> &'static str {
 fn label_value(ui: &mut Ui, label: &str, value: &str) {
     ui.label(RichText::new(label).strong());
     ui.label(value);
+}
+
+fn legacy_password_id(ui: &Ui) -> egui::Id {
+    ui.make_persistent_id("legacy-master-password")
+}
+
+fn legacy_master_password(ui: &Ui) -> String {
+    ui.ctx()
+        .data(|data| data.get_temp::<String>(legacy_password_id(ui)))
+        .unwrap_or_default()
+}
+
+fn store_legacy_master_password(
+    ui: &Ui,
+    snapshot: &MigrationRecoverySnapshot,
+    legacy_master_password: String,
+) {
+    let id = legacy_password_id(ui);
+    ui.ctx().data_mut(|data| {
+        if snapshot.state == MigrationRecoveryState::NeedsPassword
+            && !legacy_master_password.is_empty()
+        {
+            data.insert_temp(id, legacy_master_password);
+        } else {
+            data.remove_temp::<String>(id);
+        }
+    });
 }
 
 fn backup_status(snapshot: &MigrationRecoverySnapshot) -> &str {
