@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use correo_mqtt::{
     ConnectionId, LastWill, MqttAuth, MqttConnectionOptions, MqttEndpoint, MqttError,
-    MqttProtocolVersion, PublishRequest, Qos, SecretString, SshAuth, SshHostKeyPolicy,
-    SshTunnelOptions, Subscription, TlsConfig, TlsHostVerification, TlsOptions, UnsubscribeRequest,
+    MqttProtocolVersion, PublishRequest, Qos, SecretBytes, SecretString, SshAuth, SshHostKeyPolicy,
+    SshTunnelOptions, Subscription, TlsConfig, TlsHostVerification, TlsOptions, TlsTrustRoots,
+    UnsubscribeRequest,
 };
 use thiserror::Error;
 
@@ -237,11 +238,7 @@ fn connection_options(
             };
         }
         if settings.tls_mode != "No TLS/SSL" {
-            let mut tls = TlsOptions::default();
-            if !settings.tls_host_verification {
-                tls.host_verification = TlsHostVerification::DisabledInsecure;
-            }
-            options.tls = TlsConfig::Enabled(tls);
+            options.tls = TlsConfig::Enabled(tls_options(settings));
         }
         options.ssh_tunnel = ssh_tunnel_options(connection_id, settings)?;
         options.last_will = last_will(settings)?;
@@ -253,6 +250,41 @@ fn connection_options(
             })?;
     }
     Ok(options)
+}
+
+fn tls_options(settings: &ConnectionSettingsSnapshot) -> TlsOptions {
+    let mut tls = TlsOptions::default();
+    if !settings.tls_host_verification {
+        tls.host_verification = TlsHostVerification::DisabledInsecure;
+    }
+
+    let store = settings.tls_store.trim();
+    if store.is_empty() {
+        return tls;
+    }
+
+    let path = store.to_owned();
+    if is_pkcs12_path(store) {
+        tls.trust_roots = TlsTrustRoots::Pkcs12 {
+            path: Some(path),
+            der: SecretBytes::new(Vec::new()),
+            password: settings
+                .tls_keystore_password
+                .expose_non_empty()
+                .map(|value| SecretString::new(value.to_owned())),
+        };
+    } else {
+        tls.trust_roots = TlsTrustRoots::PemBundle {
+            path: Some(path),
+            pem: None,
+        };
+    }
+    tls
+}
+
+fn is_pkcs12_path(path: &str) -> bool {
+    let lower = path.to_ascii_lowercase();
+    lower.ends_with(".p12") || lower.ends_with(".pfx")
 }
 
 fn settings_for<'a>(
@@ -331,7 +363,10 @@ fn ssh_tunnel_options(
         SshAuth::PrivateKey {
             path: non_empty(settings.ssh_key_file.trim()),
             private_key: None,
-            passphrase: None,
+            passphrase: settings
+                .ssh_password
+                .expose_non_empty()
+                .map(|value| SecretString::new(value.to_owned())),
         }
     } else {
         SshAuth::Password(SecretString::new(
@@ -343,9 +378,15 @@ fn ssh_tunnel_options(
         port,
         username: settings.auth_username.trim().to_owned(),
         auth,
-        host_key_policy: SshHostKeyPolicy::AcceptAnyInsecure,
+        host_key_policy: SshHostKeyPolicy::TrustOnFirstUse {
+            known_hosts_path: ssh_known_hosts_path(),
+        },
         local_bind_port,
     }))
+}
+
+fn ssh_known_hosts_path() -> std::path::PathBuf {
+    correo_storage::current::config_root().join("ssh_known_hosts")
 }
 
 fn optional_port(
