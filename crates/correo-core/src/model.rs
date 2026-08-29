@@ -3,9 +3,9 @@ use std::collections::{HashMap, HashSet};
 use correo_mqtt::ConnectionId;
 
 use crate::{
-    AppCommand, AppEvent, AppSnapshot, ConnectDisabledReason, ConnectionPersistenceSnapshot,
-    ConnectionSettingsSnapshot, ConnectionState, Diagnostic, MqttCommand, MqttCommandBuildError,
-    StartupState, WorkbenchSnapshot,
+    AppCommand, AppEvent, AppSnapshot, ConnectDisabledReason, ConnectionSettingsSnapshot,
+    ConnectionState, Diagnostic, MqttCommand, MqttCommandBuildError, StartupState,
+    WorkbenchSnapshot,
 };
 
 mod broker;
@@ -118,21 +118,6 @@ impl AppModel {
         command: &AppCommand,
     ) -> Result<Vec<MqttCommand>, MqttCommandBuildError> {
         crate::commands_for_app_command(command, &self.snapshot, &self.connection_settings)
-    }
-
-    pub(crate) fn connection_persistence_snapshot(&self) -> Vec<ConnectionPersistenceSnapshot> {
-        self.snapshot
-            .connections
-            .iter()
-            .filter(|connection| !connection.immutable)
-            .filter_map(|connection| {
-                let settings = self.connection_settings_for(connection.id)?.clone();
-                Some(ConnectionPersistenceSnapshot {
-                    storage_id: self.storage_connection_id(connection.id),
-                    settings,
-                })
-            })
-            .collect()
     }
 
     fn select_connection_workbench(&mut self, id: ConnectionId) {
