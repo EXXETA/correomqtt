@@ -4,84 +4,42 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus};
 
+#[path = "../../xtask/src/plugin_specs.rs"]
+mod plugin_specs;
+
+use plugin_specs::{PluginBuildSpec, PLUGIN_SPECS};
+
 const WASM_TARGET: &str = "wasm32-unknown-unknown";
 const LOCAL_REPOSITORY_FILE: &str = "local-repo.json";
 const REPOSITORY_ID: &str = "local-packaged-plugins";
 const REPOSITORY_NAME: &str = "Local Packaged Plugins";
 const PLUGIN_REPOSITORY_FORMAT_VERSION: u16 = 1;
 
-struct PluginBuildSpec {
-    package: &'static str,
-    crate_path: &'static str,
-    manifest_path: &'static str,
-    wasm_stem: &'static str,
-}
-
-const PLUGIN_SPECS: &[PluginBuildSpec] = &[
-    PluginBuildSpec {
-        package: "correo-plugin-base64",
-        crate_path: "crates/correo-plugin-base64",
-        manifest_path: "crates/correo-plugin-base64/plugin.toml",
-        wasm_stem: "correo_plugin_base64",
-    },
-    PluginBuildSpec {
-        package: "correo-plugin-zip-manipulator",
-        crate_path: "crates/correo-plugin-zip-manipulator",
-        manifest_path: "crates/correo-plugin-zip-manipulator/plugin.toml",
-        wasm_stem: "correo_plugin_zip_manipulator",
-    },
-    PluginBuildSpec {
-        package: "correo-plugins-advanced-validator",
-        crate_path: "plugins/correo-plugins-advanced-validator",
-        manifest_path: "plugins/correo-plugins-advanced-validator/plugin.toml",
-        wasm_stem: "correo_plugins_advanced_validator",
-    },
-    PluginBuildSpec {
-        package: "correo-plugins-contains-string-validator",
-        crate_path: "plugins/correo-plugins-contains-string-validator",
-        manifest_path: "plugins/correo-plugins-contains-string-validator/plugin.toml",
-        wasm_stem: "correo_plugins_contains_string_validator",
-    },
-    PluginBuildSpec {
-        package: "correo-plugins-json-format",
-        crate_path: "plugins/correo-plugins-json-format",
-        manifest_path: "plugins/correo-plugins-json-format/plugin.toml",
-        wasm_stem: "correo_plugins_json_format",
-    },
-    PluginBuildSpec {
-        package: "correo-plugins-systopic",
-        crate_path: "plugins/correo-plugins-systopic",
-        manifest_path: "plugins/correo-plugins-systopic/plugin.toml",
-        wasm_stem: "correo_plugins_systopic",
-    },
-    PluginBuildSpec {
-        package: "correo-plugins-xml-xsd-validator",
-        crate_path: "plugins/correo-plugins-xml-xsd-validator",
-        manifest_path: "plugins/correo-plugins-xml-xsd-validator/plugin.toml",
-        wasm_stem: "correo_plugins_xml_xsd_validator",
-    },
-    PluginBuildSpec {
-        package: "correo-plugin-xml-format",
-        crate_path: "plugins/xml-format",
-        manifest_path: "plugins/xml-format/plugin.toml",
-        wasm_stem: "correo_plugin_xml_format",
-    },
-    PluginBuildSpec {
-        package: "correo-plugin-save-manipulator",
-        crate_path: "plugins/save-manipulator",
-        manifest_path: "plugins/save-manipulator/plugin.toml",
-        wasm_stem: "correo_plugin_save_manipulator",
-    },
-];
-
 fn main() {
+    let workspace_root = workspace_root().expect("resolve workspace root");
     println!("cargo:rerun-if-env-changed=CARGO_TARGET_DIR");
     println!("cargo:rerun-if-env-changed=CARGO");
-    println!("cargo:rerun-if-changed=Cargo.lock");
-    println!("cargo:rerun-if-changed=Cargo.toml");
+    println!(
+        "cargo:rerun-if-changed={}",
+        workspace_root.join("Cargo.lock").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        workspace_root.join("Cargo.toml").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        workspace_root.join("xtask/src/plugin_specs.rs").display()
+    );
     for spec in PLUGIN_SPECS {
-        println!("cargo:rerun-if-changed={}", spec.crate_path);
-        println!("cargo:rerun-if-changed={}", spec.manifest_path);
+        println!(
+            "cargo:rerun-if-changed={}",
+            workspace_root.join(spec.crate_path).display()
+        );
+        println!(
+            "cargo:rerun-if-changed={}",
+            workspace_root.join(spec.manifest_path).display()
+        );
     }
 
     if let Err(error) = build_and_stage_plugins() {
@@ -153,7 +111,7 @@ fn stage_local_plugins(
         }));
     }
 
-    entries.sort_by(|left, right| manifest_entry_id(left).cmp(&manifest_entry_id(right)));
+    entries.sort_by_key(manifest_entry_id);
     let repository = serde_json::json!({
         "repository_format_version": PLUGIN_REPOSITORY_FORMAT_VERSION,
         "id": REPOSITORY_ID,

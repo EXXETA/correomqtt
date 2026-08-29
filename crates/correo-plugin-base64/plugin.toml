@@ -5,7 +5,7 @@ version = "0.1.0"
 description = "Encodes outgoing payloads and decodes incoming payloads with Base64."
 provider = "CorreoMQTT"
 license = "GPL-3.0-or-later"
-compatible_correomqtt = ">=0.1.0, <1.0.0"
+compatible_correomqtt = ">=1.0.0, <2.0.0"
 
 [capabilities]
 hooks = ["outgoing_message_transform", "incoming_message_transform"]
