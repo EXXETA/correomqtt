@@ -3,17 +3,21 @@ use std::path::Path;
 use std::process::{Command, ExitStatus};
 use thiserror::Error;
 
+mod file_io;
 mod package;
 mod plugin_repository;
+mod plugin_specs;
 
 fn main() -> Result<(), XtaskError> {
     let mut args = std::env::args().skip(1);
     match args.next().as_deref() {
         Some("check") => cargo(&["check", "--workspace"]),
         Some("test") => cargo(&["test", "--workspace"]),
+        Some("dev") => dev(),
         Some("package") => package::run(args.collect()),
         Some("package-smoke") => package::smoke(args.collect()),
         Some("plugin-release") => plugin_repository::release(args.collect()),
+        Some("plugin-release-smoke") => plugin_repository::smoke(args.collect()),
         Some("plugin-repository") => plugin_repository::run(args.collect()),
         Some("migrate-fixtures") => migrate_fixtures(),
         Some(command) => Err(XtaskError::UnknownCommand(command.to_owned())),
@@ -38,6 +42,11 @@ fn migrate_fixtures() -> Result<(), XtaskError> {
         println!("migrate-fixtures: no migration fixtures found yet");
         Ok(())
     }
+}
+
+fn dev() -> Result<(), XtaskError> {
+    plugin_repository::run(Vec::new())?;
+    cargo(&["run", "-p", "correo-app"])
 }
 
 pub(crate) fn cargo(args: &[&str]) -> Result<(), XtaskError> {
@@ -66,7 +75,7 @@ fn ensure_success(status: ExitStatus, args: &[&str]) -> Result<(), XtaskError> {
 
 fn print_help() {
     println!(
-        "Usage: cargo xtask <check|test|package|package-smoke|plugin-release|plugin-repository|migrate-fixtures>"
+        "Usage: cargo xtask <check|test|dev|package|package-smoke|plugin-release|plugin-release-smoke|plugin-repository|migrate-fixtures>"
     );
     println!();
     println!("Package options:");
@@ -75,6 +84,7 @@ fn print_help() {
     println!(
         "  cargo xtask plugin-release [--out-dir <dir>] [--asset-base-url <url>] [--no-build]"
     );
+    println!("  cargo xtask plugin-release-smoke --download-dir <dir> --profile-dir <dir>");
     println!("  cargo xtask plugin-repository [--out-dir <dir>]");
 }
 
@@ -88,6 +98,13 @@ pub(crate) enum XtaskError {
     UnsupportedTarget(String),
     #[error("expected build artifact does not exist: {0}")]
     MissingArtifact(String),
+    #[error(
+        "missing Rust target `{target}`; install it with `{install_command}` and run the xtask command again"
+    )]
+    MissingRustTarget {
+        target: String,
+        install_command: String,
+    },
     #[error(
         "package artifact guard failed for {target}: {message}; command: {command}; artifact: {artifact}"
     )]

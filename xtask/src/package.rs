@@ -6,13 +6,21 @@ use std::process::Command;
 
 use zip::{write::SimpleFileOptions, DateTime};
 
-use crate::{cargo_dynamic, XtaskError};
+use crate::{
+    cargo_dynamic,
+    file_io::{copy_file, write_file},
+    XtaskError,
+};
 
 pub(crate) mod checksums;
 mod guard;
+mod installers;
+mod metadata;
 mod plugins;
 
-use self::checksums::write_checksum_files;
+use self::checksums::{write_checksum_files, write_sha256sums};
+use self::installers::{create_dmg, create_linux_installers, create_msi, record_extra_artifact};
+use self::metadata::*;
 
 const APP_NAME: &str = "CorreoMQTT";
 const APP_ID: &str = "org.correomqtt.CorreoMQTT";
@@ -45,7 +53,6 @@ fn package(command_base: &str, args: Vec<String>) -> Result<Option<PackageOutput
 
     if config.build {
         build_app(config.target.as_deref())?;
-        crate::plugin_repository::build_wasm_plugins()?;
     }
 
     let binary = release_binary_path(config.target.as_deref(), platform);
@@ -65,7 +72,16 @@ fn package(command_base: &str, args: Vec<String>) -> Result<Option<PackageOutput
         Platform::Macos => stage_macos(&binary, &stage_dir)?,
         Platform::Windows => stage_windows(&binary, &stage_dir)?,
     }
-    plugins::stage(platform, &stage_dir)?;
+    plugins::stage(
+        platform,
+        &stage_dir,
+        binary.parent().ok_or_else(|| {
+            XtaskError::MissingArtifact(format!(
+                "package binary has no parent: {}",
+                binary.display()
+            ))
+        })?,
+    )?;
 
     fs::create_dir_all(&plan.out_dir)?;
     let artifact = plan.artifact_path();
@@ -77,6 +93,41 @@ fn package(command_base: &str, args: Vec<String>) -> Result<Option<PackageOutput
 
     println!("package: {}", artifact.display());
     println!("sha256:  {checksum}");
+    if platform == Platform::Macos {
+        let dmg = create_dmg(&stage_dir, &plan)?;
+        if config.require_installers && dmg.is_none() {
+            return Err(XtaskError::MissingArtifact(
+                "required macOS DMG installer".to_owned(),
+            ));
+        }
+        if let Some(dmg) = dmg {
+            record_extra_artifact("dmg", &dmg, &plan)?;
+        }
+    }
+    if platform == Platform::Linux {
+        let installers = create_linux_installers(&stage_dir, &plan)?;
+        if config.require_installers && installers.len() != 2 {
+            return Err(XtaskError::MissingArtifact(
+                "required Linux DEB and RPM installers".to_owned(),
+            ));
+        }
+        for installer in installers {
+            record_extra_artifact("installer", &installer, &plan)?;
+        }
+    }
+    if platform == Platform::Windows {
+        let msi = create_msi(&stage_dir, &plan)?;
+        if config.require_installers && msi.is_none() {
+            return Err(XtaskError::MissingArtifact(
+                "required Windows MSI installer".to_owned(),
+            ));
+        }
+        if let Some(msi) = msi {
+            record_extra_artifact("msi", &msi, &plan)?;
+        }
+    }
+    // Regenerate the summary now that every artifact (zip + installers) exists.
+    write_sha256sums(&plan.out_dir)?;
     Ok(Some(PackageOutput {
         command,
         target: plan.target,
@@ -183,22 +234,6 @@ fn host_triple() -> Result<String, XtaskError> {
     ))
 }
 
-fn copy_file(source: &Path, destination: &Path) -> Result<(), XtaskError> {
-    if let Some(parent) = destination.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::copy(source, destination)?;
-    Ok(())
-}
-
-fn write_file(path: &Path, content: &[u8]) -> Result<(), XtaskError> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::write(path, content)?;
-    Ok(())
-}
-
 fn zip_dir(source_dir: &Path, destination: &Path) -> Result<(), XtaskError> {
     let file = File::create(destination)?;
     let mut writer = zip::ZipWriter::new(BufWriter::new(file));
@@ -273,89 +308,10 @@ fn zip_path(path: &Path) -> String {
         .join("/")
 }
 
-fn linux_desktop_entry() -> String {
-    format!(
-        "[Desktop Entry]\n\
-         Name={APP_NAME}\n\
-         Comment=Native MQTT desktop client\n\
-         Exec={BIN_NAME}\n\
-         Icon={APP_ID}\n\
-         StartupWMClass={APP_ID}\n\
-         Terminal=false\n\
-         Type=Application\n\
-         Categories=Development;Network;\n"
-    )
-}
-
-fn linux_metainfo() -> String {
-    format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
-         <component type=\"desktop-application\">\n\
-           <id>{APP_ID}</id>\n\
-           <name>{APP_NAME}</name>\n\
-           <summary>Native MQTT desktop client</summary>\n\
-           <metadata_license>CC0-1.0</metadata_license>\n\
-           <project_license>GPL-3.0-or-later</project_license>\n\
-         </component>\n"
-    )
-}
-
-fn macos_info_plist() -> String {
-    format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
-         <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \
-         \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n\
-         <plist version=\"1.0\">\n\
-         <dict>\n\
-           <key>CFBundleDisplayName</key><string>{APP_NAME}</string>\n\
-           <key>CFBundleExecutable</key><string>{BIN_NAME}</string>\n\
-           <key>CFBundleIconFile</key><string>Icon.icns</string>\n\
-           <key>CFBundleIdentifier</key><string>{APP_ID}</string>\n\
-           <key>CFBundleName</key><string>{APP_NAME}</string>\n\
-           <key>CFBundlePackageType</key><string>APPL</string>\n\
-           <key>CFBundleShortVersionString</key><string>{}</string>\n\
-           <key>CFBundleVersion</key><string>{}</string>\n\
-           <key>LSApplicationCategoryType</key><string>public.app-category.developer-tools</string>\n\
-         </dict>\n\
-         </plist>\n",
-        env!("CARGO_PKG_VERSION"),
-        env!("CARGO_PKG_VERSION")
-    )
-}
-
-fn windows_metadata() -> String {
-    format!(
-        "{{\n  \"name\": \"{APP_NAME}\",\n  \"identifier\": \"{APP_ID}\",\n  \
-         \"version\": \"{}\",\n  \"vendor\": \"{VENDOR}\",\n  \"binary\": \
-         \"{BIN_NAME}.exe\",\n  \"icon\": \"icons/Icon.ico\",\n  \"signed\": false\n}}\n",
-        env!("CARGO_PKG_VERSION")
-    )
-}
-
-fn package_readme() -> String {
-    format!(
-        "{APP_NAME} unsigned beta package\n\n\
-         Version: {}\n\
-         Vendor: {VENDOR}\n\
-         App ID: {APP_ID}\n\n\
-         This package is intentionally unsigned. Signing, notarization, \
-         auto-update, paid services, and external release commitments are \
-         outside this automation scope.\n\n\
-         Runtime data:\n\
-         Set CORREOMQTT_CONFIG_DIR to use a specific config/history/log root.\n\
-         Without it, the Rust beta uses the OS project data directory for \
-         org/CorreoMQTT/CorreoMQTT and also checks legacy Java roots during startup.\n\
-         Current config and histories live under that root. Script execution \
-         metadata/logs live under scripts/executions/ and scripts/logs/ when \
-         scripting persistence writes them. Rust plugin packages and \
-         local-repo.json are included next to the executable. \
-         App diagnostics currently go to stdout/stderr.\n",
-        env!("CARGO_PKG_VERSION")
-    )
-}
-
 fn print_package_help() {
-    println!("Usage: cargo xtask package [--target <triple>] [--out-dir <dir>] [--no-build]");
+    println!(
+        "Usage: cargo xtask package [--target <triple>] [--out-dir <dir>] [--no-build] [--require-installers]"
+    );
     println!();
     println!("Builds correo-app release binary and writes an unsigned beta archive.");
     println!("Use `cargo xtask package-smoke` to build and validate artifact guardrails.");
@@ -402,6 +358,7 @@ struct PackageConfig {
     target: Option<String>,
     out_dir: PathBuf,
     build: bool,
+    require_installers: bool,
     show_help: bool,
 }
 
@@ -410,6 +367,7 @@ impl PackageConfig {
         let mut target = None;
         let mut out_dir = PathBuf::from("dist/beta");
         let mut build = true;
+        let mut require_installers = false;
         let mut show_help = false;
 
         let mut iter = args.into_iter();
@@ -428,6 +386,7 @@ impl PackageConfig {
                     out_dir = PathBuf::from(value);
                 }
                 "--no-build" => build = false,
+                "--require-installers" => require_installers = true,
                 "-h" | "--help" => show_help = true,
                 unknown => {
                     return Err(XtaskError::InvalidArguments(format!(
@@ -441,6 +400,7 @@ impl PackageConfig {
             target,
             out_dir,
             build,
+            require_installers,
             show_help,
         })
     }
