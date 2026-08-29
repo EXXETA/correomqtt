@@ -100,7 +100,7 @@ impl CorreoUi {
 
     pub fn draw(&mut self, context: &egui::Context) {
         self.ensure_icons_installed(context);
-        let snapshot = self.snapshot.clone();
+        let snapshot = &self.snapshot;
         apply_theme(context, &snapshot.theme_mode);
         motion::apply_preference(context, snapshot.global_settings.reduce_motion);
         let tokens = tokens(context, &snapshot.theme_mode);
@@ -140,7 +140,7 @@ impl CorreoUi {
             .show(context, |ui| {
                 command_bar::command_bar_title(ui, i18n);
             });
-        let klingon_unlocked = self.klingon_language_visible(&snapshot);
+        let klingon_unlocked = self.klingon_language_visible(snapshot);
 
         SidePanel::left("correo-rail")
             .exact_width(layout::RAIL_WIDTH)
@@ -153,7 +153,7 @@ impl CorreoUi {
         let compact_connections_context =
             responsive::connections_context_is_compact(context, snapshot.active_workspace);
 
-        if context_panel_visible(&snapshot) && !compact_connections_context {
+        if context_panel_visible(snapshot) && !compact_connections_context {
             if snapshot.active_workspace == Workspace::Connections {
                 SidePanel::left("correo-context")
                     .default_width(layout::CONNECTION_FLYOUT_WIDTH)
@@ -202,7 +202,7 @@ impl CorreoUi {
         if about_logo_triggered {
             self.klingon_easter_egg_clicks = self.klingon_easter_egg_clicks.saturating_add(1);
         }
-        let klingon_unlocked = self.klingon_language_visible(&snapshot);
+        let klingon_unlocked = self.klingon_language_visible(snapshot);
         if compact_connections_context {
             connection_flyout(context, &snapshot, tokens, commands, i18n);
         }

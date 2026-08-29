@@ -45,10 +45,10 @@ pub(crate) fn editor(
         remaining_rect.left_top(),
         egui::pos2(remaining_rect.right(), payload_bottom),
     );
-    let mut layouter = payload_highlight::layouter(
-        payload_highlighter.cloned(),
-        snapshot.plugins.active_plugin_ids(),
-    );
+    let active_plugin_ids = snapshot.plugins.active_plugin_ids();
+    let spans =
+        payload_highlight::cached_spans(ui, &payload, &active_plugin_ids, payload_highlighter);
+    let mut layouter = payload_highlight::layouter(spans);
     let mut payload_ui = ui.new_child(
         UiBuilder::new()
             .max_rect(payload_rect)
