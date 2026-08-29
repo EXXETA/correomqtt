@@ -55,6 +55,7 @@ pub(super) struct Capture {
     pub(super) scenario: Scenario,
     pub(super) mode: ThemeMode,
     pub(super) size: (u32, u32),
+    pub(super) zoom_factor: f32,
     pub(super) file_name: String,
 }
 
@@ -65,6 +66,7 @@ impl Capture {
             scenario,
             mode,
             size,
+            zoom_factor: 1.0,
             file_name: format!(
                 "correo-{}-{}-{}x{}.png",
                 scenario.slug(),
@@ -73,6 +75,19 @@ impl Capture {
                 size.1
             ),
         }
+    }
+
+    fn zoomed(mut self, zoom_factor: f32) -> Self {
+        self.zoom_factor = zoom_factor;
+        self.file_name = format!(
+            "correo-{}-{}-{}x{}-zoom-{}pct.png",
+            self.scenario.slug(),
+            mode_slug(&self.mode),
+            self.size.0,
+            self.size.1,
+            (zoom_factor * 100.0).round() as u32,
+        );
+        self
     }
 }
 #[derive(Clone, Copy)]
@@ -231,6 +246,7 @@ pub(super) fn screenshot_captures() -> Vec<Capture> {
             NARROW_WORKBENCH_SIZE,
         ));
     }
+    captures.push(Capture::new(Scenario::Workbench, ThemeMode::Light, (1024, 768)).zoomed(1.5));
     for scenario in SECONDARY_SCENARIOS {
         for mode in REQUIRED_MODES {
             if matches!(scenario, Scenario::Plugins) {

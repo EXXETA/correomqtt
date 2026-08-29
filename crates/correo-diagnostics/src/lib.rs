@@ -1,16 +1,70 @@
 use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
 use thiserror::Error;
 use time::OffsetDateTime;
+use tracing_appender::non_blocking::WorkerGuard;
+use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 
-pub fn install_tracing() {
+#[derive(Default)]
+pub struct TracingGuard {
+    _file_guard: Option<WorkerGuard>,
+}
+
+pub fn install_tracing(log_dir: Option<PathBuf>) -> TracingGuard {
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("correo=info,warn"));
 
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter(env_filter)
-        .with_target(false)
+    let mut file_setup_error = None;
+    let file_writer = match log_dir {
+        Some(log_dir) => match rolling_file_writer(&log_dir) {
+            Ok(writer) => Some(writer),
+            Err(error) => {
+                file_setup_error = Some((log_dir, error));
+                None
+            }
+        },
+        None => None,
+    };
+
+    if let Some((writer, guard)) = file_writer {
+        let console_layer = tracing_subscriber::fmt::layer().with_target(false);
+        let file_layer = tracing_subscriber::fmt::layer()
+            .with_target(true)
+            .with_ansi(false)
+            .with_writer(writer);
+        let _ = tracing_subscriber::registry()
+            .with(env_filter)
+            .with(console_layer)
+            .with(file_layer)
+            .try_init();
+        return TracingGuard {
+            _file_guard: Some(guard),
+        };
+    }
+
+    let console_layer = tracing_subscriber::fmt::layer().with_target(false);
+    let _ = tracing_subscriber::registry()
+        .with(env_filter)
+        .with(console_layer)
         .try_init();
+    // Console logging is live now, so surface a swallowed file-log failure
+    // instead of silently degrading to console-only.
+    if let Some((log_dir, error)) = file_setup_error {
+        tracing::warn!(
+            "persistent file logging unavailable at {}: {error}; continuing with console logging only",
+            log_dir.display()
+        );
+    }
+    TracingGuard::default()
+}
+
+fn rolling_file_writer(
+    log_dir: &Path,
+) -> std::io::Result<(tracing_appender::non_blocking::NonBlocking, WorkerGuard)> {
+    std::fs::create_dir_all(log_dir)?;
+    let appender = tracing_appender::rolling::daily(log_dir, "correomqtt.log");
+    Ok(tracing_appender::non_blocking(appender))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
