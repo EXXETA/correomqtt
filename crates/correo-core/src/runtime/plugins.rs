@@ -18,8 +18,18 @@ use crate::{
 use super::plugin_helpers::*;
 use super::AppRuntime;
 
+pub(super) enum IncomingPluginDispatch {
+    NotApplicable,
+    Queued,
+    Continue {
+        event: MqttEvent,
+        diagnostics: Vec<MessageDiagnosticRow>,
+    },
+    Rejected,
+}
+
 impl AppRuntime {
-    pub(super) fn apply_plugin_connection_command(&self, command: &AppCommand) {
+    pub(super) fn apply_plugin_connection_command(&mut self, command: &AppCommand) {
         match command {
             AppCommand::InvokeConnectionPluginAction {
                 plugin_id,
@@ -41,7 +51,7 @@ impl AppRuntime {
                 };
                 match self.plugin_hooks.connection_action(request) {
                     Ok(response) => {
-                        self.forward_plugin_host_actions(response.host_actions);
+                        self.forward_plugin_host_actions(response.host_actions, false);
                         if let Some(window) = response.open_window {
                             self.open_plugin_window(window);
                         }
@@ -60,7 +70,7 @@ impl AppRuntime {
                     connection_id: *connection_id,
                 };
                 match self.plugin_hooks.close_window(request) {
-                    Ok(response) => self.forward_plugin_host_actions(response.host_actions),
+                    Ok(response) => self.forward_plugin_host_actions(response.host_actions, false),
                     Err(error) => self.emit_plugin_action_error(plugin_id, error),
                 }
                 self.emit_plugin_event(PluginWorkflowEvent::PluginWindowClosed {
@@ -156,15 +166,32 @@ impl AppRuntime {
         }
     }
 
-    fn forward_plugin_host_actions(&self, actions: Vec<PluginHostAction>) {
+    fn forward_plugin_host_actions(
+        &mut self,
+        actions: Vec<PluginHostAction>,
+        allow_save_payload: bool,
+    ) {
         for action in actions {
-            match plugin_host_action_to_mqtt(action) {
-                Ok(command) => self.forward_plugin_mqtt_command(command),
-                Err(error) => {
-                    let _ = self
-                        .event_sender()
-                        .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::error(error)));
+            match action {
+                PluginHostAction::SavePayload(payload) if allow_save_payload => {
+                    if self.pending_plugin_save_payloads.len()
+                        == super::PLUGIN_SAVE_PAYLOAD_CAPACITY
+                    {
+                        let _ = self.event_sender().emit(AppEvent::DiagnosticRaised(
+                            crate::Diagnostic::error("Plugin save request was rejected because another save is awaiting confirmation."),
+                        ));
+                    } else {
+                        self.pending_plugin_save_payloads.push_back(payload);
+                    }
                 }
+                action => match plugin_host_action_to_mqtt(action) {
+                    Ok(command) => self.forward_plugin_mqtt_command(command),
+                    Err(error) => {
+                        let _ = self
+                            .event_sender()
+                            .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::error(error)));
+                    }
+                },
             }
         }
     }
@@ -198,6 +225,83 @@ impl AppRuntime {
                 mark_hook_failed: false,
             },
         ));
+    }
+
+    pub(super) fn queue_incoming_hook_job(&self, event: &MqttEvent) -> IncomingPluginDispatch {
+        let Some(worker) = &self.incoming_plugin_worker else {
+            return IncomingPluginDispatch::NotApplicable;
+        };
+        let MqttEvent::IncomingMessage(message) = event else {
+            return IncomingPluginDispatch::NotApplicable;
+        };
+        let message = message.clone();
+        let original_topic = message.topic.as_str().to_owned();
+        let mut plugin_message = plugin_message_from_incoming(&message);
+        let diagnostics = self.apply_connection_workflows(
+            message.connection_id,
+            &mut plugin_message,
+            ConnectionPluginDirection::Incoming,
+        );
+        let validator_topic = plugin_message.topic.clone();
+        let Ok(message) = incoming_from_plugin_message(message, plugin_message) else {
+            let _ = self
+                .event_sender
+                .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::error(
+                    "Incoming plugin workflow returned an invalid topic.",
+                )));
+            return IncomingPluginDispatch::Rejected;
+        };
+        let mut hooks = self.active_topic_hooks(PluginHookKind::IncomingTransform, &original_topic);
+        hooks.extend(self.active_topic_hooks(PluginHookKind::Validator, &validator_topic));
+        let requires_validation = hooks
+            .iter()
+            .any(|hook| hook.hook == PluginHookKind::Validator);
+        match worker.enqueue(message, hooks, diagnostics) {
+            Ok(()) => IncomingPluginDispatch::Queued,
+            Err(error) => {
+                let (message, mut diagnostics, detail, validation_detail) = match error {
+                    super::incoming_plugins::IncomingPluginQueueError::Full {
+                        message,
+                        diagnostics,
+                    } => (
+                        message,
+                        diagnostics,
+                        "Incoming plugin queue is full; message continued without topic plugin hooks.",
+                        "Incoming message rejected because the plugin validator queue is full.",
+                    ),
+                    super::incoming_plugins::IncomingPluginQueueError::Disconnected {
+                        message,
+                        diagnostics,
+                    } => (
+                        message,
+                        diagnostics,
+                        "Incoming plugin worker is unavailable; message continued without topic plugin hooks.",
+                        "Incoming message rejected because the plugin validator worker is unavailable.",
+                    ),
+                };
+                if requires_validation {
+                    let _ = self.event_sender.emit(AppEvent::DiagnosticRaised(
+                        crate::Diagnostic::error(validation_detail),
+                    ));
+                    return IncomingPluginDispatch::Rejected;
+                }
+                diagnostics.push(MessageDiagnosticRow {
+                    severity: PluginDiagnosticSeverity::Warning,
+                    hook: None,
+                    plugin_id: None,
+                    message: detail.to_owned(),
+                });
+                let _ =
+                    self.event_sender
+                        .emit(AppEvent::DiagnosticRaised(crate::Diagnostic::warning(
+                            detail,
+                        )));
+                IncomingPluginDispatch::Continue {
+                    event: MqttEvent::IncomingMessage(message),
+                    diagnostics,
+                }
+            }
+        }
     }
 
     pub(super) fn apply_incoming_hooks(
@@ -374,8 +478,8 @@ impl AppRuntime {
         )
     }
 
-    pub(super) fn refresh_message_detail(&self) {
-        let snapshot = self.model.snapshot();
+    pub(super) fn refresh_message_detail(&mut self) {
+        let snapshot = self.model.snapshot().clone();
         let Some(message) = snapshot.workbench.selected_message() else {
             return;
         };
@@ -389,7 +493,8 @@ impl AppRuntime {
                 self.selected_detail_hook(plugin_id, PluginHookKind::DetailTransform)
             {
                 match self.run_detail_transform(&hook, bytes.clone(), content_type.clone()) {
-                    Ok(output) => {
+                    Ok((output, host_actions)) => {
+                        self.forward_plugin_host_actions(host_actions, true);
                         bytes = output.bytes;
                         content_type = output.content_type;
                     }
@@ -453,6 +558,9 @@ impl AppRuntime {
                     .join("; "),
             });
         }
+        let retained_when_absent = request.retain;
+        let mut transport = plugin_transport_message_from_publish(&request, message);
+        let transport_capabilities = transport.capabilities.clone();
 
         for hook in self.active_topic_hooks(PluginHookKind::Validator, &topic) {
             let config = self.parse_hook_config(&hook, true)?;
@@ -461,7 +569,7 @@ impl AppRuntime {
                 hook: hook.hook,
                 target: hook.target.clone(),
                 config,
-                input: PluginHookInput::Message(message.clone()),
+                input: PluginHookInput::TransportMessage(transport.clone()),
             };
             match self.plugin_hooks.execute(call) {
                 Ok(PluginHookOutput::Validation(PluginValidation::Valid)) => {
@@ -508,14 +616,18 @@ impl AppRuntime {
                 hook: hook.hook,
                 target: hook.target.clone(),
                 config,
-                input: PluginHookInput::Message(message.clone()),
+                input: PluginHookInput::TransportMessage(transport.clone()),
             };
             match self.plugin_hooks.execute(call) {
-                Ok(PluginHookOutput::MessageTransform(MessageTransform::Unchanged)) => {}
-                Ok(PluginHookOutput::MessageTransform(MessageTransform::Replace(replacement))) => {
-                    message = replacement;
-                }
-                Ok(PluginHookOutput::MessageTransform(MessageTransform::Drop { reason })) => {
+                Ok(PluginHookOutput::TransportMessageTransform(
+                    crate::TransportMessageTransform::Unchanged,
+                )) => {}
+                Ok(PluginHookOutput::TransportMessageTransform(
+                    crate::TransportMessageTransform::Replace(replacement),
+                )) => transport = replacement,
+                Ok(PluginHookOutput::TransportMessageTransform(
+                    crate::TransportMessageTransform::Drop { reason },
+                )) => {
                     let message = reason
                         .unwrap_or_else(|| "Outgoing transform rejected the publish.".to_owned());
                     self.emit_plugin_event(PluginWorkflowEvent::PublishBlocked { message });
@@ -532,6 +644,17 @@ impl AppRuntime {
             }
         }
 
+        let message = match plugin_message_from_transport(
+            transport,
+            retained_when_absent,
+            &transport_capabilities,
+        ) {
+            Ok(message) => message,
+            Err(message) => {
+                self.emit_plugin_event(PluginWorkflowEvent::PublishBlocked { message });
+                return None;
+            }
+        };
         PublishRequest::new(
             message.topic.as_str(),
             message.payload,
@@ -551,7 +674,7 @@ impl AppRuntime {
         hook: &ActiveHook,
         bytes: Vec<u8>,
         content_type: Option<String>,
-    ) -> Result<DetailBytesOutput, PluginHookError> {
+    ) -> Result<(DetailBytesOutput, Vec<PluginHostAction>), PluginHookError> {
         let Some(config) = self.parse_hook_config(hook, false) else {
             return Err(PluginHookError::failed(
                 "detail transform config is invalid",
@@ -567,8 +690,9 @@ impl AppRuntime {
                 content_type,
             },
         };
-        match self.plugin_hooks.execute(call)? {
-            PluginHookOutput::DetailBytes(output) => Ok(output),
+        let execution = self.plugin_hooks.execute_with_host_actions(call)?;
+        match execution.output {
+            PluginHookOutput::DetailBytes(output) => Ok((output, execution.host_actions)),
             output => Err(PluginHookError::failed(format!(
                 "detail transform returned incompatible output: {output:?}"
             ))),
@@ -823,6 +947,9 @@ fn plugin_host_action_to_mqtt(action: PluginHostAction) -> Result<MqttCommand, S
             request: UnsubscribeRequest::new(topic_filter.as_str())
                 .map_err(|source| source.to_report().message)?,
         }),
+        PluginHostAction::SavePayload(_) => {
+            Err("Plugin save requests are only supported by detail transforms.".to_owned())
+        }
     }
 }
 

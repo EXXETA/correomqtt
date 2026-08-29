@@ -406,13 +406,16 @@ impl AppCommandSender {
     }
 
     pub fn send(&self, command: AppCommand) -> Result<(), CommandSendError> {
-        self.sender
-            .try_send(command)
-            .map_err(|error| CommandSendError::CommandDisconnected(error.into_inner()))
+        self.sender.try_send(command).map_err(|error| match error {
+            flume::TrySendError::Full(command) => CommandSendError::CommandFull(Box::new(command)),
+            flume::TrySendError::Disconnected(command) => {
+                CommandSendError::CommandDisconnected(Box::new(command))
+            }
+        })
     }
 
-    pub fn push(&mut self, command: AppCommand) {
-        let _ = self.send(command);
+    pub fn push(&mut self, command: AppCommand) -> Result<(), CommandSendError> {
+        self.send(command)
     }
 }
 
@@ -427,16 +430,23 @@ impl AppEventSender {
     }
 
     pub fn emit(&self, event: AppEvent) -> Result<(), CommandSendError> {
-        self.sender
-            .try_send(event)
-            .map_err(|error| CommandSendError::EventDisconnected(error.into_inner()))
+        self.sender.try_send(event).map_err(|error| match error {
+            flume::TrySendError::Full(event) => CommandSendError::EventFull(Box::new(event)),
+            flume::TrySendError::Disconnected(event) => {
+                CommandSendError::EventDisconnected(Box::new(event))
+            }
+        })
     }
 }
 
 #[derive(Debug, Error)]
 pub enum CommandSendError {
+    #[error("app command queue is full")]
+    CommandFull(Box<AppCommand>),
     #[error("app command receiver is disconnected")]
-    CommandDisconnected(AppCommand),
+    CommandDisconnected(Box<AppCommand>),
+    #[error("app event queue is full")]
+    EventFull(Box<AppEvent>),
     #[error("app event receiver is disconnected")]
-    EventDisconnected(AppEvent),
+    EventDisconnected(Box<AppEvent>),
 }

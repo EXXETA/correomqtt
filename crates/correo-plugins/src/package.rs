@@ -7,6 +7,35 @@ pub const PLUGIN_MANIFEST_FILE: &str = "plugin.toml";
 pub const PLUGIN_WASM_FILE: &str = "plugin.wasm";
 pub const PLUGIN_ASSETS_DIR: &str = "assets";
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PluginAbi {
+    V1,
+    V2,
+}
+
+impl PluginAbi {
+    pub const fn version(self) -> u16 {
+        match self {
+            Self::V1 => 1,
+            Self::V2 => 2,
+        }
+    }
+}
+
+fn package_abi(manifest: &toml::Value) -> Result<PluginAbi, PackageError> {
+    let Some(value) = manifest.get("abi_version") else {
+        return Ok(PluginAbi::V1);
+    };
+    let Some(version) = value.as_integer() else {
+        return Err(PackageError::AbiVersionMalformed);
+    };
+    match version {
+        1 => Ok(PluginAbi::V1),
+        2 => Ok(PluginAbi::V2),
+        version => Err(PackageError::AbiVersionUnsupported { version }),
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct PluginPackage {
     root: PathBuf,
@@ -14,6 +43,7 @@ pub struct PluginPackage {
     wasm_path: PathBuf,
     assets_path: Option<PathBuf>,
     manifest: PluginManifest,
+    abi: PluginAbi,
 }
 
 impl PluginPackage {
@@ -42,6 +72,10 @@ impl PluginPackage {
                 source,
             })?;
         let manifest = PluginManifest::from_toml_str(&manifest_text)?;
+        let document = manifest_text
+            .parse::<toml::Value>()
+            .map_err(PackageError::AbiVersionToml)?;
+        let abi = package_abi(&document)?;
 
         Ok(Self {
             root,
@@ -49,6 +83,7 @@ impl PluginPackage {
             wasm_path,
             assets_path,
             manifest,
+            abi,
         })
     }
 
@@ -70,6 +105,10 @@ impl PluginPackage {
 
     pub fn manifest(&self) -> &PluginManifest {
         &self.manifest
+    }
+
+    pub const fn abi(&self) -> PluginAbi {
+        self.abi
     }
 
     pub fn read_wasm(&self) -> Result<Vec<u8>, PackageError> {
@@ -110,6 +149,12 @@ pub enum PackageError {
     },
     #[error(transparent)]
     Manifest(#[from] ManifestError),
+    #[error("plugin package abi_version is malformed")]
+    AbiVersionMalformed,
+    #[error("plugin package abi_version {version} is unsupported")]
+    AbiVersionUnsupported { version: i64 },
+    #[error("plugin package manifest could not be parsed while reading abi_version: {0}")]
+    AbiVersionToml(toml::de::Error),
 }
 
 fn ensure_regular_file(path: &Path, file: PackageFile) -> Result<(), PackageError> {

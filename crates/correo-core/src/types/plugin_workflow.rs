@@ -5,7 +5,13 @@ use std::fmt;
 use crate::PluginMarketplaceRow;
 use correo_mqtt::ConnectionId;
 
-use crate::{PayloadSyntaxSpan, PluginDiagnosticSeverity, PluginHookKind, QosLevel};
+use crate::{
+    ConsumerSelection, MessageEnvelope, PayloadSyntaxSpan, PluginDiagnosticSeverity,
+    PluginHookKind, QosLevel, TransportCapabilities,
+};
+#[path = "plugin_workflow_events.rs"]
+mod events;
+pub use events::{PluginHookDiagnosticEvent, PluginWorkflowEvent};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MessageDetailSnapshot {
@@ -59,6 +65,13 @@ pub struct PluginMessage {
     pub retained: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginTransportMessage {
+    pub message: MessageEnvelope,
+    pub consumer: Option<ConsumerSelection>,
+    pub capabilities: TransportCapabilities,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct PluginHookCall {
     pub plugin_id: String,
@@ -75,20 +88,35 @@ pub enum PluginHookInput {
         bytes: Vec<u8>,
         content_type: Option<String>,
     },
+    TransportMessage(PluginTransportMessage),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PluginHookOutput {
     MessageTransform(MessageTransform),
+    TransportMessageTransform(TransportMessageTransform),
     Validation(PluginValidation),
     DetailBytes(DetailBytesOutput),
     DetailFormat(FormattedMessageDetail),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PluginHookExecution {
+    pub output: PluginHookOutput,
+    pub host_actions: Vec<PluginHostAction>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MessageTransform {
     Unchanged,
     Replace(PluginMessage),
+    Drop { reason: Option<String> },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TransportMessageTransform {
+    Unchanged,
+    Replace(PluginTransportMessage),
     Drop { reason: Option<String> },
 }
 
@@ -142,6 +170,18 @@ impl fmt::Display for PluginHookError {
 pub trait PluginHookExecutor: fmt::Debug + Send + Sync + 'static {
     fn execute(&self, call: PluginHookCall) -> Result<PluginHookOutput, PluginHookError>;
 
+    fn cancel(&self) {}
+
+    fn execute_with_host_actions(
+        &self,
+        call: PluginHookCall,
+    ) -> Result<PluginHookExecution, PluginHookError> {
+        self.execute(call).map(|output| PluginHookExecution {
+            output,
+            host_actions: Vec::new(),
+        })
+    }
+
     fn highlight_payload(
         &self,
         text: &str,
@@ -187,6 +227,17 @@ where
 {
     fn execute(&self, call: PluginHookCall) -> Result<PluginHookOutput, PluginHookError> {
         (**self).execute(call)
+    }
+
+    fn cancel(&self) {
+        (**self).cancel();
+    }
+
+    fn execute_with_host_actions(
+        &self,
+        call: PluginHookCall,
+    ) -> Result<PluginHookExecution, PluginHookError> {
+        (**self).execute_with_host_actions(call)
     }
 
     fn highlight_payload(
@@ -296,6 +347,13 @@ pub struct PluginHostActionResponse {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginSavePayload {
+    pub suggested_file_name: String,
+    pub bytes: Vec<u8>,
+    pub content_type: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PluginHostAction {
     Subscribe {
         connection_id: ConnectionId,
@@ -306,6 +364,7 @@ pub enum PluginHostAction {
         connection_id: ConnectionId,
         topic_filter: String,
     },
+    SavePayload(PluginSavePayload),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -397,48 +456,4 @@ pub struct PluginWindowMessage {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PluginWindowRenderResponse {
     pub nodes: Vec<PluginUiNode>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PluginWorkflowEvent {
-    PublishBlocked {
-        message: String,
-    },
-    PublishWarning {
-        message: String,
-    },
-    HookDiagnostic(PluginHookDiagnosticEvent),
-    MessageDiagnosticsAppended {
-        message_id: u32,
-        diagnostics: Vec<MessageDiagnosticRow>,
-    },
-    MessageDetailUpdated {
-        message_id: u32,
-        detail: FormattedMessageDetail,
-    },
-    MessageDetailCleared {
-        message_id: u32,
-    },
-    PluginWindowOpened(PluginWindowRow),
-    PluginWindowRendered {
-        plugin_id: String,
-        action_id: String,
-        connection_id: ConnectionId,
-        nodes: Vec<PluginUiNode>,
-    },
-    PluginWindowClosed {
-        plugin_id: String,
-        action_id: String,
-        connection_id: ConnectionId,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PluginHookDiagnosticEvent {
-    pub plugin_id: String,
-    pub hook: Option<PluginHookKind>,
-    pub severity: PluginDiagnosticSeverity,
-    pub message: String,
-    pub detail: String,
-    pub mark_hook_failed: bool,
 }
