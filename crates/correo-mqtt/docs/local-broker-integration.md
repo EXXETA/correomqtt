@@ -38,13 +38,18 @@ subjectAltName = @alt_names
 
 [alt_names]
 DNS.1 = localhost
-IP.1 = 127.0.0.1
 EOF
 
 openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
   -keyout "$tmp/ca.key" \
   -out "$tmp/ca.crt" \
   -subj "/CN=CorreoMQTT Synthetic Test CA"
+
+openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
+  -keyout "$tmp/untrusted-ca.key" \
+  -out "$tmp/untrusted-ca.crt" \
+  -subj "/CN=CorreoMQTT Untrusted Test CA"
+
 
 openssl req -newkey rsa:2048 -nodes \
   -keyout "$tmp/server.key" \
@@ -60,7 +65,7 @@ openssl x509 -req -days 1 \
   -extensions v3_req \
   -extfile "$tmp/server.cnf"
 
-chmod 0644 "$tmp/server.key" "$tmp/server.crt" "$tmp/ca.crt"
+chmod 0644 "$tmp/server.key" "$tmp/server.crt" "$tmp/ca.crt" "$tmp/untrusted-ca.crt"
 
 cat > "$tmp/mosquitto.conf" <<'EOF'
 persistence false
@@ -91,6 +96,8 @@ export CORREO_MQTT_BROKER_PORT=1883
 export CORREO_MQTT_TLS_HOST=localhost
 export CORREO_MQTT_TLS_BROKER_PORT=8883
 export CORREO_MQTT_TLS_CA_PEM="$tmp/ca.crt"
+export CORREO_MQTT_TLS_UNTRUSTED_CA_PEM="$tmp/untrusted-ca.crt"
+
 
 cargo test -p correo-mqtt --test local_broker -- --ignored --nocapture
 
@@ -108,6 +115,7 @@ in any future auth-specific extension.
 - Publish/subscribe loopback for QoS 0, QoS 1, and QoS 2 on the broker path.
 - Retained message storage and retained delivery on a fresh subscription.
 - TLS connect/disconnect with a synthetic CA bundle and hostname validation.
+- TLS rejection for an untrusted CA and a hostname absent from the certificate.
 - Reconnect state reporting through a local TCP disconnect probe.
 
 SSH routing uses an isolated fake instead of a real local SSH daemon because a

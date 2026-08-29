@@ -3,7 +3,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use russh::client::{self, Config};
-use russh::keys::{decode_secret_key, PrivateKeyWithHashAlg, PublicKey};
+use russh::keys::known_hosts::learn_known_hosts_path;
+use russh::keys::{check_known_hosts_path, decode_secret_key, PrivateKeyWithHashAlg, PublicKey};
 use russh::{ChannelMsg, Disconnect};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
@@ -76,6 +77,8 @@ impl Drop for RusshTunnel {
 #[derive(Clone)]
 struct Client {
     host_key_policy: SshHostKeyPolicy,
+    host: String,
+    port: u16,
 }
 
 impl client::Handler for Client {
@@ -83,10 +86,43 @@ impl client::Handler for Client {
 
     async fn check_server_key(
         &mut self,
-        _server_public_key: &PublicKey,
+        server_public_key: &PublicKey,
     ) -> Result<bool, Self::Error> {
-        match self.host_key_policy {
+        match &self.host_key_policy {
             SshHostKeyPolicy::AcceptAnyInsecure => Ok(true),
+            SshHostKeyPolicy::TrustOnFirstUse { known_hosts_path } => {
+                match check_known_hosts_path(
+                    &self.host,
+                    self.port,
+                    server_public_key,
+                    known_hosts_path,
+                ) {
+                    Ok(true) => Ok(true),
+                    // Unknown host (or file not created yet): trust on first
+                    // use and pin the key for future connections. Any other
+                    // error (changed key, unreadable/corrupt pin file) rejects
+                    // rather than silently re-pinning.
+                    Ok(false) => Ok(learn_known_hosts_path(
+                        &self.host,
+                        self.port,
+                        server_public_key,
+                        known_hosts_path,
+                    )
+                    .is_ok()),
+                    Err(russh::keys::Error::IO(error))
+                        if error.kind() == std::io::ErrorKind::NotFound =>
+                    {
+                        Ok(learn_known_hosts_path(
+                            &self.host,
+                            self.port,
+                            server_public_key,
+                            known_hosts_path,
+                        )
+                        .is_ok())
+                    }
+                    Err(_) => Ok(false),
+                }
+            }
         }
     }
 }
@@ -123,6 +159,8 @@ async fn connect_session(options: &SshTunnelOptions) -> MqttResult<client::Handl
         (options.host.as_str(), options.port),
         Client {
             host_key_policy: options.host_key_policy.clone(),
+            host: options.host.clone(),
+            port: options.port,
         },
     )
     .await
@@ -297,4 +335,40 @@ async fn relay_stream(
 
 fn map_remote_connect(error: russh::Error) -> MqttError {
     MqttError::ssh_failure(SshFailureKind::RemoteConnect, error.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use russh::client::Handler;
+    use russh::keys::ssh_key::public::{Ed25519PublicKey, KeyData};
+
+    fn server_key(byte: u8) -> PublicKey {
+        PublicKey::new(KeyData::Ed25519(Ed25519PublicKey([byte; 32])), "")
+    }
+
+    #[tokio::test]
+    async fn tofu_pins_first_key_and_rejects_changed_key() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let mut client = Client {
+            host_key_policy: SshHostKeyPolicy::TrustOnFirstUse {
+                known_hosts_path: dir.path().join("known_hosts"),
+            },
+            host: "broker.example".to_owned(),
+            port: 22,
+        };
+
+        assert!(client
+            .check_server_key(&server_key(7))
+            .await
+            .expect("first use"));
+        assert!(client
+            .check_server_key(&server_key(7))
+            .await
+            .expect("same key"));
+        assert!(!client
+            .check_server_key(&server_key(9))
+            .await
+            .expect("changed key"));
+    }
 }
