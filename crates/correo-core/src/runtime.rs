@@ -113,7 +113,7 @@ impl AppRuntime {
     }
 
     pub fn pump(&mut self) -> PumpReport {
-        let before = self.model.snapshot().clone();
+        let revision_before = self.model.revision();
         let mut report = PumpReport::default();
 
         while let Some(event) = self.try_recv_mqtt_event() {
@@ -206,7 +206,7 @@ impl AppRuntime {
             report.commands_processed += 1;
         }
 
-        report.snapshot_changed = before != *self.model.snapshot();
+        report.snapshot_changed = revision_before != self.model.revision();
         report.shutdown_requested = self.shutdown_requested;
         report
     }
@@ -694,6 +694,25 @@ mod tests {
         assert_eq!(report.commands_processed, 1);
         assert!(report.snapshot_changed);
         assert_eq!(runtime.snapshot().theme_mode, ThemeMode::Dark);
+    }
+
+    #[test]
+    fn pump_reports_changed_when_commands_restore_the_original_snapshot() {
+        let mut runtime = AppRuntime::new();
+        runtime
+            .command_sender()
+            .send(AppCommand::SearchConnections("temporary".to_owned()))
+            .unwrap();
+        runtime
+            .command_sender()
+            .send(AppCommand::SearchConnections(String::new()))
+            .unwrap();
+
+        let report = runtime.pump();
+
+        assert_eq!(report.commands_processed, 2);
+        assert!(report.snapshot_changed);
+        assert!(runtime.snapshot().connection_filter.is_empty());
     }
 
     #[test]

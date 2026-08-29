@@ -1,9 +1,10 @@
 use correo_core::{AppCommand, AppCommandSender, AppSnapshot, MessageRow, PublishHistoryRow};
 use correo_style::layout;
-use egui::{Button, Label, Layout, RichText, TextEdit, Ui};
+use egui::{Button, Label, Layout, RichText, TextEdit, Ui, WidgetInfo, WidgetType};
 use egui_phosphor::regular;
 
 use crate::{
+    i18n::I18n,
     payload_highlight,
     theme::ThemeTokens,
     widgets::{padded_text_edit, square_icon_button_size, with_icon_button_padding},
@@ -19,6 +20,7 @@ pub(crate) fn message_window_content(
     message: &MessageRow,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
     payload_highlighter: Option<&PayloadHighlighter>,
 ) {
     detail_view(
@@ -37,6 +39,7 @@ pub(crate) fn message_window_content(
         },
         tokens,
         commands,
+        i18n,
         payload_highlighter,
     );
 }
@@ -47,6 +50,7 @@ pub(crate) fn outgoing_window_content(
     row: &PublishHistoryRow,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
     payload_highlighter: Option<&PayloadHighlighter>,
 ) {
     detail_view(
@@ -65,6 +69,7 @@ pub(crate) fn outgoing_window_content(
         },
         tokens,
         commands,
+        i18n,
         payload_highlighter,
     );
 }
@@ -74,9 +79,10 @@ fn detail_view(
     detail: MessageDetail<'_>,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
     payload_highlighter: Option<&PayloadHighlighter>,
 ) {
-    detail_toolbar(ui, &detail, tokens, commands);
+    detail_toolbar(ui, &detail, tokens, commands, i18n);
     ui.add_space(6.0);
     validation_status(ui, &detail, tokens);
     payload_area(ui, &detail, payload_highlighter);
@@ -102,6 +108,7 @@ fn detail_toolbar(
     detail: &MessageDetail<'_>,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     ui.allocate_ui_with_layout(
         egui::vec2(ui.available_width(), DETAIL_TOOLBAR_HEIGHT),
@@ -129,29 +136,45 @@ fn detail_toolbar(
                                 .color(tokens.text_secondary),
                         );
                         if detail.retained {
-                            ui.label(RichText::new("retained").color(tokens.accent).strong());
+                            ui.label(
+                                RichText::new(i18n.text("message-retained"))
+                                    .color(tokens.accent)
+                                    .strong(),
+                            );
                         }
                     });
                 },
             );
             ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                if detail_icon_button(ui, regular::DOWNLOAD_SIMPLE, "Save message to cqm file")
-                    .clicked()
+                if detail_icon_button(
+                    ui,
+                    regular::DOWNLOAD_SIMPLE,
+                    &i18n.text("message-action-save"),
+                )
+                .clicked()
                 {
                     if let Some(path) = save_message_path(detail.topic) {
                         send(commands, export_command_to_path(&detail.export, path));
                     }
                 }
-                if detail_icon_button(ui, regular::CLIPBOARD_TEXT, "Copy payload to clipboard")
-                    .clicked()
+                if detail_icon_button(
+                    ui,
+                    regular::CLIPBOARD_TEXT,
+                    &i18n.text("message-action-copy-payload"),
+                )
+                .clicked()
                 {
                     ui.ctx()
                         .copy_text(payload_text(detail.payload, detail.fallback_payload));
                 }
-                if detail_icon_button(ui, regular::CLOCK, "Copy time to clipboard").clicked() {
+                if detail_icon_button(ui, regular::CLOCK, &i18n.text("message-action-copy-time"))
+                    .clicked()
+                {
                     ui.ctx().copy_text(detail.timestamp.to_owned());
                 }
-                if detail_icon_button(ui, regular::COPY, "Copy topic to clipboard").clicked() {
+                if detail_icon_button(ui, regular::COPY, &i18n.text("message-action-copy-topic"))
+                    .clicked()
+                {
                     ui.ctx().copy_text(detail.topic.to_owned());
                 }
             });
@@ -160,13 +183,14 @@ fn detail_toolbar(
 }
 
 fn detail_icon_button(ui: &mut Ui, icon: &str, hover_text: &str) -> egui::Response {
-    with_icon_button_padding(ui, |ui| {
+    let response = with_icon_button_padding(ui, |ui| {
         ui.add_sized(
             square_icon_button_size(),
             Button::new(RichText::new(icon).size(16.0)),
         )
-    })
-    .on_hover_text(hover_text)
+    });
+    response.widget_info(|| WidgetInfo::labeled(WidgetType::Button, true, hover_text));
+    response.on_hover_text(hover_text)
 }
 
 fn payload_area(
@@ -176,10 +200,13 @@ fn payload_area(
 ) {
     let mut payload = payload_text(detail.payload, detail.fallback_payload);
     let height = ui.available_height().max(0.0);
-    let mut layouter = payload_highlight::layouter(
-        payload_highlighter.cloned(),
-        detail.active_plugin_ids.clone(),
+    let spans = payload_highlight::cached_spans(
+        ui,
+        &payload,
+        &detail.active_plugin_ids,
+        payload_highlighter,
     );
+    let mut layouter = payload_highlight::layouter(spans);
     ui.add_sized(
         [ui.available_width(), height],
         padded_text_edit(

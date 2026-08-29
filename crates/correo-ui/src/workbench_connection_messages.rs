@@ -1,6 +1,6 @@
 use correo_core::{AppCommand, AppCommandSender, AppSnapshot, MessageRow, PublishHistoryRow};
 use correo_style::layout;
-use egui::{Button, Id, Rect, RichText, ScrollArea, Sense, Ui};
+use egui::{Button, Id, Rect, RichText, ScrollArea, Sense, Ui, WidgetInfo, WidgetType};
 use egui_phosphor::regular;
 
 use crate::{
@@ -53,6 +53,27 @@ enum ValidationStatus {
     Invalid,
 }
 
+#[derive(Clone, Copy)]
+struct MessageRowMetrics {
+    height: f32,
+    topic_y: f32,
+    preview_y: f32,
+}
+
+fn message_row_metrics(ui: &Ui) -> MessageRowMetrics {
+    const VERTICAL_PADDING: f32 = 6.0;
+    const LINE_GAP: f32 = 2.0;
+    let topic_font = egui::TextStyle::Button.resolve(ui.style());
+    let meta_font = egui::TextStyle::Small.resolve(ui.style());
+    let (topic_height, meta_height) =
+        ui.fonts(|fonts| (fonts.row_height(&topic_font), fonts.row_height(&meta_font)));
+    MessageRowMetrics {
+        height: (VERTICAL_PADDING * 2.0 + topic_height + LINE_GAP + meta_height).ceil(),
+        topic_y: VERTICAL_PADDING,
+        preview_y: VERTICAL_PADDING + topic_height + LINE_GAP,
+    }
+}
+
 pub(crate) fn show(
     ui: &mut Ui,
     snapshot: &AppSnapshot,
@@ -61,7 +82,7 @@ pub(crate) fn show(
     commands: &AppCommandSender,
     i18n: &I18n,
 ) {
-    toolbar(ui, snapshot, origin, tokens, commands);
+    toolbar(ui, snapshot, origin, tokens, commands, i18n);
     ui.add_space(4.0);
 
     let rows = rows(snapshot, origin);
@@ -83,6 +104,7 @@ fn toolbar(
     origin: MessageOrigin,
     tokens: ThemeTokens,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
     let selected = selected_key(snapshot, origin);
     let toolbar_width = ui.available_width();
@@ -92,7 +114,7 @@ fn toolbar(
         if icon_button(
             ui,
             regular::UPLOAD_SIMPLE,
-            "Copy selected message to publish form",
+            &i18n.text("message-action-copy-to-publish"),
             selected.is_some(),
             false,
             tokens,
@@ -107,7 +129,7 @@ fn toolbar(
         if icon_button(
             ui,
             regular::SHARE,
-            "Show selected message in extra window",
+            &i18n.text("message-action-open-window"),
             selected.is_some(),
             false,
             tokens,
@@ -123,7 +145,14 @@ fn toolbar(
         let button_width = layout::square_icon_button_side();
         let search_width = (toolbar_width - button_width * 4.0 - ui.spacing().item_spacing.x * 4.0)
             .max(button_width);
-        if clearable_search_edit(ui, None, &mut filter, search_hint(origin), search_width).changed()
+        if clearable_search_edit(
+            ui,
+            None,
+            &mut filter,
+            &search_hint(origin, i18n),
+            search_width,
+        )
+        .changed()
         {
             send(commands, search_command(origin, filter));
         }
@@ -131,7 +160,7 @@ fn toolbar(
         if icon_button(
             ui,
             regular::TRASH,
-            "Clear messages",
+            &i18n.text("message-action-clear"),
             source_has_messages(snapshot, origin),
             false,
             tokens,
@@ -145,7 +174,7 @@ fn toolbar(
         if icon_button(
             ui,
             regular::MOUSE_SCROLL,
-            "Toggle automatic scrolling",
+            &i18n.text("message-action-auto-scroll"),
             true,
             auto_scroll,
             tokens,
@@ -177,6 +206,7 @@ fn icon_button(
         })
         .inner;
     paint_focus_outline(ui, &response);
+    response.widget_info(|| WidgetInfo::labeled(WidgetType::Button, enabled, hover_text));
     response.on_hover_text(hover_text)
 }
 
@@ -187,11 +217,11 @@ fn filter_text(snapshot: &AppSnapshot, origin: MessageOrigin) -> &str {
     }
 }
 
-fn search_hint(origin: MessageOrigin) -> &'static str {
-    match origin {
-        MessageOrigin::Outgoing => "Search outgoing",
-        MessageOrigin::Incoming => "Search incoming",
-    }
+fn search_hint(origin: MessageOrigin, i18n: &I18n) -> String {
+    i18n.text(match origin {
+        MessageOrigin::Outgoing => "message-search-outgoing",
+        MessageOrigin::Incoming => "message-search-incoming",
+    })
 }
 
 fn search_command(origin: MessageOrigin, filter: String) -> AppCommand {
@@ -411,6 +441,7 @@ fn message_table(
         store_message_focus_index(ui, origin, selected_message_index(rows).unwrap_or(0));
     }
     let focused_index = message_focus_index(ui, origin, rows);
+    let row_metrics = message_row_metrics(ui);
     ScrollArea::vertical()
         .id_salt(match origin {
             MessageOrigin::Outgoing => "outgoing-messages-table",
@@ -420,37 +451,27 @@ fn message_table(
         .scroll_bar_rect(tile_scroll_bar_rect_with_height(ui, table_height))
         .stick_to_bottom(auto_scroll)
         .auto_shrink([false, false])
-        .show_rows(
-            ui,
-            layout::MESSAGE_TABLE_ROW_HEIGHT,
-            rows.len(),
-            |ui, row_range| {
-                ui.set_width(ui.available_width());
-                for index in row_range {
-                    if let Some(row) = rows.get(index) {
-                        message_row(
-                            ui,
-                            snapshot,
-                            origin,
-                            index,
-                            row,
-                            tokens,
-                            commands,
-                            table_response.has_focus(),
-                            focused_index,
-                            i18n,
-                        );
-                    }
+        .show_rows(ui, row_metrics.height, rows.len(), |ui, row_range| {
+            ui.set_width(ui.available_width());
+            for index in row_range {
+                if let Some(row) = rows.get(index) {
+                    message_row(
+                        ui,
+                        snapshot,
+                        origin,
+                        index,
+                        row,
+                        tokens,
+                        commands,
+                        table_response.has_focus(),
+                        focused_index,
+                        i18n,
+                        row_metrics,
+                    );
                 }
-                fill_remaining_tile_rows(
-                    ui,
-                    rows.len(),
-                    layout::MESSAGE_TABLE_ROW_HEIGHT,
-                    table_height,
-                    tokens,
-                );
-            },
-        );
+            }
+            fill_remaining_tile_rows(ui, rows.len(), row_metrics.height, table_height, tokens);
+        });
 }
 
 fn message_row(
@@ -464,12 +485,11 @@ fn message_row(
     table_focused: bool,
     focused_index: usize,
     i18n: &I18n,
+    metrics: MessageRowMetrics,
 ) {
     let row_width = ui.available_width();
-    let (rect, response) = ui.allocate_exact_size(
-        egui::vec2(row_width, layout::MESSAGE_TABLE_ROW_HEIGHT),
-        Sense::CLICK,
-    );
+    let (rect, response) =
+        ui.allocate_exact_size(egui::vec2(row_width, metrics.height), Sense::CLICK);
     let row_focused = table_focused && index == focused_index;
     let fill = tile_table_interactive_fill(
         index,
@@ -483,7 +503,7 @@ fn message_row(
         dotted_focus_outline(ui, rect);
     }
 
-    response.context_menu(|ui| message_context_menu(ui, snapshot, origin, row, commands));
+    response.context_menu(|ui| message_context_menu(ui, snapshot, origin, row, commands, i18n));
     if response.clicked() {
         ui.memory_mut(|memory| memory.request_focus(message_table_focus_id(origin)));
         store_message_focus_index(ui, origin, index);
@@ -496,14 +516,14 @@ fn message_row(
 
     let right = rect.right() - layout::MESSAGE_ROW_PADDING_RIGHT;
     let meta_rect = right_rect(rect, right, layout::MESSAGE_ROW_META_WIDTH);
-    let topic_y = rect.top() + 7.0;
-    let preview_y = rect.top() + 28.0;
+    let topic_y = rect.top() + metrics.topic_y;
+    let preview_y = rect.top() + metrics.preview_y;
     let topic_font = egui::TextStyle::Button.resolve(ui.style());
     let meta_font = egui::TextStyle::Small.resolve(ui.style());
     let timestamp = crate::time_format::local_date_time(row.timestamp);
     let size = formatted_size(row.byte_size);
     let qos_and_size = if row.retained {
-        format!("Retained · {} · {size}", row.qos)
+        format!("{} · {} · {size}", i18n.text("message-retained"), row.qos)
     } else {
         format!("{} · {size}", row.qos)
     };
@@ -555,29 +575,24 @@ fn message_row(
     }
     right_aligned_text(
         ui,
-        meta_rect.right_top() + egui::vec2(0.0, 7.0),
+        egui::pos2(meta_rect.right(), topic_y),
         &timestamp,
         ui.visuals().text_color(),
     );
     right_aligned_text(
         ui,
-        meta_rect.right_top() + egui::vec2(0.0, 28.0),
+        egui::pos2(meta_rect.right(), preview_y),
         &qos_and_size,
         tokens.text_secondary,
     );
     if let Some((status, label)) = row.validation_status.zip(validation_label.as_deref()) {
         let dot_gap = text_width(ui, " · ", meta_font.clone());
         let x = meta_rect.right() - text_width(ui, &qos_and_size, meta_font.clone()) - dot_gap;
-        right_aligned_text(
-            ui,
-            egui::pos2(x, meta_rect.top() + 28.0),
-            "·",
-            tokens.text_secondary,
-        );
+        right_aligned_text(ui, egui::pos2(x, preview_y), "·", tokens.text_secondary);
         let x = x - dot_gap;
         right_aligned_text(
             ui,
-            egui::pos2(x, meta_rect.top() + 28.0),
+            egui::pos2(x, preview_y),
             label,
             match status {
                 ValidationStatus::Validated => tokens.success,
@@ -707,54 +722,45 @@ fn message_context_menu(
     origin: MessageOrigin,
     row: &ConnectionMessageRow<'_>,
     commands: &AppCommandSender,
+    i18n: &I18n,
 ) {
+    let copy_to_publish = i18n.text("message-action-copy-to-publish");
+    let open_window = i18n.text("message-action-open-window");
+    let remove = i18n.text("message-action-remove");
+    let save = i18n.text("message-action-save");
+    let copy_topic = i18n.text("message-action-copy-topic");
+    let copy_time = i18n.text("message-action-copy-time");
+    let copy_payload = i18n.text("message-action-copy-payload");
+    let clear = i18n.text("message-action-clear");
     set_menu_item_width(
         ui,
         &[
-            "Put message into publish form",
-            "Show in separate window",
-            "Remove message",
-            "Save message to cqm file",
-            "Copy Topic to Clipboard",
-            "Copy time to clipboard",
-            "Copy payload to clipboard",
-            "Clear list",
+            &copy_to_publish,
+            &open_window,
+            &remove,
+            &save,
+            &copy_topic,
+            &copy_time,
+            &copy_payload,
+            &clear,
         ],
     );
-    if menu_item(
-        ui,
-        Some(regular::UPLOAD_SIMPLE),
-        "Put message into publish form",
-    )
-    .clicked()
-    {
+    if menu_item(ui, Some(regular::UPLOAD_SIMPLE), &copy_to_publish).clicked() {
         send(commands, select_command(row.key));
         send(commands, copy_command(row.key));
         ui.close_menu();
     }
-    if menu_item(
-        ui,
-        Some(regular::ARROW_SQUARE_OUT),
-        "Show in separate window",
-    )
-    .clicked()
-    {
+    if menu_item(ui, Some(regular::ARROW_SQUARE_OUT), &open_window).clicked() {
         send(commands, select_command(row.key));
         open_message(ui, snapshot, row.key);
         ui.close_menu();
     }
-    if menu_item(ui, Some(regular::TRASH), "Remove message").clicked() {
+    if menu_item(ui, Some(regular::TRASH), &remove).clicked() {
         send(commands, select_command(row.key));
         send(commands, remove_command(row.key));
         ui.close_menu();
     }
-    if menu_item(
-        ui,
-        Some(regular::DOWNLOAD_SIMPLE),
-        "Save message to cqm file",
-    )
-    .clicked()
-    {
+    if menu_item(ui, Some(regular::DOWNLOAD_SIMPLE), &save).clicked() {
         send(commands, select_command(row.key));
         if let Some(path) = save_message_path(row.topic) {
             send(commands, export_command_to_path(row.key, path));
@@ -762,23 +768,17 @@ fn message_context_menu(
         ui.close_menu();
     }
     ui.separator();
-    if menu_item(ui, Some(regular::COPY), "Copy Topic to Clipboard").clicked() {
+    if menu_item(ui, Some(regular::COPY), &copy_topic).clicked() {
         send(commands, select_command(row.key));
         ui.ctx().copy_text(row.topic.to_owned());
         ui.close_menu();
     }
-    if menu_item(ui, Some(regular::CLOCK), "Copy time to clipboard").clicked() {
+    if menu_item(ui, Some(regular::CLOCK), &copy_time).clicked() {
         send(commands, select_command(row.key));
         ui.ctx().copy_text(row.timestamp.to_owned());
         ui.close_menu();
     }
-    if menu_item(
-        ui,
-        Some(regular::CLIPBOARD_TEXT),
-        "Copy payload to clipboard",
-    )
-    .clicked()
-    {
+    if menu_item(ui, Some(regular::CLIPBOARD_TEXT), &copy_payload).clicked() {
         send(commands, select_command(row.key));
         if let Some(payload) = payload_text(snapshot, row.key) {
             ui.ctx().copy_text(payload);
@@ -786,7 +786,7 @@ fn message_context_menu(
         ui.close_menu();
     }
     ui.separator();
-    if menu_item(ui, Some(regular::BROOM), "Clear list").clicked() {
+    if menu_item(ui, Some(regular::BROOM), &clear).clicked() {
         send(commands, clear_command(origin));
         ui.close_menu();
     }
