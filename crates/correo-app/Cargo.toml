@@ -20,6 +20,7 @@ correo-storage = { path = "../correo-storage" }
 correo-ui = { path = "../correo-ui" }
 directories.workspace = true
 eframe.workspace = true
+rfd.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 rumqttd = { version = "0.20", default-features = false }

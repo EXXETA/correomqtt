@@ -186,26 +186,26 @@ fn blocking_client_supports_legacy_incoming_message_and_base64_helpers() {
 }
 
 #[test]
-fn promise_client_supports_legacy_constructor_and_subscription_callbacks() {
+fn promise_client_supports_direct_promise_subscription_callbacks() {
     let mqtt = Arc::new(RecordingMqttClient::default());
     let source = r##"
         var client = new ClientFactory().getPromiseClient();
 
-        new Promise(client.connect()).then(() => {
-            new Promise(client.subscribe("/step1", 1, (msg) => {
+        client.connect().then(() => {
+            client.subscribe("/step1", 1, (msg) => {
                 logger.info("{}", 1);
-                new Promise(client.publish("/step2", 1, "foo2"));
-            }));
+                client.publish("/step2", 1, "foo2");
+            });
 
-            new Promise(client.subscribe("/step2", 1, (msg) => {
+            client.subscribe("/step2", 1, (msg) => {
                 logger.info("{}", msg);
                 queue.jumpOut();
-            }));
+            });
 
-            new Promise(client.publish("/step1", 1, "foo1")).then(() => {
+            client.publish("/step1", 1, "foo1").then(() => {
                 queue.process();
-                new Promise(client.unsubscribeAll());
-                new Promise(client.disconnect());
+                client.unsubscribeAll();
+                client.disconnect();
                 logger.info("Finished");
             });
         });
@@ -238,20 +238,20 @@ fn mixed_client_supports_top_level_await_and_mode_conversion() {
         client.connect();
         client = client.toPromised();
 
-        await new Promise(client.subscribe("/step1", 1, (msg) => {
+        await client.subscribe("/step1", 1, (msg) => {
             logger.info("{}", 1);
-            new Promise(client.publish("/step2", 1, "foo2"));
-        }));
+            client.publish("/step2", 1, "foo2");
+        });
 
-        await new Promise(client.subscribe("/step2", 1, (msg) => {
+        await client.subscribe("/step2", 1, (msg) => {
             logger.info("{}", msg);
             queue.jumpOut();
-        }));
+        });
 
-        await new Promise(client.publish("/step1", 1, "foo1")).then(() => {
+        await client.publish("/step1", 1, "foo1").then(() => {
             queue.process();
-            new Promise(client.unsubscribeAll());
-            new Promise(client.disconnect());
+            client.unsubscribeAll();
+            client.disconnect();
             logger.info("Finished");
         });
 

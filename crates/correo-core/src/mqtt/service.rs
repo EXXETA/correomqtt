@@ -59,6 +59,10 @@ impl MqttService {
     pub(crate) fn try_recv_event(&self) -> Result<MqttEvent, flume::TryRecvError> {
         self.events.try_recv()
     }
+
+    pub(crate) fn has_pending_events(&self) -> bool {
+        !self.events.is_empty()
+    }
 }
 
 impl Drop for MqttService {

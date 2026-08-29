@@ -1,8 +1,11 @@
 use correo_core::{
-    AppRuntime, Diagnostic, HistoryPersistenceWorker, MigrationPersistenceWorker, MqttService,
-    PluginHookExecutor, RumqttSessionFactory, ScriptingWorker, SettingsPersistenceWorker,
+    AppEvent, AppRuntime, Diagnostic, HistoryPersistenceWorker, MigrationPersistenceWorker,
+    MqttService, PluginHookExecutor, RumqttSessionFactory, ScriptingWorker,
+    SettingsPersistenceWorker,
 };
-use std::sync::Arc;
+use std::{path::Path, sync::Arc, time::Duration};
+
+const IDLE_REPAINT_INTERVAL: Duration = Duration::from_millis(100);
 
 use crate::plugins::{InstalledPluginExecutor, PluginFileInstaller};
 use crate::startup::{history_root, load_startup_state};
@@ -93,14 +96,89 @@ impl CorreoDesktopApp {
 
     fn pump_runtime(&mut self, context: &eframe::egui::Context) {
         let report = self.runtime.pump();
+        let save_feedback = self.drain_plugin_save_payload();
         if report.snapshot_changed {
             self.ui.set_snapshot(self.runtime.snapshot().clone());
+        }
+        if report.snapshot_changed || save_feedback || report.backlog_remaining {
             context.request_repaint();
+        } else {
+            context.request_repaint_after(IDLE_REPAINT_INTERVAL);
         }
         if report.shutdown_requested {
             context.send_viewport_cmd(eframe::egui::ViewportCommand::Close);
         }
     }
+
+    fn drain_plugin_save_payload(&mut self) -> bool {
+        let Some(payload) = self.runtime.take_plugin_save_payload() else {
+            return false;
+        };
+        if !valid_plugin_save_file_name(&payload.suggested_file_name) {
+            record_plugin_save_error(
+                &mut self.runtime,
+                "Plugin save request has an invalid file name.",
+            );
+            return true;
+        }
+        let Some(path) = rfd::FileDialog::new()
+            .set_file_name(&payload.suggested_file_name)
+            .save_file()
+        else {
+            return false;
+        };
+        let events = self.runtime.event_sender();
+        if let Err(error) = std::thread::Builder::new()
+            .name("correo-plugin-payload-save".to_owned())
+            .spawn(move || {
+                if let Err(error) =
+                    correo_storage::current::write_file_atomic(&path, &payload.bytes)
+                {
+                    let _ = events.emit(AppEvent::DiagnosticRaised(Diagnostic::error(format!(
+                        "Plugin payload could not be saved: {error}"
+                    ))));
+                }
+            })
+        {
+            record_plugin_save_error(
+                &mut self.runtime,
+                &format!("Plugin payload save could not be started: {error}"),
+            );
+        }
+        true
+    }
+}
+
+fn record_plugin_save_error(runtime: &mut AppRuntime, message: &str) {
+    let _ = runtime
+        .event_sender()
+        .emit(AppEvent::DiagnosticRaised(Diagnostic::error(message)));
+}
+
+fn valid_plugin_save_file_name(file_name: &str) -> bool {
+    let path = Path::new(file_name);
+    let stem = file_name.split('.').next().unwrap_or_default();
+    let reserved_windows_name = [
+        "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
+        "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    ]
+    .iter()
+    .any(|reserved| reserved.eq_ignore_ascii_case(stem));
+
+    !file_name.is_empty()
+        && file_name == file_name.trim()
+        && !file_name.ends_with('.')
+        && !matches!(file_name, "." | "..")
+        && !reserved_windows_name
+        && path.is_relative()
+        && path.components().count() == 1
+        && !file_name.chars().any(|character| {
+            character.is_control()
+                || matches!(
+                    character,
+                    '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|'
+                )
+        })
 }
 
 fn attach_plugin_executor(

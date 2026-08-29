@@ -1,6 +1,6 @@
 use crate::{
-    AppCommand, AppEvent, AppSnapshot, Diagnostic, ScriptExecutionRow, ScriptExecutionStatus,
-    ScriptRow, ScriptingCommand, ScriptingEvent,
+    AppCommand, AppEvent, AppSnapshot, Diagnostic, MqttCommand, ScriptExecutionRow,
+    ScriptExecutionStatus, ScriptRow, ScriptingCommand, ScriptingEvent,
 };
 
 use super::AppRuntime;
@@ -64,9 +64,15 @@ impl AppRuntime {
         let Some(worker) = &self.scripting_worker else {
             return;
         };
-        let Some(command) = scripting_command(command, before, self.model.snapshot()) else {
+        let Some(mut command) = scripting_command(command, before, self.model.snapshot()) else {
             return;
         };
+        if let ScriptingCommand::Run {
+            connect_command, ..
+        } = &mut command
+        {
+            *connect_command = self.script_connect_command().map(Box::new);
+        }
         let script_started = matches!(command, ScriptingCommand::Run { .. });
         if let Err(error) = worker.dispatch(command) {
             let _ = self
@@ -79,6 +85,14 @@ impl AppRuntime {
                 .event_sender
                 .emit(AppEvent::DiagnosticRaised(script_started_diagnostic()));
         }
+    }
+
+    fn script_connect_command(&self) -> Option<MqttCommand> {
+        self.model
+            .mqtt_commands_for_app_command(&AppCommand::RunScript)
+            .ok()?
+            .into_iter()
+            .find(|command| matches!(command, MqttCommand::Connect { .. }))
     }
 }
 
@@ -137,6 +151,7 @@ fn scripting_command(
                 script_path: script.relative_path.clone(),
                 source: script.source.clone(),
                 connection_id: after.scripts.selected_connection_id.clone(),
+                connect_command: None,
             })
         }
         AppCommand::CancelScript => {
