@@ -1,3 +1,4 @@
+use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -6,6 +7,7 @@ use futures::stream::BoxStream;
 use rumqttc_v5 as rumqtt;
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
+use tokio::time::timeout;
 
 use super::common::{
     client_id, finish_startup, keep_alive_seconds, SessionChannels, StartupSignal,
@@ -16,6 +18,8 @@ use crate::{
     MqttError, MqttProtocolVersion, MqttResult, MqttSession, MqttSessionEvent, PublishRequest, Qos,
     SessionState, Subscription, TopicName, UnsubscribeRequest,
 };
+
+const CLIENT_ACK_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub struct Mqtt5Session {
     channels: SessionChannels,
@@ -113,11 +117,27 @@ impl MqttSession for Mqtt5Session {
             return Ok(());
         };
 
-        client.disconnect().await.map_err(map_client_error)?;
-        if let Some(mut transport) = self.transport.take() {
-            transport.close().await?;
+        let disconnect_result = match timeout(CLIENT_ACK_TIMEOUT, client.disconnect()).await {
+            Ok(result) => result.map_err(map_client_error),
+            Err(_) => Err(MqttError::protocol("disconnect timed out")),
+        };
+        if let Some(mut task) = self.task.take() {
+            if disconnect_result.is_ok() {
+                if timeout(CLIENT_ACK_TIMEOUT, &mut task).await.is_err() {
+                    task.abort();
+                }
+            } else {
+                task.abort();
+            }
         }
+        let transport_result = if let Some(mut transport) = self.transport.take() {
+            transport.close().await
+        } else {
+            Ok(())
+        };
         self.channels.set_state(SessionState::Disconnected);
+        disconnect_result?;
+        transport_result?;
         Ok(())
     }
 
@@ -132,10 +152,7 @@ impl MqttSession for Mqtt5Session {
             )
             .await
             .map_err(map_client_error)?;
-        notice
-            .wait_completion_async()
-            .await
-            .map_err(|error| MqttError::protocol(error.to_string()))?;
+        wait_for_ack(notice.wait_completion_async(), "publish").await?;
         self.channels.report_published(MqttSessionEvent::Published {
             topic: request.topic,
             payload: request.payload,
@@ -151,10 +168,7 @@ impl MqttSession for Mqtt5Session {
             .subscribe_tracked(subscription.topic_filter.as_str(), to_qos(subscription.qos))
             .await
             .map_err(map_client_error)?;
-        notice
-            .wait_completion_async()
-            .await
-            .map_err(|error| MqttError::protocol(error.to_string()))?;
+        wait_for_ack(notice.wait_completion_async(), "subscribe").await?;
         self.channels
             .report_published(MqttSessionEvent::Subscribed(subscription));
         Ok(())
@@ -166,10 +180,7 @@ impl MqttSession for Mqtt5Session {
             .unsubscribe_tracked(request.topic_filter.as_str())
             .await
             .map_err(map_client_error)?;
-        notice
-            .wait_completion_async()
-            .await
-            .map_err(|error| MqttError::protocol(error.to_string()))?;
+        wait_for_ack(notice.wait_completion_async(), "unsubscribe").await?;
         self.channels
             .report_published(MqttSessionEvent::Unsubscribed(request));
         Ok(())
@@ -186,6 +197,17 @@ impl MqttSession for Mqtt5Session {
     fn incoming(&mut self) -> BoxStream<'static, Result<IncomingMessage, MqttError>> {
         self.channels.incoming_stream()
     }
+}
+
+async fn wait_for_ack<F, E>(future: F, operation: &'static str) -> MqttResult<()>
+where
+    F: Future<Output = Result<(), E>>,
+    E: std::fmt::Display,
+{
+    timeout(CLIENT_ACK_TIMEOUT, future)
+        .await
+        .map_err(|_| MqttError::protocol(format!("{operation} timed out")))?
+        .map_err(|error| MqttError::protocol(error.to_string()))
 }
 
 async fn run_loop(
