@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::sync::Arc;
 
 use crate::{
@@ -9,9 +10,15 @@ use crate::{
     SettingsPersistenceEvent, SettingsPersistenceWorker, StartupState,
 };
 
+mod incoming_plugins;
 mod plugin_helpers;
 mod plugins;
 mod scripting;
+
+const APP_COMMAND_CAPACITY: usize = 256;
+const APP_EVENT_CAPACITY: usize = 256;
+const PLUGIN_SAVE_PAYLOAD_CAPACITY: usize = 1;
+const PUMP_BUDGET: usize = 64;
 
 #[derive(Debug)]
 pub struct AppRuntime {
@@ -25,7 +32,9 @@ pub struct AppRuntime {
     history_worker: Option<HistoryPersistenceWorker>,
     migration_worker: Option<MigrationPersistenceWorker>,
     plugin_hooks: Arc<dyn PluginHookExecutor>,
+    incoming_plugin_worker: Option<incoming_plugins::IncomingPluginWorker>,
     plugin_installer: Option<Arc<dyn PluginInstaller>>,
+    pending_plugin_save_payloads: VecDeque<crate::PluginSavePayload>,
     settings_worker: Option<SettingsPersistenceWorker>,
     scripting_worker: Option<ScriptingWorker>,
     shutdown_requested: bool,
@@ -45,8 +54,8 @@ impl AppRuntime {
     }
 
     fn with_model(model: AppModel) -> Self {
-        let (command_sender, command_receiver) = flume::unbounded();
-        let (event_sender, event_receiver) = flume::unbounded();
+        let (command_sender, command_receiver) = flume::bounded(APP_COMMAND_CAPACITY);
+        let (event_sender, event_receiver) = flume::bounded(APP_EVENT_CAPACITY);
         let app_event_sender = AppEventSender::new(event_sender);
         Self {
             model,
@@ -59,7 +68,9 @@ impl AppRuntime {
             history_worker: None,
             migration_worker: None,
             plugin_hooks: Arc::new(NoopPluginHookExecutor),
+            incoming_plugin_worker: None,
             plugin_installer: None,
+            pending_plugin_save_payloads: VecDeque::new(),
             settings_worker: None,
             scripting_worker: None,
             shutdown_requested: false,
@@ -91,11 +102,19 @@ impl AppRuntime {
     }
 
     pub fn attach_plugin_hook_executor(&mut self, executor: impl PluginHookExecutor) {
-        self.plugin_hooks = Arc::new(executor);
+        let executor: Arc<dyn PluginHookExecutor> = Arc::new(executor);
+        self.incoming_plugin_worker = Some(incoming_plugins::IncomingPluginWorker::start(
+            executor.clone(),
+        ));
+        self.plugin_hooks = executor;
     }
 
     pub fn attach_plugin_installer(&mut self, installer: impl PluginInstaller) {
         self.plugin_installer = Some(Arc::new(installer));
+    }
+
+    pub fn take_plugin_save_payload(&mut self) -> Option<crate::PluginSavePayload> {
+        self.pending_plugin_save_payloads.pop_front()
     }
 
     pub fn attach_settings_worker(&mut self, worker: SettingsPersistenceWorker) {
@@ -115,52 +134,99 @@ impl AppRuntime {
     pub fn pump(&mut self) -> PumpReport {
         let before = self.model.snapshot().clone();
         let mut report = PumpReport::default();
+        let mut event_budget = if self.command_receiver.is_empty() {
+            PUMP_BUDGET
+        } else {
+            PUMP_BUDGET - 1
+        };
 
-        while let Some(event) = self.try_recv_mqtt_event() {
-            let Some((event, incoming_diagnostics)) = self.apply_incoming_hooks(event) else {
-                report.events_processed += 1;
-                continue;
+        while event_budget > 0 {
+            let Some(result) = self.try_recv_incoming_hook_result() else {
+                break;
             };
-            let refresh_detail = matches!(event, crate::MqttEvent::IncomingMessage(_));
-            self.dispatch_history_for_mqtt_event(&event);
-            self.model.apply_event(AppEvent::Mqtt(event));
-            self.append_incoming_diagnostics(incoming_diagnostics);
-            if refresh_detail {
-                self.refresh_message_detail();
-                self.refresh_plugin_windows();
+            if let Some(event) = result.event {
+                self.apply_incoming_mqtt_event(event, result.diagnostics);
+            } else {
+                self.emit_incoming_plugin_diagnostics(result.diagnostics);
             }
-            self.dispatch_dirty_workbenches();
             report.events_processed += 1;
+            event_budget -= 1;
+        }
+
+        while event_budget > 0 {
+            let Some(event) = self.try_recv_mqtt_event() else {
+                break;
+            };
+            let incoming = match self.queue_incoming_hook_job(&event) {
+                plugins::IncomingPluginDispatch::Queued
+                | plugins::IncomingPluginDispatch::Rejected => {
+                    report.events_processed += 1;
+                    event_budget -= 1;
+                    continue;
+                }
+                plugins::IncomingPluginDispatch::Continue { event, diagnostics } => {
+                    Some((event, diagnostics))
+                }
+                plugins::IncomingPluginDispatch::NotApplicable => self.apply_incoming_hooks(event),
+            };
+            if let Some((event, diagnostics)) = incoming {
+                self.apply_incoming_mqtt_event(event, diagnostics);
+            }
+            report.events_processed += 1;
+            event_budget -= 1;
         }
 
         self.broker_worker.poll();
 
-        while let Some(event) = self.try_recv_history_event() {
+        while event_budget > 0 {
+            let Some(event) = self.try_recv_history_event() else {
+                break;
+            };
             self.apply_history_event(event);
             report.events_processed += 1;
+            event_budget -= 1;
         }
 
-        while let Some(event) = self.try_recv_settings_event() {
+        while event_budget > 0 {
+            let Some(event) = self.try_recv_settings_event() else {
+                break;
+            };
             self.apply_settings_event(event);
             report.events_processed += 1;
+            event_budget -= 1;
         }
 
-        while let Some(event) = self.try_recv_scripting_event() {
+        while event_budget > 0 {
+            let Some(event) = self.try_recv_scripting_event() else {
+                break;
+            };
             self.apply_scripting_event(event);
             report.events_processed += 1;
+            event_budget -= 1;
         }
 
-        while let Some(event) = self.try_recv_migration_event() {
+        while event_budget > 0 {
+            let Some(event) = self.try_recv_migration_event() else {
+                break;
+            };
             self.model.apply_event(event);
             report.events_processed += 1;
+            event_budget -= 1;
         }
 
-        while let Ok(event) = self.event_receiver.try_recv() {
+        while event_budget > 0 {
+            let Ok(event) = self.event_receiver.try_recv() else {
+                break;
+            };
             self.model.apply_event(event);
             report.events_processed += 1;
+            event_budget -= 1;
         }
 
-        while let Ok(command) = self.command_receiver.try_recv() {
+        while report.commands_processed + report.events_processed < PUMP_BUDGET {
+            let Ok(command) = self.command_receiver.try_recv() else {
+                break;
+            };
             let command_before = self.model.snapshot().clone();
             let should_persist_settings = (matches!(command, AppCommand::SaveGlobalSettings)
                 && self.model.snapshot().global_settings.dirty)
@@ -170,6 +236,9 @@ impl AppRuntime {
                 );
             if matches!(command, AppCommand::Shutdown) {
                 self.shutdown_requested = true;
+                if let Some(worker) = &self.incoming_plugin_worker {
+                    worker.cancel();
+                }
             }
             self.forward_mqtt_commands(&command);
             self.forward_broker_command(&command);
@@ -207,8 +276,52 @@ impl AppRuntime {
         }
 
         report.snapshot_changed = before != *self.model.snapshot();
+        report.backlog_remaining = !self.command_receiver.is_empty()
+            || !self.event_receiver.is_empty()
+            || self
+                .incoming_plugin_worker
+                .as_ref()
+                .is_some_and(incoming_plugins::IncomingPluginWorker::has_pending_results)
+            || self
+                .mqtt_service
+                .as_ref()
+                .is_some_and(MqttService::has_pending_events);
         report.shutdown_requested = self.shutdown_requested;
         report
+    }
+
+    fn apply_incoming_mqtt_event(
+        &mut self,
+        event: crate::MqttEvent,
+        diagnostics: Vec<crate::MessageDiagnosticRow>,
+    ) {
+        self.dispatch_history_for_mqtt_event(&event);
+        self.model.apply_event(AppEvent::Mqtt(event));
+        self.append_incoming_diagnostics(diagnostics);
+        self.refresh_message_detail();
+        self.refresh_plugin_windows();
+        self.dispatch_dirty_workbenches();
+    }
+
+    fn emit_incoming_plugin_diagnostics(&self, diagnostics: Vec<crate::MessageDiagnosticRow>) {
+        let message = if diagnostics.is_empty() {
+            "Incoming plugin processing dropped a message.".to_owned()
+        } else {
+            diagnostics
+                .into_iter()
+                .map(|diagnostic| crate::redact_sensitive(&diagnostic.message))
+                .collect::<Vec<_>>()
+                .join("; ")
+        };
+        let _ = self
+            .event_sender
+            .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(message)));
+    }
+
+    fn try_recv_incoming_hook_result(&self) -> Option<incoming_plugins::IncomingPluginResult> {
+        self.incoming_plugin_worker
+            .as_ref()
+            .and_then(incoming_plugins::IncomingPluginWorker::try_recv)
     }
 
     fn try_recv_mqtt_event(&self) -> Option<crate::MqttEvent> {
@@ -668,6 +781,7 @@ pub struct PumpReport {
     pub commands_processed: usize,
     pub events_processed: usize,
     pub snapshot_changed: bool,
+    pub backlog_remaining: bool,
     pub shutdown_requested: bool,
 }
 
@@ -694,6 +808,34 @@ mod tests {
         assert_eq!(report.commands_processed, 1);
         assert!(report.snapshot_changed);
         assert_eq!(runtime.snapshot().theme_mode, ThemeMode::Dark);
+    }
+
+    #[test]
+    fn pump_bounds_work_and_reserves_command_capacity() {
+        let mut runtime = AppRuntime::new();
+        for index in 0..super::PUMP_BUDGET {
+            runtime
+                .event_sender()
+                .emit(AppEvent::DiagnosticRaised(Diagnostic::info(format!(
+                    "event-{index}"
+                ))))
+                .unwrap();
+        }
+        runtime
+            .command_sender()
+            .send(AppCommand::SetThemeMode(ThemeMode::Dark))
+            .unwrap();
+
+        let first = runtime.pump();
+
+        assert_eq!(first.events_processed, super::PUMP_BUDGET - 1);
+        assert_eq!(first.commands_processed, 1);
+        assert!(first.backlog_remaining);
+        assert_eq!(runtime.snapshot().theme_mode, ThemeMode::Dark);
+
+        let second = runtime.pump();
+        assert_eq!(second.events_processed, 1);
+        assert!(!second.backlog_remaining);
     }
 
     #[test]

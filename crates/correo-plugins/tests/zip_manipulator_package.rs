@@ -36,7 +36,7 @@ fn zip_manipulator_wasm_package_declares_minimal_capabilities_and_runs_hook() {
     }
     assert!(manifest.config_schema.is_some());
 
-    let mut registry = PluginRegistry::new(Version::new(0, 1, 0)).unwrap();
+    let mut registry = PluginRegistry::new(Version::new(1, 0, 0)).unwrap();
     let plugin = registry.register_package(package).unwrap();
 
     let mut request = DetailByteTransformRequest::new(b"payload".to_vec());

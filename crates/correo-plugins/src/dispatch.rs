@@ -2,8 +2,12 @@ use crate::runtime::WasmSandboxLimits;
 use crate::{
     DetailByteTransformRequest, DetailByteTransformResponse, DetailFormatterRequest,
     DetailFormatterResponse, HookDispatchError, HookKind, IncomingMessageTransformRequest,
-    IncomingMessageTransformResponse, MessageValidatorRequest, MessageValidatorResponse,
-    OutgoingMessageTransformRequest, OutgoingMessageTransformResponse, VersionedDto, ABI_VERSION,
+    IncomingMessageTransformResponse, IncomingTransportMessageTransformRequest,
+    IncomingTransportMessageTransformResponse, MessageValidatorRequest, MessageValidatorResponse,
+    OutgoingMessageTransformRequest, OutgoingMessageTransformResponse,
+    OutgoingTransportMessageTransformRequest, OutgoingTransportMessageTransformResponse,
+    TransportMessageValidatorRequest, TransportMessageValidatorResponse, VersionedDto, ABI_VERSION,
+    ABI_VERSION_V2,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -15,6 +19,9 @@ pub enum HookInvocation {
     MessageValidator(MessageValidatorRequest),
     DetailByteTransform(DetailByteTransformRequest),
     DetailFormatter(DetailFormatterRequest),
+    OutgoingTransportMessageTransform(OutgoingTransportMessageTransformRequest),
+    IncomingTransportMessageTransform(IncomingTransportMessageTransformRequest),
+    TransportMessageValidator(TransportMessageValidatorRequest),
 }
 
 impl HookInvocation {
@@ -25,6 +32,22 @@ impl HookInvocation {
             Self::MessageValidator(_) => HookKind::MessageValidator,
             Self::DetailByteTransform(_) => HookKind::DetailByteTransform,
             Self::DetailFormatter(_) => HookKind::DetailFormatter,
+            Self::OutgoingTransportMessageTransform(_) => HookKind::OutgoingMessageTransform,
+            Self::IncomingTransportMessageTransform(_) => HookKind::IncomingMessageTransform,
+            Self::TransportMessageValidator(_) => HookKind::MessageValidator,
+        }
+    }
+
+    pub fn abi_version(&self) -> u16 {
+        match self {
+            Self::OutgoingMessageTransform(_)
+            | Self::IncomingMessageTransform(_)
+            | Self::MessageValidator(_)
+            | Self::DetailByteTransform(_)
+            | Self::DetailFormatter(_) => ABI_VERSION,
+            Self::OutgoingTransportMessageTransform(_)
+            | Self::IncomingTransportMessageTransform(_)
+            | Self::TransportMessageValidator(_) => ABI_VERSION_V2,
         }
     }
 
@@ -38,6 +61,13 @@ impl HookInvocation {
             Self::MessageValidator(request) => serialize_request(request, self.hook())?,
             Self::DetailByteTransform(request) => serialize_request(request, self.hook())?,
             Self::DetailFormatter(request) => serialize_request(request, self.hook())?,
+            Self::OutgoingTransportMessageTransform(request) => {
+                serialize_request(request, self.hook())?
+            }
+            Self::IncomingTransportMessageTransform(request) => {
+                serialize_request(request, self.hook())?
+            }
+            Self::TransportMessageValidator(request) => serialize_request(request, self.hook())?,
         };
         ensure_payload_size(bytes.len(), limits.max_payload_bytes, self.hook())?;
         Ok(bytes)
@@ -70,6 +100,18 @@ impl HookInvocation {
                 parse_response::<DetailFormatterResponse>(&bytes, self.hook())
                     .map(HookOutput::DetailFormatter)
             }
+            Self::OutgoingTransportMessageTransform(_) => {
+                parse_response_v2::<OutgoingTransportMessageTransformResponse>(&bytes, self.hook())
+                    .map(HookOutput::OutgoingTransportMessageTransform)
+            }
+            Self::IncomingTransportMessageTransform(_) => {
+                parse_response_v2::<IncomingTransportMessageTransformResponse>(&bytes, self.hook())
+                    .map(HookOutput::IncomingTransportMessageTransform)
+            }
+            Self::TransportMessageValidator(_) => {
+                parse_response_v2::<TransportMessageValidatorResponse>(&bytes, self.hook())
+                    .map(HookOutput::TransportMessageValidator)
+            }
         }
     }
 }
@@ -81,6 +123,9 @@ pub enum HookOutput {
     MessageValidator(MessageValidatorResponse),
     DetailByteTransform(DetailByteTransformResponse),
     DetailFormatter(DetailFormatterResponse),
+    OutgoingTransportMessageTransform(OutgoingTransportMessageTransformResponse),
+    IncomingTransportMessageTransform(IncomingTransportMessageTransformResponse),
+    TransportMessageValidator(TransportMessageValidatorResponse),
 }
 
 impl HookOutput {
@@ -91,6 +136,9 @@ impl HookOutput {
             Self::MessageValidator(_) => HookKind::MessageValidator,
             Self::DetailByteTransform(_) => HookKind::DetailByteTransform,
             Self::DetailFormatter(_) => HookKind::DetailFormatter,
+            Self::OutgoingTransportMessageTransform(_) => HookKind::OutgoingMessageTransform,
+            Self::IncomingTransportMessageTransform(_) => HookKind::IncomingMessageTransform,
+            Self::TransportMessageValidator(_) => HookKind::MessageValidator,
         }
     }
 }
@@ -117,6 +165,25 @@ where
             hook,
             found: response.abi_version(),
             expected: ABI_VERSION,
+        })
+    }
+}
+
+fn parse_response_v2<T>(bytes: &[u8], hook: HookKind) -> Result<T, HookDispatchError>
+where
+    T: DeserializeOwned + VersionedDto,
+{
+    let text = String::from_utf8(bytes.to_vec())
+        .map_err(|source| HookDispatchError::ResponseUtf8 { hook, source })?;
+    let response = serde_json::from_str::<T>(&text)
+        .map_err(|source| HookDispatchError::DecodeResponse { hook, source })?;
+    if response.abi_version() == ABI_VERSION_V2 {
+        Ok(response)
+    } else {
+        Err(HookDispatchError::AbiVersionMismatch {
+            hook,
+            found: response.abi_version(),
+            expected: ABI_VERSION_V2,
         })
     }
 }

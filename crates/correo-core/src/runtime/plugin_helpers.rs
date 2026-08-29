@@ -1,8 +1,11 @@
 use correo_mqtt::{IncomingMessage, PublishRequest, Qos, TopicName};
+use serde_json::json;
 
+use crate::mqtt::{message_from_incoming, message_from_publish};
 use crate::{
-    FormattedMessageDetail, MessageDetailFormat, MessageDiagnosticRow, PluginDiagnosticSeverity,
-    PluginHookKind, PluginMessage, QosLevel,
+    DeliveryGuarantee, DeliverySemantics, FormattedMessageDetail, MessageDetailFormat,
+    MessageDiagnosticRow, NamespacedName, PluginDiagnosticSeverity, PluginHookKind, PluginMessage,
+    PluginTransportMessage, QosLevel, TransportCapabilities, TransportCapability,
 };
 
 #[derive(Debug, Clone)]
@@ -40,6 +43,93 @@ pub(super) fn incoming_from_plugin_message(
     original.qos = mqtt_qos(message.qos);
     original.retain = message.retained;
     Ok(original)
+}
+
+pub(super) fn plugin_transport_message_from_publish(
+    request: &PublishRequest,
+    message: PluginMessage,
+) -> PluginTransportMessage {
+    merge_plugin_message(message_from_publish(request), message)
+}
+
+pub(super) fn plugin_transport_message_from_incoming(
+    incoming: &IncomingMessage,
+    message: PluginMessage,
+) -> PluginTransportMessage {
+    merge_plugin_message(message_from_incoming(incoming), message)
+}
+
+pub(super) fn plugin_message_from_transport(
+    input: PluginTransportMessage,
+    retained_when_absent: bool,
+    capabilities: &TransportCapabilities,
+) -> Result<PluginMessage, String> {
+    let retained_capability = TransportCapability::new("mqtt.retained")
+        .expect("MQTT transport capabilities are namespaced");
+    let retained = match input.message.metadata.get_value("mqtt.retained") {
+        Some(serde_json::Value::Bool(value))
+            if capabilities
+                .iter()
+                .any(|capability| capability == &retained_capability) =>
+        {
+            *value
+        }
+        Some(serde_json::Value::Bool(_)) => {
+            return Err(
+                "transport metadata mqtt.retained is not mutable for this connection".to_owned(),
+            )
+        }
+        Some(_) => return Err("transport metadata mqtt.retained must be a boolean".to_owned()),
+        None => retained_when_absent,
+    };
+    Ok(PluginMessage {
+        topic: input.message.address,
+        payload: input.message.body,
+        qos: match input.message.delivery.guarantee {
+            DeliveryGuarantee::AtMostOnce => QosLevel::Zero,
+            DeliveryGuarantee::AtLeastOnce => QosLevel::One,
+            DeliveryGuarantee::ExactlyOnce => QosLevel::Two,
+        },
+        retained,
+    })
+}
+
+fn merge_plugin_message(
+    mut message: crate::MessageEnvelope,
+    plugin: PluginMessage,
+) -> PluginTransportMessage {
+    message.address = plugin.topic;
+    message.body = plugin.payload;
+    message.delivery = DeliverySemantics::new(match plugin.qos {
+        QosLevel::Zero => DeliveryGuarantee::AtMostOnce,
+        QosLevel::One => DeliveryGuarantee::AtLeastOnce,
+        QosLevel::Two => DeliveryGuarantee::ExactlyOnce,
+    });
+    message.metadata.insert(
+        mqtt_metadata_key("mqtt.qos"),
+        json!(match plugin.qos {
+            QosLevel::Zero => "at_most_once",
+            QosLevel::One => "at_least_once",
+            QosLevel::Two => "exactly_once",
+        }),
+    );
+    message
+        .metadata
+        .insert(mqtt_metadata_key("mqtt.retained"), json!(plugin.retained));
+    let mut capabilities = TransportCapabilities::default();
+    capabilities.insert(
+        TransportCapability::new("mqtt.retained")
+            .expect("MQTT transport capabilities are namespaced"),
+    );
+    PluginTransportMessage {
+        message,
+        consumer: None,
+        capabilities,
+    }
+}
+
+fn mqtt_metadata_key(value: &'static str) -> NamespacedName {
+    NamespacedName::new(value).expect("MQTT metadata keys are namespaced")
 }
 
 pub(super) fn message_diagnostic(

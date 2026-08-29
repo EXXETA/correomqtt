@@ -22,12 +22,102 @@ fn package_loader_accepts_mvp_layout_with_optional_assets() {
 }
 
 #[test]
+fn package_abi_defaults_to_v1_and_selects_v2() {
+    let (_legacy_dir, legacy) = write_package(all_hooks_manifest(), minimal_wasm(), false);
+    assert_eq!(legacy.abi(), correo_plugins::PluginAbi::V1);
+
+    let v2_manifest = all_hooks_manifest().replace(
+        "manifest_version = 1",
+        "manifest_version = 1\nabi_version = 2",
+    );
+    let (_v2_dir, v2) = write_package(v2_manifest, minimal_wasm(), false);
+    assert_eq!(v2.abi(), correo_plugins::PluginAbi::V2);
+}
+
+#[test]
+fn package_abi_rejects_malformed_and_unsupported_selectors() {
+    for (selector, expected) in [
+        (
+            "abi_version = \"two\"",
+            "plugin package abi_version is malformed",
+        ),
+        (
+            "abi_version = 3",
+            "plugin package abi_version 3 is unsupported",
+        ),
+    ] {
+        let dir = TempDir::new().unwrap();
+        let manifest = all_hooks_manifest().replace(
+            "manifest_version = 1",
+            &format!("manifest_version = 1\n{selector}"),
+        );
+        fs::write(dir.path().join("plugin.toml"), manifest).unwrap();
+        fs::write(dir.path().join("plugin.wasm"), minimal_wasm()).unwrap();
+        assert_eq!(
+            PluginPackage::load(dir.path()).unwrap_err().to_string(),
+            expected
+        );
+    }
+}
+
+#[test]
+fn v2_package_dispatches_a_v2_wasm_response_and_rejects_v1_invocation() {
+    let manifest = message_validator_manifest().replace(
+        "manifest_version = 1",
+        "manifest_version = 1\nabi_version = 2",
+    );
+    let response = correo_plugins::TransportMessageValidatorResponse {
+        abi_version: correo_plugins::ABI_VERSION_V2,
+        result: correo_plugins::ValidationResultDto::Valid,
+    };
+    let (_dir, package) = write_package(
+        manifest,
+        static_response_validator_wasm(&serde_json::to_vec(&response).unwrap(), 1),
+        false,
+    );
+    let runtime = WasmtimePluginRuntime::default();
+    let plugin = runtime
+        .compile_package(package, &Version::new(1, 0, 0))
+        .unwrap();
+    let v2 = correo_plugins::HookInvocation::TransportMessageValidator(
+        correo_plugins::TransportMessageValidatorRequest {
+            abi_version: correo_plugins::ABI_VERSION_V2,
+            context: Default::default(),
+            config: serde_json::Value::Null,
+            input: correo_plugins::TransportHookInputDto {
+                message: correo_plugins::TransportMessageDto {
+                    address: "orders.created".to_owned(),
+                    body: vec![1, 2, 3],
+                    delivery: correo_plugins::DeliveryGuaranteeDto::AtLeastOnce,
+                    metadata: Default::default(),
+                },
+                consumer: None,
+                capabilities: Default::default(),
+            },
+        },
+    );
+    assert!(matches!(
+        plugin.dispatch(v2).unwrap(),
+        correo_plugins::HookOutput::TransportMessageValidator(_)
+    ));
+    let error = plugin.dispatch(message_validator_invocation()).unwrap_err();
+    assert!(matches!(
+        error,
+        HookDispatchError::AbiVersionMismatch {
+            expected: 2,
+            found: 1,
+            ..
+        }
+    ));
+}
+
+#[test]
 fn registry_dispatches_noop_fixture_for_every_supported_hook() {
     let fixtures = WasmFixtureHarness::new(fixture_root())
         .load_all_noop_fixtures()
         .unwrap();
     let (_dir, package) = write_package(all_hooks_manifest(), noop_fixture_wasm(&fixtures), false);
-    let mut registry = PluginRegistry::new(Version::new(0, 1, 0)).unwrap();
+    let mut registry = PluginRegistry::new(Version::new(1, 0, 0)).unwrap();
     let plugin = registry.register_package(package).unwrap();
 
     for fixture in fixtures {
@@ -39,7 +129,7 @@ fn registry_dispatches_noop_fixture_for_every_supported_hook() {
 #[test]
 fn registry_rejects_manifest_incompatible_with_current_app_version() {
     let (_dir, package) = write_package(incompatible_manifest(), minimal_wasm(), false);
-    let mut registry = PluginRegistry::new(Version::new(0, 1, 0)).unwrap();
+    let mut registry = PluginRegistry::new(Version::new(1, 0, 0)).unwrap();
     let error = registry.register_package(package).unwrap_err();
 
     assert!(matches!(
@@ -59,7 +149,7 @@ fn registry_rejects_unsupported_host_capabilities() {
         minimal_wasm(),
         false,
     );
-    let mut registry = PluginRegistry::new(Version::new(0, 1, 0)).unwrap();
+    let mut registry = PluginRegistry::new(Version::new(1, 0, 0)).unwrap();
     let error = registry.register_package(package).unwrap_err();
 
     assert!(matches!(
@@ -74,7 +164,7 @@ fn registry_rejects_unsupported_host_capabilities() {
 #[test]
 fn registry_rejects_wasm_imports_before_plugin_runs() {
     let (_dir, package) = write_package(all_hooks_manifest(), importing_wasm(), false);
-    let mut registry = PluginRegistry::new(Version::new(0, 1, 0)).unwrap();
+    let mut registry = PluginRegistry::new(Version::new(1, 0, 0)).unwrap();
     let error = registry.register_package(package).unwrap_err();
 
     assert!(matches!(
@@ -86,7 +176,7 @@ fn registry_rejects_wasm_imports_before_plugin_runs() {
 #[test]
 fn registry_rejects_missing_entrypoint_export_before_plugin_runs() {
     let (_dir, package) = write_package(all_hooks_manifest(), minimal_wasm(), false);
-    let mut registry = PluginRegistry::new(Version::new(0, 1, 0)).unwrap();
+    let mut registry = PluginRegistry::new(Version::new(1, 0, 0)).unwrap();
     let error = registry.register_package(package).unwrap_err();
 
     assert!(matches!(
@@ -97,7 +187,7 @@ fn registry_rejects_missing_entrypoint_export_before_plugin_runs() {
 
 #[test]
 fn registry_rejects_duplicate_plugin_ids() {
-    let mut registry = PluginRegistry::new(Version::new(0, 1, 0)).unwrap();
+    let mut registry = PluginRegistry::new(Version::new(1, 0, 0)).unwrap();
     let (_first_dir, first) = write_package(message_validator_manifest(), validator_wasm(), false);
     let (_second_dir, second) =
         write_package(message_validator_manifest(), validator_wasm(), false);
@@ -121,7 +211,7 @@ fn sandbox_fuel_limit_isolated_as_typed_dispatch_error() {
         false,
     );
     let plugin = runtime
-        .compile_package(package, &Version::new(0, 1, 0))
+        .compile_package(package, &Version::new(1, 0, 0))
         .unwrap();
 
     let error = plugin.dispatch(message_validator_invocation()).unwrap_err();
@@ -148,7 +238,7 @@ fn cancellation_token_interrupts_running_hook() {
         false,
     );
     let plugin = runtime
-        .compile_package(package, &Version::new(0, 1, 0))
+        .compile_package(package, &Version::new(1, 0, 0))
         .unwrap();
 
     let worker_token = token.clone();
@@ -174,7 +264,7 @@ fn registry_rejects_initial_memory_over_limit() {
         ..Default::default()
     };
     let runtime = WasmtimePluginRuntime::new(limits).unwrap();
-    let mut registry = PluginRegistry::with_runtime(Version::new(0, 1, 0), runtime);
+    let mut registry = PluginRegistry::with_runtime(Version::new(1, 0, 0), runtime);
     let (_dir, package) = write_package(
         message_validator_manifest(),
         two_page_validator_wasm(),
@@ -217,7 +307,7 @@ fn all_hooks_manifest() -> String {
             ),
             (HookKind::DetailFormatter, "correo_detail_formatter"),
         ],
-        ">=0.1.0, <1.0.0",
+        ">=1.0.0, <2.0.0",
         None,
     )
 }
@@ -225,7 +315,7 @@ fn all_hooks_manifest() -> String {
 fn message_validator_manifest() -> String {
     manifest_for(
         &[(HookKind::MessageValidator, "correo_message_validator")],
-        ">=0.1.0, <1.0.0",
+        ">=1.0.0, <2.0.0",
         None,
     )
 }
@@ -241,7 +331,7 @@ fn incompatible_manifest() -> String {
 fn host_capability_manifest(surface: HostSurface) -> String {
     manifest_for(
         &[(HookKind::MessageValidator, "correo_message_validator")],
-        ">=0.1.0, <1.0.0",
+        ">=1.0.0, <2.0.0",
         Some(surface),
     )
 }
@@ -355,7 +445,6 @@ fn importing_wasm() -> Vec<u8> {
     )
     .unwrap()
 }
-
 fn static_response_validator_wasm(response: &[u8], pages: u32) -> Vec<u8> {
     let mut wat = allocator_module(pages);
     wat.push_str(&format!(

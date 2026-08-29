@@ -22,6 +22,17 @@ impl HookKind {
         Self::PayloadHighlighter,
     ];
 
+    /// Hooks that go through the WASM dispatch ABI. `PayloadHighlighter` is a
+    /// built-in host capability without a WASM invocation and therefore has
+    /// no noop fixture.
+    pub const WASM_DISPATCHED: [Self; 5] = [
+        Self::OutgoingMessageTransform,
+        Self::IncomingMessageTransform,
+        Self::MessageValidator,
+        Self::DetailByteTransform,
+        Self::DetailFormatter,
+    ];
+
     pub fn fixture_file_name(self) -> &'static str {
         match self {
             Self::OutgoingMessageTransform => "outgoing_message_transform.json",

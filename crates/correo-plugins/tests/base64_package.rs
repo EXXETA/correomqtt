@@ -38,7 +38,7 @@ fn base64_wasm_package_declares_minimal_capabilities_and_runs_supported_hooks() 
     }
     assert!(manifest.config_schema.is_some());
 
-    let mut registry = PluginRegistry::new(Version::new(0, 1, 0)).unwrap();
+    let mut registry = PluginRegistry::new(Version::new(1, 0, 0)).unwrap();
     let plugin = registry.register_package(package).unwrap();
 
     let outgoing = plugin
