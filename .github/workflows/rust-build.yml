@@ -76,6 +76,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
+            libdbus-1-dev \
             libgl1-mesa-dev \
             libwayland-dev \
             libx11-dev \
