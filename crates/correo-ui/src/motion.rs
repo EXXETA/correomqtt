@@ -2,7 +2,6 @@ use std::hash::Hash;
 
 const TILE_HOVER_SECONDS: f32 = 0.12;
 const TILE_SELECT_SECONDS: f32 = 0.18;
-const FLYOUT_SECONDS: f32 = 0.22;
 
 pub(crate) fn apply_preference(ctx: &egui::Context, reduce_motion: bool) {
     if !reduce_motion {
@@ -34,53 +33,6 @@ pub(crate) fn tile_fill(
     );
 
     lerp_color(lerp_color(base, selected, selected_t), hover, hover_t)
-}
-
-pub(crate) fn flyout_progress(
-    ctx: &egui::Context,
-    id_source: impl Hash,
-    open: bool,
-) -> Option<f32> {
-    let progress = bool_progress(
-        ctx,
-        egui::Id::new(("flyout-motion", id_source)),
-        open,
-        FLYOUT_SECONDS,
-    );
-    if open || progress > 0.01 {
-        Some(progress)
-    } else {
-        None
-    }
-}
-
-pub(crate) fn finish_flyout_closed(ctx: &egui::Context, id_source: impl Hash) {
-    let _ = ctx.animate_bool_with_time_and_easing(
-        egui::Id::new(("flyout-motion", id_source)),
-        false,
-        0.0,
-        ease_out_quart,
-    );
-}
-
-pub(crate) fn flyout_panel_rect(
-    scrim_rect: egui::Rect,
-    panel_width: f32,
-    progress: f32,
-) -> egui::Rect {
-    let width = panel_width.min(scrim_rect.width()) * progress.clamp(0.0, 1.0);
-    egui::Rect::from_min_size(
-        scrim_rect.left_top(),
-        egui::vec2(width, scrim_rect.height()),
-    )
-}
-
-pub(crate) fn scrim_color(max_alpha: u8, progress: f32) -> egui::Color32 {
-    egui::Color32::from_black_alpha((f32::from(max_alpha) * progress).round() as u8)
-}
-
-pub(crate) fn content_opacity(progress: f32) -> f32 {
-    progress.clamp(0.0, 1.0)
 }
 
 fn bool_progress(ctx: &egui::Context, id: egui::Id, target: bool, seconds: f32) -> f32 {

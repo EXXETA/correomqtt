@@ -1,14 +1,14 @@
-use correo_core::{sample_snapshot, AppCommandSender, AppSnapshot, ThemeMode, Workspace};
+use correo_core::{sample_snapshot, AppCommandSender, AppSnapshot, ThemeMode};
 use correo_style::{apply_theme, layout, tokens, ThemeTokens};
 use egui::{CentralPanel, Frame, SidePanel, TopBottomPanel};
-use egui_phosphor::regular;
 
 use crate::{
-    command_bar, connection_launcher, i18n::I18n, icons, migration_recovery, motion, nav,
-    responsive, toasts, transfer_wizard, widgets, workspace, PayloadHighlighter,
+    i18n::I18n, icons, migration_recovery, motion, nav, responsive, toasts, transfer_wizard,
+    widgets::paint_pane_divider, workspace, PayloadHighlighter,
 };
 
 pub const THEME_KEY: &str = "correo.theme-mode";
+const SIDEBAR_DIVIDER_HIT_WIDTH: f32 = 10.0;
 
 pub struct CorreoUi {
     command_sender: AppCommandSender,
@@ -110,21 +110,35 @@ impl CorreoUi {
         if snapshot.migration_recovery.blocks_normal_shell() {
             TopBottomPanel::top("correo-recovery-command")
                 .exact_height(layout::HEADER_HEIGHT)
-                .frame(top_frame(tokens))
+                .frame(Frame::NONE.fill(chrome_bg(tokens)))
                 .show(context, |ui| {
                     migration_recovery::top_bar(ui, &snapshot.migration_recovery);
                 });
 
-            SidePanel::left("correo-recovery-context")
-                .default_width(layout::RECOVERY_CONTEXT_DEFAULT_WIDTH)
-                .width_range(
-                    layout::RECOVERY_CONTEXT_MIN_WIDTH..=layout::RECOVERY_CONTEXT_MAX_WIDTH,
-                )
-                .resizable(true)
+            let recovery_width = stored_panel_width(
+                context,
+                "recovery-context-width",
+                layout::RECOVERY_CONTEXT_DEFAULT_WIDTH,
+                layout::RECOVERY_CONTEXT_MIN_WIDTH,
+                layout::RECOVERY_CONTEXT_MAX_WIDTH,
+            );
+            let recovery_panel = SidePanel::left("correo-recovery-context")
+                .exact_width(recovery_width)
+                .resizable(false)
+                .show_separator_line(false)
                 .frame(sidebar_frame(tokens))
                 .show(context, |ui| {
                     migration_recovery::context_panel(ui, &snapshot.migration_recovery, tokens);
                 });
+            resizable_panel_divider(
+                context,
+                recovery_panel.response.rect,
+                "recovery-context-divider",
+                "recovery-context-width",
+                layout::RECOVERY_CONTEXT_MIN_WIDTH,
+                layout::RECOVERY_CONTEXT_MAX_WIDTH,
+                tokens,
+            );
 
             CentralPanel::default()
                 .frame(central_frame(tokens))
@@ -134,12 +148,7 @@ impl CorreoUi {
             return;
         }
 
-        let header = TopBottomPanel::top("correo-command")
-            .exact_height(layout::HEADER_HEIGHT)
-            .frame(top_frame(tokens))
-            .show(context, |ui| {
-                command_bar::command_bar_title(ui, i18n);
-            });
+        macos_titlebar_spacer(context, tokens);
         let klingon_unlocked = self.klingon_language_visible(&snapshot);
 
         SidePanel::left("correo-rail")
@@ -150,70 +159,80 @@ impl CorreoUi {
                 nav::rail(ui, &snapshot, tokens, commands, i18n);
             });
 
-        let compact_connections_context =
-            responsive::connections_context_is_compact(context, snapshot.active_workspace);
-
-        if context_panel_visible(&snapshot) && !compact_connections_context {
-            if snapshot.active_workspace == Workspace::Connections {
-                SidePanel::left("correo-context")
-                    .default_width(layout::CONNECTION_FLYOUT_WIDTH)
-                    .width_range(
-                        layout::CONNECTION_SIDEBAR_MIN_WIDTH..=layout::CONNECTION_SIDEBAR_MAX_WIDTH,
-                    )
-                    .resizable(true)
-                    .frame(sidebar_frame(tokens))
-                    .show(context, |ui| {
-                        connection_launcher::panel(ui, &snapshot, tokens, commands, i18n);
-                    });
-            } else {
-                SidePanel::left("correo-context")
-                    .default_width(layout::SIDEBAR_DEFAULT_WIDTH)
-                    .width_range(layout::SIDEBAR_MIN_WIDTH..=layout::SIDEBAR_MAX_WIDTH)
-                    .resizable(true)
-                    .frame(sidebar_frame(tokens))
-                    .show(context, |ui| {
-                        workspace::sidebar(
-                            ui,
-                            &snapshot,
-                            snapshot.active_workspace,
-                            tokens,
-                            commands,
-                            i18n,
-                        );
-                    });
-            }
+        if responsive::toggle_sidebar_shortcut(context, snapshot.active_workspace) {
+            responsive::toggle_sidebar(context);
         }
-
+        let sidebar_visible = responsive::workspace_has_sidebar(snapshot.active_workspace)
+            && responsive::sidebar_visible(context);
+        let sidebar_uses_exclusive_content = responsive::sidebar_uses_exclusive_content(context);
         let mut about_logo_triggered = false;
-        CentralPanel::default()
-            .frame(central_frame(tokens))
-            .show(context, |ui| {
-                workspace::show(
-                    ui,
-                    &snapshot,
+
+        if sidebar_uses_exclusive_content && sidebar_visible {
+            CentralPanel::default()
+                .frame(sidebar_frame(tokens))
+                .show(context, |ui| {
+                    workspace::sidebar(
+                        ui,
+                        &snapshot,
+                        snapshot.active_workspace,
+                        tokens,
+                        commands,
+                        i18n,
+                    );
+                });
+        } else {
+            let sidebar_width = stored_panel_width(
+                context,
+                "context-sidebar-width",
+                layout::SIDEBAR_DEFAULT_WIDTH,
+                layout::SIDEBAR_MIN_WIDTH,
+                layout::SIDEBAR_MAX_WIDTH,
+            );
+            let sidebar_panel = SidePanel::left("correo-context")
+                .exact_width(sidebar_width)
+                .resizable(false)
+                .show_separator_line(false)
+                .frame(sidebar_frame(tokens))
+                .show_animated(context, sidebar_visible, |ui| {
+                    workspace::sidebar(
+                        ui,
+                        &snapshot,
+                        snapshot.active_workspace,
+                        tokens,
+                        commands,
+                        i18n,
+                    );
+                });
+            if let Some(sidebar_panel) = sidebar_panel {
+                resizable_panel_divider(
+                    context,
+                    sidebar_panel.response.rect,
+                    "context-sidebar-divider",
+                    "context-sidebar-width",
+                    layout::SIDEBAR_MIN_WIDTH,
+                    layout::SIDEBAR_MAX_WIDTH,
                     tokens,
-                    commands,
-                    i18n,
-                    self.payload_highlighter.as_ref(),
-                    klingon_unlocked,
-                    &mut about_logo_triggered,
                 );
-            });
+            }
+
+            CentralPanel::default()
+                .frame(central_frame(tokens))
+                .show(context, |ui| {
+                    workspace::show(
+                        ui,
+                        &snapshot,
+                        tokens,
+                        commands,
+                        i18n,
+                        self.payload_highlighter.as_ref(),
+                        klingon_unlocked,
+                        &mut about_logo_triggered,
+                    );
+                });
+        }
         if about_logo_triggered {
             self.klingon_easter_egg_clicks = self.klingon_easter_egg_clicks.saturating_add(1);
         }
-        let klingon_unlocked = self.klingon_language_visible(&snapshot);
-        if compact_connections_context {
-            connection_flyout(context, &snapshot, tokens, commands, i18n);
-        }
-        command_bar::command_bar_controls(
-            context,
-            header.response.rect,
-            &snapshot,
-            commands,
-            i18n,
-            klingon_unlocked,
-        );
         transfer_wizard::show(
             context,
             &snapshot,
@@ -234,175 +253,6 @@ impl CorreoUi {
 
     fn klingon_language_visible(&self, snapshot: &AppSnapshot) -> bool {
         self.klingon_easter_egg_clicks >= 2 || snapshot.global_settings.language == "tlh"
-    }
-}
-
-fn context_panel_visible(snapshot: &AppSnapshot) -> bool {
-    !matches!(
-        snapshot.active_workspace,
-        Workspace::Scripts
-            | Workspace::Connections
-            | Workspace::Broker
-            | Workspace::Plugins
-            | Workspace::Diagnostics
-            | Workspace::Settings
-            | Workspace::About
-    )
-}
-
-fn connection_flyout(
-    context: &egui::Context,
-    snapshot: &AppSnapshot,
-    tokens: ThemeTokens,
-    commands: &AppCommandSender,
-    i18n: &I18n,
-) {
-    let screen = context.screen_rect();
-    let overlay_rect = egui::Rect::from_min_max(
-        egui::pos2(
-            screen.left() + layout::RAIL_WIDTH,
-            screen.top() + layout::HEADER_HEIGHT,
-        ),
-        screen.right_bottom(),
-    );
-    if overlay_rect.width() <= 0.0 || overlay_rect.height() <= 0.0 {
-        return;
-    }
-
-    let open = responsive::connection_flyout_open(context);
-    if !open {
-        connection_flyout_collapsed_handle(context, overlay_rect, i18n);
-    }
-    let Some(progress) = motion::flyout_progress(context, "connections-context", open) else {
-        return;
-    };
-    if open && context.input(|input| input.key_pressed(egui::Key::Escape)) {
-        responsive::close_connection_flyout(context);
-    }
-
-    egui::Area::new(egui::Id::new("connections-context-flyout"))
-        .order(egui::Order::Foreground)
-        .fixed_pos(overlay_rect.min)
-        .movable(false)
-        .show(context, |ui| {
-            let (scrim_rect, _) = ui.allocate_exact_size(overlay_rect.size(), egui::Sense::hover());
-            ui.painter().rect_filled(
-                scrim_rect,
-                egui::CornerRadius::ZERO,
-                motion::scrim_color(crate::modal_style::SCRIM_ALPHA, progress),
-            );
-
-            let handle_rect = egui::Rect::from_min_size(
-                scrim_rect.left_top(),
-                egui::vec2(widgets::FLYOUT_HANDLE_WIDTH, scrim_rect.height()),
-            );
-            let panel_area = egui::Rect::from_min_max(
-                egui::pos2(handle_rect.right(), scrim_rect.top()),
-                scrim_rect.right_bottom(),
-            );
-            let panel_width = layout::CONNECTION_FLYOUT_WIDTH.min(panel_area.width());
-            let panel_rect = motion::flyout_panel_rect(panel_area, panel_width, progress);
-            ui.painter()
-                .rect_filled(panel_rect, egui::CornerRadius::ZERO, tokens.window_bg);
-
-            let margin = layout::sidebar_margin();
-            let content_rect = egui::Rect::from_min_max(
-                egui::pos2(
-                    panel_rect.left() + f32::from(margin.left),
-                    panel_rect.top() + f32::from(margin.top),
-                ),
-                egui::pos2(
-                    panel_rect.right() - f32::from(margin.right),
-                    panel_rect.bottom() - f32::from(margin.bottom),
-                ),
-            );
-            let mut panel_ui = ui.new_child(
-                egui::UiBuilder::new()
-                    .max_rect(content_rect)
-                    .layout(egui::Layout::top_down(egui::Align::Min)),
-            );
-            panel_ui.multiply_opacity(motion::content_opacity(progress));
-            panel_ui.set_clip_rect(content_rect);
-            connection_launcher::panel(&mut panel_ui, snapshot, tokens, commands, i18n);
-            connection_flyout_expanded_controls(ui, handle_rect, panel_rect, i18n);
-
-            let clicked_outside = open
-                && ui.ctx().input(|input| {
-                    input.pointer.any_click()
-                        && input
-                            .pointer
-                            .interact_pos()
-                            .is_some_and(|pos| !panel_rect.contains(pos))
-                });
-            if clicked_outside {
-                responsive::close_connection_flyout(ui.ctx());
-            }
-        });
-}
-
-fn connection_flyout_collapsed_handle(
-    context: &egui::Context,
-    overlay_rect: egui::Rect,
-    i18n: &I18n,
-) {
-    egui::Area::new(egui::Id::new("connections-context-flyout-collapsed-handle"))
-        .order(egui::Order::Foreground)
-        .fixed_pos(overlay_rect.min)
-        .movable(false)
-        .show(context, |ui| {
-            let handle_rect = egui::Rect::from_min_size(
-                ui.min_rect().min,
-                egui::vec2(widgets::FLYOUT_HANDLE_WIDTH, overlay_rect.height()),
-            );
-            if widgets::flyout_handle(
-                ui,
-                handle_rect,
-                "connections-flyout-open-handle",
-                regular::CARET_RIGHT,
-                &i18n.text("connection-show-list"),
-            )
-            .clicked()
-            {
-                responsive::open_connection_flyout(ui.ctx());
-            }
-        });
-}
-
-fn connection_flyout_expanded_controls(
-    ui: &mut egui::Ui,
-    handle_rect: egui::Rect,
-    panel_rect: egui::Rect,
-    i18n: &I18n,
-) {
-    if widgets::flyout_handle(
-        ui,
-        handle_rect,
-        "connections-flyout-collapse-handle",
-        regular::CARET_LEFT,
-        &i18n.text("connection-collapse-flyout"),
-    )
-    .clicked()
-    {
-        responsive::close_connection_flyout(ui.ctx());
-    }
-
-    if !(responsive::forced_connection_flyout_mode(ui.ctx())
-        && !responsive::connections_context_requires_flyout(ui.ctx()))
-    {
-        return;
-    }
-
-    if widgets::flyout_restore_button_above_edge(
-        ui,
-        "connections-flyout-restore-button",
-        panel_rect.right(),
-        panel_rect.top(),
-        &i18n.text("connection-use-sidebar"),
-    )
-    .clicked()
-    {
-        responsive::set_forced_context_flyout_mode(ui.ctx(), false);
-        responsive::close_connection_flyout(ui.ctx());
     }
 }
 
@@ -429,13 +279,58 @@ pub fn stored_theme(creation_context: &eframe::CreationContext<'_>) -> ThemeMode
         .unwrap_or_default()
 }
 
-fn top_frame(tokens: ThemeTokens) -> Frame {
-    Frame::NONE
-        .fill(chrome_bg(tokens))
-        .inner_margin(egui::Margin::symmetric(
-            layout::HEADER_MARGIN_X,
-            layout::HEADER_MARGIN_Y,
-        ))
+fn macos_titlebar_spacer(context: &egui::Context, tokens: ThemeTokens) {
+    #[cfg(target_os = "macos")]
+    TopBottomPanel::top("correo-macos-titlebar")
+        .exact_height(28.0)
+        .frame(Frame::NONE.fill(chrome_bg(tokens)))
+        .show(context, |_| {});
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = (context, tokens);
+}
+
+fn stored_panel_width(
+    context: &egui::Context,
+    id: &'static str,
+    default: f32,
+    min: f32,
+    max: f32,
+) -> f32 {
+    context
+        .data_mut(|data| *data.get_persisted_mut_or(egui::Id::new(id), default))
+        .clamp(min, max)
+}
+
+fn resizable_panel_divider(
+    context: &egui::Context,
+    panel_rect: egui::Rect,
+    divider_id: &'static str,
+    width_id: &'static str,
+    min_width: f32,
+    max_width: f32,
+    tokens: ThemeTokens,
+) {
+    let hit_rect = egui::Rect::from_center_size(
+        egui::pos2(panel_rect.right(), panel_rect.center().y),
+        egui::vec2(SIDEBAR_DIVIDER_HIT_WIDTH, panel_rect.height()),
+    );
+    egui::Area::new(egui::Id::new(divider_id))
+        .order(egui::Order::Foreground)
+        .fixed_pos(hit_rect.min)
+        .movable(false)
+        .show(context, |ui| {
+            let (rect, response) =
+                ui.allocate_exact_size(hit_rect.size(), egui::Sense::click_and_drag());
+            let response = response.on_hover_cursor(egui::CursorIcon::ResizeHorizontal);
+            if response.dragged() {
+                if let Some(pointer) = response.interact_pointer_pos() {
+                    let width = (pointer.x - panel_rect.left()).clamp(min_width, max_width);
+                    context.data_mut(|data| data.insert_persisted(egui::Id::new(width_id), width));
+                }
+            }
+            paint_pane_divider(ui, rect, &response, tokens, true);
+        });
 }
 
 fn rail_frame(tokens: ThemeTokens) -> Frame {
@@ -450,8 +345,18 @@ fn chrome_bg(tokens: ThemeTokens) -> egui::Color32 {
 
 fn sidebar_frame(tokens: ThemeTokens) -> Frame {
     Frame::NONE
-        .fill(tokens.window_bg)
+        .fill(sidebar_bg(tokens))
         .inner_margin(layout::sidebar_margin())
+}
+
+fn sidebar_bg(tokens: ThemeTokens) -> egui::Color32 {
+    let [red, green, blue, _] = tokens.window_bg.to_array();
+    let luminance = (u16::from(red) + u16::from(green) + u16::from(blue)) / 3;
+    if luminance < 128 {
+        tokens.window_bg.gamma_multiply(1.5)
+    } else {
+        tokens.window_bg.gamma_multiply(0.88)
+    }
 }
 
 fn central_frame(tokens: ThemeTokens) -> Frame {
@@ -466,21 +371,18 @@ mod tests {
     use correo_style::static_tokens;
 
     #[test]
-    fn header_frame_uses_larger_height_and_horizontal_padding() {
-        let frame = top_frame(static_tokens(&ThemeMode::Dark));
+    fn sidebar_frame_contrasts_with_the_main_content_in_both_themes() {
+        let dark = static_tokens(&ThemeMode::Dark);
+        let light = static_tokens(&ThemeMode::Light);
 
-        assert_eq!(layout::HEADER_HEIGHT, 64.0);
-        assert_eq!(
-            frame.inner_margin,
-            egui::Margin::symmetric(layout::HEADER_MARGIN_X, layout::HEADER_MARGIN_Y)
-        );
+        assert!(sidebar_bg(dark).r() >= dark.window_bg.r() + 8);
+        assert!(sidebar_bg(light).r() + 16 <= light.window_bg.r());
     }
 
     #[test]
     fn global_chrome_frames_do_not_draw_decorative_strokes() {
         let tokens = static_tokens(&ThemeMode::Dark);
 
-        assert_eq!(top_frame(tokens).stroke, egui::Stroke::NONE);
         assert_eq!(rail_frame(tokens).stroke, egui::Stroke::NONE);
         assert_eq!(sidebar_frame(tokens).stroke, egui::Stroke::NONE);
     }

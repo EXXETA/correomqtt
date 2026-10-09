@@ -155,6 +155,11 @@ legacy-failed = Failed
 legacy-restored = Backup restored
 
 connections-heading = Connections
+sidebar-show = Show sidebar
+sidebar-hide = Hide sidebar
+sidebar-unavailable = No sidebar is available for this view
+workbench-use-tab-view = Use tab view
+workbench-use-split-view = Use split view
 connection-none-available = No connection available
 connection-show-list = Show connections
 connection-use-flyout = Use connections flyout

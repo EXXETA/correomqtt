@@ -12,8 +12,8 @@ use crate::{
     theme::ThemeTokens,
     widgets::{
         checkbox, disable_tile_text_selection, fill_remaining_tile_rows, menu_item,
-        padded_text_edit, set_text_menu_item_width, square_icon_button_size, tile_table_hover_fill,
-        tile_table_interactive_fill, with_icon_button_padding,
+        padded_text_edit, paint_pane_divider, set_text_menu_item_width, square_icon_button_size,
+        tile_table_hover_fill, tile_table_interactive_fill, with_icon_button_padding,
     },
 };
 
@@ -133,13 +133,7 @@ fn dialog_content(
                 .data_mut(|data| data.insert_persisted(divider_width_id(), width));
         }
     }
-    ui.painter().line_segment(
-        [
-            egui::pos2(separator_x, body_rect.top() + WORKFLOW_LIST_HEADER_HEIGHT),
-            egui::pos2(separator_x, body_rect.bottom()),
-        ],
-        egui::Stroke::new(1.0, tokens.border),
-    );
+    paint_pane_divider(ui, divider_rect, &divider_response, tokens, true);
 
     let mut left_ui = ui.new_child(UiBuilder::new().max_rect(left_rect));
     left_ui.set_clip_rect(left_rect);
@@ -336,7 +330,7 @@ fn workflow_row(
         ui.painter().rect_stroke(
             rect.shrink(2.0),
             CornerRadius::ZERO,
-            egui::Stroke::new(2.0, tokens.accent),
+            egui::Stroke::new(2.0_f32, tokens.accent),
             egui::StrokeKind::Inside,
         );
     }
@@ -355,7 +349,7 @@ fn workflow_row(
                 egui::pos2(rect.left() + 6.0, y),
                 egui::pos2(rect.right() - 6.0, y),
             ],
-            egui::Stroke::new(3.0, tokens.accent),
+            egui::Stroke::new(3.0_f32, tokens.accent),
         );
     }
     if response.clicked() {

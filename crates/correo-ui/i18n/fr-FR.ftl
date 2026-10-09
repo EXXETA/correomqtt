@@ -155,6 +155,11 @@ legacy-failed = Échec
 legacy-restored = Sauvegarde restaurée
 
 connections-heading = Connexions
+sidebar-show = Afficher la barre laterale
+sidebar-hide = Masquer la barre laterale
+sidebar-unavailable = Aucune barre laterale n'est disponible pour cette vue
+workbench-use-tab-view = Utiliser la vue par onglets
+workbench-use-split-view = Utiliser la vue scindee
 connection-none-available = Aucune connexion disponible
 connection-show-list = Afficher les connexions
 connection-use-flyout = Utiliser le panneau volant des connexions

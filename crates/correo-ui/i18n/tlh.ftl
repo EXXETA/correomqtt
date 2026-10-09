@@ -155,6 +155,11 @@ legacy-failed = luj
 legacy-restored = backup restorelu'pu'
 
 connections-heading = rarghachmey
+sidebar-show = sidebar 'ang
+sidebar-hide = sidebar SoQ
+sidebar-unavailable = viewvam sidebar tu'lu'be'
+workbench-use-tab-view = tab view lo'
+workbench-use-split-view = split view lo'
 connection-none-available = rarghach tu'lu'be'
 connection-show-list = rarghachmey tetlh cha'
 connection-use-flyout = connections flyout lo'

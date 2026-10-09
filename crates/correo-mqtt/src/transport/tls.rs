@@ -1,26 +1,17 @@
-use std::io::BufReader;
+use std::{io::BufReader, sync::Arc};
 
-use rustls::{ClientConfig, RootCertStore};
+use rustls::{
+    client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
+    pki_types::{CertificateDer, ServerName, UnixTime},
+    ClientConfig, DigitallySignedStruct, Error, RootCertStore, SignatureScheme,
+};
 
 use crate::{
     MqttError, MqttResult, TlsClientIdentity, TlsConfig, TlsHostVerification, TlsOptions,
     TlsTrustRoots,
 };
 
-pub(crate) fn validate(config: &TlsConfig) -> MqttResult<()> {
-    let TlsConfig::Enabled(options) = config else {
-        return Ok(());
-    };
-
-    if matches!(
-        options.host_verification,
-        TlsHostVerification::DisabledInsecure
-    ) {
-        return Err(MqttError::tls(
-            "insecure TLS hostname verification disable is explicit but unsupported",
-        ));
-    }
-
+pub(crate) fn validate(_config: &TlsConfig) -> MqttResult<()> {
     Ok(())
 }
 
@@ -36,11 +27,63 @@ pub(crate) fn rustls_client_config(config: &TlsConfig) -> MqttResult<Option<Clie
             .with_safe_default_protocol_versions()
             .map_err(|error| MqttError::tls(error.to_string()))?
             .with_root_certificates(roots);
-    let config = match &options.client_identity {
+    let mut config = match &options.client_identity {
         Some(identity) => with_client_identity(builder, identity)?,
         None => builder.with_no_client_auth(),
     };
+    if matches!(
+        options.host_verification,
+        TlsHostVerification::DisabledInsecure
+    ) {
+        // Rustls requires a custom verifier for this explicit insecure option.
+        config
+            .dangerous()
+            .set_certificate_verifier(Arc::new(InsecureServerCertVerifier {
+                supported_algorithms: rustls::crypto::ring::default_provider()
+                    .signature_verification_algorithms,
+            }));
+    }
     Ok(Some(config))
+}
+
+#[derive(Debug)]
+struct InsecureServerCertVerifier {
+    supported_algorithms: rustls::crypto::WebPkiSupportedAlgorithms,
+}
+
+impl ServerCertVerifier for InsecureServerCertVerifier {
+    fn verify_server_cert(
+        &self,
+        _end_entity: &CertificateDer<'_>,
+        _intermediates: &[CertificateDer<'_>],
+        _server_name: &ServerName<'_>,
+        _ocsp_response: &[u8],
+        _now: UnixTime,
+    ) -> Result<ServerCertVerified, Error> {
+        Ok(ServerCertVerified::assertion())
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, Error> {
+        rustls::crypto::verify_tls12_signature(message, cert, dss, &self.supported_algorithms)
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, Error> {
+        rustls::crypto::verify_tls13_signature(message, cert, dss, &self.supported_algorithms)
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
+        self.supported_algorithms.supported_schemes()
+    }
 }
 
 fn root_store(options: &TlsOptions) -> MqttResult<RootCertStore> {
@@ -156,15 +199,13 @@ oaQ31k55+MyS0LvD2dJIcPD6vtubQ9P/uTq0l7vOAkNrREc=
     }
 
     #[test]
-    fn insecure_hostname_disable_is_rejected_explicitly() {
+    fn insecure_hostname_disable_builds_an_insecure_client_config() {
         let options = TlsConfig::Enabled(TlsOptions {
             host_verification: TlsHostVerification::DisabledInsecure,
             ..TlsOptions::default()
         });
 
-        let error = validate(&options).expect_err("unsupported");
-        assert!(matches!(error, MqttError::Tls { .. }));
-        assert!(error.to_string().contains("insecure"));
+        assert!(rustls_client_config(&options).is_ok());
     }
 
     #[test]

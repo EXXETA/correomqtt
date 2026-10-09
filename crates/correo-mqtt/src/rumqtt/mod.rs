@@ -2,6 +2,8 @@ mod common;
 mod v3;
 mod v5;
 
+const MAX_MQTT_PACKET_SIZE_BYTES: u32 = 10 * 1024 * 1024;
+
 use async_trait::async_trait;
 use futures::stream::BoxStream;
 

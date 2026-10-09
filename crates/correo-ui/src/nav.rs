@@ -6,10 +6,10 @@ use egui::{Align, Align2, Button, Color32, CornerRadius, FontId, Layout, Ui};
 
 use crate::i18n::I18n;
 use crate::icons;
-use crate::motion;
 use crate::responsive;
 use crate::theme::ThemeTokens;
 use crate::widgets::{dotted_focus_outline, square_icon_button_size, with_icon_button_padding};
+use egui_phosphor::regular;
 
 const TOP_WORKSPACES: [Workspace; 3] = [
     Workspace::Connections,
@@ -35,6 +35,8 @@ pub fn rail(
 ) {
     ui.with_layout(Layout::top_down(Align::Center), |ui| {
         ui.add_space(4.0);
+        sidebar_toggle(ui, snapshot, i18n);
+        ui.add_space(12.0);
         nav_group(ui, &TOP_WORKSPACES, snapshot, tokens, commands, i18n);
         let button_height = square_icon_button_size()[1];
         let bottom_height =
@@ -42,6 +44,38 @@ pub fn rail(
         ui.add_space((ui.available_height() - bottom_height).max(0.0));
         nav_group(ui, &BOTTOM_WORKSPACES, snapshot, tokens, commands, i18n);
     });
+}
+
+fn sidebar_toggle(ui: &mut Ui, snapshot: &AppSnapshot, i18n: &I18n) {
+    let available = responsive::workspace_has_sidebar(snapshot.active_workspace);
+    let visible = responsive::sidebar_visible(ui.ctx());
+    let tooltip = if available {
+        i18n.text(if visible {
+            "sidebar-hide"
+        } else {
+            "sidebar-show"
+        })
+    } else {
+        i18n.text("sidebar-unavailable")
+    };
+    let response = with_icon_button_padding(ui, |ui| {
+        ui.add_enabled_ui(available, |ui| {
+            ui.visuals_mut().widgets.inactive.bg_fill = Color32::TRANSPARENT;
+            ui.visuals_mut().widgets.inactive.weak_bg_fill = Color32::TRANSPARENT;
+            ui.add_sized(
+                square_icon_button_size(),
+                Button::new(regular::SIDEBAR_SIMPLE).corner_radius(CornerRadius::same(4)),
+            )
+        })
+        .inner
+    })
+    .on_hover_text(tooltip);
+    if response.has_focus() {
+        dotted_focus_outline(ui, response.rect);
+    }
+    if response.clicked() {
+        responsive::toggle_sidebar(ui.ctx());
+    }
 }
 
 fn nav_group(
@@ -100,7 +134,6 @@ fn nav_button(
         dotted_focus_outline(ui, response.rect);
     }
     if response.clicked() {
-        close_flyouts_without_animation(ui);
         let _ = commands.send(AppCommand::SelectWorkspace(workspace));
     }
 }
@@ -148,15 +181,6 @@ fn paint_status_dot(ui: &Ui, rect: egui::Rect, color: Color32) {
     ui.painter()
         .circle_filled(center, STATUS_DOT_RADIUS + 1.5, ui.visuals().panel_fill);
     ui.painter().circle_filled(center, STATUS_DOT_RADIUS, color);
-}
-
-fn close_flyouts_without_animation(ui: &Ui) {
-    responsive::close_connection_flyout(ui.ctx());
-    responsive::close_scripting_flyout(ui.ctx());
-    responsive::close_plugin_flyout(ui.ctx());
-    motion::finish_flyout_closed(ui.ctx(), "connections-context");
-    motion::finish_flyout_closed(ui.ctx(), "scripting-context");
-    motion::finish_flyout_closed(ui.ctx(), "plugin-context");
 }
 
 #[cfg(test)]

@@ -3,7 +3,6 @@ use egui::{Button, Label, RichText, ScrollArea, Ui};
 use egui_phosphor::regular;
 
 use crate::i18n::I18n;
-use crate::responsive;
 use crate::theme::ThemeTokens;
 use correo_style::layout;
 
@@ -12,11 +11,11 @@ use crate::widgets::{
 };
 
 use super::{
-    install_button, marketplace_capability_chips, metadata_row, plugin_metadata_line, plugin_split,
-    plugin_tile, search_field, send, TILE_HEIGHT,
+    install_button, marketplace_capability_chips, metadata_row, plugin_metadata_line, plugin_tile,
+    search_field, send, TILE_HEIGHT,
 };
 
-pub(super) fn tab(
+pub(super) fn sidebar(
     ui: &mut Ui,
     plugins: &PluginSurfaceSnapshot,
     tokens: ThemeTokens,
@@ -24,17 +23,7 @@ pub(super) fn tab(
     i18n: &I18n,
 ) {
     let filtered = plugins.filtered_marketplace_plugins();
-    plugin_split(
-        ui,
-        plugins,
-        tokens,
-        commands,
-        i18n,
-        |ui| {
-            marketplace_list(ui, plugins, &filtered, tokens, commands, i18n);
-        },
-        |ui| selected_detail(ui, plugins, tokens, commands, i18n),
-    );
+    marketplace_list(ui, plugins, &filtered, tokens, commands, i18n);
 }
 
 fn marketplace_list(
@@ -101,7 +90,6 @@ fn marketplace_row(
             commands,
             AppCommand::SelectMarketplacePlugin(plugin.id.clone()),
         );
-        responsive::close_plugin_flyout(ui.ctx());
     }
     response.context_menu(|ui| marketplace_context_menu(ui, plugins, plugin, commands, i18n));
 }
@@ -159,7 +147,7 @@ fn menu_label(icon: &str, label: &str) -> String {
     format!("{icon}  {label}")
 }
 
-fn selected_detail(
+pub(super) fn detail(
     ui: &mut Ui,
     plugins: &PluginSurfaceSnapshot,
     tokens: ThemeTokens,

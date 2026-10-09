@@ -7,16 +7,14 @@ use egui::{Button, ComboBox, Id, Modal, RichText, ScrollArea, Sense, TextEdit, U
 use egui_phosphor::regular;
 
 use crate::i18n::I18n;
-use crate::modal_style;
 use crate::motion;
 use crate::payload_highlight;
-use crate::responsive;
 use crate::theme::{ThemeTokens, CONTROL_HEIGHT};
 use crate::widgets::{
     clearable_search_edit, fill_remaining_tile_rows, padded_text_edit, square_icon_button_size,
     tile_list_content_width, tile_scroll_bar_rect_with_height, tile_table_fill,
-    tile_table_hover_fill, tile_table_selected_fill, with_icon_button_padding, FLYOUT_HANDLE_WIDTH,
-    TILE_GAP, TWO_LINE_TILE_HEIGHT,
+    tile_table_hover_fill, tile_table_selected_fill, with_icon_button_padding, TILE_GAP,
+    TWO_LINE_TILE_HEIGHT,
 };
 
 #[path = "scripts/dialogs.rs"]
@@ -39,31 +37,12 @@ pub fn sidebar(
     commands: &AppCommandSender,
     i18n: &I18n,
 ) {
-    let mut filter = scripts.script_filter.clone();
-    if clearable_search_edit(
+    layout::list_column(
         ui,
-        None,
-        &mut filter,
-        i18n.text("script-search"),
-        tile_list_content_width(ui),
-    )
-    .changed()
-    {
-        send(commands, AppCommand::SearchScripts(filter));
-    }
-    ui.add_space(8.0);
-    if ui
-        .add_sized(
-            [ui.available_width(), CONTROL_HEIGHT],
-            Button::new(format!("+ {}", i18n.text("script-new"))),
-        )
-        .clicked()
-    {
-        send(commands, AppCommand::RequestCreateScript);
-    }
-    ui.separator();
-    let list_height = ui.available_height().max(style_layout::TABLE_MIN_HEIGHT);
-    script_list(ui, scripts, tokens, commands, i18n, list_height);
+        tokens,
+        |ui| script_browser(ui, scripts, tokens, commands, i18n),
+        |ui| executions(ui, scripts, tokens, commands, i18n),
+    );
 }
 
 pub fn show(
@@ -73,50 +52,8 @@ pub fn show(
     commands: &AppCommandSender,
     i18n: &I18n,
 ) {
-    if responsive::scripting_context_is_compact(ui.ctx()) {
-        compact_right_panes(ui, snapshot, tokens, commands, i18n);
-        scripting_flyout(ui.ctx(), snapshot, tokens, commands, i18n);
-    } else {
-        layout::four_pane(
-            ui,
-            tokens,
-            |ui| script_browser(ui, &snapshot.scripts, tokens, commands, i18n),
-            |ui| {
-                toolbar(ui, snapshot, commands, i18n);
-                ui.add_space(6.0);
-                editor(ui, &snapshot.scripts, commands, i18n);
-            },
-            |ui| executions(ui, &snapshot.scripts, tokens, commands, i18n),
-            |ui| log::log_view(ui, &snapshot.scripts, tokens, commands, i18n),
-            |ui, divider| scripting_flyout_mode_button(ui, divider, i18n),
-        );
-    }
-    dialogs::create_dialog(ui, &snapshot.scripts, tokens, commands, i18n);
-    rename_dialog(ui, &snapshot.scripts, tokens, commands, i18n);
-    delete_dialog(ui, &snapshot.scripts, tokens, commands, i18n);
-}
-
-fn compact_right_panes(
-    ui: &mut Ui,
-    snapshot: &AppSnapshot,
-    tokens: ThemeTokens,
-    commands: &AppCommandSender,
-    i18n: &I18n,
-) {
-    let available = ui.available_rect_before_wrap();
-    ui.allocate_rect(available, Sense::hover());
-    let rect = egui::Rect::from_min_max(
-        egui::pos2(available.left() + FLYOUT_HANDLE_WIDTH, available.top()),
-        available.right_bottom(),
-    );
-    let mut child = ui.new_child(
-        egui::UiBuilder::new()
-            .max_rect(rect)
-            .layout(egui::Layout::top_down(egui::Align::Min)),
-    );
-    child.set_clip_rect(rect);
     layout::right_panes(
-        &mut child,
+        ui,
         tokens,
         |ui| {
             toolbar(ui, snapshot, commands, i18n);
@@ -125,6 +62,9 @@ fn compact_right_panes(
         },
         |ui| log::log_view(ui, &snapshot.scripts, tokens, commands, i18n),
     );
+    dialogs::create_dialog(ui, &snapshot.scripts, tokens, commands, i18n);
+    rename_dialog(ui, &snapshot.scripts, tokens, commands, i18n);
+    delete_dialog(ui, &snapshot.scripts, tokens, commands, i18n);
 }
 
 fn script_browser(
@@ -243,7 +183,6 @@ fn script_list(
         response.context_menu(|ui| script_context_menu(ui, scripts, script, commands, i18n));
         if response.clicked() {
             send(commands, AppCommand::SelectScript(script.name.clone()));
-            close_scripting_flyout_if_open(ui);
         }
         ui.add_space(TILE_GAP);
     }
@@ -576,7 +515,6 @@ fn executions(
                         commands,
                         AppCommand::SelectScriptExecution(execution.execution_id.clone()),
                     );
-                    close_scripting_flyout_if_open(ui);
                 }
                 ui.add_space(TILE_GAP);
             }
@@ -637,184 +575,6 @@ fn execution_context_menu(
     {
         send(commands, AppCommand::ClearFinishedScriptExecutions);
         ui.close_menu();
-    }
-}
-
-fn scripting_flyout(
-    ctx: &egui::Context,
-    snapshot: &AppSnapshot,
-    tokens: ThemeTokens,
-    commands: &AppCommandSender,
-    i18n: &I18n,
-) {
-    let screen = ctx.screen_rect();
-    let overlay_rect = egui::Rect::from_min_max(
-        egui::pos2(
-            screen.left() + style_layout::RAIL_WIDTH,
-            screen.top() + style_layout::HEADER_HEIGHT,
-        ),
-        screen.right_bottom(),
-    );
-    if overlay_rect.width() <= 0.0 || overlay_rect.height() <= 0.0 {
-        return;
-    }
-
-    let open = responsive::scripting_flyout_open(ctx);
-    if !open {
-        scripting_flyout_collapsed_handle(ctx, overlay_rect, i18n);
-    }
-    let Some(progress) = motion::flyout_progress(ctx, "scripting-context", open) else {
-        return;
-    };
-    if open && ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
-        responsive::close_scripting_flyout(ctx);
-    }
-
-    egui::Area::new(egui::Id::new("scripting-context-flyout"))
-        .order(egui::Order::Foreground)
-        .fixed_pos(overlay_rect.min)
-        .movable(false)
-        .show(ctx, |ui| {
-            let (scrim_rect, _) = ui.allocate_exact_size(overlay_rect.size(), Sense::hover());
-            ui.painter().rect_filled(
-                scrim_rect,
-                egui::CornerRadius::ZERO,
-                motion::scrim_color(modal_style::SCRIM_ALPHA, progress),
-            );
-
-            let handle_rect = egui::Rect::from_min_size(
-                scrim_rect.left_top(),
-                egui::vec2(FLYOUT_HANDLE_WIDTH, scrim_rect.height()),
-            );
-            let panel_area = egui::Rect::from_min_max(
-                egui::pos2(handle_rect.right(), scrim_rect.top()),
-                scrim_rect.right_bottom(),
-            );
-            let panel_width = style_layout::SCRIPTING_FLYOUT_WIDTH.min(panel_area.width());
-            let panel_rect = motion::flyout_panel_rect(panel_area, panel_width, progress);
-            ui.painter()
-                .rect_filled(panel_rect, egui::CornerRadius::ZERO, tokens.window_bg);
-
-            let margin = style_layout::sidebar_margin();
-            let content_rect = egui::Rect::from_min_max(
-                egui::pos2(
-                    panel_rect.left() + f32::from(margin.left),
-                    panel_rect.top() + f32::from(margin.top),
-                ),
-                egui::pos2(
-                    panel_rect.right() - f32::from(margin.right),
-                    panel_rect.bottom() - f32::from(margin.bottom),
-                ),
-            );
-            let mut panel_ui = ui.new_child(
-                egui::UiBuilder::new()
-                    .max_rect(content_rect)
-                    .layout(egui::Layout::top_down(egui::Align::Min)),
-            );
-            panel_ui.multiply_opacity(motion::content_opacity(progress));
-            panel_ui.set_clip_rect(content_rect);
-            layout::list_column(
-                &mut panel_ui,
-                tokens,
-                |ui| script_browser(ui, &snapshot.scripts, tokens, commands, i18n),
-                |ui| executions(ui, &snapshot.scripts, tokens, commands, i18n),
-            );
-            scripting_flyout_expanded_controls(ui, handle_rect, panel_rect, i18n);
-
-            let clicked_outside = open
-                && ui.ctx().input(|input| {
-                    input.pointer.any_click()
-                        && input
-                            .pointer
-                            .interact_pos()
-                            .is_some_and(|pos| !panel_rect.contains(pos))
-                });
-            if clicked_outside {
-                responsive::close_scripting_flyout(ui.ctx());
-            }
-        });
-}
-
-fn scripting_flyout_collapsed_handle(ctx: &egui::Context, overlay_rect: egui::Rect, i18n: &I18n) {
-    egui::Area::new(egui::Id::new("scripting-context-flyout-collapsed-handle"))
-        .order(egui::Order::Foreground)
-        .fixed_pos(overlay_rect.min)
-        .movable(false)
-        .show(ctx, |ui| {
-            let handle_rect = egui::Rect::from_min_size(
-                ui.min_rect().min,
-                egui::vec2(FLYOUT_HANDLE_WIDTH, overlay_rect.height()),
-            );
-            if crate::widgets::flyout_handle(
-                ui,
-                handle_rect,
-                "scripting-flyout-open-handle",
-                regular::CARET_RIGHT,
-                &i18n.text("script-show-list"),
-            )
-            .clicked()
-            {
-                responsive::open_scripting_flyout(ui.ctx());
-            }
-        });
-}
-
-fn scripting_flyout_mode_button(ui: &mut Ui, divider: egui::Rect, i18n: &I18n) {
-    if crate::widgets::flyout_mode_button_above_divider(
-        ui,
-        "scripting-flyout-mode-button",
-        divider,
-        &i18n.text("script-use-flyout"),
-    )
-    .clicked()
-    {
-        responsive::set_forced_context_flyout_mode(ui.ctx(), true);
-        responsive::close_scripting_flyout(ui.ctx());
-        motion::finish_flyout_closed(ui.ctx(), "scripting-context");
-    }
-}
-
-fn scripting_flyout_expanded_controls(
-    ui: &mut Ui,
-    handle_rect: egui::Rect,
-    panel_rect: egui::Rect,
-    i18n: &I18n,
-) {
-    if crate::widgets::flyout_handle(
-        ui,
-        handle_rect,
-        "scripting-flyout-collapse-handle",
-        regular::CARET_LEFT,
-        &i18n.text("script-collapse-flyout"),
-    )
-    .clicked()
-    {
-        responsive::close_scripting_flyout(ui.ctx());
-    }
-
-    if !(responsive::forced_scripting_flyout_mode(ui.ctx())
-        && !responsive::scripting_context_requires_flyout(ui.ctx()))
-    {
-        return;
-    }
-
-    if crate::widgets::flyout_restore_button_above_edge(
-        ui,
-        "scripting-flyout-restore-button",
-        panel_rect.right(),
-        panel_rect.top(),
-        &i18n.text("script-use-lists"),
-    )
-    .clicked()
-    {
-        responsive::set_forced_context_flyout_mode(ui.ctx(), false);
-        responsive::close_scripting_flyout(ui.ctx());
-    }
-}
-
-fn close_scripting_flyout_if_open(ui: &Ui) {
-    if responsive::scripting_flyout_open(ui.ctx()) {
-        responsive::close_scripting_flyout(ui.ctx());
     }
 }
 

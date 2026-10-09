@@ -155,6 +155,11 @@ legacy-failed = Neuspešno
 legacy-restored = Rezervna kopija vraćena
 
 connections-heading = Veze
+sidebar-show = Prikazi bocnu traku
+sidebar-hide = Sakrij bocnu traku
+sidebar-unavailable = Bocna traka nije dostupna za ovaj prikaz
+workbench-use-tab-view = Koristi prikaz kartica
+workbench-use-split-view = Koristi podeljeni prikaz
 connection-none-available = Nema dostupne veze
 connection-show-list = Prikaži veze
 connection-use-flyout = Koristi iskačući panel za veze

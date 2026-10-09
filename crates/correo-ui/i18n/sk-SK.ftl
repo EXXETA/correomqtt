@@ -155,6 +155,11 @@ legacy-failed = Zlyhalo
 legacy-restored = Záloha obnovená
 
 connections-heading = Pripojenia
+sidebar-show = Zobrazit bocny panel
+sidebar-hide = Skryt bocny panel
+sidebar-unavailable = Pre toto zobrazenie nie je k dispozicii bocny panel
+workbench-use-tab-view = Pouzit zobrazenie na kartach
+workbench-use-split-view = Pouzit rozdelene zobrazenie
 connection-none-available = Nie je dostupné žiadne pripojenie
 connection-show-list = Zobraziť pripojenia
 connection-use-flyout = Použiť vysúvací panel pripojení

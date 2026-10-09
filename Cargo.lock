@@ -1440,6 +1440,7 @@ dependencies = [
  "correo-plugins",
  "correo-plugins-systopic",
  "correo-storage",
+ "correo-style",
  "correo-ui",
  "directories",
  "eframe",

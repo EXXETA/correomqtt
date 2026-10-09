@@ -2,6 +2,7 @@ use correo_core::{
     AppRuntime, Diagnostic, HistoryPersistenceWorker, MigrationPersistenceWorker, MqttService,
     PluginHookExecutor, RumqttSessionFactory, ScriptingWorker, SettingsPersistenceWorker,
 };
+use correo_style::layout;
 use std::sync::Arc;
 
 use crate::plugins::{InstalledPluginExecutor, PluginFileInstaller};
@@ -13,12 +14,7 @@ pub fn run() -> eframe::Result {
     tracing::info!("starting CorreoMQTT desktop shell");
 
     let options = eframe::NativeOptions {
-        viewport: eframe::egui::ViewportBuilder::default()
-            .with_app_id("org.correomqtt.CorreoMQTT")
-            .with_title("CorreoMQTT")
-            .with_icon(app_icon())
-            .with_inner_size([1280.0, 800.0])
-            .with_min_inner_size([550.0, 520.0]),
+        viewport: viewport(),
         ..Default::default()
     };
 
@@ -27,6 +23,23 @@ pub fn run() -> eframe::Result {
         options,
         Box::new(|creation_context| Ok(Box::new(CorreoDesktopApp::new(creation_context)))),
     )
+}
+
+fn viewport() -> eframe::egui::ViewportBuilder {
+    let viewport = eframe::egui::ViewportBuilder::default()
+        .with_app_id("org.correomqtt.CorreoMQTT")
+        .with_title("CorreoMQTT")
+        .with_icon(app_icon())
+        .with_inner_size([1280.0, 800.0])
+        .with_min_inner_size([layout::MIN_WINDOW_WIDTH, 640.0]);
+
+    #[cfg(target_os = "macos")]
+    let viewport = viewport
+        .with_fullsize_content_view(true)
+        .with_titlebar_shown(false)
+        .with_title_shown(false);
+
+    viewport
 }
 
 fn prefer_x11_when_wayland_is_unstable() {

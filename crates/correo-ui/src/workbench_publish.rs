@@ -27,7 +27,14 @@ pub(crate) fn editor(
     commands: &AppCommandSender,
     payload_highlighter: Option<&PayloadHighlighter>,
 ) {
-    workbench_layout::pane_title(ui, "Publish", WorkbenchPaneSide::Publish);
+    workbench_layout::pane_title(
+        ui,
+        "Publish",
+        WorkbenchPaneSide::Publish,
+        snapshot.workbench.narrow_tab,
+        tokens,
+        commands,
+    );
     ui.add_space(4.0);
     topic_row(ui, snapshot, tokens, commands);
     let mut payload = snapshot.workbench.publish.payload.clone();

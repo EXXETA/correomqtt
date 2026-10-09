@@ -10,6 +10,7 @@ use tokio::task::JoinHandle;
 use super::common::{
     client_id, finish_startup, keep_alive_seconds, SessionChannels, StartupSignal,
 };
+use super::MAX_MQTT_PACKET_SIZE_BYTES;
 use crate::{
     transport::{tls::rustls_client_config, PreparedTransport, TransportErrorReporter},
     ConnectionId, IncomingMessage, LastWill, MqttAuth, MqttConnectionOptions, MqttEndpoint,
@@ -274,6 +275,10 @@ fn build_options(
     );
     mqtt_options.set_clean_session(options.clean_start);
     mqtt_options.set_keep_alive(keep_alive_seconds(options.keep_alive)?);
+    mqtt_options.set_max_packet_size(
+        MAX_MQTT_PACKET_SIZE_BYTES as usize,
+        MAX_MQTT_PACKET_SIZE_BYTES as usize,
+    );
     apply_auth(&mut mqtt_options, &options.auth)?;
 
     if let Some(will) = &options.last_will {

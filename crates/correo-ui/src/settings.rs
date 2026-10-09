@@ -1,6 +1,6 @@
 use correo_core::{
     AppCommand, AppCommandSender, AppSnapshot, GlobalSettingField, GlobalSettingFlag,
-    GlobalSettingsSnapshot, SettingsOption,
+    GlobalSettingsSnapshot, SettingsOption, ThemeMode,
 };
 use correo_style::layout;
 use egui::{Button, ComboBox, RichText, ScrollArea, TextEdit, Ui};
@@ -30,10 +30,18 @@ pub fn show(
         .show(ui, |ui| {
             section(
                 ui,
+                i18n.settings_section_label(correo_core::SettingsSection::Language),
+                tokens,
+                |ui| {
+                    language(ui, settings, commands, i18n, klingon_unlocked);
+                },
+            );
+            section(
+                ui,
                 i18n.settings_section_label(correo_core::SettingsSection::Appearance),
                 tokens,
                 |ui| {
-                    appearance(ui, settings, commands, i18n);
+                    appearance(ui, snapshot, commands, i18n);
                 },
             );
             section(
@@ -66,14 +74,6 @@ pub fn show(
                 tokens,
                 |ui| {
                     plugins(ui, settings, tokens, commands, i18n);
-                },
-            );
-            section(
-                ui,
-                i18n.settings_section_label(correo_core::SettingsSection::Language),
-                tokens,
-                |ui| {
-                    language(ui, settings, commands, i18n, klingon_unlocked);
                 },
             );
         });
@@ -116,19 +116,44 @@ fn section(ui: &mut Ui, title: String, tokens: ThemeTokens, add: impl FnOnce(&mu
     ui.add_space(14.0);
 }
 
-fn appearance(
-    ui: &mut Ui,
-    settings: &GlobalSettingsSnapshot,
-    commands: &AppCommandSender,
-    i18n: &I18n,
-) {
+fn appearance(ui: &mut Ui, snapshot: &AppSnapshot, commands: &AppCommandSender, i18n: &I18n) {
+    row(ui, &i18n.text("settings-theme"), |ui| {
+        theme_combo(ui, &snapshot.theme_mode, commands, i18n);
+    });
     checkbox_flag(
         ui,
         &i18n.text("settings-reduce-motion"),
-        settings.reduce_motion,
+        snapshot.global_settings.reduce_motion,
         GlobalSettingFlag::ReduceMotion,
         commands,
     );
+}
+
+fn theme_combo(ui: &mut Ui, current: &ThemeMode, commands: &AppCommandSender, i18n: &I18n) {
+    let mut selected = current.clone();
+    ComboBox::from_id_salt("settings-theme")
+        .selected_text(theme_label(current, i18n))
+        .width(layout::SETTINGS_COMBO_WIDTH)
+        .show_ui(ui, |ui| {
+            for theme in ThemeMode::ALL {
+                ui.selectable_value(&mut selected, theme.clone(), theme_label(&theme, i18n));
+            }
+        });
+    if selected != *current {
+        send_and_save(commands, AppCommand::SetThemeMode(selected));
+    }
+}
+
+fn theme_label(theme: &ThemeMode, i18n: &I18n) -> String {
+    if *theme == ThemeMode::System {
+        i18n.text("theme-system")
+    } else if *theme == ThemeMode::Light {
+        i18n.text("theme-light")
+    } else if *theme == ThemeMode::Dark {
+        i18n.text("theme-dark")
+    } else {
+        theme.label().to_owned()
+    }
 }
 
 fn search(

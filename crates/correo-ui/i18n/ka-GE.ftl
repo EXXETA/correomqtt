@@ -155,6 +155,11 @@ legacy-failed = ვერ შესრულდა
 legacy-restored = სარეზერვო ასლი აღდგა
 
 connections-heading = კავშირები
+sidebar-show = გვერდითი პანელის ჩვენება
+sidebar-hide = გვერდითი პანელის დამალვა
+sidebar-unavailable = ამ ხედისთვის გვერდითი პანელი მიუწვდომელია
+workbench-use-tab-view = ჩანართების ხედის გამოყენება
+workbench-use-split-view = გაყოფილი ხედის გამოყენება
 connection-none-available = კავშირი ხელმისაწვდომი არ არის
 connection-show-list = კავშირების ჩვენება
 connection-use-flyout = კავშირების გამოშლადი პანელის გამოყენება

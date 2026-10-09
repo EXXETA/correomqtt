@@ -3,6 +3,8 @@ pub(crate) use correo_style::widgets::*;
 use egui::{Align2, Color32, CursorIcon, FontId, Id, Response, Sense, TextEdit, Ui, WidgetText};
 use egui_phosphor::regular;
 
+use crate::theme::ThemeTokens;
+
 const SEARCH_CLEAR_ICON_SIZE: f32 = 13.0;
 const MENU_ITEM_HEIGHT: f32 = 30.0;
 const MENU_ITEM_PADDING_X: f32 = 12.0;
@@ -12,8 +14,6 @@ const MENU_ITEM_ICON_SIZE: f32 = 14.0;
 const ICON_ACTIVITY_DOT_RADIUS: f32 = 3.8;
 const MENU_ITEM_WIDTH_ID: &str = "correo-menu-item-width";
 const MENU_ITEM_ICON_COLUMN_ID: &str = "correo-menu-item-icon-column";
-pub(crate) const FLYOUT_HANDLE_WIDTH: f32 = 16.0;
-pub(crate) const COMPACT_MODE_BUTTON_SIDE: f32 = crate::theme::CONTROL_HEIGHT - 6.0;
 
 pub(crate) fn clearable_search_edit(
     ui: &mut Ui,
@@ -78,200 +78,32 @@ pub(crate) fn paint_focus_outline(ui: &Ui, response: &Response) {
     }
 }
 
-pub(crate) fn flyout_handle(
-    ui: &mut Ui,
-    rect: egui::Rect,
-    id: impl std::hash::Hash,
-    icon: &'static str,
-    tooltip: &str,
-) -> Response {
-    let response = ui
-        .interact(rect, ui.make_persistent_id(id), Sense::click())
-        .on_hover_cursor(CursorIcon::PointingHand)
-        .on_hover_text(tooltip);
-    let fill = if response.hovered() || response.has_focus() {
-        ui.visuals().widgets.hovered.bg_fill
-    } else {
-        ui.visuals().widgets.inactive.bg_fill
-    };
-    ui.painter()
-        .rect_filled(rect, egui::CornerRadius::ZERO, fill);
-    ui.painter().text(
-        egui::pos2(rect.center().x, rect.top() + 16.0),
-        Align2::CENTER_CENTER,
-        icon,
-        FontId::proportional(12.0),
-        ui.visuals().text_color(),
-    );
-    paint_focus_outline(ui, &response);
-    response
-}
-
-pub(crate) fn flyout_restore_button_above_edge(
-    ui: &mut Ui,
-    id: impl std::hash::Hash,
-    x: f32,
-    top: f32,
-    tooltip: &str,
-) -> Response {
-    flyout_mode_icon_button_above_edge(ui, id, x, top, regular::LAYOUT, tooltip)
-}
-
-pub(crate) fn flyout_mode_button_above_divider(
-    ui: &mut Ui,
-    id: impl std::hash::Hash,
-    divider: egui::Rect,
-    tooltip: &str,
-) -> Response {
-    let mut x = divider.center().x;
-    if let Some(to_global) = ui.ctx().layer_transform_to_global(ui.layer_id()) {
-        x = (to_global * egui::pos2(x, divider.top())).x;
-    }
-    let top = ui.ctx().screen_rect().top() + correo_style::layout::HEADER_HEIGHT;
-    flyout_mode_button_above_global_edge(ui.ctx(), id, x, top, tooltip)
-}
-
-pub(crate) fn flyout_mode_button_above_global_edge(
-    ctx: &egui::Context,
-    id: impl std::hash::Hash,
-    x: f32,
-    top: f32,
-    tooltip: &str,
-) -> Response {
-    flyout_mode_icon_button_above_global_edge(ctx, id, x, top, regular::SIDEBAR_SIMPLE, tooltip)
-}
-
-fn flyout_mode_icon_button_above_global_edge(
-    ctx: &egui::Context,
-    id: impl std::hash::Hash,
-    x: f32,
-    top: f32,
-    icon: &'static str,
-    tooltip: &str,
-) -> Response {
-    let size = egui::Vec2::from(compact_mode_button_size());
-    let rect = egui::Rect::from_center_size(
-        egui::pos2(x, top - size.y * 0.5 - correo_style::layout::TOOLBAR_GAP),
-        size,
-    );
-    egui::Area::new(egui::Id::new(("compact-mode-global", id)))
-        .order(egui::Order::Foreground)
-        .fixed_pos(rect.min)
-        .movable(false)
-        .show(ctx, |ui| {
-            let rect = egui::Rect::from_min_size(ui.min_rect().min, rect.size());
-            compact_mode_icon_button_at(ui, rect, icon, true, tooltip)
-        })
-        .inner
-}
-
-fn flyout_mode_icon_button_above_edge(
-    ui: &mut Ui,
-    id: impl std::hash::Hash,
-    x: f32,
-    top: f32,
-    icon: &'static str,
-    tooltip: &str,
-) -> Response {
-    let size = egui::Vec2::from(compact_mode_button_size());
-    let rect = egui::Rect::from_center_size(
-        egui::pos2(x, top - size.y * 0.5 - correo_style::layout::TOOLBAR_GAP),
-        size,
-    );
-    compact_mode_icon_button_area(ui, id, rect, icon, tooltip)
-}
-
-fn compact_mode_icon_button_area(
-    ui: &mut Ui,
-    id: impl std::hash::Hash,
-    rect: egui::Rect,
-    icon: &'static str,
-    tooltip: &str,
-) -> Response {
-    let mut global_rect = rect;
-    if let Some(to_global) = ui.ctx().layer_transform_to_global(ui.layer_id()) {
-        global_rect = to_global * global_rect;
-    }
-    egui::Area::new(ui.make_persistent_id(id))
-        .order(egui::Order::Foreground)
-        .fixed_pos(global_rect.min)
-        .movable(false)
-        .show(ui.ctx(), |ui| {
-            let rect = egui::Rect::from_min_size(ui.min_rect().min, global_rect.size());
-            compact_mode_icon_button_at(ui, rect, icon, true, tooltip)
-        })
-        .inner
-}
-
-pub(crate) fn compact_mode_button_size() -> [f32; 2] {
-    [COMPACT_MODE_BUTTON_SIDE, COMPACT_MODE_BUTTON_SIDE]
-}
-
-pub(crate) fn compact_mode_icon_button(
-    ui: &mut Ui,
-    icon: &str,
-    enabled: bool,
-    tooltip: &str,
-) -> Response {
-    let (rect, response) = ui.allocate_exact_size(
-        egui::Vec2::from(compact_mode_button_size()),
-        if enabled {
-            Sense::click()
-        } else {
-            Sense::hover()
-        },
-    );
-    paint_compact_mode_icon_button(ui, rect, &response, icon, enabled);
-    response.on_hover_text(tooltip)
-}
-
-fn compact_mode_icon_button_at(
-    ui: &mut Ui,
-    rect: egui::Rect,
-    icon: &str,
-    enabled: bool,
-    tooltip: &str,
-) -> Response {
-    let response = ui
-        .interact(
-            rect,
-            ui.make_persistent_id(("compact-mode-icon-button", tooltip)),
-            if enabled {
-                Sense::click()
-            } else {
-                Sense::hover()
-            },
-        )
-        .on_hover_text(tooltip);
-    paint_compact_mode_icon_button(ui, rect, &response, icon, enabled);
-    response
-}
-
-fn paint_compact_mode_icon_button(
+pub(crate) fn paint_pane_divider(
     ui: &Ui,
     rect: egui::Rect,
     response: &Response,
-    icon: &str,
-    enabled: bool,
+    tokens: ThemeTokens,
+    vertical: bool,
 ) {
-    if enabled && (response.hovered() || response.has_focus()) {
-        let visuals = ui.style().interact(response);
-        ui.painter()
-            .rect_filled(rect, visuals.corner_radius, visuals.bg_fill);
-    }
-    let color = if enabled {
-        ui.visuals().widgets.inactive.fg_stroke.color
+    let color = if response.hovered() || response.dragged() {
+        tokens.accent
     } else {
-        ui.visuals().weak_text_color()
+        tokens.border
     };
-    ui.painter().text(
-        rect.center(),
-        Align2::CENTER_CENTER,
-        icon,
-        FontId::proportional(16.0),
-        color,
-    );
-    paint_focus_outline(ui, response);
+    let center = rect.center();
+    let points = if vertical {
+        [
+            egui::pos2(center.x, rect.top()),
+            egui::pos2(center.x, rect.bottom()),
+        ]
+    } else {
+        [
+            egui::pos2(rect.left(), center.y),
+            egui::pos2(rect.right(), center.y),
+        ]
+    };
+    ui.painter()
+        .line_segment(points, egui::Stroke::new(1.0_f32, color));
 }
 
 pub(crate) fn menu_item(ui: &mut Ui, icon: Option<&str>, label: &str) -> Response {

@@ -155,6 +155,11 @@ legacy-failed = Fehlgeschlagen
 legacy-restored = Backup wiederhergestellt
 
 connections-heading = Verbindungen
+sidebar-show = Seitenleiste anzeigen
+sidebar-hide = Seitenleiste ausblenden
+sidebar-unavailable = Fur diese Ansicht ist keine Seitenleiste verfugbar
+workbench-use-tab-view = Tabansicht verwenden
+workbench-use-split-view = Geteilte Ansicht verwenden
 connection-none-available = Keine Verbindung verfügbar
 connection-show-list = Verbindungen anzeigen
 connection-use-flyout = Verbindungs-Flyout verwenden

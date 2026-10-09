@@ -1,6 +1,6 @@
 use correo_core::{
     ConnectionSettingsTab, ConnectionState, PluginLoadState, PluginSource, PluginStatus,
-    PluginSurfaceTab, SettingsSection, ThemeMode, Workspace,
+    PluginSurfaceTab, SettingsSection, Workspace,
 };
 use fluent_bundle::{FluentArgs, FluentBundle, FluentResource};
 use unic_langid::LanguageIdentifier;
@@ -160,16 +160,6 @@ impl I18n {
         })
     }
 
-    pub(crate) fn theme_label(&self, mode: &ThemeMode) -> String {
-        self.text(if matches!(mode, ThemeMode::System) {
-            "theme-system"
-        } else if mode.is_light() {
-            "theme-light"
-        } else {
-            "theme-dark"
-        })
-    }
-
     pub(crate) fn settings_section_label(&self, section: SettingsSection) -> String {
         self.text(match section {
             SettingsSection::Appearance => "settings-appearance",
@@ -316,7 +306,7 @@ fn system_locale() -> Locale {
 #[cfg(test)]
 mod tests {
     use super::I18n;
-    use correo_core::{ThemeMode, Workspace};
+    use correo_core::Workspace;
 
     #[test]
     fn german_catalog_uses_original_settings_label() {
@@ -326,7 +316,7 @@ mod tests {
         assert_eq!(i18n.text("common-save"), "Speichern");
         assert_eq!(i18n.text("plugin-header"), "Plugins");
         assert_eq!(i18n.workspace_label(Workspace::Settings), "Einstellungen");
-        assert_eq!(i18n.theme_label(&ThemeMode::Dark), "Dunkel");
+        assert_eq!(i18n.text("theme-dark"), "Dunkel");
     }
 
     #[test]

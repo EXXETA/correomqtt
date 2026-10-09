@@ -374,7 +374,7 @@ pub fn dotted_focus_outline(ui: &Ui, rect: egui::Rect) {
     } else {
         egui::Color32::BLACK
     };
-    let stroke = egui::Stroke::new(1.0, color);
+    let stroke = egui::Stroke::new(1.0_f32, color);
     let rect = rect.shrink(1.0);
     dotted_line(ui, rect.left_top(), rect.right_top(), stroke);
     dotted_line(ui, rect.right_top(), rect.right_bottom(), stroke);

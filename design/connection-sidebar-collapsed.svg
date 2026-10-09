@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <style>
+    .title { font: 700 28px Arial, sans-serif; fill: #f4f1ec } .label { font: 600 14px Arial, sans-serif; fill: #cac4bc } .body { font: 14px Arial, sans-serif; fill: #a8a19a } .item { font: 14px Arial, sans-serif; fill: #e7e2db } .small { font: 12px Arial, sans-serif; fill: #8f8881 } .icon { font: 22px Arial, sans-serif; fill: #d6d0c8 }
+  </style>
+  <rect width="1440" height="900" fill="#17191c"/>
+  <text x="56" y="66" class="title">Proposal B: Collapsed sidebar uses the navigation rail</text>
+  <text x="56" y="96" class="body">No full-height expansion strip. The familiar Connections destination remains available in one place.</text>
+  <rect x="56" y="132" width="1328" height="700" rx="10" fill="#22252a" stroke="#484d54"/>
+  <rect x="57" y="133" width="1326" height="64" rx="10" fill="#2a2e34"/>
+  <text x="88" y="172" class="label">CORREO MQTT</text>
+  <rect x="57" y="197" width="70" height="634" fill="#2a2e34"/>
+  <text x="80" y="252" class="icon">⌂</text>
+  <rect x="66" y="281" width="52" height="54" rx="7" fill="#4a5965"/>
+  <text x="81" y="315" class="icon">⌁</text>
+  <circle cx="108" cy="291" r="5" fill="#66c28a"/>
+  <text x="138" y="313" class="small">Tooltip: Show connections sidebar</text>
+  <text x="80" y="378" class="icon">◈</text>
+  <text x="160" y="249" class="title">Development broker</text>
+  <text x="160" y="282" class="body">Connected · 12 subscriptions · 1,246 messages</text>
+  <rect x="160" y="319" width="1183" height="48" rx="5" fill="#2c3036"/>
+  <text x="182" y="350" class="item">Messages</text><text x="292" y="350" class="body">Publish</text><text x="382" y="350" class="body">Subscriptions</text>
+  <rect x="160" y="391" width="1183" height="390" rx="6" fill="#1b1e22" stroke="#363b42"/>
+  <text x="183" y="426" class="small">TOPIC</text><text x="600" y="426" class="small">PAYLOAD</text><text x="1194" y="426" class="small">RECEIVED</text>
+  <line x1="178" y1="444" x2="1325" y2="444" stroke="#373c43"/>
+  <text x="183" y="478" class="item">sensors/lab/temperature</text><text x="600" y="478" class="body">{ "value": 22.4 }</text><text x="1194" y="478" class="body">10:42:18</text>
+  <text x="183" y="526" class="item">sensors/lab/humidity</text><text x="600" y="526" class="body">{ "value": 48 }</text><text x="1194" y="526" class="body">10:42:17</text>
+</svg>

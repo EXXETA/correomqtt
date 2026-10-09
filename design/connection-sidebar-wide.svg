@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <style>
+    .title { font: 700 28px Arial, sans-serif; fill: #f4f1ec } .label { font: 600 14px Arial, sans-serif; fill: #cac4bc } .body { font: 14px Arial, sans-serif; fill: #a8a19a } .item { font: 14px Arial, sans-serif; fill: #e7e2db } .small { font: 12px Arial, sans-serif; fill: #8f8881 } .icon { font: 22px Arial, sans-serif; fill: #d6d0c8 }
+  </style>
+  <rect width="1440" height="900" fill="#17191c"/>
+  <text x="56" y="66" class="title">Proposal A: Persistent sidebar, divider toggle</text>
+  <text x="56" y="96" class="body">The control belongs to the panel boundary, not the application header.</text>
+  <rect x="56" y="132" width="1328" height="700" rx="10" fill="#22252a" stroke="#484d54"/>
+  <rect x="57" y="133" width="1326" height="64" rx="10" fill="#2a2e34"/>
+  <text x="88" y="172" class="label">CORREO MQTT</text>
+  <rect x="57" y="197" width="70" height="634" fill="#2a2e34"/>
+  <text x="80" y="252" class="icon">⌂</text><text x="80" y="315" class="icon">⌁</text><text x="80" y="378" class="icon">◈</text>
+  <rect x="66" y="344" width="52" height="54" rx="7" fill="#4a5965"/>
+  <text x="82" y="378" class="icon">⌁</text>
+  <rect x="127" y="197" width="310" height="634" fill="#202328"/>
+  <text x="151" y="241" class="label">CONNECTIONS</text>
+  <rect x="151" y="264" width="262" height="34" rx="5" fill="#30343a"/>
+  <text x="164" y="287" class="small">Search connections</text>
+  <rect x="151" y="320" width="262" height="72" rx="5" fill="#303940"/>
+  <circle cx="174" cy="346" r="6" fill="#66c28a"/><text x="191" y="350" class="item">Development broker</text><text x="191" y="374" class="small">mqtt://localhost:1883</text>
+  <rect x="151" y="400" width="262" height="72" rx="5" fill="#272b30"/>
+  <circle cx="174" cy="426" r="6" fill="#d5a85e"/><text x="191" y="430" class="item">Production</text><text x="191" y="454" class="small">Disconnected</text>
+  <line x1="437" y1="197" x2="437" y2="831" stroke="#5a6068"/>
+  <rect x="426" y="480" width="22" height="42" rx="10" fill="#3f4851" stroke="#77818b"/>
+  <text x="432" y="507" class="icon">‹</text>
+  <text x="462" y="505" class="small">Hover tooltip: Hide connections sidebar</text>
+  <text x="478" y="249" class="title">Development broker</text>
+  <text x="478" y="282" class="body">Connected · 12 subscriptions · 1,246 messages</text>
+  <rect x="478" y="319" width="865" height="48" rx="5" fill="#2c3036"/>
+  <text x="500" y="350" class="item">Messages</text><text x="610" y="350" class="body">Publish</text><text x="700" y="350" class="body">Subscriptions</text>
+  <rect x="478" y="391" width="865" height="390" rx="6" fill="#1b1e22" stroke="#363b42"/>
+  <text x="501" y="426" class="small">TOPIC</text><text x="790" y="426" class="small">PAYLOAD</text><text x="1194" y="426" class="small">RECEIVED</text>
+  <line x1="496" y1="444" x2="1325" y2="444" stroke="#373c43"/>
+  <text x="501" y="478" class="item">sensors/lab/temperature</text><text x="790" y="478" class="body">{ "value": 22.4 }</text><text x="1194" y="478" class="body">10:42:18</text>
+  <text x="501" y="526" class="item">sensors/lab/humidity</text><text x="790" y="526" class="body">{ "value": 48 }</text><text x="1194" y="526" class="body">10:42:17</text>
+</svg>

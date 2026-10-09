@@ -28,7 +28,14 @@ pub(crate) fn editor(
     tokens: ThemeTokens,
     commands: &AppCommandSender,
 ) {
-    workbench_layout::pane_title(ui, "Subscribe", WorkbenchPaneSide::Subscribe);
+    workbench_layout::pane_title(
+        ui,
+        "Subscribe",
+        WorkbenchPaneSide::Subscribe,
+        snapshot.workbench.narrow_tab,
+        tokens,
+        commands,
+    );
     ui.add_space(4.0);
     topic_row(ui, snapshot, tokens, commands);
     subscriptions(ui, snapshot, tokens, commands);

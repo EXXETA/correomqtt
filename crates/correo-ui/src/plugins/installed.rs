@@ -3,7 +3,6 @@ use egui::{Label, RichText, ScrollArea, Ui};
 use egui_phosphor::regular;
 
 use crate::i18n::I18n;
-use crate::responsive;
 use crate::theme::ThemeTokens;
 use correo_style::layout;
 
@@ -12,11 +11,10 @@ use crate::widgets::{
 };
 
 use super::{
-    capability_chips, plugin_detail, plugin_split, plugin_tile, search_field, send, status_color,
-    TILE_HEIGHT,
+    capability_chips, plugin_detail, plugin_tile, search_field, send, status_color, TILE_HEIGHT,
 };
 
-pub(super) fn tab(
+pub(super) fn sidebar(
     ui: &mut Ui,
     plugins: &PluginSurfaceSnapshot,
     tokens: ThemeTokens,
@@ -24,17 +22,7 @@ pub(super) fn tab(
     i18n: &I18n,
 ) {
     let filtered = plugins.filtered_plugins();
-    plugin_split(
-        ui,
-        plugins,
-        tokens,
-        commands,
-        i18n,
-        |ui| {
-            plugin_list(ui, plugins, &filtered, tokens, commands, i18n);
-        },
-        |ui| selected_detail(ui, plugins, tokens, commands, i18n),
-    );
+    plugin_list(ui, plugins, &filtered, tokens, commands, i18n);
 }
 
 fn plugin_list(
@@ -104,7 +92,6 @@ fn plugin_row(
     );
     if response.clicked() {
         send(commands, AppCommand::SelectPlugin(plugin.id.clone()));
-        responsive::close_plugin_flyout(ui.ctx());
     }
     response.context_menu(|ui| installed_plugin_context_menu(ui, plugin, commands, i18n));
 }
@@ -156,7 +143,7 @@ fn menu_label(icon: &str, label: &str) -> String {
     format!("{icon}  {label}")
 }
 
-fn selected_detail(
+pub(super) fn detail(
     ui: &mut Ui,
     plugins: &PluginSurfaceSnapshot,
     tokens: ThemeTokens,

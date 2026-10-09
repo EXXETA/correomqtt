@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <style>
+    .title { font: 700 28px Arial, sans-serif; fill: #f4f1ec } .label { font: 600 14px Arial, sans-serif; fill: #cac4bc } .body { font: 14px Arial, sans-serif; fill: #a8a19a } .item { font: 14px Arial, sans-serif; fill: #e7e2db } .small { font: 12px Arial, sans-serif; fill: #8f8881 } .icon { font: 22px Arial, sans-serif; fill: #d6d0c8 }
+  </style>
+  <rect width="1440" height="900" fill="#17191c"/>
+  <text x="56" y="66" class="title">Proposal C: Narrow window uses a temporary drawer</text>
+  <text x="56" y="96" class="body">A page-level Connections button opens the drawer. Escape, outside click, or Close dismisses it.</text>
+  <rect x="250" y="132" width="940" height="700" rx="10" fill="#22252a" stroke="#484d54"/>
+  <rect x="251" y="133" width="938" height="64" rx="10" fill="#2a2e34"/>
+  <text x="279" y="172" class="label">CORREO MQTT</text>
+  <rect x="251" y="197" width="70" height="634" fill="#2a2e34"/>
+  <text x="274" y="252" class="icon">⌂</text><text x="274" y="315" class="icon">⌁</text>
+  <text x="349" y="249" class="title">Development broker</text>
+  <text x="349" y="282" class="body">Connected · 12 subscriptions</text>
+  <rect x="349" y="310" width="174" height="38" rx="5" fill="#4a5965" stroke="#77818b"/>
+  <text x="365" y="335" class="item">☰  Connections</text>
+  <text x="537" y="335" class="small">Page toolbar action</text>
+  <rect x="349" y="373" width="809" height="408" rx="6" fill="#1b1e22" stroke="#363b42"/>
+  <text x="373" y="408" class="small">TOPIC</text><text x="700" y="408" class="small">PAYLOAD</text>
+  <rect x="321" y="197" width="868" height="634" fill="#0e1013" opacity="0.57"/>
+  <rect x="321" y="197" width="350" height="634" fill="#202328" stroke="#626972"/>
+  <text x="345" y="241" class="label">CONNECTIONS</text>
+  <rect x="618" y="215" width="31" height="31" rx="5" fill="#373c43"/>
+  <text x="627" y="238" class="icon">×</text>
+  <rect x="345" y="264" width="302" height="34" rx="5" fill="#30343a"/>
+  <text x="358" y="287" class="small">Search connections</text>
+  <rect x="345" y="320" width="302" height="72" rx="5" fill="#303940"/>
+  <circle cx="368" cy="346" r="6" fill="#66c28a"/><text x="385" y="350" class="item">Development broker</text><text x="385" y="374" class="small">mqtt://localhost:1883</text>
+  <rect x="345" y="400" width="302" height="72" rx="5" fill="#272b30"/>
+  <circle cx="368" cy="426" r="6" fill="#d5a85e"/><text x="385" y="430" class="item">Production</text><text x="385" y="454" class="small">Disconnected</text>
+  <text x="345" y="804" class="small">Drawer overlays content only in compact layouts</text>
+</svg>

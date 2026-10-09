@@ -2,7 +2,6 @@ use correo_core::{
     AppCommand, AppCommandSender, AppSnapshot, ConnectDisabledReason, ConnectionState,
     ConnectionSummary,
 };
-use correo_style::layout;
 use egui::{Button, Layout, Rect, RichText, Sense, Ui, UiBuilder};
 use egui_phosphor::regular;
 
@@ -30,9 +29,7 @@ pub fn connection_header(
     let Some(connection) = snapshot.selected_connection() else {
         return;
     };
-    if responsive::connections_context_is_compact(ui.ctx(), snapshot.active_workspace)
-        || tabbed_header_needs_compact_actions(ui)
-    {
+    if tabbed_header_needs_compact_actions(ui) {
         compact_connection_header(ui, snapshot, connection, tokens, commands, i18n);
         return;
     }
@@ -50,6 +47,7 @@ pub fn connection_header(
     );
     left.set_clip_rect(rect);
     left.heading(&connection.name);
+    tab_mode_toggle(&mut left, rect.width(), i18n);
     if !connection.immutable {
         if header_icon_button(
             &mut left,
@@ -86,8 +84,6 @@ pub fn connection_header(
     }
     plugin_connection_actions(&mut left, snapshot, connection, commands);
 
-    title_tab_controls_if_visible(ui, rect, snapshot, tokens, commands);
-
     let mut right = ui.new_child(
         UiBuilder::new()
             .max_rect(rect)
@@ -106,7 +102,7 @@ fn compact_connection_header(
     commands: &AppCommandSender,
     i18n: &I18n,
 ) {
-    let response = ui.allocate_ui_with_layout(
+    ui.allocate_ui_with_layout(
         egui::vec2(ui.available_width(), square_icon_button_size()[1]),
         egui::Layout::left_to_right(egui::Align::Center),
         |ui| {
@@ -116,13 +112,23 @@ fn compact_connection_header(
             } else {
                 104.0
             };
+            let tab_toggle_visible = workbench_layout::tab_toggle_available(ui.available_width());
+            let tab_toggle_width = if tab_toggle_visible {
+                square_icon_button_size()[0] + ui.spacing().item_spacing.x
+            } else {
+                0.0
+            };
             let center_width = (ui.available_width()
                 - connection_action_width
                 - square_icon_button_size()[0]
                 - square_icon_button_size()[0]
-                - (ui.spacing().item_spacing.x * 3.0))
+                - (ui.spacing().item_spacing.x * 3.0)
+                - tab_toggle_width)
                 .max(80.0);
             connection_title(ui, connection, tokens, i18n, center_width, false);
+            if tab_toggle_visible {
+                tab_mode_toggle(ui, ui.available_width(), i18n);
+            }
             compact_overflow_menu(ui, snapshot, connection, tokens, commands, i18n);
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 connection_action(ui, connection, commands, i18n, icon_actions);
@@ -130,36 +136,28 @@ fn compact_connection_header(
             });
         },
     );
-    title_tab_controls_if_visible(ui, response.response.rect, snapshot, tokens, commands);
 }
 
 fn tabbed_header_needs_compact_actions(ui: &Ui) -> bool {
-    let width = ui.available_width();
-    workbench_layout::tabs_visible_for_width(ui, width)
-        && width < TABBED_HEADER_COMPACT_ACTIONS_WIDTH
+    ui.available_width() < TABBED_HEADER_COMPACT_ACTIONS_WIDTH
 }
 
-fn title_tab_controls_if_visible(
-    ui: &mut Ui,
-    rect: Rect,
-    snapshot: &AppSnapshot,
-    tokens: ThemeTokens,
-    commands: &AppCommandSender,
-) {
-    if !workbench_layout::tabs_visible_for_width(ui, rect.width()) {
+fn tab_mode_toggle(ui: &mut Ui, available_width: f32, i18n: &I18n) {
+    if !workbench_layout::tab_toggle_available(available_width) {
         return;
     }
-
-    let width = workbench_layout::title_tab_controls_width(rect.width());
-    let tab_rect = Rect::from_center_size(rect.center(), egui::vec2(width, layout::CONTROL_HEIGHT));
-    workbench_layout::title_bar_tab_controls(
-        ui,
-        tab_rect,
-        tokens,
-        snapshot.workbench.narrow_tab,
-        commands,
-        workbench_layout::natural_tabs_for_width(rect.width()),
-    );
+    let tab_mode = workbench_layout::user_tab_mode(ui);
+    let (icon, tooltip) = if tab_mode {
+        (
+            regular::SQUARE_SPLIT_VERTICAL,
+            i18n.text("workbench-use-split-view"),
+        )
+    } else {
+        (regular::TABS, i18n.text("workbench-use-tab-view"))
+    };
+    if header_icon_button(ui, icon, tooltip).clicked() {
+        workbench_layout::toggle_user_tab_mode(ui);
+    }
 }
 
 fn connection_title(

@@ -7,7 +7,6 @@ use egui::{
 use egui_phosphor::regular;
 
 use crate::i18n::I18n;
-use crate::responsive;
 use crate::theme::{ThemeTokens, CONTROL_HEIGHT};
 use crate::widgets::{
     clearable_search_edit, disable_tile_text_selection, fill_remaining_tile_rows, menu_item,
@@ -156,7 +155,7 @@ fn connection_row(
         ui.painter().rect_stroke(
             rect.shrink(2.0),
             egui::CornerRadius::ZERO,
-            Stroke::new(2.0, tokens.accent),
+            Stroke::new(2.0_f32, tokens.accent),
             egui::StrokeKind::Inside,
         );
     }
@@ -175,7 +174,7 @@ fn connection_row(
                 egui::pos2(rect.left() + 6.0, y),
                 egui::pos2(rect.right() - 6.0, y),
             ],
-            Stroke::new(3.0, tokens.accent),
+            Stroke::new(3.0_f32, tokens.accent),
         );
     }
 
@@ -226,20 +225,12 @@ fn connection_row(
     if response.double_clicked() {
         if connection.can_connect() {
             send(commands, AppCommand::Connect(connection.id));
-            close_compact_flyout(ui, snapshot);
         }
     } else if response.clicked() {
         send(commands, AppCommand::SelectConnection(connection.id));
-        close_compact_flyout(ui, snapshot);
     }
 
     ui.add_space(TILE_GAP);
-}
-
-fn close_compact_flyout(ui: &Ui, snapshot: &AppSnapshot) {
-    if responsive::connections_context_is_compact(ui.ctx(), snapshot.active_workspace) {
-        responsive::close_connection_flyout(ui.ctx());
-    }
 }
 
 fn connection_context_menu(

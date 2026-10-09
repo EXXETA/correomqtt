@@ -93,7 +93,7 @@ pub fn apply_theme_with_registry(
         style.visuals.widgets.open.weak_bg_fill = highlight;
         style.visuals.selection.bg_fill = selected;
         style.visuals.selection.stroke =
-            Stroke::new(0.0, selected_text_color(style.visuals.dark_mode));
+            Stroke::new(0.0_f32, selected_text_color(style.visuals.dark_mode));
     });
     ctx.set_theme(match selection {
         ThemeSelection::System => ThemePreference::System,
@@ -179,21 +179,21 @@ fn visuals_for(tokens: ThemeTokens, dark_mode: bool) -> Visuals {
     visuals.error_fg_color = tokens.danger;
     visuals.hyperlink_color = tokens.accent;
     visuals.selection.bg_fill = tile_table_selected_fill(tokens);
-    visuals.selection.stroke = Stroke::new(0.0, selected_text_color(dark_mode));
+    visuals.selection.stroke = Stroke::new(0.0_f32, selected_text_color(dark_mode));
     visuals.window_stroke = Stroke::NONE;
     visuals.widgets.noninteractive.bg_fill = tokens.panel_bg;
     visuals.widgets.noninteractive.weak_bg_fill = tokens.window_bg;
     visuals.widgets.noninteractive.bg_stroke = Stroke::NONE;
-    visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0, tokens.text_primary);
+    visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0_f32, tokens.text_primary);
     visuals.widgets.inactive.bg_fill = tokens.panel_raised;
     visuals.widgets.inactive.weak_bg_fill = tokens.panel_raised;
     visuals.widgets.inactive.bg_stroke = Stroke::NONE;
-    visuals.widgets.inactive.fg_stroke = Stroke::new(1.0, tokens.text_primary);
+    visuals.widgets.inactive.fg_stroke = Stroke::new(1.0_f32, tokens.text_primary);
     let highlight = highlight_fill(tokens);
     visuals.widgets.hovered.bg_fill = highlight;
     visuals.widgets.hovered.weak_bg_fill = highlight;
     visuals.widgets.hovered.bg_stroke = Stroke::NONE;
-    visuals.widgets.hovered.fg_stroke = Stroke::new(1.0, tokens.text_primary);
+    visuals.widgets.hovered.fg_stroke = Stroke::new(1.0_f32, tokens.text_primary);
     visuals.widgets.active.bg_fill = highlight;
     visuals.widgets.active.weak_bg_fill = highlight;
     visuals.widgets.active.bg_stroke = Stroke::NONE;

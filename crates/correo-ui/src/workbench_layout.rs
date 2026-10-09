@@ -1,24 +1,16 @@
 use correo_core::{AppCommand, AppCommandSender, WorkbenchTab};
 use correo_style::layout;
-use egui::{
-    pos2, vec2, Align, Color32, CursorIcon, Id, Layout, Rect, RichText, Sense, Stroke, Ui,
-    UiBuilder,
-};
-use egui_phosphor::regular;
+use egui::{pos2, vec2, Align, CursorIcon, Id, Layout, Rect, RichText, Sense, Ui, UiBuilder};
 
 use crate::{
     responsive,
     theme::ThemeTokens,
     widgets::{
-        compact_mode_button_size, compact_mode_icon_button, dotted_focus_outline,
-        paint_top_tab_strip_underline, TopUnderlineTab,
+        dotted_focus_outline, paint_pane_divider, paint_top_tab_strip_underline, TopUnderlineTab,
     },
 };
 
 const PANE_TITLE_SIZE: f32 = 18.0;
-const TITLE_TAB_CONTROLS_MAX_WIDTH: f32 = 420.0;
-const TITLE_TAB_CONTROLS_MIN_WIDTH: f32 = 220.0;
-const TITLE_TAB_SHORT_LABEL_WIDTH: f32 = 130.0;
 const TITLE_TAB_GAP: f32 = 4.0;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -47,7 +39,7 @@ pub(crate) fn show(
         return;
     }
 
-    let (left, right, divider) = center_split(ui, rect, tokens);
+    let (left, right, _) = center_split(ui, rect, tokens);
     stack_split(
         ui,
         Id::new("workbench-left-stack-ratio"),
@@ -64,11 +56,18 @@ pub(crate) fn show(
         subscribe,
         incoming,
     );
-    divider_mode_button(ui, divider);
 }
 
-pub(crate) fn pane_title(ui: &mut Ui, title: &str, _side: WorkbenchPaneSide) {
+pub(crate) fn pane_title(
+    ui: &mut Ui,
+    title: &str,
+    _side: WorkbenchPaneSide,
+    active_tab: WorkbenchTab,
+    tokens: ThemeTokens,
+    commands: &AppCommandSender,
+) {
     if responsive::workbench_tabs_visible(ui) {
+        pane_tab_controls(ui, tokens, active_tab, commands);
         return;
     }
 
@@ -111,14 +110,17 @@ fn tabbed_layout(
     }
 }
 
-pub(crate) fn title_bar_tab_controls(
+fn pane_tab_controls(
     ui: &mut Ui,
-    rect: Rect,
     tokens: ThemeTokens,
     active_tab: WorkbenchTab,
     commands: &AppCommandSender,
-    natural_tabs: bool,
 ) {
+    let rect = Rect::from_min_size(
+        ui.available_rect_before_wrap().min,
+        vec2(ui.available_width(), layout::CONTROL_HEIGHT),
+    );
+    ui.allocate_rect(rect, Sense::hover());
     let mut child = ui.new_child(
         UiBuilder::new()
             .max_rect(rect)
@@ -126,18 +128,7 @@ pub(crate) fn title_bar_tab_controls(
     );
     child.set_clip_rect(rect);
     child.spacing_mut().item_spacing.x = 0.0;
-    let mode_button_width = if natural_tabs {
-        0.0
-    } else {
-        compact_mode_button_size()[0]
-    };
-    let mode_button_gap = if natural_tabs {
-        0.0
-    } else {
-        layout::TOOLBAR_GAP
-    };
-    let tab_width =
-        ((rect.width() - mode_button_width - mode_button_gap - TITLE_TAB_GAP) * 0.5).max(0.0);
+    let tab_width = ((rect.width() - TITLE_TAB_GAP) * 0.5).max(0.0);
     let mut active_rect = None;
     let mut focused_rect = None;
     for (index, tab) in [WorkbenchTab::Publish, WorkbenchTab::Subscribe]
@@ -145,15 +136,10 @@ pub(crate) fn title_bar_tab_controls(
         .enumerate()
     {
         let selected = active_tab == tab;
-        let tab_label = if tab_width < TITLE_TAB_SHORT_LABEL_WIDTH {
-            short_tab_label(tab)
-        } else {
-            tab.label()
-        };
         let tab_label = if selected {
-            RichText::new(tab_label).strong()
+            RichText::new(tab.label()).strong()
         } else {
-            RichText::new(tab_label)
+            RichText::new(tab.label())
         };
         let response = child.add(
             TopUnderlineTab::new(tab_label, selected, tokens)
@@ -182,23 +168,6 @@ pub(crate) fn title_bar_tab_controls(
     if let Some(focused_rect) = focused_rect {
         dotted_focus_outline(&child, focused_rect);
     }
-    if !natural_tabs {
-        child.add_space(mode_button_gap);
-        tab_mode_button(&mut child);
-    }
-}
-
-pub(crate) fn title_tab_controls_width(available_width: f32) -> f32 {
-    (available_width * 0.34)
-        .clamp(TITLE_TAB_CONTROLS_MIN_WIDTH, TITLE_TAB_CONTROLS_MAX_WIDTH)
-        .min(available_width.max(0.0))
-}
-
-fn short_tab_label(tab: WorkbenchTab) -> &'static str {
-    match tab {
-        WorkbenchTab::Publish => "Pub",
-        WorkbenchTab::Subscribe => "Sub",
-    }
 }
 
 pub(crate) fn natural_tabs_for_width(width: f32) -> bool {
@@ -207,6 +176,18 @@ pub(crate) fn natural_tabs_for_width(width: f32) -> bool {
 
 pub(crate) fn tabs_visible_for_width(ui: &Ui, width: f32) -> bool {
     natural_tabs_for_width(width) || forced_tab_mode(ui)
+}
+
+pub(crate) fn tab_toggle_available(width: f32) -> bool {
+    !natural_tabs_for_width(width)
+}
+
+pub(crate) fn user_tab_mode(ui: &Ui) -> bool {
+    forced_tab_mode(ui)
+}
+
+pub(crate) fn toggle_user_tab_mode(ui: &Ui) {
+    set_forced_tab_mode(ui, !forced_tab_mode(ui));
 }
 
 fn center_split(ui: &mut Ui, rect: Rect, tokens: ThemeTokens) -> (Rect, Rect, Rect) {
@@ -229,7 +210,7 @@ fn center_split(ui: &mut Ui, rect: Rect, tokens: ThemeTokens) -> (Rect, Rect, Re
         left_width = (left_width + response.drag_delta().x).clamp(min_left, max_left);
         store_ratio(ui, id, left_width / usable);
     }
-    draw_divider(ui, divider, tokens.border, true);
+    paint_pane_divider(ui, divider, &response, tokens, true);
 
     let left = Rect::from_min_max(
         rect.left_top(),
@@ -246,36 +227,6 @@ fn center_split(ui: &mut Ui, rect: Rect, tokens: ThemeTokens) -> (Rect, Rect, Re
         rect.right_bottom(),
     );
     (left, right, divider)
-}
-
-fn divider_mode_button(ui: &mut Ui, divider: Rect) {
-    let size = egui::Vec2::from(compact_mode_button_size());
-    let rect = Rect::from_center_size(
-        pos2(
-            divider.center().x,
-            divider.top() - (size.y * 0.5) - layout::TOOLBAR_GAP,
-        ),
-        size,
-    );
-    let mut child = ui.new_child(
-        UiBuilder::new()
-            .max_rect(rect)
-            .layout(Layout::centered_and_justified(egui::Direction::LeftToRight)),
-    );
-    child.set_clip_rect(rect.expand(2.0));
-    if mode_button(&mut child, regular::TABS, true, "Use tab mode").clicked() {
-        set_forced_tab_mode(&child, true);
-    }
-}
-
-fn tab_mode_button(ui: &mut Ui) {
-    if mode_button(ui, regular::COLUMNS, true, "Use split mode").clicked() {
-        set_forced_tab_mode(ui, false);
-    }
-}
-
-fn mode_button(ui: &mut Ui, icon: &str, enabled: bool, tooltip: &str) -> egui::Response {
-    compact_mode_icon_button(ui, icon, enabled, tooltip)
 }
 
 fn stack_split(
@@ -304,7 +255,7 @@ fn stack_split(
         top_height = (top_height + response.drag_delta().y).clamp(min_top, max_top);
         store_ratio(ui, id, top_height / usable);
     }
-    draw_divider(ui, divider, tokens.border, false);
+    paint_pane_divider(ui, divider, &response, tokens, false);
 
     top_pane(
         ui,
@@ -369,14 +320,4 @@ fn ratio(ui: &Ui, id: Id, default: f32) -> f32 {
 fn store_ratio(ui: &Ui, id: Id, value: f32) {
     ui.ctx()
         .data_mut(|data| data.insert_persisted(id, value.clamp(0.15, 0.85)));
-}
-
-fn draw_divider(ui: &Ui, rect: Rect, color: Color32, vertical: bool) {
-    let center = rect.center();
-    let points = if vertical {
-        [pos2(center.x, rect.top()), pos2(center.x, rect.bottom())]
-    } else {
-        [pos2(rect.left(), center.y), pos2(rect.right(), center.y)]
-    };
-    ui.painter().line_segment(points, Stroke::new(1.0, color));
 }
