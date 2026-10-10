@@ -26,7 +26,7 @@ impl AppModel {
                     .empty_profile_confirmation_open = false;
             }
             MigrationRecoveryCommand::ConfirmStartEmptyProfile => self.start_empty_profile(),
-            MigrationRecoveryCommand::SubmitPassword => self.unlock_secrets(),
+            MigrationRecoveryCommand::SubmitPassword { .. } => self.unlock_secrets(),
             MigrationRecoveryCommand::SkipSecrets => self.skip_secrets(),
             MigrationRecoveryCommand::SelectMigrationItem { item_id, selected } => {
                 self.select_migration_item(item_id, *selected);
@@ -84,10 +84,12 @@ impl AppModel {
                 self.snapshot.migration_recovery.state = MigrationRecoveryState::NeedsPassword;
             }
             MigrationRecoveryEvent::PasswordRejected => {
+                self.snapshot.migration_recovery.state = MigrationRecoveryState::NeedsPassword;
                 self.snapshot.migration_recovery.password_error =
                     Some(MigrationPasswordError::WrongPassword);
             }
             MigrationRecoveryEvent::UnsupportedEncryption => {
+                self.snapshot.migration_recovery.state = MigrationRecoveryState::NeedsPassword;
                 self.snapshot.migration_recovery.password_error =
                     Some(MigrationPasswordError::UnsupportedEncryption);
             }
@@ -170,7 +172,6 @@ impl AppModel {
     }
 
     fn unlock_secrets(&mut self) {
-        self.snapshot.migration_recovery.state = MigrationRecoveryState::Reviewing;
         self.snapshot.migration_recovery.password_error = None;
     }
 

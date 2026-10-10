@@ -1,6 +1,7 @@
 use crate::{Result, StorageError};
 use std::ffi::OsStr;
 use std::fs;
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 
 pub(super) fn collect_script_paths(root: &Path, dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
@@ -20,10 +21,23 @@ pub(super) fn collect_script_paths(root: &Path, dir: &Path, out: &mut Vec<PathBu
             }
             collect_script_paths(root, &path, out)?;
         } else if path.extension() == Some(OsStr::new("js")) {
-            out.push(path.strip_prefix(root).unwrap_or(&path).to_path_buf());
+            out.push(relative_script_path(root, &path));
         }
     }
     Ok(())
+}
+
+fn relative_script_path(root: &Path, path: &Path) -> PathBuf {
+    let relative = path.strip_prefix(root).unwrap_or(path);
+    relative
+        .components()
+        .filter_map(|component| match component {
+            Component::Normal(name) => Some(name.to_string_lossy()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("/")
+        .into()
 }
 
 pub fn redact_script_log_text(input: &str) -> String {
@@ -88,10 +102,30 @@ pub(super) fn remove_file_if_exists(path: PathBuf) -> Result<()> {
 }
 
 pub(super) fn write_text(path: &Path, text: &str) -> Result<()> {
-    fs::write(path, text).map_err(|source| StorageError::Write {
+    let mut file = fs::File::create(path).map_err(|source| StorageError::Write {
         path: path.to_path_buf(),
         source,
-    })
+    })?;
+    file.write_all(text.as_bytes())
+        .and_then(|()| file.sync_all())
+        .map_err(|source| StorageError::Write {
+            path: path.to_path_buf(),
+            source,
+        })
+}
+
+pub(super) fn sync_parent_dir(path: &Path) -> Result<()> {
+    #[cfg(not(windows))]
+    {
+        let parent = path.parent().unwrap_or(path);
+        fs::File::open(parent)
+            .and_then(|directory| directory.sync_all())
+            .map_err(|source| StorageError::Write {
+                path: parent.to_path_buf(),
+                source,
+            })?;
+    }
+    Ok(())
 }
 
 pub(super) fn display_path(path: &Path) -> String {
