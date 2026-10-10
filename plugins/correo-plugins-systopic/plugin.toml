@@ -5,7 +5,7 @@ version = "0.1.0"
 description = "Adds a connection header action that opens live $SYS broker metrics."
 provider = "CorreoMQTT"
 license = "GPL-3.0-or-later"
-compatible_correomqtt = ">=0.1.0, <1.0.0"
+compatible_correomqtt = ">=1.0.0, <2.0.0"
 
 [capabilities]
 hooks = []

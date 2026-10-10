@@ -218,7 +218,7 @@ fn system_topic_plugin() -> BundledPlugin {
             .to_owned(),
         provider: "CorreoMQTT".to_owned(),
         license: "GPL-3.0-or-later".to_owned(),
-        compatible_correomqtt: VersionReq::parse(">=0.1.0, <1.0.0")
+        compatible_correomqtt: VersionReq::parse(">=1.0.0, <2.0.0")
             .expect("bundled compatibility requirement is valid"),
         capabilities: CapabilityGrants {
             hooks: Vec::new(),
@@ -360,7 +360,7 @@ fn bundled_plugin(
         description: description.to_owned(),
         provider: "CorreoMQTT".to_owned(),
         license: "GPL-3.0-or-later".to_owned(),
-        compatible_correomqtt: VersionReq::parse(">=0.1.0, <1.0.0")
+        compatible_correomqtt: VersionReq::parse(">=1.0.0, <2.0.0")
             .expect("bundled compatibility requirement is valid"),
         capabilities: CapabilityGrants {
             hooks: hooks.to_vec(),

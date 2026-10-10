@@ -2,13 +2,17 @@ name: Rust Desktop Build
 
 on:
   push:
-    branches: ["**"]
-    tags: ["v*"]
+    branches: [ rust, "release/**" ]
+    tags: [ "v*" ]
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: rust-build-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   CARGO_INCREMENTAL: "0"
@@ -16,12 +20,18 @@ env:
 
 jobs:
   check:
-    name: Packaging automation tests
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    name: Build automation checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      # Exercise the independent build and packaging automation on every target
+      # OS. Formatting and Clippy run once on Linux only.
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-24.04, macos-26, windows-2025 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Show Rust toolchain
         run: |
@@ -30,7 +40,7 @@ jobs:
           cargo --version
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cargo/git
@@ -43,8 +53,16 @@ jobs:
       - name: Verify lockfile
         run: cargo fetch --locked
 
-      - name: Test packaging automation
-        run: cargo test --locked -p xtask
+      - name: Check formatting
+        if: runner.os == 'Linux'
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        if: runner.os == 'Linux'
+        run: cargo clippy --manifest-path xtask/Cargo.toml --bin xtask --no-deps -- -D warnings
+
+      - name: Test build automation
+        run: cargo test -p xtask --locked
 
   package:
     name: Package ${{ matrix.platform }} (${{ matrix.target }})
@@ -69,7 +87,7 @@ jobs:
             artifact: correomqtt-macos-aarch64-unsigned-beta
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Install Linux desktop build dependencies
         if: runner.os == 'Linux'
@@ -86,12 +104,26 @@ jobs:
             libxrandr-dev \
             pkg-config
 
+      - name: Install nfpm for DEB/RPM packaging
+        if: runner.os == 'Linux'
+        run: |
+          curl -sSfL -o /tmp/nfpm.deb https://github.com/goreleaser/nfpm/releases/download/v2.47.0/nfpm_2.47.0_amd64.deb
+          echo "3f1cf344bd0b57373ca55636a78c08b0491f7293d609a456a9ac3b0b150fda97  /tmp/nfpm.deb" | sha256sum -c -
+          sudo dpkg -i /tmp/nfpm.deb
+
+      - name: Install WiX for MSI packaging
+        if: runner.os == 'Windows'
+        run: |
+          dotnet tool install --global wix --version 6.0.2
+          Add-Content $env:GITHUB_PATH "$env:USERPROFILE\.dotnet\tools"
+          & "$env:USERPROFILE\.dotnet\tools\wix.exe" --version
+
       - name: Show package provenance
         run: |
           echo "commit=${{ github.sha }}"
           echo "runner=${{ matrix.runner }}"
           echo "target=${{ matrix.target }}"
-          echo "command=cargo xtask package-smoke --target ${{ matrix.target }} --out-dir dist/beta/${{ matrix.target }}"
+          echo "command=cargo xtask package-smoke --target ${{ matrix.target }} --out-dir dist/beta/${{ matrix.target }} --require-installers"
           rustup show active-toolchain
           rustc -vV
           cargo --version
@@ -99,8 +131,11 @@ jobs:
       - name: Add Rust target
         run: rustup target add ${{ matrix.target }}
 
+      - name: Add validated WASM target
+        run: rustup target add wasm32-unknown-unknown
+
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cargo/git
@@ -114,13 +149,13 @@ jobs:
         run: cargo fetch --locked --target ${{ matrix.target }}
 
       - name: Build and verify unsigned beta package
-        run: cargo xtask package-smoke --target ${{ matrix.target }} --out-dir dist/beta/${{ matrix.target }}
+        run: cargo xtask package-smoke --target ${{ matrix.target }} --out-dir dist/beta/${{ matrix.target }} --require-installers
 
       - name: List package outputs
         run: ls dist/beta/${{ matrix.target }}
 
       - name: Upload unsigned beta package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ matrix.artifact }}
           if-no-files-found: error
@@ -128,23 +163,44 @@ jobs:
           path: |
             dist/beta/${{ matrix.target }}/*.zip
             dist/beta/${{ matrix.target }}/*.zip.sha256
+            dist/beta/${{ matrix.target }}/*.dmg
+            dist/beta/${{ matrix.target }}/*.dmg.sha256
+            dist/beta/${{ matrix.target }}/*.deb
+            dist/beta/${{ matrix.target }}/*.deb.sha256
+            dist/beta/${{ matrix.target }}/*.rpm
+            dist/beta/${{ matrix.target }}/*.rpm.sha256
+            dist/beta/${{ matrix.target }}/*.msi
+            dist/beta/${{ matrix.target }}/*.msi.sha256
             dist/beta/${{ matrix.target }}/SHA256SUMS
 
   plugin-release:
     name: Plugin release artifacts
-    needs: check
+    needs: [check, package]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+
+    env:
+      RELEASE_ASSET_BASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Verify tag matches package version
+        shell: bash
+        run: |
+          package_version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "correo-app") | .version')"
+          test "$GITHUB_REF_NAME" = "v$package_version"
 
       - name: Show plugin release provenance
         run: |
           echo "commit=${{ github.sha }}"
           echo "tag=${{ github.ref_name }}"
-          echo "command=cargo xtask plugin-release --out-dir dist/plugins --asset-base-url https://github.com/EXXETA/correomqtt/releases/download/latest"
+          echo "command=cargo xtask plugin-release --out-dir dist/plugins --asset-base-url $RELEASE_ASSET_BASE_URL"
           rustup show active-toolchain
           rustc -vV
           cargo --version
@@ -153,7 +209,7 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.cargo/git
@@ -167,17 +223,58 @@ jobs:
         run: cargo fetch --locked --target wasm32-unknown-unknown
 
       - name: Build plugin release artifacts
-        run: cargo xtask plugin-release --out-dir dist/plugins --asset-base-url https://github.com/EXXETA/correomqtt/releases/download/latest
+        run: cargo xtask plugin-release --out-dir dist/plugins --asset-base-url "$RELEASE_ASSET_BASE_URL"
 
       - name: List plugin outputs
         run: ls dist/plugins
 
-      - name: Upload plugin release artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: correomqtt-plugin-release-artifacts
-          if-no-files-found: error
-          retention-days: 14
-          path: |
-            dist/plugins/*.zip
-            dist/plugins/default-repo.json
+      - name: Download verified package artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "$GITHUB_RUN_ID" --dir dist/packages
+
+      - name: Create draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            if [ "$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq '.isDraft')" != true ]; then
+              echo "refusing to replace assets on published release $GITHUB_REF_NAME" >&2
+              exit 1
+            fi
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --draft --generate-notes
+          fi
+
+      - name: Remove stale draft assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' |
+            while IFS= read -r asset; do
+              gh release delete-asset "$GITHUB_REF_NAME" "$asset" --yes
+            done
+
+      - name: Upload complete release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" \
+            dist/plugins/*.zip \
+            dist/plugins/default-repo.json \
+            dist/packages/*/*.{zip,zip.sha256,dmg,dmg.sha256,deb,deb.sha256,rpm,rpm.sha256,msi,msi.sha256}
+
+      - name: Smoke published plugin release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          release_dir="$(mktemp -d)"
+          profile_dir="$(mktemp -d)"
+          trap 'rm -rf "$release_dir" "$profile_dir"' EXIT
+          gh release download "$GITHUB_REF_NAME" --dir "$release_dir" --pattern '*.zip' --pattern default-repo.json
+          cargo xtask plugin-release-smoke --download-dir "$release_dir" --profile-dir "$profile_dir" --asset-base-url "$RELEASE_ASSET_BASE_URL"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --draft=false
