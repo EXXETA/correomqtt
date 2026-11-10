@@ -1,6 +1,6 @@
 use correo_core::{AppCommand, AppCommandSender, AppSnapshot, PayloadTransform};
 use correo_style::layout;
-use egui::{Button, Rect, RichText, Sense, TextEdit, Ui, UiBuilder};
+use egui::{Button, Label, Rect, RichText, Sense, TextEdit, Ui, UiBuilder};
 use egui_phosphor::regular;
 
 use crate::{
@@ -206,10 +206,6 @@ fn json_status(
     if let Some((line, column)) =
         payload_highlight::error_position(payload, payload_highlighter, &active_plugin_ids)
     {
-        ui.colored_label(
-            ui.visuals().error_fg_color,
-            format!("JSON error at line {line}, column {column}"),
-        );
         let repair = ui.button("Repair").on_hover_text(
             "Quote bare keys and values, replace single quotes, drop trailing commas",
         );
@@ -220,6 +216,9 @@ fn json_status(
                 AppCommand::TransformPublishPayload(PayloadTransform::Repair),
             );
         }
+        let message = RichText::new(format!("JSON error: line {line}, col {column}"))
+            .color(ui.visuals().error_fg_color);
+        ui.add(Label::new(message).truncate());
         return;
     }
     // shortcut: the UI guesses JSON from the first character, replace with a capability from the executor once a second format gets these actions.
@@ -228,32 +227,27 @@ fn json_status(
     {
         return;
     }
-    for (label, hint, transform) in [
-        (
-            "Format",
-            "Reindent the JSON payload",
-            PayloadTransform::Format,
-        ),
-        (
-            "Minify",
-            "Remove whitespace from the JSON payload",
-            PayloadTransform::Minify,
-        ),
-    ] {
-        let action = ui.button(label).on_hover_text(hint);
-        paint_focus_outline(ui, &action);
-        if action.clicked() {
-            send(commands, AppCommand::TransformPublishPayload(transform));
+    let menu = ui.menu_button("JSON", |ui| {
+        for (label, transform) in [
+            ("Format", PayloadTransform::Format),
+            ("Minify", PayloadTransform::Minify),
+        ] {
+            if ui.button(label).clicked() {
+                send(commands, AppCommand::TransformPublishPayload(transform));
+                ui.close_menu();
+            }
         }
-    }
-    let copy_escaped = ui
-        .button("Copy escaped")
-        .on_hover_text("Copy the payload as an escaped JSON string");
-    paint_focus_outline(ui, &copy_escaped);
-    if copy_escaped.clicked() {
-        ui.ctx()
-            .copy_text(serde_json::to_string(payload).unwrap_or_default());
-    }
+        if ui
+            .button("Copy escaped")
+            .on_hover_text("Copy the payload as an escaped JSON string")
+            .clicked()
+        {
+            ui.ctx()
+                .copy_text(serde_json::to_string(payload).unwrap_or_default());
+            ui.close_menu();
+        }
+    });
+    paint_focus_outline(ui, &menu.response);
 }
 
 fn retained_row(
