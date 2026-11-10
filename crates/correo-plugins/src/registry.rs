@@ -1,6 +1,6 @@
 use crate::{
-    IntoPluginDiagnostic, PluginDiagnostic, PluginPackage, RuntimeLoadError, WasmPlugin,
-    WasmtimePluginRuntime,
+    IntoPluginDiagnostic, PluginCancellationToken, PluginDiagnostic, PluginPackage,
+    RuntimeLoadError, WasmPlugin, WasmtimePluginRuntime,
 };
 use semver::Version;
 use std::collections::BTreeMap;
@@ -28,6 +28,10 @@ impl PluginRegistry {
             runtime,
             plugins: BTreeMap::new(),
         }
+    }
+
+    pub fn cancellation_token(&self) -> PluginCancellationToken {
+        self.runtime.cancellation_token()
     }
 
     pub fn register_package(

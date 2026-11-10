@@ -12,7 +12,7 @@
         "description": "Composes configured validator rules with AND and OR groups.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "message_validator"
@@ -22,7 +22,8 @@
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
@@ -142,7 +143,7 @@
         "description": "Encodes outgoing payloads and decodes incoming payloads with Base64.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "outgoing_message_transform",
@@ -153,7 +154,8 @@
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
@@ -188,7 +190,7 @@
         "description": "Validates text payloads by checking for configured text.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "message_validator"
@@ -198,7 +200,8 @@
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
@@ -241,23 +244,29 @@
         "description": "Formats valid JSON payloads for the message detail view.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
-            "detail_formatter"
+            "detail_formatter",
+            "payload_highlighter"
           ],
           "host": {
             "filesystem": false,
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
           {
             "hook": "detail_formatter",
             "export": "builtin_detail_formatter"
+          },
+          {
+            "hook": "payload_highlighter",
+            "export": "builtin_payload_highlighter"
           }
         ],
         "config_schema": {
@@ -282,7 +291,7 @@
         "description": "Requests that CorreoMQTT save the selected message payload.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "detail_byte_transform"
@@ -292,7 +301,8 @@
             "message_save": true,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
@@ -318,28 +328,30 @@
       "manifest": {
         "manifest_version": 1,
         "id": "org.correomqtt.plugins.system-topic",
-        "name": "System Topic Formatter",
+        "name": "System Topics",
         "version": "0.1.0",
-        "description": "Labels known $SYS broker metrics for the message detail view.",
+        "description": "Adds a connection header action that opens live $SYS broker metrics.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
-          "hooks": [
-            "detail_formatter"
-          ],
+          "hooks": [],
           "host": {
             "filesystem": false,
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": true,
+            "ui": true
           }
         },
-        "entrypoints": [
+        "entrypoints": [],
+        "connection_header_actions": [
           {
-            "hook": "detail_formatter",
-            "export": "builtin_detail_formatter"
+            "id": "system-topics",
+            "label": "$SYS",
+            "tooltip": "Open system topics",
+            "requires_connected": true
           }
         ],
         "config_schema": {
@@ -364,23 +376,29 @@
         "description": "Formats XML-like payloads for the message detail view.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
-            "detail_formatter"
+            "detail_formatter",
+            "payload_highlighter"
           ],
           "host": {
             "filesystem": false,
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
           {
             "hook": "detail_formatter",
             "export": "builtin_detail_formatter"
+          },
+          {
+            "hook": "payload_highlighter",
+            "export": "builtin_payload_highlighter"
           }
         ],
         "config_schema": {
@@ -405,7 +423,7 @@
         "description": "Validates XML payloads against configured inline XSD schema text.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "message_validator"
@@ -415,7 +433,8 @@
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [
@@ -487,7 +506,7 @@
         "description": "Compresses or decompresses message detail bytes with GZIP.",
         "provider": "CorreoMQTT",
         "license": "GPL-3.0-or-later",
-        "compatible_correomqtt": ">=0.1.0, <1.0.0",
+        "compatible_correomqtt": ">=1.0.0, <2.0.0",
         "capabilities": {
           "hooks": [
             "detail_byte_transform"
@@ -497,7 +516,8 @@
             "message_save": false,
             "network": false,
             "secrets": false,
-            "mqtt": false
+            "mqtt": false,
+            "ui": false
           }
         },
         "entrypoints": [

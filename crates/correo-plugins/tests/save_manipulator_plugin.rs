@@ -53,7 +53,7 @@ fn runtime_accepts_save_manipulator_response_for_detail_transform_hook() {
         })],
     };
     let (_dir, package) = write_package(static_detail_transform_wasm(&response));
-    let mut registry = PluginRegistry::new(Version::new(0, 1, 0)).unwrap();
+    let mut registry = PluginRegistry::new(Version::new(1, 0, 0)).unwrap();
     let plugin = registry.register_package(package).unwrap();
 
     let output = plugin

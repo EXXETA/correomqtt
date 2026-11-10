@@ -22,7 +22,7 @@ fn parses_plugin_manifest_with_config_schema_metadata() {
     assert_eq!(manifest.version, Version::new(0, 1, 0));
     assert!(manifest
         .compatible_correomqtt
-        .matches(&Version::new(0, 1, 0)));
+        .matches(&Version::new(1, 0, 0)));
     assert!(manifest
         .capabilities
         .grants_hook(HookKind::OutgoingMessageTransform));
@@ -129,10 +129,15 @@ fn fixture_harness_loads_noop_fixture_for_every_supported_hook() {
         .map(NoopHookFixture::hook)
         .collect::<BTreeSet<_>>();
 
-    assert_eq!(fixtures.len(), HookKind::ALL.len());
-    assert_eq!(hooks, HookKind::ALL.into_iter().collect::<BTreeSet<_>>());
+    assert_eq!(fixtures.len(), HookKind::WASM_DISPATCHED.len());
+    assert_eq!(
+        hooks,
+        HookKind::WASM_DISPATCHED
+            .into_iter()
+            .collect::<BTreeSet<_>>()
+    );
 
-    for hook in HookKind::ALL {
+    for hook in HookKind::WASM_DISPATCHED {
         assert!(harness.noop_fixture_path(hook).exists());
     }
 }

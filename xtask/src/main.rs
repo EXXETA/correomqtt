@@ -5,6 +5,7 @@ use thiserror::Error;
 
 mod package;
 mod plugin_repository;
+mod plugin_specs;
 
 fn main() -> Result<(), XtaskError> {
     let mut args = std::env::args().skip(1);

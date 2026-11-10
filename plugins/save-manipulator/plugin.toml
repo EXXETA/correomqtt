@@ -5,7 +5,7 @@ version = "0.1.0"
 description = "Requests that CorreoMQTT save the selected message payload."
 provider = "CorreoMQTT"
 license = "GPL-3.0-or-later"
-compatible_correomqtt = ">=0.1.0, <1.0.0"
+compatible_correomqtt = ">=1.0.0, <2.0.0"
 
 [capabilities]
 hooks = ["detail_byte_transform"]

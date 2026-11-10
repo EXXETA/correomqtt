@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use rquickjs::{prelude::Rest, Ctx, Function, Object, Value};
 
@@ -21,7 +21,7 @@ use crate::{
 
 pub(crate) fn build_client_factory<'js>(
     ctx: Ctx<'js>,
-    state: Arc<HostState>,
+    state: Rc<HostState>,
 ) -> rquickjs::Result<Object<'js>> {
     let factory = Object::new(ctx.clone())?;
     factory.set(
@@ -58,7 +58,7 @@ enum ClientMode {
 
 fn build_client<'js>(
     ctx: Ctx<'js>,
-    state: Arc<HostState>,
+    state: Rc<HostState>,
     mode: ClientMode,
 ) -> rquickjs::Result<Object<'js>> {
     let client = Object::new(ctx.clone())?;
@@ -93,7 +93,7 @@ fn build_client<'js>(
 fn install_conversions<'js>(
     ctx: Ctx<'js>,
     client: &Object<'js>,
-    state: Arc<HostState>,
+    state: Rc<HostState>,
 ) -> rquickjs::Result<()> {
     let promise_state = state.clone();
     client.set(
@@ -115,7 +115,7 @@ fn install_conversions<'js>(
 fn install_connectivity<'js>(
     ctx: Ctx<'js>,
     client: &Object<'js>,
-    state: Arc<HostState>,
+    state: Rc<HostState>,
     mode: ClientMode,
     subscriptions: MessageSubscriptions<'js>,
 ) -> rquickjs::Result<()> {
@@ -170,7 +170,7 @@ impl ConnectivityOperation {
 fn install_connectivity_method<'js>(
     ctx: Ctx<'js>,
     client: &Object<'js>,
-    state: Arc<HostState>,
+    state: Rc<HostState>,
     mode: ClientMode,
     operation: ConnectivityOperation,
     subscriptions: MessageSubscriptions<'js>,
@@ -226,7 +226,7 @@ fn install_connectivity_method<'js>(
 fn function_creating_client<'js>(
     ctx: Ctx<'js>,
     name: &'static str,
-    state: Arc<HostState>,
+    state: Rc<HostState>,
     mode: ClientMode,
 ) -> rquickjs::Result<Function<'js>> {
     Function::new(ctx, move |ctx: Ctx<'js>| {
@@ -238,7 +238,7 @@ fn function_creating_client<'js>(
 fn install_publish<'js>(
     ctx: Ctx<'js>,
     client: &Object<'js>,
-    state: Arc<HostState>,
+    state: Rc<HostState>,
     mode: ClientMode,
     subscriptions: MessageSubscriptions<'js>,
 ) -> rquickjs::Result<()> {
@@ -308,7 +308,7 @@ fn install_publish<'js>(
 fn install_subscribe<'js>(
     ctx: Ctx<'js>,
     client: &Object<'js>,
-    state: Arc<HostState>,
+    state: Rc<HostState>,
     mode: ClientMode,
     subscriptions: MessageSubscriptions<'js>,
 ) -> rquickjs::Result<()> {
@@ -389,7 +389,7 @@ fn install_incoming_message<'js>(
 fn install_unsubscribe<'js>(
     ctx: Ctx<'js>,
     client: &Object<'js>,
-    state: Arc<HostState>,
+    state: Rc<HostState>,
     mode: ClientMode,
     subscriptions: MessageSubscriptions<'js>,
 ) -> rquickjs::Result<()> {
@@ -455,7 +455,7 @@ fn install_unsubscribe<'js>(
 }
 
 fn finish_connectivity_async_result<'js>(
-    state: &Arc<HostState>,
+    state: &Rc<HostState>,
     result: ScriptingResult<()>,
     on_success: Option<Function<'js>>,
     on_error: Option<Function<'js>>,

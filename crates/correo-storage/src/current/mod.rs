@@ -1,3 +1,4 @@
+mod atomic_file;
 mod config;
 mod history;
 mod hooks;
@@ -6,6 +7,7 @@ mod message;
 mod passwords;
 mod scripting;
 
+pub use atomic_file::*;
 pub use config::*;
 pub use history::*;
 pub use hooks::*;

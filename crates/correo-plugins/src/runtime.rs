@@ -1,6 +1,6 @@
 use crate::{
-    HookDispatchError, HookInvocation, HookKind, HookOutput, PluginManifest, PluginPackage,
-    RuntimeLoadError,
+    HookDispatchError, HookInvocation, HookKind, HookOutput, PluginAbi, PluginManifest,
+    PluginPackage, RuntimeLoadError,
 };
 use semver::Version;
 use std::fmt;
@@ -100,6 +100,7 @@ impl WasmtimePluginRuntime {
 
         Ok(WasmPlugin {
             manifest: package.manifest().clone(),
+            abi: package.abi(),
             module,
             engine: self.engine.clone(),
             limits: self.limits.clone(),
@@ -116,6 +117,7 @@ impl Default for WasmtimePluginRuntime {
 #[derive(Clone)]
 pub struct WasmPlugin {
     manifest: PluginManifest,
+    abi: PluginAbi,
     module: Module,
     engine: Engine,
     limits: WasmSandboxLimits,
@@ -124,6 +126,10 @@ pub struct WasmPlugin {
 impl WasmPlugin {
     pub fn manifest(&self) -> &PluginManifest {
         &self.manifest
+    }
+
+    pub const fn abi(&self) -> PluginAbi {
+        self.abi
     }
 
     pub fn id(&self) -> &str {
@@ -150,6 +156,13 @@ impl WasmPlugin {
         }
 
         let hook = invocation.hook();
+        if invocation.abi_version() != self.abi.version() {
+            return Err(HookDispatchError::AbiVersionMismatch {
+                hook,
+                found: invocation.abi_version(),
+                expected: self.abi.version(),
+            });
+        }
         let entrypoint = self
             .manifest
             .entrypoint_for(hook)

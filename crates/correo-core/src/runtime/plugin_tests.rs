@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use correo_mqtt::{PublishRequest, Qos};
 
@@ -6,8 +9,8 @@ use crate::mqtt::test_support::{connection_options, connection_state, pump_until
 use crate::{
     sample_snapshot, AppCommand, AppRuntime, ConnectionState, FormattedMessageDetail,
     MessageDetailFormat, MessageTransform, MqttCommand, PluginHookCall, PluginHookError,
-    PluginHookExecutor, PluginHookInput, PluginHookKind, PluginHookOutput, PluginHookStatus,
-    PluginMessage, PluginStatus, PluginValidation, ThemeMode,
+    PluginHookExecution, PluginHookExecutor, PluginHookInput, PluginHookKind, PluginHookOutput,
+    PluginHookStatus, PluginMessage, PluginSavePayload, PluginStatus, PluginValidation, ThemeMode,
 };
 
 #[tokio::test]
@@ -225,7 +228,10 @@ async fn incoming_validator_result_is_recorded_on_message() {
     );
     let mut runtime = AppRuntime::with_snapshot(snapshot);
     runtime.attach_plugin_hook_executor(MockHooks::new(
-        MockBehavior::ValidatorBlock("payload missing required text".to_owned()),
+        MockBehavior::ValidatorBlockAfterFirst {
+            message: "payload missing required text".to_owned(),
+            calls: Mutex::new(0),
+        },
         Arc::default(),
     ));
     runtime.attach_mqtt_service(
@@ -272,6 +278,103 @@ async fn incoming_validator_result_is_recorded_on_message() {
             })
     })
     .await;
+}
+
+#[tokio::test]
+async fn full_incoming_plugin_queue_keeps_order_and_runs_every_transform() {
+    const MESSAGE_COUNT: usize = 6;
+    let mut snapshot = sample_snapshot(ThemeMode::System);
+    enable_hook(
+        &mut snapshot,
+        "org.correomqtt.plugins.base64",
+        PluginHookKind::IncomingTransform,
+        "ordered/#",
+    );
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let executor = Arc::new(MockHooks::new(
+        MockBehavior::IncomingSlow(Duration::from_millis(20)),
+        calls.clone(),
+    ));
+    let mut runtime = AppRuntime::with_snapshot(snapshot);
+    runtime.attach_plugin_hook_executor(executor.clone());
+    runtime.incoming_plugin_worker =
+        Some(super::incoming_plugins::IncomingPluginWorker::start_with_capacity(executor, 1));
+    runtime.attach_mqtt_service(
+        crate::MqttService::spawn(FakeFactory::new(Arc::default(), None)).unwrap(),
+    );
+    let connection_id = runtime.snapshot().connections[2].id;
+    runtime
+        .command_sender()
+        .send(AppCommand::SelectConnection(connection_id))
+        .unwrap();
+    runtime
+        .command_sender()
+        .send(AppCommand::Mqtt(MqttCommand::Connect {
+            options: connection_options(connection_id),
+        }))
+        .unwrap();
+    pump_until(&mut runtime, |runtime| {
+        connection_state(runtime, connection_id) == ConnectionState::Connected
+    })
+    .await;
+
+    for index in 0..MESSAGE_COUNT {
+        let topic = format!("ordered/{index}");
+        runtime
+            .command_sender()
+            .send(AppCommand::Mqtt(MqttCommand::Publish {
+                connection_id,
+                request: PublishRequest::new(
+                    topic.as_str(),
+                    b"payload".to_vec(),
+                    Qos::AtMostOnce,
+                    false,
+                )
+                .unwrap(),
+                diagnostics: Vec::new(),
+            }))
+            .unwrap();
+    }
+    runtime.pump();
+    tokio::time::sleep(Duration::from_millis(50)).await;
+    pump_until(&mut runtime, |runtime| {
+        incoming_messages(runtime, "ordered/").len() == MESSAGE_COUNT
+    })
+    .await;
+
+    let mut arrived = incoming_messages(&runtime, "ordered/");
+    arrived.sort_by_key(|message| message.id);
+    let arrival_order: Vec<String> = arrived
+        .iter()
+        .map(|message| message.topic.clone())
+        .collect();
+    let expected: Vec<String> = (0..MESSAGE_COUNT)
+        .map(|index| format!("ordered/{index}"))
+        .collect();
+    assert_eq!(arrival_order, expected);
+    assert!(incoming_messages(&runtime, "ordered/")
+        .iter()
+        .all(|message| message.diagnostics.is_empty()));
+    let transform_calls = calls
+        .lock()
+        .unwrap()
+        .iter()
+        .filter(|call| call.hook == PluginHookKind::IncomingTransform)
+        .count();
+    assert_eq!(transform_calls, MESSAGE_COUNT);
+}
+
+fn incoming_messages<'a>(
+    runtime: &'a AppRuntime,
+    topic_prefix: &str,
+) -> Vec<&'a crate::MessageRow> {
+    runtime
+        .snapshot()
+        .workbench
+        .messages
+        .iter()
+        .filter(|message| message.topic.starts_with(topic_prefix))
+        .collect()
 }
 
 #[test]
@@ -334,6 +437,36 @@ fn detail_formatter_selection_renders_and_cancellation_falls_back() {
     assert!(!detail.diagnostics.is_empty());
 }
 
+#[test]
+fn detail_transform_queues_one_save_payload() {
+    let mut snapshot = sample_snapshot(ThemeMode::System);
+    enable_hook(
+        &mut snapshot,
+        "org.correomqtt.plugins.json-format",
+        PluginHookKind::DetailTransform,
+        "#",
+    );
+    let mut runtime = AppRuntime::with_snapshot(snapshot);
+    runtime.attach_plugin_hook_executor(MockHooks::new(MockBehavior::DetailSave, Arc::default()));
+    runtime
+        .command_sender()
+        .send(AppCommand::SelectDetailTransform(Some(
+            "org.correomqtt.plugins.json-format".to_owned(),
+        )))
+        .unwrap();
+    runtime.pump();
+
+    assert_eq!(
+        runtime.take_plugin_save_payload(),
+        Some(PluginSavePayload {
+            suggested_file_name: "transformed.bin".to_owned(),
+            bytes: b"saved".to_vec(),
+            content_type: Some("application/octet-stream".to_owned()),
+        })
+    );
+    assert_eq!(runtime.take_plugin_save_payload(), None);
+}
+
 #[derive(Debug)]
 struct MockHooks {
     behavior: MockBehavior,
@@ -347,37 +480,72 @@ impl MockHooks {
 }
 
 impl PluginHookExecutor for MockHooks {
+    fn execute_with_host_actions(
+        &self,
+        call: PluginHookCall,
+    ) -> Result<PluginHookExecution, PluginHookError> {
+        let host_actions = matches!(&self.behavior, MockBehavior::DetailSave)
+            .then(|| {
+                vec![crate::PluginHostAction::SavePayload(PluginSavePayload {
+                    suggested_file_name: "transformed.bin".to_owned(),
+                    bytes: b"saved".to_vec(),
+                    content_type: Some("application/octet-stream".to_owned()),
+                })]
+            })
+            .unwrap_or_default();
+        self.execute(call).map(|output| PluginHookExecution {
+            output,
+            host_actions,
+        })
+    }
+
     fn execute(&self, call: PluginHookCall) -> Result<PluginHookOutput, PluginHookError> {
         self.calls.lock().unwrap().push(call.clone());
+        if let MockBehavior::IncomingSlow(delay) = &self.behavior {
+            std::thread::sleep(*delay);
+        }
+        if let MockBehavior::ValidatorBlockAfterFirst { message, calls } = &self.behavior {
+            if call.hook == PluginHookKind::Validator {
+                let mut validation_calls = calls.lock().unwrap();
+                *validation_calls += 1;
+                return if *validation_calls == 1 {
+                    Ok(PluginHookOutput::Validation(PluginValidation::Valid))
+                } else {
+                    Ok(PluginHookOutput::Validation(PluginValidation::Block {
+                        message: message.clone(),
+                    }))
+                };
+            }
+        }
         match (&self.behavior, call.hook, call.input) {
             (
                 MockBehavior::OutgoingReplace(payload),
                 PluginHookKind::OutgoingTransform,
-                PluginHookInput::Message(mut message),
+                PluginHookInput::TransportMessage(mut message),
             ) => {
-                message.payload = payload.clone();
-                Ok(PluginHookOutput::MessageTransform(
-                    MessageTransform::Replace(message),
+                message.message.body = payload.clone();
+                Ok(PluginHookOutput::TransportMessageTransform(
+                    crate::TransportMessageTransform::Replace(message),
                 ))
             }
             (
                 MockBehavior::ValidatorBlock(message),
                 PluginHookKind::Validator,
-                PluginHookInput::Message(_),
+                PluginHookInput::TransportMessage(_),
             ) => Ok(PluginHookOutput::Validation(PluginValidation::Block {
                 message: message.clone(),
             })),
             (
                 MockBehavior::ValidatorWarning(message),
                 PluginHookKind::Validator,
-                PluginHookInput::Message(_),
+                PluginHookInput::TransportMessage(_),
             ) => Ok(PluginHookOutput::Validation(PluginValidation::Warning {
                 message: message.clone(),
             })),
             (
                 MockBehavior::IncomingError(message),
                 PluginHookKind::IncomingTransform,
-                PluginHookInput::Message(_),
+                PluginHookInput::TransportMessage(_),
             ) => Err(PluginHookError::failed(message.clone())),
             (
                 MockBehavior::DetailFormat(text),
@@ -424,6 +592,11 @@ impl PluginHookExecutor for MockHooks {
                 content_type,
                 diagnostics: Vec::new(),
             })),
+            (_, _, PluginHookInput::TransportMessage(_)) => {
+                Ok(PluginHookOutput::TransportMessageTransform(
+                    crate::TransportMessageTransform::Unchanged,
+                ))
+            }
         }
     }
 }
@@ -432,10 +605,16 @@ impl PluginHookExecutor for MockHooks {
 enum MockBehavior {
     OutgoingReplace(Vec<u8>),
     ValidatorBlock(String),
+    ValidatorBlockAfterFirst {
+        message: String,
+        calls: Mutex<usize>,
+    },
     ValidatorWarning(String),
     IncomingError(String),
+    IncomingSlow(Duration),
     DetailFormat(String),
     DetailCancel(String),
+    DetailSave,
 }
 
 fn enable_hook(

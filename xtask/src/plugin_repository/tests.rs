@@ -19,6 +19,7 @@ fn release_artifacts_point_repository_entries_at_archives() {
     let wasm_stem = Box::leak(wasm_stem.into_boxed_str());
     let spec = PluginBuildSpec {
         package: "release-test-plugin",
+        crate_path: "",
         manifest_path,
         wasm_stem,
     };
