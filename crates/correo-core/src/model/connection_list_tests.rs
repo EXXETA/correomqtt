@@ -4,8 +4,8 @@ use crate::{AppCommand, ConnectionSurface};
 #[test]
 fn connection_selection_opens_workbench_and_preserves_pending_editor() {
     let mut model = AppModel::default();
-    let first_id = model.snapshot().connections[0].id;
-    let second_id = model.snapshot().connections[1].id;
+    let first_id = model.snapshot().connections[1].id;
+    let second_id = model.snapshot().connections[2].id;
 
     model.apply_command(AppCommand::OpenConnectionSettings(first_id));
 
@@ -104,8 +104,8 @@ fn move_connection_reorders_visible_connections() {
         .collect();
 
     model.apply_command(AppCommand::MoveConnection {
-        connection_id: original[0],
-        target_connection_id: original[2],
+        connection_id: original[1],
+        target_connection_id: original[3],
         after: true,
     });
 
@@ -117,12 +117,18 @@ fn move_connection_reorders_visible_connections() {
         .collect();
     assert_eq!(
         reordered,
-        [original[1], original[2], original[0], original[3]]
+        [
+            original[0],
+            original[2],
+            original[3],
+            original[1],
+            original[4]
+        ]
     );
 
     model.apply_command(AppCommand::MoveConnection {
-        connection_id: original[0],
-        target_connection_id: original[1],
+        connection_id: original[1],
+        target_connection_id: original[2],
         after: false,
     });
 

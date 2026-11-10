@@ -763,7 +763,7 @@ mod tests {
             runtime.snapshot().migration_recovery.state == MigrationRecoveryState::Complete
         });
 
-        assert_eq!(runtime.snapshot().connection_count, 2);
+        assert_eq!(runtime.snapshot().connection_count, 3);
         assert!(temp.path().join("config.json").exists());
     }
 

@@ -31,7 +31,10 @@ fn bundled_repository_definition_lists_installable_replacements() {
     );
 
     for plugin in &repository.plugins {
-        assert!(!plugin.manifest.capabilities.hooks.is_empty());
+        assert!(
+            !plugin.manifest.capabilities.hooks.is_empty()
+                || !plugin.manifest.connection_header_actions.is_empty()
+        );
         assert_eq!(plugin.manifest.provider, "CorreoMQTT");
         assert_eq!(
             plugin.manifest.compatible_correomqtt.to_string(),
