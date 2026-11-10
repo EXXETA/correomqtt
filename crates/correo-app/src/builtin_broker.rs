@@ -13,6 +13,7 @@ use tokio::net::{TcpListener as TokioTcpListener, TcpStream};
 const CONNECT_PREFIX_TIMEOUT: Duration = Duration::from_secs(5);
 const BROKER_START_TIMEOUT: Duration = Duration::from_secs(5);
 const BROKER_START_RETRY_DELAY: Duration = Duration::from_millis(20);
+const ENGINE_POLL_INTERVAL: Duration = Duration::from_millis(250);
 
 pub fn run_child() -> i32 {
     match run_child_inner() {
@@ -54,8 +55,24 @@ fn run_child_inner() -> Result<(), String> {
         wait_for_broker_listeners(v4_port, v5_port, &engine_status_receiver).await?;
         println!("{}", correo_core::builtin_broker_ready_message(config.port));
         flush_stdout();
-        proxy_loop(listener, v4_port, v5_port).await
+        // Exit with the engine so the parent sees the broker stop instead of a proxy without a broker.
+        tokio::select! {
+            result = proxy_loop(listener, v4_port, v5_port) => result,
+            error = engine_stopped(&engine_status_receiver) => Err(error),
+        }
     })
+}
+
+async fn engine_stopped(engine_status: &mpsc::Receiver<Result<(), String>>) -> String {
+    loop {
+        match engine_status.try_recv() {
+            Ok(Err(error)) => return error,
+            Ok(Ok(())) | Err(mpsc::TryRecvError::Disconnected) => {
+                return "broker engine stopped".to_owned()
+            }
+            Err(mpsc::TryRecvError::Empty) => tokio::time::sleep(ENGINE_POLL_INTERVAL).await,
+        }
+    }
 }
 
 fn broker_config(config: &BuiltInBrokerProcessConfig, v4_port: u16, v5_port: u16) -> Config {

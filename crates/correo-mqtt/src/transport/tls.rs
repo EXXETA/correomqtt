@@ -111,16 +111,11 @@ fn root_store(options: &TlsOptions) -> MqttResult<RootCertStore> {
     match &options.trust_roots {
         TlsTrustRoots::Native => {
             let result = rustls_native_certs::load_native_certs();
-            if !result.errors.is_empty() {
-                return Err(MqttError::tls(format!(
-                    "native certificate store could not be loaded: {} error(s)",
-                    result.errors.len()
-                )));
-            }
             let (added, ignored) = roots.add_parsable_certificates(result.certs);
             if added == 0 {
                 return Err(MqttError::tls(format!(
-                    "native certificate store did not provide usable roots; ignored {ignored}"
+                    "native certificate store did not provide usable roots; ignored {ignored}, {} load error(s)",
+                    result.errors.len()
                 )));
             }
         }

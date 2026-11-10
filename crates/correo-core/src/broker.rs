@@ -141,6 +141,8 @@ pub struct BuiltInBrokerWorker {
 struct BuiltInBrokerChild {
     process: Child,
     ready: Arc<AtomicBool>,
+    port: u16,
+    started_reported: bool,
 }
 
 impl BuiltInBrokerWorker {
@@ -235,7 +237,12 @@ impl BuiltInBrokerWorker {
         if let Some(stderr) = process.stderr.take() {
             spawn_log_reader(stderr, self.event_sender.clone());
         }
-        Ok(BuiltInBrokerChild { process, ready })
+        Ok(BuiltInBrokerChild {
+            process,
+            ready,
+            port: config.port,
+            started_reported: false,
+        })
     }
 
     fn reap_finished_child(&mut self) {
@@ -261,7 +268,14 @@ impl BuiltInBrokerWorker {
                     });
                 }
             }
-            Ok(None) => {}
+            Ok(None) => {
+                // Started is reported here, not by the output reader, so it can never follow Stopped or Failed.
+                if !child.started_reported && child.ready.load(Ordering::Acquire) {
+                    child.started_reported = true;
+                    let port = child.port;
+                    self.emit(BuiltInBrokerEvent::Started { port });
+                }
+            }
             Err(error) => {
                 self.child = None;
                 self.emit(BuiltInBrokerEvent::Failed {
@@ -406,11 +420,7 @@ fn spawn_broker_output_reader(
         for line in reader.lines().map_while(Result::ok) {
             let message = line.trim().to_owned();
             if message == ready_message {
-                if !ready.swap(true, Ordering::AcqRel) {
-                    let _ = sender.emit(AppEvent::BuiltInBroker(BuiltInBrokerEvent::Started {
-                        port,
-                    }));
-                }
+                ready.store(true, Ordering::Release);
             } else if !message.is_empty() {
                 let _ = sender.emit(AppEvent::BuiltInBroker(BuiltInBrokerEvent::Log { message }));
             }
@@ -445,57 +455,4 @@ fn timestamp() -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn broker_output_reports_started_only_after_ready_message() {
-        let (sender, receiver) = flume::bounded(2);
-        let ready = Arc::new(AtomicBool::new(false));
-        let output = format!("starting\n{}\n", builtin_broker_ready_message(1883));
-
-        spawn_broker_output_reader(
-            std::io::Cursor::new(output),
-            AppEventSender::new(sender),
-            1883,
-            Arc::clone(&ready),
-        );
-
-        assert!(matches!(
-            receiver.recv_timeout(std::time::Duration::from_secs(1)),
-            Ok(AppEvent::BuiltInBroker(BuiltInBrokerEvent::Log { message }))
-                if message == "starting"
-        ));
-        assert!(matches!(
-            receiver.recv_timeout(std::time::Duration::from_secs(1)),
-            Ok(AppEvent::BuiltInBroker(BuiltInBrokerEvent::Started {
-                port: 1883
-            }))
-        ));
-        assert!(ready.load(Ordering::Acquire));
-    }
-
-    #[test]
-    fn broker_snapshot_serialization_never_exposes_password() {
-        let snapshot = BuiltInBrokerSnapshot {
-            credentials_enabled: true,
-            username: "broker".to_owned(),
-            password: "snapshot-broker-password".to_owned(),
-            ..BuiltInBrokerSnapshot::default()
-        };
-
-        let serialized = serde_json::to_string(&snapshot).unwrap();
-
-        assert!(!serialized.contains("snapshot-broker-password"));
-        assert!(serde_json::from_str::<serde_json::Value>(&serialized)
-            .unwrap()
-            .get("password")
-            .is_none());
-
-        let mut app_snapshot = crate::AppSnapshot::empty();
-        app_snapshot.built_in_broker = snapshot;
-        assert!(!serde_json::to_string(&app_snapshot)
-            .unwrap()
-            .contains("snapshot-broker-password"));
-    }
-}
+mod tests;
