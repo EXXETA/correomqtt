@@ -1,9 +1,9 @@
 use std::{
     sync::{Arc, Mutex},
-    time::{Duration, Instant},
+    time::Duration,
 };
 
-use correo_mqtt::{IncomingMessage, PublishRequest, Qos, TopicName};
+use correo_mqtt::{PublishRequest, Qos};
 
 use crate::mqtt::test_support::{connection_options, connection_state, pump_until, FakeFactory};
 use crate::{
@@ -280,96 +280,101 @@ async fn incoming_validator_result_is_recorded_on_message() {
     .await;
 }
 
-#[test]
-fn full_incoming_plugin_queue_continues_transform_only_message() {
-    let (_, dispatch) = saturated_incoming_plugin_dispatch(false, "bridge/fallback");
-    let super::plugins::IncomingPluginDispatch::Continue { event, diagnostics } = dispatch else {
-        panic!("full queue must continue transform-only messages");
-    };
-    let crate::MqttEvent::IncomingMessage(message) = event else {
-        panic!("expected incoming MQTT message");
-    };
-    assert_eq!(message.topic.as_str(), "bridge/fallback");
-    assert!(diagnostics.iter().any(|diagnostic| diagnostic
-        .message
-        .contains("continued without topic plugin hooks")));
-}
-
-#[test]
-fn full_incoming_plugin_queue_rejects_message_when_validator_cannot_run() {
-    let (mut runtime, dispatch) = saturated_incoming_plugin_dispatch(true, "bridge/rejected");
-    assert!(matches!(
-        dispatch,
-        super::plugins::IncomingPluginDispatch::Rejected
-    ));
-
-    runtime.pump();
-    assert!(runtime
-        .snapshot()
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic
-            .message
-            .contains("plugin validator queue is full")));
-}
-
-fn saturated_incoming_plugin_dispatch(
-    with_validator: bool,
-    third_topic: &str,
-) -> (AppRuntime, super::plugins::IncomingPluginDispatch) {
+#[tokio::test]
+async fn full_incoming_plugin_queue_keeps_order_and_runs_every_transform() {
+    const MESSAGE_COUNT: usize = 6;
     let mut snapshot = sample_snapshot(ThemeMode::System);
     enable_hook(
         &mut snapshot,
         "org.correomqtt.plugins.base64",
         PluginHookKind::IncomingTransform,
-        "bridge/#",
+        "ordered/#",
     );
-    if with_validator {
-        enable_hook(
-            &mut snapshot,
-            "user.advanced-validator",
-            PluginHookKind::Validator,
-            "bridge/#",
-        );
-    }
     let calls = Arc::new(Mutex::new(Vec::new()));
     let executor = Arc::new(MockHooks::new(
-        MockBehavior::IncomingSlow(Duration::from_secs(1)),
+        MockBehavior::IncomingSlow(Duration::from_millis(20)),
         calls.clone(),
     ));
     let mut runtime = AppRuntime::with_snapshot(snapshot);
     runtime.attach_plugin_hook_executor(executor.clone());
     runtime.incoming_plugin_worker =
         Some(super::incoming_plugins::IncomingPluginWorker::start_with_capacity(executor, 1));
+    runtime.attach_mqtt_service(
+        crate::MqttService::spawn(FakeFactory::new(Arc::default(), None)).unwrap(),
+    );
     let connection_id = runtime.snapshot().connections[2].id;
+    runtime
+        .command_sender()
+        .send(AppCommand::SelectConnection(connection_id))
+        .unwrap();
+    runtime
+        .command_sender()
+        .send(AppCommand::Mqtt(MqttCommand::Connect {
+            options: connection_options(connection_id),
+        }))
+        .unwrap();
+    pump_until(&mut runtime, |runtime| {
+        connection_state(runtime, connection_id) == ConnectionState::Connected
+    })
+    .await;
 
-    assert!(matches!(
-        runtime.queue_incoming_hook_job(&incoming_event(connection_id, "bridge/first")),
-        super::plugins::IncomingPluginDispatch::Queued
-    ));
-    let deadline = Instant::now() + Duration::from_secs(1);
-    while calls.lock().unwrap().is_empty() && Instant::now() < deadline {
-        std::thread::sleep(Duration::from_millis(1));
+    for index in 0..MESSAGE_COUNT {
+        let topic = format!("ordered/{index}");
+        runtime
+            .command_sender()
+            .send(AppCommand::Mqtt(MqttCommand::Publish {
+                connection_id,
+                request: PublishRequest::new(
+                    topic.as_str(),
+                    b"payload".to_vec(),
+                    Qos::AtMostOnce,
+                    false,
+                )
+                .unwrap(),
+                diagnostics: Vec::new(),
+            }))
+            .unwrap();
     }
-    assert!(!calls.lock().unwrap().is_empty());
-    assert!(matches!(
-        runtime.queue_incoming_hook_job(&incoming_event(connection_id, "bridge/second")),
-        super::plugins::IncomingPluginDispatch::Queued
-    ));
-    let dispatch = runtime.queue_incoming_hook_job(&incoming_event(connection_id, third_topic));
-    (runtime, dispatch)
+    runtime.pump();
+    tokio::time::sleep(Duration::from_millis(50)).await;
+    pump_until(&mut runtime, |runtime| {
+        incoming_messages(runtime, "ordered/").len() == MESSAGE_COUNT
+    })
+    .await;
+
+    let mut arrived = incoming_messages(&runtime, "ordered/");
+    arrived.sort_by_key(|message| message.id);
+    let arrival_order: Vec<String> = arrived
+        .iter()
+        .map(|message| message.topic.clone())
+        .collect();
+    let expected: Vec<String> = (0..MESSAGE_COUNT)
+        .map(|index| format!("ordered/{index}"))
+        .collect();
+    assert_eq!(arrival_order, expected);
+    assert!(incoming_messages(&runtime, "ordered/")
+        .iter()
+        .all(|message| message.diagnostics.is_empty()));
+    let transform_calls = calls
+        .lock()
+        .unwrap()
+        .iter()
+        .filter(|call| call.hook == PluginHookKind::IncomingTransform)
+        .count();
+    assert_eq!(transform_calls, MESSAGE_COUNT);
 }
 
-fn incoming_event(connection_id: correo_mqtt::ConnectionId, topic: &str) -> crate::MqttEvent {
-    crate::MqttEvent::IncomingMessage(IncomingMessage {
-        connection_id,
-        topic: TopicName::new(topic).unwrap(),
-        payload: b"payload".to_vec(),
-        qos: Qos::AtMostOnce,
-        retain: false,
-        duplicate: false,
-        packet_id: None,
-    })
+fn incoming_messages<'a>(
+    runtime: &'a AppRuntime,
+    topic_prefix: &str,
+) -> Vec<&'a crate::MessageRow> {
+    runtime
+        .snapshot()
+        .workbench
+        .messages
+        .iter()
+        .filter(|message| message.topic.starts_with(topic_prefix))
+        .collect()
 }
 
 #[test]

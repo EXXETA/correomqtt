@@ -153,7 +153,8 @@ impl AppRuntime {
             event_budget -= 1;
         }
 
-        while event_budget > 0 {
+        // Backpressure: MQTT events wait in the service queue so they stay ordered behind queued hook jobs.
+        while event_budget > 0 && self.incoming_plugin_worker_has_capacity() {
             let Some(event) = self.try_recv_mqtt_event() else {
                 break;
             };
@@ -221,6 +222,14 @@ impl AppRuntime {
             self.model.apply_event(event);
             report.events_processed += 1;
             event_budget -= 1;
+        }
+
+        let dropped_events = self.event_sender.take_dropped();
+        if dropped_events > 0 {
+            self.model
+                .apply_event(AppEvent::DiagnosticRaised(Diagnostic::warning(format!(
+                    "{dropped_events} app events were dropped because the event queue was full."
+                ))));
         }
 
         while report.commands_processed + report.events_processed < PUMP_BUDGET {
@@ -316,6 +325,12 @@ impl AppRuntime {
         let _ = self
             .event_sender
             .emit(AppEvent::DiagnosticRaised(Diagnostic::warning(message)));
+    }
+
+    fn incoming_plugin_worker_has_capacity(&self) -> bool {
+        self.incoming_plugin_worker
+            .as_ref()
+            .is_none_or(incoming_plugins::IncomingPluginWorker::has_capacity)
     }
 
     fn try_recv_incoming_hook_result(&self) -> Option<incoming_plugins::IncomingPluginResult> {
@@ -836,6 +851,30 @@ mod tests {
         let second = runtime.pump();
         assert_eq!(second.events_processed, 1);
         assert!(!second.backlog_remaining);
+    }
+
+    #[test]
+    fn pump_reports_events_dropped_by_full_event_queue() {
+        let mut runtime = AppRuntime::new();
+        let dropped = (0..super::APP_EVENT_CAPACITY + 3)
+            .filter(|index| {
+                runtime
+                    .event_sender()
+                    .emit(AppEvent::DiagnosticRaised(Diagnostic::info(format!(
+                        "event-{index}"
+                    ))))
+                    .is_err()
+            })
+            .count();
+        assert_eq!(dropped, 3);
+
+        runtime.pump();
+
+        assert!(runtime
+            .snapshot()
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.message.contains("3 app events were dropped")));
     }
 
     #[test]

@@ -1,4 +1,10 @@
-use std::path::PathBuf;
+use std::{
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
 use correo_mqtt::ConnectionId;
 use thiserror::Error;
@@ -422,20 +428,31 @@ impl AppCommandSender {
 #[derive(Debug, Clone)]
 pub struct AppEventSender {
     sender: flume::Sender<AppEvent>,
+    dropped: Arc<AtomicUsize>,
 }
 
 impl AppEventSender {
     pub(crate) fn new(sender: flume::Sender<AppEvent>) -> Self {
-        Self { sender }
+        Self {
+            sender,
+            dropped: Arc::default(),
+        }
     }
 
     pub fn emit(&self, event: AppEvent) -> Result<(), CommandSendError> {
         self.sender.try_send(event).map_err(|error| match error {
-            flume::TrySendError::Full(event) => CommandSendError::EventFull(Box::new(event)),
+            flume::TrySendError::Full(event) => {
+                self.dropped.fetch_add(1, Ordering::Relaxed);
+                CommandSendError::EventFull(Box::new(event))
+            }
             flume::TrySendError::Disconnected(event) => {
                 CommandSendError::EventDisconnected(Box::new(event))
             }
         })
+    }
+
+    pub(crate) fn take_dropped(&self) -> usize {
+        self.dropped.swap(0, Ordering::Relaxed)
     }
 }
 

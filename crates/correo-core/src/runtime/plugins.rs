@@ -258,30 +258,16 @@ impl AppRuntime {
             .any(|hook| hook.hook == PluginHookKind::Validator);
         match worker.enqueue(message, hooks, diagnostics) {
             Ok(()) => IncomingPluginDispatch::Queued,
-            Err(error) => {
-                let (message, mut diagnostics, detail, validation_detail) = match error {
-                    super::incoming_plugins::IncomingPluginQueueError::Full {
-                        message,
-                        diagnostics,
-                    } => (
-                        message,
-                        diagnostics,
-                        "Incoming plugin queue is full; message continued without topic plugin hooks.",
-                        "Incoming message rejected because the plugin validator queue is full.",
-                    ),
-                    super::incoming_plugins::IncomingPluginQueueError::Disconnected {
-                        message,
-                        diagnostics,
-                    } => (
-                        message,
-                        diagnostics,
-                        "Incoming plugin worker is unavailable; message continued without topic plugin hooks.",
-                        "Incoming message rejected because the plugin validator worker is unavailable.",
-                    ),
-                };
+            Err(super::incoming_plugins::IncomingPluginWorkerUnavailable {
+                message,
+                mut diagnostics,
+            }) => {
+                let detail = "Incoming plugin worker is unavailable; message continued without topic plugin hooks.";
                 if requires_validation {
                     let _ = self.event_sender.emit(AppEvent::DiagnosticRaised(
-                        crate::Diagnostic::error(validation_detail),
+                        crate::Diagnostic::error(
+                            "Incoming message rejected because the plugin validator worker is unavailable.",
+                        ),
                     ));
                     return IncomingPluginDispatch::Rejected;
                 }

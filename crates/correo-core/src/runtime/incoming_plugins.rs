@@ -64,23 +64,24 @@ impl IncomingPluginWorker {
         message: IncomingMessage,
         hooks: Vec<ActiveHook>,
         diagnostics: Vec<MessageDiagnosticRow>,
-    ) -> Result<(), IncomingPluginQueueError> {
+    ) -> Result<(), IncomingPluginWorkerUnavailable> {
         self.requests
             .try_send(IncomingPluginJob {
                 message,
                 hooks,
                 diagnostics,
             })
-            .map_err(|error| match error {
-                flume::TrySendError::Full(job) => IncomingPluginQueueError::Full {
+            .map_err(|error| {
+                let job = error.into_inner();
+                IncomingPluginWorkerUnavailable {
                     message: job.message,
                     diagnostics: job.diagnostics,
-                },
-                flume::TrySendError::Disconnected(job) => IncomingPluginQueueError::Disconnected {
-                    message: job.message,
-                    diagnostics: job.diagnostics,
-                },
+                }
             })
+    }
+
+    pub(super) fn has_capacity(&self) -> bool {
+        !self.requests.is_full()
     }
 
     pub(super) fn try_recv(&self) -> Option<IncomingPluginResult> {
@@ -104,15 +105,9 @@ impl Drop for IncomingPluginWorker {
 }
 
 #[derive(Debug)]
-pub(super) enum IncomingPluginQueueError {
-    Full {
-        message: IncomingMessage,
-        diagnostics: Vec<MessageDiagnosticRow>,
-    },
-    Disconnected {
-        message: IncomingMessage,
-        diagnostics: Vec<MessageDiagnosticRow>,
-    },
+pub(super) struct IncomingPluginWorkerUnavailable {
+    pub(super) message: IncomingMessage,
+    pub(super) diagnostics: Vec<MessageDiagnosticRow>,
 }
 
 pub(super) struct IncomingPluginResult {
