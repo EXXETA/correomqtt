@@ -21,6 +21,22 @@ fn storage_fixture(path: &str) -> PathBuf {
 }
 
 #[test]
+fn zero_broker_port_blocks_start() {
+    let mut model = AppModel::new();
+    model.apply_command(AppCommand::UpdateBuiltInBrokerPort("0".to_owned()));
+    model.apply_command(AppCommand::StartBuiltInBroker);
+
+    assert_eq!(
+        model.snapshot().built_in_broker.status,
+        crate::BuiltInBrokerStatus::Error
+    );
+    assert!(model.broker_start_config().is_none());
+    assert!(model.snapshot().built_in_broker.logs[0]
+        .message
+        .contains("port between 1 and 65535"));
+}
+
+#[test]
 fn applies_connection_events_to_snapshot() {
     let mut model = AppModel::default();
     let connection_id = model.snapshot().connections[1].id;

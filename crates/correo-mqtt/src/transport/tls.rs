@@ -1,9 +1,12 @@
-use std::{io::BufReader, sync::Arc};
+use std::io::BufReader;
+use std::sync::Arc;
 
+use rustls::client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier};
+use rustls::client::WebPkiServerVerifier;
+use rustls::pki_types::{CertificateDer, ServerName, UnixTime};
 use rustls::{
-    client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
-    pki_types::{CertificateDer, ServerName, UnixTime},
-    ClientConfig, DigitallySignedStruct, Error, RootCertStore, SignatureScheme,
+    CertificateError, ClientConfig, DigitallySignedStruct, Error as RustlsError, RootCertStore,
+    SignatureScheme,
 };
 
 use crate::{
@@ -22,45 +25,62 @@ pub(crate) fn rustls_client_config(config: &TlsConfig) -> MqttResult<Option<Clie
 
     validate(config)?;
     let roots = root_store(options)?;
-    let builder =
-        ClientConfig::builder_with_provider(rustls::crypto::ring::default_provider().into())
-            .with_safe_default_protocol_versions()
-            .map_err(|error| MqttError::tls(error.to_string()))?
-            .with_root_certificates(roots);
-    let mut config = match &options.client_identity {
-        Some(identity) => with_client_identity(builder, identity)?,
-        None => builder.with_no_client_auth(),
-    };
-    if matches!(
+    let provider: Arc<rustls::crypto::CryptoProvider> =
+        rustls::crypto::ring::default_provider().into();
+    let builder = ClientConfig::builder_with_provider(provider.clone())
+        .with_safe_default_protocol_versions()
+        .map_err(|error| MqttError::tls(error.to_string()))?;
+    let builder = if matches!(
         options.host_verification,
         TlsHostVerification::DisabledInsecure
     ) {
-        // Rustls requires a custom verifier for this explicit insecure option.
-        config
+        let verifier = WebPkiServerVerifier::builder_with_provider(Arc::new(roots), provider)
+            .build()
+            .map_err(|error| MqttError::tls(error.to_string()))?;
+        builder
             .dangerous()
-            .set_certificate_verifier(Arc::new(InsecureServerCertVerifier {
-                supported_algorithms: rustls::crypto::ring::default_provider()
-                    .signature_verification_algorithms,
-            }));
-    }
+            .with_custom_certificate_verifier(Arc::new(SkipHostnameVerification {
+                inner: verifier,
+            }))
+    } else {
+        builder.with_root_certificates(roots)
+    };
+    let config = match &options.client_identity {
+        Some(identity) => with_client_identity(builder, identity)?,
+        None => builder.with_no_client_auth(),
+    };
     Ok(Some(config))
 }
 
+/// Verifies the certificate chain and validity as usual and only tolerates a
+/// hostname mismatch — the behaviour behind the connection setting that
+/// disables TLS host verification (Java parity).
 #[derive(Debug)]
-struct InsecureServerCertVerifier {
-    supported_algorithms: rustls::crypto::WebPkiSupportedAlgorithms,
+struct SkipHostnameVerification {
+    inner: Arc<WebPkiServerVerifier>,
 }
 
-impl ServerCertVerifier for InsecureServerCertVerifier {
+impl ServerCertVerifier for SkipHostnameVerification {
     fn verify_server_cert(
         &self,
-        _end_entity: &CertificateDer<'_>,
-        _intermediates: &[CertificateDer<'_>],
-        _server_name: &ServerName<'_>,
-        _ocsp_response: &[u8],
-        _now: UnixTime,
-    ) -> Result<ServerCertVerified, Error> {
-        Ok(ServerCertVerified::assertion())
+        end_entity: &CertificateDer<'_>,
+        intermediates: &[CertificateDer<'_>],
+        server_name: &ServerName<'_>,
+        ocsp_response: &[u8],
+        now: UnixTime,
+    ) -> Result<ServerCertVerified, RustlsError> {
+        match self.inner.verify_server_cert(
+            end_entity,
+            intermediates,
+            server_name,
+            ocsp_response,
+            now,
+        ) {
+            Err(RustlsError::InvalidCertificate(
+                CertificateError::NotValidForName | CertificateError::NotValidForNameContext { .. },
+            )) => Ok(ServerCertVerified::assertion()),
+            other => other,
+        }
     }
 
     fn verify_tls12_signature(
@@ -68,8 +88,8 @@ impl ServerCertVerifier for InsecureServerCertVerifier {
         message: &[u8],
         cert: &CertificateDer<'_>,
         dss: &DigitallySignedStruct,
-    ) -> Result<HandshakeSignatureValid, Error> {
-        rustls::crypto::verify_tls12_signature(message, cert, dss, &self.supported_algorithms)
+    ) -> Result<HandshakeSignatureValid, RustlsError> {
+        self.inner.verify_tls12_signature(message, cert, dss)
     }
 
     fn verify_tls13_signature(
@@ -77,12 +97,12 @@ impl ServerCertVerifier for InsecureServerCertVerifier {
         message: &[u8],
         cert: &CertificateDer<'_>,
         dss: &DigitallySignedStruct,
-    ) -> Result<HandshakeSignatureValid, Error> {
-        rustls::crypto::verify_tls13_signature(message, cert, dss, &self.supported_algorithms)
+    ) -> Result<HandshakeSignatureValid, RustlsError> {
+        self.inner.verify_tls13_signature(message, cert, dss)
     }
 
     fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
-        self.supported_algorithms.supported_schemes()
+        self.inner.supported_verify_schemes()
     }
 }
 
@@ -91,27 +111,30 @@ fn root_store(options: &TlsOptions) -> MqttResult<RootCertStore> {
     match &options.trust_roots {
         TlsTrustRoots::Native => {
             let result = rustls_native_certs::load_native_certs();
-            if !result.errors.is_empty() {
-                return Err(MqttError::tls(format!(
-                    "native certificate store could not be loaded: {} error(s)",
-                    result.errors.len()
-                )));
-            }
             let (added, ignored) = roots.add_parsable_certificates(result.certs);
             if added == 0 {
                 return Err(MqttError::tls(format!(
-                    "native certificate store did not provide usable roots; ignored {ignored}"
+                    "native certificate store did not provide usable roots; ignored {ignored}, {} load error(s)",
+                    result.errors.len()
                 )));
             }
         }
         TlsTrustRoots::PemBundle { path, pem } => {
-            let Some(pem) = pem else {
-                return Err(MqttError::tls(format!(
-                    "CA PEM material for {:?} must be loaded before connecting",
-                    path.as_deref().unwrap_or("<inline>")
-                )));
+            let loaded_pem;
+            let pem_bytes = if let Some(pem) = pem {
+                pem.expose_secret()
+            } else {
+                let Some(path) = path else {
+                    return Err(MqttError::tls(
+                        "CA PEM material must include inline bytes or a path",
+                    ));
+                };
+                loaded_pem = std::fs::read(path).map_err(|error| {
+                    MqttError::tls(format!("CA PEM bundle could not be read: {error}"))
+                })?;
+                loaded_pem.as_slice()
             };
-            let certs = parse_certs(pem.expose_secret())?;
+            let certs = parse_certs(pem_bytes)?;
             let (added, ignored) = roots.add_parsable_certificates(certs);
             if added == 0 {
                 return Err(MqttError::tls(format!(
@@ -199,13 +222,19 @@ oaQ31k55+MyS0LvD2dJIcPD6vtubQ9P/uTq0l7vOAkNrREc=
     }
 
     #[test]
-    fn insecure_hostname_disable_builds_an_insecure_client_config() {
+    fn insecure_hostname_disable_builds_config_with_chain_verification() {
         let options = TlsConfig::Enabled(TlsOptions {
             host_verification: TlsHostVerification::DisabledInsecure,
-            ..TlsOptions::default()
+            trust_roots: TlsTrustRoots::PemBundle {
+                path: None,
+                pem: Some(SecretBytes::new(SYNTHETIC_CA_PEM.to_vec())),
+            },
+            client_identity: None,
         });
 
-        assert!(rustls_client_config(&options).is_ok());
+        assert!(validate(&options).is_ok());
+        let config = rustls_client_config(&options).expect("valid TLS config");
+        assert!(config.is_some());
     }
 
     #[test]

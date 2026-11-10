@@ -16,6 +16,8 @@ pub(crate) struct FakeFactory {
     created_sessions: Arc<Mutex<usize>>,
     connect_error: Option<MqttError>,
     publish_error: Option<MqttError>,
+    connect_hangs: bool,
+    disconnect_hangs: bool,
 }
 
 impl FakeFactory {
@@ -27,11 +29,23 @@ impl FakeFactory {
             created_sessions,
             connect_error,
             publish_error: None,
+            connect_hangs: false,
+            disconnect_hangs: false,
         }
     }
 
     pub(crate) fn with_publish_error(mut self, error: MqttError) -> Self {
         self.publish_error = Some(error);
+        self
+    }
+
+    pub(crate) fn with_hanging_connect(mut self) -> Self {
+        self.connect_hangs = true;
+        self
+    }
+
+    pub(crate) fn with_hanging_disconnect(mut self) -> Self {
+        self.disconnect_hangs = true;
         self
     }
 }
@@ -43,6 +57,8 @@ impl MqttSessionFactory for FakeFactory {
             options.connection_id,
             self.connect_error.clone(),
             self.publish_error.clone(),
+            self.connect_hangs,
+            self.disconnect_hangs,
         ))
     }
 }
@@ -54,6 +70,8 @@ struct FakeSession {
     event_receiver: Option<flume::Receiver<MqttSessionEvent>>,
     connect_error: Option<MqttError>,
     publish_error: Option<MqttError>,
+    connect_hangs: bool,
+    disconnect_hangs: bool,
 }
 
 impl FakeSession {
@@ -61,6 +79,8 @@ impl FakeSession {
         connection_id: ConnectionId,
         connect_error: Option<MqttError>,
         publish_error: Option<MqttError>,
+        connect_hangs: bool,
+        disconnect_hangs: bool,
     ) -> Self {
         let (event_sender, event_receiver) = flume::unbounded();
         Self {
@@ -70,6 +90,8 @@ impl FakeSession {
             event_receiver: Some(event_receiver),
             connect_error,
             publish_error,
+            connect_hangs,
+            disconnect_hangs,
         }
     }
 
@@ -85,6 +107,9 @@ impl MqttSession for FakeSession {
             self.emit(MqttSessionEvent::Error(error.to_report()));
             return Err(error.clone());
         }
+        if self.connect_hangs {
+            std::future::pending::<()>().await;
+        }
 
         self.state = SessionState::Connected;
         self.emit(MqttSessionEvent::StateChanged(SessionState::Connected));
@@ -92,6 +117,9 @@ impl MqttSession for FakeSession {
     }
 
     async fn disconnect(&mut self) -> MqttResult<()> {
+        if self.disconnect_hangs {
+            std::future::pending::<()>().await;
+        }
         self.state = SessionState::Disconnected;
         self.emit(MqttSessionEvent::StateChanged(SessionState::Disconnected));
         Ok(())

@@ -63,7 +63,7 @@ fn app_icon() -> eframe::egui::IconData {
 
 struct CorreoDesktopApp {
     runtime: AppRuntime,
-    _mqtt_runtime: Option<tokio::runtime::Runtime>,
+    mqtt_runtime: Option<tokio::runtime::Runtime>,
     ui: correo_ui::CorreoUi,
 }
 
@@ -99,7 +99,7 @@ impl CorreoDesktopApp {
         );
         Self {
             runtime,
-            _mqtt_runtime: mqtt_runtime,
+            mqtt_runtime,
             ui,
         }
     }
@@ -176,6 +176,14 @@ fn record_startup_diagnostic(runtime: &mut AppRuntime, message: String) {
             message,
         )));
     runtime.pump();
+}
+
+impl Drop for CorreoDesktopApp {
+    fn drop(&mut self) {
+        if let Some(mqtt_runtime) = &self.mqtt_runtime {
+            mqtt_runtime.block_on(self.runtime.shutdown_mqtt());
+        }
+    }
 }
 
 impl eframe::App for CorreoDesktopApp {

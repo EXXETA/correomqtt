@@ -41,11 +41,15 @@ impl SessionChannels {
     }
 
     pub(crate) fn event_stream(&self) -> BoxStream<'static, MqttSessionEvent> {
-        broadcast_stream(self.events.subscribe())
+        broadcast_stream(self.events.subscribe(), |dropped| {
+            MqttSessionEvent::Error(broadcast_lag_error(dropped).to_report())
+        })
     }
 
     pub(crate) fn incoming_stream(&self) -> BoxStream<'static, Result<IncomingMessage, MqttError>> {
-        broadcast_stream(self.incoming.subscribe())
+        broadcast_stream(self.incoming.subscribe(), |dropped| {
+            Err(broadcast_lag_error(dropped))
+        })
     }
 
     pub(crate) fn set_state(&self, state: SessionState) {
@@ -101,18 +105,94 @@ pub(crate) fn keep_alive_seconds(duration: Duration) -> MqttResult<u16> {
     })
 }
 
-fn broadcast_stream<T>(receiver: broadcast::Receiver<T>) -> BoxStream<'static, T>
+fn broadcast_lag_error(dropped: u64) -> MqttError {
+    MqttError::protocol(format!(
+        "MQTT broadcast stream lagged; {dropped} messages dropped"
+    ))
+}
+
+fn broadcast_stream<T, F>(receiver: broadcast::Receiver<T>, lagged: F) -> BoxStream<'static, T>
 where
     T: Clone + Send + 'static,
+    F: Fn(u64) -> T + Send + 'static,
 {
-    stream::unfold(receiver, |mut receiver| async move {
-        loop {
-            match receiver.recv().await {
-                Ok(item) => return Some((item, receiver)),
-                Err(broadcast::error::RecvError::Lagged(_)) => continue,
-                Err(broadcast::error::RecvError::Closed) => return None,
+    stream::unfold((receiver, lagged), |(mut receiver, lagged)| async move {
+        match receiver.recv().await {
+            Ok(item) => Some((item, (receiver, lagged))),
+            Err(broadcast::error::RecvError::Lagged(dropped)) => {
+                Some((lagged(dropped), (receiver, lagged)))
             }
+            Err(broadcast::error::RecvError::Closed) => None,
         }
     })
     .boxed()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SessionChannels;
+    use crate::{
+        ConnectionId, IncomingMessage, MqttErrorKind, MqttSessionEvent, Qos, SessionState,
+        TopicName,
+    };
+    use futures::StreamExt;
+
+    #[tokio::test]
+    async fn event_stream_reports_broadcast_lag_with_dropped_count() {
+        let channels = SessionChannels::new();
+        let mut events = channels.event_stream();
+
+        for _ in 0..257 {
+            channels.set_state(SessionState::Connecting);
+        }
+
+        let Some(MqttSessionEvent::Error(report)) = events.next().await else {
+            panic!("expected lag error event");
+        };
+        assert_eq!(report.kind, MqttErrorKind::Protocol);
+        assert!(
+            report
+                .message
+                .contains("MQTT broadcast stream lagged; 1 messages dropped"),
+            "{}",
+            report.message
+        );
+        assert!(matches!(
+            events.next().await,
+            Some(MqttSessionEvent::StateChanged(SessionState::Connecting))
+        ));
+    }
+
+    #[tokio::test]
+    async fn incoming_stream_reports_broadcast_lag_with_dropped_count() {
+        let channels = SessionChannels::new();
+        let mut incoming = channels.incoming_stream();
+        let message = IncomingMessage {
+            connection_id: ConnectionId::new(),
+            topic: TopicName::new("lag/test").unwrap(),
+            payload: Vec::new(),
+            qos: Qos::AtMostOnce,
+            retain: false,
+            duplicate: false,
+            packet_id: None,
+        };
+
+        for _ in 0..257 {
+            channels.report_incoming(message.clone());
+        }
+
+        let Some(Err(error)) = incoming.next().await else {
+            panic!("expected lag error");
+        };
+        assert_eq!(error.kind(), MqttErrorKind::Protocol);
+        let diagnostic_message = error.diagnostic_message();
+        assert!(
+            diagnostic_message.contains("MQTT broadcast stream lagged; 1 messages dropped"),
+            "{diagnostic_message}"
+        );
+        let Some(Ok(delivered)) = incoming.next().await else {
+            panic!("expected preserved incoming message");
+        };
+        assert_eq!(delivered, message);
+    }
 }

@@ -1,6 +1,10 @@
 use std::fmt;
 use std::io::{BufRead, BufReader, Write};
 use std::process::{Child, Command, Stdio};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 use std::thread;
 
 use serde::{Deserialize, Serialize};
@@ -23,6 +27,7 @@ pub struct BuiltInBrokerSnapshot {
     pub port: String,
     pub credentials_enabled: bool,
     pub username: String,
+    #[serde(skip_serializing, default)]
     pub password: String,
     pub status: BuiltInBrokerStatus,
     pub logs: Vec<BuiltInBrokerLogEntry>,
@@ -75,11 +80,18 @@ pub struct BuiltInBrokerLogEntry {
     pub message: String,
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct BuiltInBrokerProcessConfig {
     pub port: u16,
     pub username: Option<String>,
     pub password: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct BrokerChildRequest {
+    port: u16,
+    username: Option<String>,
+    password: Option<String>,
 }
 
 impl fmt::Debug for BuiltInBrokerProcessConfig {
@@ -100,10 +112,37 @@ pub enum BuiltInBrokerEvent {
     Log { message: String },
 }
 
+impl BuiltInBrokerProcessConfig {
+    pub fn encode_for_child(&self) -> Result<Vec<u8>, serde_json::Error> {
+        serde_json::to_vec(&BrokerChildRequest {
+            port: self.port,
+            username: self.username.clone(),
+            password: self.password.clone(),
+        })
+    }
+
+    pub fn read_from_child(reader: impl std::io::Read) -> Result<Self, serde_json::Error> {
+        let request: BrokerChildRequest = serde_json::from_reader(reader)?;
+        Ok(Self {
+            port: request.port,
+            username: request.username,
+            password: request.password,
+        })
+    }
+}
+
 #[derive(Debug)]
 pub struct BuiltInBrokerWorker {
     event_sender: AppEventSender,
-    child: Option<Child>,
+    child: Option<BuiltInBrokerChild>,
+}
+
+#[derive(Debug)]
+struct BuiltInBrokerChild {
+    process: Child,
+    ready: Arc<AtomicBool>,
+    port: u16,
+    started_reported: bool,
 }
 
 impl BuiltInBrokerWorker {
@@ -122,12 +161,8 @@ impl BuiltInBrokerWorker {
             });
             return;
         }
-
-        match self.spawn_child(config.clone()) {
-            Ok(child) => {
-                self.child = Some(child);
-                self.emit(BuiltInBrokerEvent::Started { port: config.port });
-            }
+        match self.spawn_child(config) {
+            Ok(child) => self.child = Some(child),
             Err(error) => self.emit(BuiltInBrokerEvent::Failed { message: error }),
         }
     }
@@ -140,7 +175,10 @@ impl BuiltInBrokerWorker {
             return;
         };
 
-        let result = child.kill().and_then(|()| child.wait().map(|_| ()));
+        let result = child
+            .process
+            .kill()
+            .and_then(|()| child.process.wait().map(|_| ()));
         match result {
             Ok(()) => self.emit(BuiltInBrokerEvent::Stopped {
                 message: "Built-in broker stopped.".to_owned(),
@@ -155,9 +193,15 @@ impl BuiltInBrokerWorker {
         self.reap_finished_child();
     }
 
-    fn spawn_child(&self, config: BuiltInBrokerProcessConfig) -> Result<Child, String> {
+    fn spawn_child(
+        &self,
+        config: BuiltInBrokerProcessConfig,
+    ) -> Result<BuiltInBrokerChild, String> {
+        let request = config
+            .encode_for_child()
+            .map_err(|error| format!("Broker configuration could not be encoded: {error}"))?;
         let executable = std::env::current_exe().map_err(|error| error.to_string())?;
-        let mut child = Command::new(executable)
+        let mut process = Command::new(executable)
             .arg(CHILD_ARG)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -165,31 +209,73 @@ impl BuiltInBrokerWorker {
             .spawn()
             .map_err(|error| format!("Built-in broker could not be started: {error}"))?;
 
-        if let Some(mut stdin) = child.stdin.take() {
-            let json = serde_json::to_vec(&config).map_err(|error| error.to_string())?;
-            stdin.write_all(&json).map_err(|error| error.to_string())?;
+        let write_result = process
+            .stdin
+            .take()
+            .ok_or_else(|| "Built-in broker stdin is unavailable.".to_owned())
+            .and_then(|mut stdin| {
+                stdin
+                    .write_all(&request)
+                    .map_err(|error| format!("Broker configuration could not be sent: {error}"))
+            });
+        if let Err(error) = write_result {
+            terminate_child(&mut process);
+            return Err(error);
         }
-        if let Some(stdout) = child.stdout.take() {
-            spawn_log_reader(stdout, self.event_sender.clone());
-        }
-        if let Some(stderr) = child.stderr.take() {
+
+        let Some(stdout) = process.stdout.take() else {
+            terminate_child(&mut process);
+            return Err("Built-in broker stdout is unavailable.".to_owned());
+        };
+        let ready = Arc::new(AtomicBool::new(false));
+        spawn_broker_output_reader(
+            stdout,
+            self.event_sender.clone(),
+            config.port,
+            Arc::clone(&ready),
+        );
+        if let Some(stderr) = process.stderr.take() {
             spawn_log_reader(stderr, self.event_sender.clone());
         }
-        Ok(child)
+        Ok(BuiltInBrokerChild {
+            process,
+            ready,
+            port: config.port,
+            started_reported: false,
+        })
     }
 
     fn reap_finished_child(&mut self) {
         let Some(child) = self.child.as_mut() else {
             return;
         };
-        match child.try_wait() {
+        match child.process.try_wait() {
             Ok(Some(status)) => {
+                let was_ready = child.ready.load(Ordering::Acquire);
                 self.child = None;
-                self.emit(BuiltInBrokerEvent::Stopped {
-                    message: format!("Built-in broker exited with {status}."),
-                });
+                if was_ready && status.success() {
+                    self.emit(BuiltInBrokerEvent::Stopped {
+                        message: format!("Built-in broker exited with {status}."),
+                    });
+                } else {
+                    let phase = if was_ready {
+                        "unexpectedly"
+                    } else {
+                        "before reporting readiness"
+                    };
+                    self.emit(BuiltInBrokerEvent::Failed {
+                        message: format!("Built-in broker exited {phase} with {status}."),
+                    });
+                }
             }
-            Ok(None) => {}
+            Ok(None) => {
+                // Started is reported here, not by the output reader, so it can never follow Stopped or Failed.
+                if !child.started_reported && child.ready.load(Ordering::Acquire) {
+                    child.started_reported = true;
+                    let port = child.port;
+                    self.emit(BuiltInBrokerEvent::Started { port });
+                }
+            }
             Err(error) => {
                 self.child = None;
                 self.emit(BuiltInBrokerEvent::Failed {
@@ -207,8 +293,7 @@ impl BuiltInBrokerWorker {
 impl Drop for BuiltInBrokerWorker {
     fn drop(&mut self) {
         if let Some(mut child) = self.child.take() {
-            let _ = child.kill();
-            let _ = child.wait();
+            terminate_child(&mut child.process);
         }
     }
 }
@@ -217,8 +302,12 @@ pub fn builtin_broker_child_arg() -> &'static str {
     CHILD_ARG
 }
 
+pub fn builtin_broker_ready_message(port: u16) -> String {
+    format!("correo-builtin-broker-ready:{port}")
+}
+
 pub fn built_in_broker_connection_id() -> ConnectionId {
-    ConnectionId::from_uuid(Uuid::from_u128(0xc011_e0b0_0000_4000_8000_000000000001))
+    ConnectionId::from_uuid(Uuid::from_u128(0xc011_e0b0_0000_4000_8000_0000_0000_0001))
 }
 
 pub fn is_built_in_broker_connection(id: ConnectionId) -> bool {
@@ -319,6 +408,26 @@ pub(crate) fn append_broker_log(logs: &mut Vec<BuiltInBrokerLogEntry>, message: 
     logs.truncate(MAX_LOG_ENTRIES);
 }
 
+fn spawn_broker_output_reader(
+    stream: impl std::io::Read + Send + 'static,
+    sender: AppEventSender,
+    port: u16,
+    ready: Arc<AtomicBool>,
+) {
+    thread::spawn(move || {
+        let ready_message = builtin_broker_ready_message(port);
+        let reader = BufReader::new(stream);
+        for line in reader.lines().map_while(Result::ok) {
+            let message = line.trim().to_owned();
+            if message == ready_message {
+                ready.store(true, Ordering::Release);
+            } else if !message.is_empty() {
+                let _ = sender.emit(AppEvent::BuiltInBroker(BuiltInBrokerEvent::Log { message }));
+            }
+        }
+    });
+}
+
 fn spawn_log_reader(stream: impl std::io::Read + Send + 'static, sender: AppEventSender) {
     thread::spawn(move || {
         let reader = BufReader::new(stream);
@@ -331,6 +440,11 @@ fn spawn_log_reader(stream: impl std::io::Read + Send + 'static, sender: AppEven
     });
 }
 
+fn terminate_child(child: &mut Child) {
+    let _ = child.kill();
+    let _ = child.wait();
+}
+
 fn timestamp() -> String {
     const FORMAT: &[time::format_description::FormatItem<'_>] =
         format_description!("[hour]:[minute]:[second]");
@@ -339,3 +453,6 @@ fn timestamp() -> String {
         .format(FORMAT)
         .unwrap_or_else(|_| "--:--:--".to_owned())
 }
+
+#[cfg(test)]
+mod tests;
