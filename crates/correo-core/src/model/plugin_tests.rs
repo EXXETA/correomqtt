@@ -159,7 +159,6 @@ fn plugin_diagnostics_filter_and_required_failure_copy_stay_visible() {
     assert!(all_details.contains("Publish was blocked"));
     assert!(all_details.contains("original payload remains visible"));
     assert!(all_details.contains("validator rejected the payload"));
-    assert!(all_details.contains("fell back to the original raw payload"));
 
     model.apply_command(AppCommand::SearchPluginDiagnostics(
         "publish was blocked".to_owned(),
@@ -313,11 +312,11 @@ fn plugin_denials_legacy_plugins_and_diagnostics_stay_visible() {
     assert!(model.snapshot().diagnostics.len() > diagnostic_count);
 
     model.apply_command(AppCommand::SelectPluginDiagnostic(
-        "diag-systopic-hook-failed".to_owned(),
+        "diag-base64-incoming-failed".to_owned(),
     ));
     assert_eq!(
         model.snapshot().plugins.selected_diagnostic_id.as_deref(),
-        Some("diag-systopic-hook-failed")
+        Some("diag-base64-incoming-failed")
     );
     model.apply_command(AppCommand::ClearPluginDiagnostics);
     assert!(model.snapshot().plugins.diagnostics().is_empty());

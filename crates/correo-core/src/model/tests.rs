@@ -28,7 +28,7 @@ fn applies_connection_events_to_snapshot() {
     model.apply_event(AppEvent::ConnectionOpened { connection_id });
 
     assert_eq!(model.snapshot().active_connection, Some(connection_id));
-    assert_eq!(model.snapshot().connection_count, 4);
+    assert_eq!(model.snapshot().connection_count, 5);
     assert_eq!(
         model.snapshot().connections[1].state,
         ConnectionState::Connected
@@ -224,8 +224,8 @@ fn publish_history_removal_builds_persistence_command_from_selected_row() {
 #[test]
 fn workbench_state_is_scoped_per_selected_connection() {
     let mut model = AppModel::default();
-    let first = model.snapshot().connections[0].id;
-    let second = model.snapshot().connections[1].id;
+    let first = model.snapshot().connections[1].id;
+    let second = model.snapshot().connections[2].id;
 
     model.apply_command(AppCommand::UpdatePublishTopic("first/topic".to_owned()));
     model.apply_command(AppCommand::UpdatePublishPayload("first payload".to_owned()));
@@ -311,7 +311,7 @@ fn selected_subscription_click_toggles_off_without_ctrl() {
 #[test]
 fn run_script_dispatches_connect_for_disconnected_script_connection() {
     let mut model = AppModel::default();
-    let disconnected_id = model.snapshot().connections[1].id;
+    let disconnected_id = model.snapshot().connections[2].id;
     model.apply_command(AppCommand::SelectScriptConnection(
         disconnected_id.to_string(),
     ));
@@ -405,16 +405,16 @@ fn global_settings_plugin_repository_commands_edit_rows() {
 #[test]
 fn connect_command_queues_service_work_without_marking_open() {
     let mut model = AppModel::default();
-    let connection_id = model.snapshot().connections[2].id;
+    let connection_id = model.snapshot().connections[3].id;
 
     model.apply_command(AppCommand::Connect(connection_id));
 
     assert_eq!(
         model.snapshot().active_connection,
-        model.snapshot().connections[0].id.into()
+        model.snapshot().connections[1].id.into()
     );
     assert_eq!(
-        model.snapshot().connections[2].state,
+        model.snapshot().connections[3].state,
         ConnectionState::Connecting
     );
 }
@@ -467,7 +467,7 @@ fn add_connection_opens_settings_draft_and_save_adds_profile() {
         .snapshot()
         .selected_connection()
         .expect("saved draft should be visible in launcher");
-    assert_eq!(model.snapshot().connection_count, 1);
+    assert_eq!(model.snapshot().connection_count, 2);
     assert_eq!(connection.name, "New connection");
     assert_eq!(connection.endpoint, "localhost:1883");
     assert_eq!(
@@ -569,9 +569,9 @@ fn migrated_fixture_opens_workbench_and_settings_without_secret_values() {
     let mut model = AppModel::with_startup_state(state);
 
     assert_eq!(model.snapshot().theme_mode, ThemeMode::Light);
-    assert_eq!(model.snapshot().connection_count, 2);
+    assert_eq!(model.snapshot().connection_count, 3);
 
-    let first = &model.snapshot().connections[0];
+    let first = &model.snapshot().connections[1];
     assert_eq!(first.name, "Synthetic Local Broker");
     assert_eq!(first.endpoint, "localhost:1883");
     assert_eq!(first.mqtt_version, "MQTT v5");
@@ -597,7 +597,7 @@ fn migrated_fixture_opens_workbench_and_settings_without_secret_values() {
             .message
             .contains("Unsupported legacy field ignored")));
 
-    let first_id = model.snapshot().connections[0].id;
+    let first_id = model.snapshot().connections[1].id;
     model.apply_command(AppCommand::OpenConnectionSettings(first_id));
     let settings = &model.snapshot().connection_settings;
     assert_eq!(settings.profile_name, "Synthetic Local Broker");

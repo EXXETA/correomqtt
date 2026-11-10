@@ -8,7 +8,7 @@ use egui_kittest::Harness;
 #[test]
 fn plugin_manager_keyboard_flow_is_command_driven() {
     let mut harness = Harness::builder()
-        .with_size(egui::vec2(900.0, 600.0))
+        .with_size(egui::vec2(1280.0, 720.0))
         .build_state(draw_shell, TestState::new());
 
     harness.press_key_modifiers(Modifiers::COMMAND, Key::F);

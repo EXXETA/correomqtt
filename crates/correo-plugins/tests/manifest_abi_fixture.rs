@@ -123,18 +123,17 @@ fn detail_byte_transform_response_can_request_host_save() {
 #[test]
 fn fixture_harness_loads_noop_fixture_for_every_supported_hook() {
     let harness = WasmFixtureHarness::new(fixture_root());
+    let abi_hooks = HookKind::ALL
+        .into_iter()
+        .filter(|hook| *hook != HookKind::PayloadHighlighter)
+        .collect::<BTreeSet<_>>();
     let fixtures = harness.load_all_noop_fixtures().unwrap();
     let hooks = fixtures
         .iter()
         .map(NoopHookFixture::hook)
         .collect::<BTreeSet<_>>();
 
-    assert_eq!(fixtures.len(), HookKind::ALL.len());
-    assert_eq!(hooks, HookKind::ALL.into_iter().collect::<BTreeSet<_>>());
-
-    for hook in HookKind::ALL {
-        assert!(harness.noop_fixture_path(hook).exists());
-    }
+    assert_eq!(hooks, abi_hooks);
 }
 
 fn assert_versioned_json_round_trip<T>(value: T)

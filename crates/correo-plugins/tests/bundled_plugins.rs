@@ -41,9 +41,12 @@ fn bundled_manifests_cover_mvp_replacements_with_config_schemas() {
         assert!(!manifest
             .capabilities
             .grants_host_surface(correo_plugins::HostSurface::Secrets));
-        assert!(!manifest
-            .capabilities
-            .grants_host_surface(correo_plugins::HostSurface::Mqtt));
+        assert_eq!(
+            manifest
+                .capabilities
+                .grants_host_surface(correo_plugins::HostSurface::Mqtt),
+            manifest.id == "org.correomqtt.plugins.system-topic"
+        );
     }
 }
 
@@ -169,30 +172,24 @@ fn detail_formatters_return_pretty_json_and_xml_text() {
 }
 
 #[test]
-fn system_topic_formatter_labels_known_broker_metrics() {
+fn system_topic_plugin_contributes_a_connection_action_instead_of_hooks() {
     let plugin = bundled_plugin_by_id("org.correomqtt.plugins.system-topic").unwrap();
-    let mut request = DetailFormatterRequest::new(b"7".to_vec());
-    request.context.subscription_topic = Some("$SYS/broker/clients/connected".to_owned());
+    let manifest = plugin.manifest();
 
-    let output = plugin
-        .dispatch(HookInvocation::DetailFormatter(request))
-        .unwrap();
-
-    assert_formatted(output, DetailFormatDto::PlainText, "Connected clients");
-}
-
-#[test]
-fn system_topic_formatter_reports_aggregated_windows() {
-    let plugin = bundled_plugin_by_id("org.correomqtt.plugins.system-topic").unwrap();
-    let mut request = DetailFormatterRequest::new(b"42".to_vec());
-    request.context.subscription_topic =
-        Some("$SYS/broker/load/messages/received/15min".to_owned());
-
-    let output = plugin
-        .dispatch(HookInvocation::DetailFormatter(request))
-        .unwrap();
-
-    assert_formatted(output, DetailFormatDto::PlainText, "Window: 15min");
+    assert!(manifest.capabilities.hooks.is_empty());
+    assert_eq!(
+        manifest
+            .connection_header_actions
+            .iter()
+            .map(|action| action.id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["system-topics"]
+    );
+    assert!(plugin
+        .dispatch(HookInvocation::DetailFormatter(
+            DetailFormatterRequest::new(b"7".to_vec())
+        ))
+        .is_err());
 }
 
 #[test]

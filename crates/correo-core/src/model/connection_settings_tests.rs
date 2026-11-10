@@ -20,7 +20,7 @@ fn migrated_connection_settings_expose_legacy_form_fields() {
     let preview = MigrationPreview::from_legacy_profile(profile).unwrap();
     let state = startup_state_from_migration(preview, ThemeMode::Dark);
     let mut model = AppModel::with_startup_state(state);
-    let first_id = model.snapshot().connections[0].id;
+    let first_id = model.snapshot().connections[1].id;
 
     model.apply_command(AppCommand::OpenConnectionSettings(first_id));
     let settings = &model.snapshot().connection_settings;
