@@ -1,4 +1,4 @@
-use correo_core::{AppCommand, AppCommandSender, AppSnapshot};
+use correo_core::{AppCommand, AppCommandSender, AppSnapshot, PayloadTransform};
 use correo_style::layout;
 use egui::{Button, Rect, RichText, Sense, TextEdit, Ui, UiBuilder};
 use egui_phosphor::regular;
@@ -72,21 +72,11 @@ pub(crate) fn editor(
     if payload_response.changed() {
         send(commands, AppCommand::UpdatePublishPayload(payload));
     }
-    let error_position = payload_highlight::error_position(
-        &snapshot.workbench.publish.payload,
-        payload_highlighter,
-        &snapshot.plugins.active_plugin_ids(),
-    );
-    if let Some((line, column)) = error_position {
-        let error_rect =
-            retained_row_rect.with_max_x(retained_row_rect.right() - layout::RETAINED_WIDTH);
-        child_ui(ui, error_rect, |ui| {
-            ui.colored_label(
-                ui.visuals().error_fg_color,
-                format!("JSON error at line {line}, column {column}"),
-            );
-        });
-    }
+    let status_rect =
+        retained_row_rect.with_max_x(retained_row_rect.right() - layout::RETAINED_WIDTH);
+    child_ui(ui, status_rect, |ui| {
+        json_status(ui, snapshot, commands, payload_highlighter);
+    });
     retained_row(ui, retained_row_rect, snapshot, commands);
 }
 
@@ -203,6 +193,49 @@ fn topic_row(
             publish.on_hover_text("Publish");
         }
     });
+}
+
+fn json_status(
+    ui: &mut Ui,
+    snapshot: &AppSnapshot,
+    commands: &AppCommandSender,
+    payload_highlighter: Option<&PayloadHighlighter>,
+) {
+    let payload = &snapshot.workbench.publish.payload;
+    let active_plugin_ids = snapshot.plugins.active_plugin_ids();
+    if let Some((line, column)) =
+        payload_highlight::error_position(payload, payload_highlighter, &active_plugin_ids)
+    {
+        ui.colored_label(
+            ui.visuals().error_fg_color,
+            format!("JSON error at line {line}, column {column}"),
+        );
+        return;
+    }
+    // shortcut: the UI guesses JSON from the first character, replace with a capability from the executor once a second format gets these actions.
+    if !payload.trim_start().starts_with(['{', '['])
+        || !payload_highlight::is_highlighted(payload, payload_highlighter, &active_plugin_ids)
+    {
+        return;
+    }
+    for (label, hint, transform) in [
+        (
+            "Format",
+            "Reindent the JSON payload",
+            PayloadTransform::Format,
+        ),
+        (
+            "Minify",
+            "Remove whitespace from the JSON payload",
+            PayloadTransform::Minify,
+        ),
+    ] {
+        let action = ui.button(label).on_hover_text(hint);
+        paint_focus_outline(ui, &action);
+        if action.clicked() {
+            send(commands, AppCommand::TransformPublishPayload(transform));
+        }
+    }
 }
 
 fn retained_row(

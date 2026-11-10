@@ -41,6 +41,14 @@ pub(crate) fn javascript_layouter() -> impl FnMut(&Ui, &str, f32) -> Arc<egui::G
     }
 }
 
+pub(crate) fn is_highlighted(
+    text: &str,
+    highlighter: Option<&PayloadHighlighter>,
+    active_plugin_ids: &[String],
+) -> bool {
+    highlighter.is_some_and(|highlight| highlight(text, active_plugin_ids).is_some())
+}
+
 pub(crate) fn error_position(
     text: &str,
     highlighter: Option<&PayloadHighlighter>,

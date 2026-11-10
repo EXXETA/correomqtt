@@ -161,6 +161,21 @@ impl AppRuntime {
         }
 
         while let Ok(command) = self.command_receiver.try_recv() {
+            let command = match command {
+                AppCommand::TransformPublishPayload(transform) => {
+                    let snapshot = self.model.snapshot();
+                    let transformed = self.plugin_hooks.transform_payload(
+                        &snapshot.workbench.publish.payload,
+                        transform,
+                        &snapshot.plugins.active_plugin_ids(),
+                    );
+                    match transformed {
+                        Some(payload) => AppCommand::UpdatePublishPayload(payload),
+                        None => continue,
+                    }
+                }
+                command => command,
+            };
             let command_before = self.model.snapshot().clone();
             let should_persist_settings = (matches!(command, AppCommand::SaveGlobalSettings)
                 && self.model.snapshot().global_settings.dirty)

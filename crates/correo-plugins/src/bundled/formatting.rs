@@ -90,6 +90,66 @@ pub fn highlight_json(text: &str) -> Option<Vec<PayloadSyntaxSpan>> {
     Some(marked)
 }
 
+/// Rewrites only the whitespace between tokens, so key order and number spelling stay as typed.
+pub fn reformat_json(text: &str, minify: bool) -> Option<String> {
+    serde_json::from_str::<serde::de::IgnoredAny>(text).ok()?;
+    let mut output = String::with_capacity(text.len());
+    let mut depth = 0_usize;
+    let mut chars = text.chars().peekable();
+    let mut in_string = false;
+    while let Some(ch) = chars.next() {
+        if in_string {
+            output.push(ch);
+            if ch == '\\' {
+                output.extend(chars.next());
+            } else if ch == '"' {
+                in_string = false;
+            }
+            continue;
+        }
+        if ch.is_whitespace() {
+            continue;
+        }
+        if minify {
+            in_string = ch == '"';
+            output.push(ch);
+            continue;
+        }
+        match ch {
+            '{' | '[' => {
+                output.push(ch);
+                while chars.next_if(|next| next.is_whitespace()).is_some() {}
+                if let Some(closer) = chars.next_if(|next| matches!(next, '}' | ']')) {
+                    output.push(closer);
+                } else {
+                    depth += 1;
+                    push_line(&mut output, depth);
+                }
+            }
+            '}' | ']' => {
+                depth = depth.saturating_sub(1);
+                push_line(&mut output, depth);
+                output.push(ch);
+            }
+            ',' => {
+                output.push(ch);
+                push_line(&mut output, depth);
+            }
+            ':' => output.push_str(": "),
+            _ => {
+                in_string = ch == '"';
+                output.push(ch);
+            }
+        }
+    }
+    Some(output)
+}
+
+fn push_line(output: &mut String, depth: usize) {
+    output.push('\n');
+    output.push_str(&"  ".repeat(depth));
+}
+
 fn json_error_range(text: &str) -> Option<std::ops::Range<usize>> {
     let error = serde_json::from_str::<serde::de::IgnoredAny>(text).err()?;
     let line_start: usize = text
@@ -231,6 +291,27 @@ mod tests {
     #[test]
     fn marks_the_last_token_when_input_ends_early() {
         assert_eq!(error_text("{\"a\": [1,\n"), Some(","));
+    }
+
+    #[test]
+    fn format_keeps_key_order_and_number_spelling() {
+        assert_eq!(
+            reformat_json("{\"b\":1.50,\"a\":[ ],\"c\":[1,{\"d\":\"x, \\\"y\\\": {\"}]}", false).as_deref(),
+            Some("{\n  \"b\": 1.50,\n  \"a\": [],\n  \"c\": [\n    1,\n    {\n      \"d\": \"x, \\\"y\\\": {\"\n    }\n  ]\n}")
+        );
+    }
+
+    #[test]
+    fn minify_removes_whitespace_outside_strings() {
+        assert_eq!(
+            reformat_json("{\n  \"a b\": [1, 2],\n  \"c\": \"d  e\"\n}\n", true).as_deref(),
+            Some("{\"a b\":[1,2],\"c\":\"d  e\"}")
+        );
+    }
+
+    #[test]
+    fn invalid_json_is_not_reformatted() {
+        assert_eq!(reformat_json("{\"a\": }", false), None);
     }
 
     #[test]

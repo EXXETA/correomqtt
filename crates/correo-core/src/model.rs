@@ -269,6 +269,8 @@ impl AppModel {
             AppCommand::SelectWorkbenchTab(tab) => self.snapshot.workbench.narrow_tab = tab,
             AppCommand::UpdatePublishTopic(topic) => self.update_publish_topic(topic),
             AppCommand::UpdatePublishPayload(payload) => self.update_publish_payload(payload),
+            // The runtime resolves this through the plugin executor before it reaches the model.
+            AppCommand::TransformPublishPayload(_) => {}
             AppCommand::UpdatePublishQos(qos) => self.update_publish_qos(qos),
             AppCommand::SetPublishRetained(retained) => {
                 self.snapshot.workbench.publish.retained = retained;
@@ -589,6 +591,7 @@ fn command_mutates_active_workbench(command: &AppCommand) -> bool {
             | AppCommand::SelectWorkbenchTab(_)
             | AppCommand::UpdatePublishTopic(_)
             | AppCommand::UpdatePublishPayload(_)
+            | AppCommand::TransformPublishPayload(_)
             | AppCommand::UpdatePublishQos(_)
             | AppCommand::SetPublishRetained(_)
             | AppCommand::SearchPublishHistory(_)

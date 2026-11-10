@@ -517,6 +517,24 @@ impl PluginHookExecutor for InstalledPluginExecutor {
         }
     }
 
+    fn transform_payload(
+        &self,
+        text: &str,
+        transform: correo_core::PayloadTransform,
+        active_plugin_ids: &[String],
+    ) -> Option<String> {
+        active_plugin_ids
+            .iter()
+            .any(|plugin_id| plugin_id == correo_plugins::JSON_FORMAT_ID)
+            .then(|| {
+                correo_plugins::reformat_json(
+                    text,
+                    transform == correo_core::PayloadTransform::Minify,
+                )
+            })
+            .flatten()
+    }
+
     fn connection_action(
         &self,
         request: PluginConnectionActionRequest,

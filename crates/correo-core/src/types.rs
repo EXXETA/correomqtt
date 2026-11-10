@@ -18,6 +18,12 @@ pub enum PayloadSyntaxKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PayloadTransform {
+    Format,
+    Minify,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PayloadSyntaxSpan {
     pub start: usize,
     pub end: usize,
