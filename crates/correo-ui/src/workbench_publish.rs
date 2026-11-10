@@ -236,6 +236,14 @@ fn json_status(
             send(commands, AppCommand::TransformPublishPayload(transform));
         }
     }
+    let copy_escaped = ui
+        .button("Copy escaped")
+        .on_hover_text("Copy the payload as an escaped JSON string");
+    paint_focus_outline(ui, &copy_escaped);
+    if copy_escaped.clicked() {
+        ui.ctx()
+            .copy_text(serde_json::to_string(payload).unwrap_or_default());
+    }
 }
 
 fn retained_row(
