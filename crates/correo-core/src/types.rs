@@ -21,6 +21,7 @@ pub enum PayloadSyntaxKind {
 pub enum PayloadTransform {
     Format,
     Minify,
+    Repair,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

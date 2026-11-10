@@ -210,6 +210,16 @@ fn json_status(
             ui.visuals().error_fg_color,
             format!("JSON error at line {line}, column {column}"),
         );
+        let repair = ui.button("Repair").on_hover_text(
+            "Quote bare keys and values, replace single quotes, drop trailing commas",
+        );
+        paint_focus_outline(ui, &repair);
+        if repair.clicked() {
+            send(
+                commands,
+                AppCommand::TransformPublishPayload(PayloadTransform::Repair),
+            );
+        }
         return;
     }
     // shortcut: the UI guesses JSON from the first character, replace with a capability from the executor once a second format gets these actions.

@@ -145,6 +145,66 @@ pub fn reformat_json(text: &str, minify: bool) -> Option<String> {
     Some(output)
 }
 
+/// Fixes the common hand-typing mistakes and returns the text only if it is valid JSON afterwards.
+pub fn repair_json(text: &str) -> Option<String> {
+    let mut output = String::with_capacity(text.len() + 8);
+    let mut rest = text;
+    while let Some(ch) = rest.chars().next() {
+        let consumed = match ch {
+            '"' => {
+                let end = quoted_end(rest, '"');
+                output.push_str(&rest[..end]);
+                end
+            }
+            '\'' => {
+                let end = quoted_end(rest, '\'');
+                let inner = rest[1..end].strip_suffix('\'').unwrap_or(&rest[1..end]);
+                output.push('"');
+                output.push_str(&inner.replace("\\'", "'").replace('"', "\\\""));
+                output.push('"');
+                end
+            }
+            ',' if rest[1..].trim_start().starts_with(['}', ']']) => 1,
+            _ if ch.is_whitespace() || "{}[]:,".contains(ch) => {
+                output.push(ch);
+                ch.len_utf8()
+            }
+            _ => {
+                let end = rest
+                    .find(|next| "{}[]:,\"'\n".contains(next))
+                    .unwrap_or(rest.len());
+                let word = rest[..end].trim_end();
+                if is_valid_json(word) {
+                    output.push_str(word);
+                } else {
+                    output.push_str(&serde_json::to_string(word).ok()?);
+                }
+                word.len()
+            }
+        };
+        rest = &rest[consumed..];
+    }
+    is_valid_json(&output).then_some(output)
+}
+
+fn quoted_end(text: &str, quote: char) -> usize {
+    let mut escaped = false;
+    for (index, ch) in text.char_indices().skip(1) {
+        if escaped {
+            escaped = false;
+        } else if ch == '\\' {
+            escaped = true;
+        } else if ch == quote {
+            return index + 1;
+        }
+    }
+    text.len()
+}
+
+fn is_valid_json(text: &str) -> bool {
+    serde_json::from_str::<serde::de::IgnoredAny>(text).is_ok()
+}
+
 fn push_line(output: &mut String, depth: usize) {
     output.push('\n');
     output.push_str(&"  ".repeat(depth));
@@ -312,6 +372,27 @@ mod tests {
     #[test]
     fn invalid_json_is_not_reformatted() {
         assert_eq!(reformat_json("{\"a\": }", false), None);
+    }
+
+    #[test]
+    fn repair_quotes_bare_words_and_drops_trailing_commas() {
+        assert_eq!(
+            repair_json("{name: 'it\\'s \"x\"', on: true, n: -1.5e3, note: hello world,\n}").as_deref(),
+            Some("{\"name\": \"it's \\\"x\\\"\", \"on\": true, \"n\": -1.5e3, \"note\": \"hello world\"\n}")
+        );
+    }
+
+    #[test]
+    fn repair_leaves_quoted_strings_untouched() {
+        assert_eq!(
+            repair_json("{\"a, b\": \"it's: {x}\", c: [1,],}").as_deref(),
+            Some("{\"a, b\": \"it's: {x}\", \"c\": [1]}")
+        );
+    }
+
+    #[test]
+    fn repair_gives_up_when_the_result_is_still_invalid() {
+        assert_eq!(repair_json("{\"a\": [1, 2"), None);
     }
 
     #[test]

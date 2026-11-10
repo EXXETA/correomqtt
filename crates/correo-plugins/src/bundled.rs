@@ -16,7 +16,7 @@ use correo_plugins_xml_xsd_validator::{
 };
 use formatting::{format_json, format_xml};
 pub use formatting::{
-    highlight_json, highlight_xml, reformat_json, PayloadSyntaxKind, PayloadSyntaxSpan,
+    highlight_json, highlight_xml, reformat_json, repair_json, PayloadSyntaxKind, PayloadSyntaxSpan,
 };
 use gzip::{gzip_config_schema, transform_gzip_detail, GzipTransformError};
 use semver::{Version, VersionReq};

@@ -526,11 +526,10 @@ impl PluginHookExecutor for InstalledPluginExecutor {
         active_plugin_ids
             .iter()
             .any(|plugin_id| plugin_id == correo_plugins::JSON_FORMAT_ID)
-            .then(|| {
-                correo_plugins::reformat_json(
-                    text,
-                    transform == correo_core::PayloadTransform::Minify,
-                )
+            .then(|| match transform {
+                correo_core::PayloadTransform::Format => correo_plugins::reformat_json(text, false),
+                correo_core::PayloadTransform::Minify => correo_plugins::reformat_json(text, true),
+                correo_core::PayloadTransform::Repair => correo_plugins::repair_json(text),
             })
             .flatten()
     }
