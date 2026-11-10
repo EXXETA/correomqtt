@@ -3,14 +3,16 @@ use correo_core::{
     PluginHookExecutor, RumqttSessionFactory, ScriptingWorker, SettingsPersistenceWorker,
 };
 use correo_style::layout;
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
+
+const IDLE_REPAINT_INTERVAL: Duration = Duration::from_millis(100);
 
 use crate::plugins::{InstalledPluginExecutor, PluginFileInstaller};
 use crate::startup::{history_root, load_startup_state};
 
 pub fn run() -> eframe::Result {
     prefer_x11_when_wayland_is_unstable();
-    correo_diagnostics::install_tracing();
+    let tracing_guard = correo_diagnostics::install_tracing(Some(history_root().join("logs")));
     tracing::info!("starting CorreoMQTT desktop shell");
 
     let options = eframe::NativeOptions {
@@ -21,7 +23,12 @@ pub fn run() -> eframe::Result {
     eframe::run_native(
         "CorreoMQTT",
         options,
-        Box::new(|creation_context| Ok(Box::new(CorreoDesktopApp::new(creation_context)))),
+        Box::new(move |creation_context| {
+            Ok(Box::new(CorreoDesktopApp::new(
+                creation_context,
+                tracing_guard,
+            )))
+        }),
     )
 }
 
@@ -64,11 +71,15 @@ fn app_icon() -> eframe::egui::IconData {
 struct CorreoDesktopApp {
     runtime: AppRuntime,
     _mqtt_runtime: Option<tokio::runtime::Runtime>,
+    _tracing_guard: correo_diagnostics::TracingGuard,
     ui: correo_ui::CorreoUi,
 }
 
 impl CorreoDesktopApp {
-    fn new(creation_context: &eframe::CreationContext<'_>) -> Self {
+    fn new(
+        creation_context: &eframe::CreationContext<'_>,
+        tracing_guard: correo_diagnostics::TracingGuard,
+    ) -> Self {
         let theme_mode = correo_ui::stored_theme(creation_context);
         let loaded = load_startup_state(theme_mode);
         let mut runtime = AppRuntime::with_startup_state(loaded.state);
@@ -87,6 +98,7 @@ impl CorreoDesktopApp {
             storage_root,
             runtime.mqtt_command_sender(),
         ));
+        spawn_update_check(&runtime, creation_context.egui_ctx.clone());
         let ui = correo_ui::CorreoUi::with_command_sender(
             creation_context,
             runtime.snapshot().clone(),
@@ -100,6 +112,7 @@ impl CorreoDesktopApp {
         Self {
             runtime,
             _mqtt_runtime: mqtt_runtime,
+            _tracing_guard: tracing_guard,
             ui,
         }
     }
@@ -109,6 +122,8 @@ impl CorreoDesktopApp {
         if report.snapshot_changed {
             self.ui.set_snapshot(self.runtime.snapshot().clone());
             context.request_repaint();
+        } else {
+            context.request_repaint_after(IDLE_REPAINT_INTERVAL);
         }
         if report.shutdown_requested {
             context.send_viewport_cmd(eframe::egui::ViewportCommand::Close);
@@ -167,6 +182,21 @@ fn attach_mqtt_service(runtime: &mut AppRuntime) -> Option<tokio::runtime::Runti
         }
     }
     Some(mqtt_runtime)
+}
+
+fn spawn_update_check(runtime: &AppRuntime, context: eframe::egui::Context) {
+    if !runtime.snapshot().global_settings.update_checks_enabled {
+        return;
+    }
+    let events = runtime.event_sender();
+    std::thread::spawn(move || {
+        let (summary, update_available) = crate::update_check::check_latest_release();
+        let _ = events.emit(correo_core::AppEvent::UpdateCheckCompleted {
+            summary,
+            update_available,
+        });
+        context.request_repaint();
+    });
 }
 
 fn record_startup_diagnostic(runtime: &mut AppRuntime, message: String) {

@@ -106,7 +106,7 @@ fn capture_recovery(capture: migration_recovery_scenarios::RecoveryCapture) -> S
 }
 
 fn render_egui_shell(capture: &Capture) -> Result<RgbaImage, String> {
-    render_egui_snapshot(snapshot_for(capture), capture.size)
+    render_egui_snapshot_at_zoom(snapshot_for(capture), capture.size, capture.zoom_factor)
 }
 
 fn render_recovery_shell(
@@ -130,6 +130,14 @@ fn render_egui_snapshot(
     snapshot: correo_core::AppSnapshot,
     size: (u32, u32),
 ) -> Result<RgbaImage, String> {
+    render_egui_snapshot_at_zoom(snapshot, size, 1.0)
+}
+
+fn render_egui_snapshot_at_zoom(
+    snapshot: correo_core::AppSnapshot,
+    size: (u32, u32),
+    zoom_factor: f32,
+) -> Result<RgbaImage, String> {
     let hook = panic::take_hook();
     panic::set_hook(Box::new(|_| {}));
 
@@ -141,6 +149,7 @@ fn render_egui_snapshot(
             .renderer(software_renderer::SoftwareRenderer::default())
             .build(move |ctx| {
                 ctx.set_debug_on_hover(false);
+                ctx.set_zoom_factor(zoom_factor);
                 ctx.all_styles_mut(|style| {
                     style.debug.debug_on_hover = false;
                     style.debug.debug_on_hover_with_all_modifiers = false;
@@ -190,6 +199,9 @@ fn write_manifest(artifacts: &[ScreenshotArtifact]) {
     manifest.push_str("## Coverage\n\n");
     manifest.push_str(
         "- Empty connections and active workbench cover light/dark at 1280x800, 1024x768, and 900x640; active workbench also covers compact 720x640.\n",
+    );
+    manifest.push_str(
+        "- Active workbench message rows include a 150% zoom capture to check font-metric row height and baseline alignment.\n",
     );
     manifest.push_str(
         "- Connection transfer covers .cqc import choose/password/review/outcome states and export \

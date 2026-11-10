@@ -320,6 +320,10 @@ pub enum AppEvent {
         diagnostics: Vec<MigrationRecoveryDiagnostic>,
     },
     DiagnosticRaised(Diagnostic),
+    UpdateCheckCompleted {
+        summary: String,
+        update_available: bool,
+    },
     ScriptExecutionLogAppended {
         execution_id: String,
         level: ScriptLogLevel,

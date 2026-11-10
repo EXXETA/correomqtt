@@ -31,6 +31,7 @@ pub struct AppModel {
     storage_connection_ids: HashMap<ConnectionId, String>,
     workbenches: HashMap<ConnectionId, WorkbenchSnapshot>,
     dirty_workbenches: HashSet<ConnectionId>,
+    revision: u64,
     saved_global_settings: crate::GlobalSettingsSnapshot,
     saved_theme_mode: crate::ThemeMode,
 }
@@ -74,6 +75,7 @@ impl AppModel {
             storage_connection_ids,
             workbenches,
             dirty_workbenches: HashSet::new(),
+            revision: 0,
             saved_global_settings,
             saved_theme_mode,
         };
@@ -84,6 +86,14 @@ impl AppModel {
 
     pub fn snapshot(&self) -> &AppSnapshot {
         &self.snapshot
+    }
+
+    pub(crate) fn revision(&self) -> u64 {
+        self.revision
+    }
+
+    fn bump_revision(&mut self) {
+        self.revision = self.revision.wrapping_add(1);
     }
 
     pub(crate) fn connection_settings_for(
@@ -107,7 +117,7 @@ impl AppModel {
                 let workbench = self.workbench_for_connection(connection_id)?.clone();
                 Some(crate::HistoryPersistenceCommand::ReplaceWorkbench {
                     connection_id: self.storage_connection_id(connection_id),
-                    workbench,
+                    workbench: Box::new(workbench),
                 })
             })
             .collect()
@@ -185,6 +195,7 @@ impl AppModel {
             || self.apply_broker_command(&command)
             || self.apply_plugin_command(&command)
         {
+            self.bump_revision();
             return;
         }
 
@@ -210,6 +221,7 @@ impl AppModel {
                     self.push_diagnostic(Diagnostic::warning(
                         "Correo Broker connection is managed automatically.",
                     ));
+                    self.bump_revision();
                     return;
                 }
                 self.select_connection_workbench(id);
@@ -393,6 +405,7 @@ impl AppModel {
         if dirty_active_workbench {
             self.mark_active_workbench_dirty();
         }
+        self.bump_revision();
     }
 
     pub fn apply_event(&mut self, event: AppEvent) {
@@ -461,6 +474,16 @@ impl AppModel {
                 diagnostics,
             } => self.apply_migrated_startup_state(*state, completion, diagnostics),
             AppEvent::DiagnosticRaised(diagnostic) => self.push_diagnostic(diagnostic),
+            AppEvent::UpdateCheckCompleted {
+                summary,
+                update_available,
+            } => {
+                self.snapshot.global_settings.last_update_check = summary.clone();
+                self.saved_global_settings.last_update_check = summary.clone();
+                if update_available {
+                    self.push_diagnostic(Diagnostic::info(summary));
+                }
+            }
             AppEvent::ScriptExecutionLogAppended {
                 execution_id,
                 level,
@@ -478,6 +501,7 @@ impl AppModel {
             AppEvent::MigrationRecovery(event) => self.apply_migration_recovery_event(event),
             AppEvent::PluginWorkflow(event) => self.apply_plugin_workflow_event(event),
         }
+        self.bump_revision();
     }
 
     fn publish_from_snapshot(&mut self) {

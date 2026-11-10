@@ -1,9 +1,159 @@
-use std::sync::Arc;
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    hash::{Hash, Hasher},
+    sync::{mpsc, Arc, Mutex},
+};
 
 use correo_core::{PayloadSyntaxKind, PayloadSyntaxSpan};
-use egui::{text::LayoutJob, Color32, FontId, TextFormat, TextStyle, Ui};
+use egui::{text::LayoutJob, Color32, Context, FontId, Id, TextFormat, TextStyle, Ui};
 
 use crate::PayloadHighlighter;
+#[path = "payload_highlight_javascript.rs"]
+mod javascript;
+
+use javascript::{
+    is_class_like, is_js_ident_continue, is_js_ident_start, is_js_keyword, is_js_punctuation,
+    previous_word_is_new,
+};
+
+const HIGHLIGHT_CACHE_CAPACITY: usize = 32;
+const HIGHLIGHT_WORKER_CAPACITY: usize = 4;
+const MAX_CACHED_SPANS: usize = 100_000;
+const HIGHLIGHT_CACHE_ID: &str = "payload-highlight-cache";
+
+type HighlightResult = Option<Arc<[PayloadSyntaxSpan]>>;
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+struct HighlightKey {
+    payload_hash: u64,
+    payload_len: usize,
+    plugin_hash: u64,
+}
+
+impl HighlightKey {
+    fn new(payload: &str, active_plugin_ids: &[String]) -> Self {
+        let mut payload_hasher = std::hash::DefaultHasher::new();
+        payload.hash(&mut payload_hasher);
+        let mut plugin_hasher = std::hash::DefaultHasher::new();
+        active_plugin_ids.hash(&mut plugin_hasher);
+        Self {
+            payload_hash: payload_hasher.finish(),
+            payload_len: payload.len(),
+            plugin_hash: plugin_hasher.finish(),
+        }
+    }
+}
+
+struct HighlightCache {
+    results: HashMap<HighlightKey, HighlightResult>,
+    order: VecDeque<HighlightKey>,
+    pending: HashSet<HighlightKey>,
+    jobs: mpsc::SyncSender<HighlightJob>,
+    receiver: mpsc::Receiver<(HighlightKey, HighlightResult)>,
+}
+
+type HighlightJob = (
+    HighlightKey,
+    String,
+    Vec<String>,
+    Context,
+    PayloadHighlighter,
+);
+
+impl Default for HighlightCache {
+    fn default() -> Self {
+        let (jobs, job_receiver) = mpsc::sync_channel::<HighlightJob>(HIGHLIGHT_WORKER_CAPACITY);
+        let (sender, receiver) = mpsc::channel();
+        std::thread::spawn(move || {
+            while let Ok((key, payload, active_plugin_ids, context, highlighter)) =
+                job_receiver.recv()
+            {
+                let result = highlighter(&payload, &active_plugin_ids).and_then(|mut spans| {
+                    if spans.len() > MAX_CACHED_SPANS {
+                        return None;
+                    }
+                    spans.sort_by_key(|span| span.start);
+                    Some(Arc::from(spans))
+                });
+                let _ = sender.send((key, result));
+                context.request_repaint();
+            }
+        });
+        Self {
+            results: HashMap::new(),
+            order: VecDeque::new(),
+            pending: HashSet::new(),
+            jobs,
+            receiver,
+        }
+    }
+}
+
+impl HighlightCache {
+    fn spans(
+        &mut self,
+        context: &Context,
+        payload: &str,
+        active_plugin_ids: &[String],
+        highlighter: Option<&PayloadHighlighter>,
+    ) -> HighlightResult {
+        self.collect();
+        let key = HighlightKey::new(payload, active_plugin_ids);
+        if let Some(result) = self.results.get(&key) {
+            return result.clone();
+        }
+        let highlighter = highlighter?;
+        if self.pending.len() < HIGHLIGHT_WORKER_CAPACITY
+            && self
+                .jobs
+                .try_send((
+                    key,
+                    payload.to_owned(),
+                    active_plugin_ids.to_vec(),
+                    context.clone(),
+                    highlighter.clone(),
+                ))
+                .is_ok()
+        {
+            self.pending.insert(key);
+        }
+        None
+    }
+
+    fn collect(&mut self) {
+        while let Ok((key, result)) = self.receiver.try_recv() {
+            self.pending.remove(&key);
+            if self.results.insert(key, result).is_none() {
+                self.order.push_back(key);
+            }
+        }
+        while self.order.len() > HIGHLIGHT_CACHE_CAPACITY {
+            if let Some(key) = self.order.pop_front() {
+                self.results.remove(&key);
+            }
+        }
+    }
+}
+
+pub(crate) fn cached_spans(
+    ui: &Ui,
+    payload: &str,
+    active_plugin_ids: &[String],
+    highlighter: Option<&PayloadHighlighter>,
+) -> HighlightResult {
+    let cache = ui.ctx().data_mut(|data| {
+        data.get_temp::<Arc<Mutex<HighlightCache>>>(Id::new(HIGHLIGHT_CACHE_ID))
+            .unwrap_or_else(|| {
+                let cache = Arc::new(Mutex::new(HighlightCache::default()));
+                data.insert_temp(Id::new(HIGHLIGHT_CACHE_ID), cache.clone());
+                cache
+            })
+    });
+    cache
+        .lock()
+        .ok()
+        .and_then(|mut cache| cache.spans(ui.ctx(), payload, active_plugin_ids, highlighter))
+}
 
 #[derive(Clone, Copy)]
 struct Palette {
@@ -20,12 +170,9 @@ struct Palette {
     class: Color32,
 }
 
-pub(crate) fn layouter(
-    highlighter: Option<PayloadHighlighter>,
-    active_plugin_ids: Vec<String>,
-) -> impl FnMut(&Ui, &str, f32) -> Arc<egui::Galley> {
+pub(crate) fn layouter(spans: HighlightResult) -> impl FnMut(&Ui, &str, f32) -> Arc<egui::Galley> {
     move |ui, text, wrap_width| {
-        let mut job = highlight_payload(ui, text, highlighter.as_ref(), &active_plugin_ids);
+        let mut job = highlight_payload(ui, text, spans.as_deref());
         job.wrap.max_width = wrap_width;
         ui.fonts(|fonts| fonts.layout_job(job))
     }
@@ -40,15 +187,10 @@ pub(crate) fn javascript_layouter() -> impl FnMut(&Ui, &str, f32) -> Arc<egui::G
     }
 }
 
-fn highlight_payload(
-    ui: &Ui,
-    text: &str,
-    highlighter: Option<&PayloadHighlighter>,
-    active_plugin_ids: &[String],
-) -> LayoutJob {
+fn highlight_payload(ui: &Ui, text: &str, spans: Option<&[PayloadSyntaxSpan]>) -> LayoutJob {
     let font = TextStyle::Monospace.resolve(ui.style());
     let palette = palette(ui);
-    if let Some(spans) = highlighter.and_then(|highlight| highlight(text, active_plugin_ids)) {
+    if let Some(spans) = spans {
         highlight_spans(text, spans, font, palette)
     } else {
         plain_job(text, font, palette.plain)
@@ -96,15 +238,19 @@ fn plain_job(text: &str, font: FontId, color: Color32) -> LayoutJob {
 
 fn highlight_spans(
     text: &str,
-    mut spans: Vec<PayloadSyntaxSpan>,
+    spans: &[PayloadSyntaxSpan],
     font: FontId,
     palette: Palette,
 ) -> LayoutJob {
     let mut job = LayoutJob::default();
-    spans.sort_by_key(|span| span.start);
     let mut index = 0;
     for span in spans {
-        if span.start < index || span.start >= span.end || span.end > text.len() {
+        if span.start < index
+            || span.start >= span.end
+            || span.end > text.len()
+            || !text.is_char_boundary(span.start)
+            || !text.is_char_boundary(span.end)
+        {
             continue;
         }
         if index < span.start {
@@ -250,111 +396,6 @@ fn previous_non_ws(bytes: &[u8], start: usize) -> Option<u8> {
         .find(|byte| !byte.is_ascii_whitespace())
 }
 
-fn is_js_ident_start(ch: char) -> bool {
-    ch.is_ascii_alphabetic() || matches!(ch, '_' | '$')
-}
-
-fn is_js_ident_continue(ch: char) -> bool {
-    ch.is_ascii_alphanumeric() || matches!(ch, '_' | '$')
-}
-
-fn is_js_punctuation(ch: char) -> bool {
-    matches!(
-        ch,
-        '{' | '}'
-            | '['
-            | ']'
-            | '('
-            | ')'
-            | ';'
-            | ','
-            | '.'
-            | ':'
-            | '?'
-            | '!'
-            | '+'
-            | '-'
-            | '*'
-            | '/'
-            | '%'
-            | '='
-            | '<'
-            | '>'
-            | '&'
-            | '|'
-    )
-}
-
-fn is_js_keyword(word: &str) -> bool {
-    matches!(
-        word,
-        "async"
-            | "await"
-            | "break"
-            | "case"
-            | "catch"
-            | "class"
-            | "const"
-            | "continue"
-            | "debugger"
-            | "default"
-            | "delete"
-            | "do"
-            | "else"
-            | "export"
-            | "extends"
-            | "false"
-            | "finally"
-            | "for"
-            | "from"
-            | "function"
-            | "if"
-            | "import"
-            | "in"
-            | "instanceof"
-            | "let"
-            | "new"
-            | "null"
-            | "of"
-            | "return"
-            | "static"
-            | "super"
-            | "switch"
-            | "this"
-            | "throw"
-            | "true"
-            | "try"
-            | "typeof"
-            | "undefined"
-            | "var"
-            | "void"
-            | "while"
-            | "yield"
-    )
-}
-
-fn is_class_like(word: &str) -> bool {
-    word.chars()
-        .next()
-        .is_some_and(|ch| ch.is_ascii_uppercase())
-}
-
-fn previous_word_is_new(text: &str, index: usize) -> bool {
-    let Some(prefix) = text.get(..index) else {
-        return false;
-    };
-    let trimmed = prefix.trim_end();
-    let Some(end) = trimmed
-        .char_indices()
-        .last()
-        .map(|(index, ch)| index + ch.len_utf8())
-    else {
-        return false;
-    };
-    let start = trimmed[..end]
-        .char_indices()
-        .rev()
-        .find(|(_, ch)| !is_js_ident_continue(*ch))
-        .map_or(0, |(index, ch)| index + ch.len_utf8());
-    &trimmed[start..end] == "new"
-}
+#[cfg(test)]
+#[path = "payload_highlight_tests.rs"]
+mod tests;

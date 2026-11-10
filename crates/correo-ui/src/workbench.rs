@@ -31,7 +31,14 @@ pub fn show(
         |ui| workbench_publish::outgoing_messages(ui, snapshot, tokens, commands, i18n),
         |ui| workbench_subscribe::incoming_messages(ui, snapshot, tokens, commands, i18n),
     );
-    workbench_messages::show(ui.ctx(), snapshot, tokens, commands, payload_highlighter);
+    workbench_messages::show(
+        ui.ctx(),
+        snapshot,
+        tokens,
+        commands,
+        i18n,
+        payload_highlighter,
+    );
     workbench_plugin_windows::show(ui.ctx(), snapshot, tokens, commands);
     workbench_dialogs::unsubscribe_all_confirmation(ui, snapshot, commands);
 }
