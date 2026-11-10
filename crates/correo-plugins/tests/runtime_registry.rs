@@ -23,13 +23,9 @@ fn package_loader_accepts_mvp_layout_with_optional_assets() {
 
 #[test]
 fn registry_dispatches_noop_fixture_for_every_supported_hook() {
-    // The payload highlighter is a host-side hook without ABI DTOs, so it has no fixture.
-    let harness = WasmFixtureHarness::new(fixture_root());
-    let fixtures = HookKind::ALL
-        .into_iter()
-        .filter(|hook| *hook != HookKind::PayloadHighlighter)
-        .map(|hook| harness.load_noop_fixture(hook).unwrap())
-        .collect::<Vec<_>>();
+    let fixtures = WasmFixtureHarness::new(fixture_root())
+        .load_all_noop_fixtures()
+        .unwrap();
     let (_dir, package) = write_package(all_hooks_manifest(), noop_fixture_wasm(&fixtures), false);
     let mut registry = PluginRegistry::new(Version::new(0, 1, 0)).unwrap();
     let plugin = registry.register_package(package).unwrap();

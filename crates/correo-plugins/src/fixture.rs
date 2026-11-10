@@ -46,8 +46,10 @@ impl WasmFixtureHarness {
     }
 
     pub fn load_all_noop_fixtures(&self) -> Result<Vec<NoopHookFixture>, FixtureError> {
+        // The payload highlighter is a host-side hook without ABI DTOs, so it has no fixture.
         HookKind::ALL
             .into_iter()
+            .filter(|hook| *hook != HookKind::PayloadHighlighter)
             .map(|hook| self.load_noop_fixture(hook))
             .collect()
     }

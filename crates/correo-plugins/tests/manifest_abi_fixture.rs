@@ -123,15 +123,11 @@ fn detail_byte_transform_response_can_request_host_save() {
 #[test]
 fn fixture_harness_loads_noop_fixture_for_every_supported_hook() {
     let harness = WasmFixtureHarness::new(fixture_root());
-    // The payload highlighter is a host-side hook without ABI DTOs, so it has no fixture.
     let abi_hooks = HookKind::ALL
         .into_iter()
         .filter(|hook| *hook != HookKind::PayloadHighlighter)
         .collect::<BTreeSet<_>>();
-    let fixtures = abi_hooks
-        .iter()
-        .map(|hook| harness.load_noop_fixture(*hook).unwrap())
-        .collect::<Vec<_>>();
+    let fixtures = harness.load_all_noop_fixtures().unwrap();
     let hooks = fixtures
         .iter()
         .map(NoopHookFixture::hook)
