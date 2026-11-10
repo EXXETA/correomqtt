@@ -20,6 +20,18 @@ const GCM_SALT_BYTES: usize = 16;
 
 pub type LegacyPasswordMap = BTreeMap<String, String>;
 
+/// Master password the Java app stored in the OS keyring (macOS Keychain,
+/// libsecret) under service "CorreoMQTT". Lets migration import secrets
+/// without prompting; users of Java's UserInputKeyring have no such entry
+/// and fall back to the manual prompt.
+pub fn os_keyring_master_password() -> Option<String> {
+    let entry = keyring::Entry::new("CorreoMQTT", "CorreoMQTT_MasterPassword").ok()?;
+    match entry.get_password() {
+        Ok(password) if !password.trim().is_empty() => Some(password),
+        _ => None,
+    }
+}
+
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LegacyPasswords {

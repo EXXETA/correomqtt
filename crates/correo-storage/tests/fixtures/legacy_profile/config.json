@@ -26,10 +26,22 @@
       "lwtRetained": true,
       "lwtPayload": "offline",
       "connectionUISettings": {
-        "selectedTab": "publish"
+        "showSubscribe": true,
+        "showPublish": true,
+        "mainDividerPosition": 0.42,
+        "publishDividerPosition": 0.35,
+        "publishDetailDividerPosition": 0.63,
+        "publishDetailActive": true,
+        "subscribeDividerPosition": 0.48,
+        "subscribeDetailDividerPosition": 0.57,
+        "subscribeDetailActive": false
       },
       "publishListViewConfig": {
-        "columns": ["topic", "payload"]
+        "labelVisibilityMap": {
+          "QOS": true,
+          "RETAINED": false,
+          "TIMESTAMP": true
+        }
       },
       "subscribeListViewConfig": {
         "columns": ["topic", "qos"]
@@ -46,7 +58,8 @@
       "cleanSession": true,
       "mqttVersion": "MQTT_3_1_1",
       "ssl": "ON",
-      "sslHostVerification": true,
+      "sslKeystore": "/synthetic/path/client.p12",
+      "sslHostVerification": false,
       "proxy": "OFF",
       "auth": "OFF",
       "lwt": "OFF"

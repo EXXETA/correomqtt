@@ -39,6 +39,13 @@
           "config": {
             "needle": "ok"
           }
+        },
+        {
+          "id": "note-schema",
+          "pluginId": "org.correomqtt.plugin.xml_xsd_validator",
+          "config": {
+            "schemaPath": "/synthetic/schema/note.xsd"
+          }
         }
       ]
     }

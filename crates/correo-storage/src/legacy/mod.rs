@@ -73,7 +73,7 @@ pub struct LegacyConnection {
     pub lwt_retained: bool,
     #[serde(default)]
     pub lwt_payload: Option<String>,
-    #[serde(default)]
+    #[serde(default, alias = "connectionUISettings")]
     pub connection_ui_settings: Option<Value>,
     #[serde(default)]
     pub publish_list_view_config: Option<Value>,

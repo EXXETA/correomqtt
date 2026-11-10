@@ -5,16 +5,23 @@ use std::ffi::OsStr;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+#[cfg(test)]
+use std::{
+    collections::BTreeSet,
+    sync::{Arc, Mutex},
+};
 
 #[path = "scripting_helpers.rs"]
 mod helpers;
 
 use helpers::{
     collect_script_paths, display_path, ensure_dir, ensure_parent_dir, normalize_script_path,
-    remove_dir_if_exists, remove_file_if_exists, rename_path, write_text,
+    remove_dir_if_exists, remove_file_if_exists, rename_path, sync_parent_dir, write_text,
 };
 #[path = "scripting_log.rs"]
 mod log;
+#[path = "scripting_replace.rs"]
+mod replace;
 
 pub use helpers::redact_script_log_text;
 pub use log::{BoundedScriptLog, ScriptLogLevel, ScriptLogRecord};
@@ -92,17 +99,26 @@ pub enum ScriptExecutionErrorType {
 
 #[derive(Clone, Debug)]
 pub struct ScriptStore {
-    data_root: PathBuf,
+    scripts_root: PathBuf,
+    #[cfg(test)]
+    failures: Arc<Mutex<FailureInjection>>,
+}
+
+#[cfg(test)]
+#[derive(Debug, Default)]
+struct FailureInjection {
+    staged_write_failure_after: Option<usize>,
+    rename_attempts: usize,
+    rename_failure_attempts: BTreeSet<usize>,
 }
 
 impl ScriptStore {
     pub fn new(data_root: impl Into<PathBuf>) -> Self {
-        Self {
-            data_root: data_root.into(),
-        }
+        Self::with_scripts_root(data_root.into().join("scripts"))
     }
 
     pub fn list_scripts(&self) -> Result<Vec<ScriptFile>> {
+        self.recover_live_root()?;
         let root = self.scripts_root();
         ensure_dir(&root)?;
         let mut paths = Vec::new();
@@ -138,36 +154,40 @@ impl ScriptStore {
     }
 
     pub fn replace_all(&self, snapshot: &ScriptPersistenceSnapshot) -> Result<()> {
-        let root = self.scripts_root();
-        remove_dir_if_exists(root.clone())?;
-        ensure_dir(&root)?;
+        self.recover_live_root()?;
+        self.validate_snapshot(snapshot)?;
 
-        for file in &snapshot.files {
-            self.create_script(&file.relative_path, &file.source)?;
-        }
-        for execution in &snapshot.executions {
-            self.save_execution(&execution.script_path, execution)?;
+        let staging_root = self.replacement_root("staging");
+        ensure_parent_dir(&staging_root)?;
+        fs::create_dir(&staging_root).map_err(|source| StorageError::CreateDir {
+            path: staging_root.clone(),
+            source,
+        })?;
+        let staging_store = Self::with_scripts_root(staging_root.clone());
+        #[cfg(test)]
+        let staging_store = {
+            let mut staging_store = staging_store;
+            staging_store.failures = Arc::clone(&self.failures);
+            staging_store
+        };
+
+        let staged_result = staging_store
+            .write_snapshot(snapshot)
+            .and_then(|()| staging_store.load_snapshot(usize::MAX).map(|_| ()));
+        if let Err(error) = staged_result {
+            let _ = remove_dir_if_exists(staging_root);
+            return Err(error);
         }
 
-        let execution_paths = snapshot
-            .executions
-            .iter()
-            .map(|execution| {
-                (
-                    execution.execution_id.as_str(),
-                    execution.script_path.as_path(),
-                )
-            })
-            .collect::<BTreeMap<_, _>>();
-        for record in &snapshot.logs {
-            if let Some(script_path) = execution_paths.get(record.execution_id.as_str()) {
-                self.append_log_record(*script_path, record)?;
-            }
+        if let Err(error) = self.commit_staging(staging_root.clone()) {
+            let _ = remove_dir_if_exists(staging_root);
+            return Err(error);
         }
         Ok(())
     }
 
     pub fn create_script(&self, script_path: impl AsRef<Path>, source: &str) -> Result<ScriptFile> {
+        self.recover_live_root()?;
         let relative_path = normalize_script_path(script_path.as_ref())?;
         let absolute_path = self.script_absolute_path(&relative_path);
         if absolute_path.exists() {
@@ -176,11 +196,12 @@ impl ScriptStore {
             )));
         }
         ensure_parent_dir(&absolute_path)?;
-        write_text(&absolute_path, source)?;
+        self.write_script_text(&absolute_path, source)?;
         Ok(ScriptFile::new(relative_path, source.to_owned()))
     }
 
     pub fn load_script(&self, script_path: impl AsRef<Path>) -> Result<ScriptFile> {
+        self.recover_live_root()?;
         let relative_path = normalize_script_path(script_path.as_ref())?;
         let absolute_path = self.script_absolute_path(&relative_path);
         if !absolute_path.exists() {
@@ -191,6 +212,7 @@ impl ScriptStore {
     }
 
     pub fn update_script(&self, script_path: impl AsRef<Path>, source: &str) -> Result<ScriptFile> {
+        self.recover_live_root()?;
         let relative_path = normalize_script_path(script_path.as_ref())?;
         let absolute_path = self.script_absolute_path(&relative_path);
         if !absolute_path.exists() {
@@ -205,6 +227,7 @@ impl ScriptStore {
         old_path: impl AsRef<Path>,
         new_path: impl AsRef<Path>,
     ) -> Result<ScriptFile> {
+        self.recover_live_root()?;
         let old_relative = normalize_script_path(old_path.as_ref())?;
         let new_relative = normalize_script_path(new_path.as_ref())?;
         if old_relative == new_relative {
@@ -229,6 +252,7 @@ impl ScriptStore {
     }
 
     pub fn delete_script(&self, script_path: impl AsRef<Path>) -> Result<()> {
+        self.recover_live_root()?;
         let relative_path = normalize_script_path(script_path.as_ref())?;
         let absolute_path = self.script_absolute_path(&relative_path);
         if !absolute_path.exists() {
@@ -260,6 +284,7 @@ impl ScriptStore {
         script_path: impl AsRef<Path>,
         execution: &ScriptExecution,
     ) -> Result<()> {
+        self.recover_live_root()?;
         let relative_path = normalize_script_path(script_path.as_ref())?;
         let path = self
             .script_sidecar_dir("executions", &relative_path)
@@ -274,6 +299,7 @@ impl ScriptStore {
     }
 
     pub fn load_executions(&self, script_path: impl AsRef<Path>) -> Result<Vec<ScriptExecution>> {
+        self.recover_live_root()?;
         let relative_path = normalize_script_path(script_path.as_ref())?;
         let dir = self.script_sidecar_dir("executions", &relative_path);
         if !dir.exists() {
@@ -303,6 +329,7 @@ impl ScriptStore {
         script_path: impl AsRef<Path>,
         record: &ScriptLogRecord,
     ) -> Result<()> {
+        self.recover_live_root()?;
         let relative_path = normalize_script_path(script_path.as_ref())?;
         let path = self
             .script_sidecar_dir("logs", &relative_path)
@@ -326,6 +353,7 @@ impl ScriptStore {
         execution_id: &str,
         max_records: usize,
     ) -> Result<BoundedScriptLog> {
+        self.recover_live_root()?;
         let relative_path = normalize_script_path(script_path.as_ref())?;
         let path = self
             .script_sidecar_dir("logs", &relative_path)
@@ -350,6 +378,7 @@ impl ScriptStore {
         script_path: impl AsRef<Path>,
         execution_id: &str,
     ) -> Result<()> {
+        self.recover_live_root()?;
         let relative_path = normalize_script_path(script_path.as_ref())?;
         remove_file_if_exists(
             self.script_sidecar_dir("executions", &relative_path)
@@ -363,7 +392,7 @@ impl ScriptStore {
     }
 
     fn scripts_root(&self) -> PathBuf {
-        self.data_root.join("scripts")
+        self.scripts_root.clone()
     }
 
     fn script_absolute_path(&self, relative_path: &Path) -> PathBuf {
@@ -372,6 +401,50 @@ impl ScriptStore {
 
     fn script_sidecar_dir(&self, sidecar: &str, relative_path: &Path) -> PathBuf {
         self.scripts_root().join(sidecar).join(relative_path)
+    }
+
+    fn with_scripts_root(scripts_root: PathBuf) -> Self {
+        Self {
+            scripts_root,
+            #[cfg(test)]
+            failures: Arc::new(Mutex::new(FailureInjection::default())),
+        }
+    }
+
+    fn validate_snapshot(&self, snapshot: &ScriptPersistenceSnapshot) -> Result<()> {
+        for file in &snapshot.files {
+            normalize_script_path(&file.relative_path)?;
+        }
+        for execution in &snapshot.executions {
+            normalize_script_path(&execution.script_path)?;
+        }
+        Ok(())
+    }
+
+    fn write_snapshot(&self, snapshot: &ScriptPersistenceSnapshot) -> Result<()> {
+        for file in &snapshot.files {
+            self.create_script(&file.relative_path, &file.source)?;
+        }
+        for execution in &snapshot.executions {
+            self.save_execution(&execution.script_path, execution)?;
+        }
+
+        let execution_paths = snapshot
+            .executions
+            .iter()
+            .map(|execution| {
+                (
+                    execution.execution_id.as_str(),
+                    execution.script_path.as_path(),
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+        for record in &snapshot.logs {
+            if let Some(script_path) = execution_paths.get(record.execution_id.as_str()) {
+                self.append_log_record(*script_path, record)?;
+            }
+        }
+        Ok(())
     }
 
     fn rename_script_sidecar_dirs(&self, old_path: &Path, new_path: &Path) -> Result<()> {

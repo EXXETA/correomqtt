@@ -1,6 +1,6 @@
 use correo_core::{
     AppCommand, AppCommandSender, MigrationRecoveryCommand, MigrationRecoverySnapshot,
-    MigrationRecoveryState,
+    MigrationRecoveryState, SecretInput,
 };
 use egui::{Button, Ui};
 
@@ -11,14 +11,20 @@ pub(super) fn action_bar(
     ui: &mut Ui,
     snapshot: &MigrationRecoverySnapshot,
     commands: &AppCommandSender,
+    legacy_master_password: &mut String,
 ) {
     ui.horizontal_wrapped(|ui| {
         ui.add_space((ui.available_width() - action_width(snapshot)).max(0.0));
-        actions(ui, snapshot, commands);
+        actions(ui, snapshot, commands, legacy_master_password);
     });
 }
 
-fn actions(ui: &mut Ui, snapshot: &MigrationRecoverySnapshot, commands: &AppCommandSender) {
+fn actions(
+    ui: &mut Ui,
+    snapshot: &MigrationRecoverySnapshot,
+    commands: &AppCommandSender,
+    legacy_master_password: &mut String,
+) {
     match snapshot.state {
         MigrationRecoveryState::NeedsDecision => {
             button(
@@ -47,12 +53,12 @@ fn actions(ui: &mut Ui, snapshot: &MigrationRecoverySnapshot, commands: &AppComm
                 commands,
                 MigrationRecoveryCommand::SkipSecrets,
             );
-            button(
-                ui,
-                "Unlock secrets",
-                commands,
-                MigrationRecoveryCommand::SubmitPassword,
-            );
+            if ui
+                .add_sized([BUTTON_WIDTH, BUTTON_HEIGHT], Button::new("Unlock secrets"))
+                .clicked()
+            {
+                send_submit_password(commands, legacy_master_password);
+            }
         }
         MigrationRecoveryState::Reviewing => {
             button(ui, "Back", commands, MigrationRecoveryCommand::Retry);
@@ -135,6 +141,7 @@ pub(super) fn handle_keyboard(
     ui: &mut Ui,
     snapshot: &MigrationRecoverySnapshot,
     commands: &AppCommandSender,
+    legacy_master_password: &mut String,
 ) {
     if ui.input(|input| input.key_pressed(egui::Key::Escape)) {
         if snapshot.empty_profile_confirmation_open {
@@ -144,7 +151,9 @@ pub(super) fn handle_keyboard(
         }
     }
     if ui.input(|input| input.key_pressed(egui::Key::Enter)) {
-        if let Some(command) = primary_command(snapshot) {
+        if snapshot.state == MigrationRecoveryState::NeedsPassword {
+            send_submit_password(commands, legacy_master_password);
+        } else if let Some(command) = primary_command(snapshot) {
             send(commands, command);
         }
     }
@@ -171,7 +180,6 @@ pub(super) fn send(commands: &AppCommandSender, command: MigrationRecoveryComman
 fn primary_command(snapshot: &MigrationRecoverySnapshot) -> Option<MigrationRecoveryCommand> {
     match snapshot.state {
         MigrationRecoveryState::NeedsDecision => Some(MigrationRecoveryCommand::ChooseMigrate),
-        MigrationRecoveryState::NeedsPassword => Some(MigrationRecoveryCommand::SubmitPassword),
         MigrationRecoveryState::Reviewing if snapshot.selected_count() > 0 => {
             Some(MigrationRecoveryCommand::ApplyMigration)
         }
@@ -181,4 +189,21 @@ fn primary_command(snapshot: &MigrationRecoverySnapshot) -> Option<MigrationReco
         }
         _ => None,
     }
+}
+
+pub(super) fn send_submit_password(commands: &AppCommandSender, password: &mut String) {
+    let submitted = std::mem::take(password);
+    // Never submit an empty password. The field is cleared on the first
+    // submit, so a second Enter/click would otherwise send an empty password
+    // whose rejection could arrive after a successful unlock and bounce the UI
+    // back to the password screen.
+    if submitted.trim().is_empty() {
+        return;
+    }
+    send(
+        commands,
+        MigrationRecoveryCommand::SubmitPassword {
+            password: SecretInput::new(submitted),
+        },
+    );
 }
