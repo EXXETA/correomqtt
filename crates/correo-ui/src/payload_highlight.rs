@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use correo_core::{PayloadSyntaxKind, PayloadSyntaxSpan};
-use egui::{text::LayoutJob, Color32, FontId, TextFormat, TextStyle, Ui};
+use egui::{text::LayoutJob, Color32, FontId, Stroke, TextFormat, TextStyle, Ui};
 
 use crate::PayloadHighlighter;
 
@@ -18,6 +18,7 @@ struct Palette {
     comment: Color32,
     method: Color32,
     class: Color32,
+    error: Color32,
 }
 
 pub(crate) fn layouter(
@@ -38,6 +39,22 @@ pub(crate) fn javascript_layouter() -> impl FnMut(&Ui, &str, f32) -> Arc<egui::G
         job.wrap.max_width = wrap_width;
         ui.fonts(|fonts| fonts.layout_job(job))
     }
+}
+
+pub(crate) fn error_position(
+    text: &str,
+    highlighter: Option<&PayloadHighlighter>,
+    active_plugin_ids: &[String],
+) -> Option<(usize, usize)> {
+    let error = highlighter?(text, active_plugin_ids)?
+        .into_iter()
+        .find(|span| span.kind == PayloadSyntaxKind::Error)?;
+    let before = text.get(..error.start)?;
+    let line_start = before.rfind('\n').map_or(0, |newline| newline + 1);
+    Some((
+        before.matches('\n').count() + 1,
+        before[line_start..].chars().count() + 1,
+    ))
 }
 
 fn highlight_payload(
@@ -70,6 +87,7 @@ fn palette(ui: &Ui) -> Palette {
             comment: Color32::from_rgb(106, 153, 85),
             method: Color32::from_rgb(220, 220, 170),
             class: Color32::from_rgb(78, 201, 176),
+            error: visuals.error_fg_color,
         }
     } else {
         Palette {
@@ -84,6 +102,7 @@ fn palette(ui: &Ui) -> Palette {
             comment: Color32::from_rgb(0, 128, 0),
             method: Color32::from_rgb(121, 94, 38),
             class: Color32::from_rgb(38, 127, 153),
+            error: visuals.error_fg_color,
         }
     }
 }
@@ -115,12 +134,11 @@ fn highlight_spans(
                 palette.plain,
             );
         }
-        append(
-            &mut job,
-            &text[span.start..span.end],
-            font.clone(),
-            syntax_color(span.kind, palette),
-        );
+        let mut format = TextFormat::simple(font.clone(), syntax_color(span.kind, palette));
+        if span.kind == PayloadSyntaxKind::Error {
+            format.underline = Stroke::new(1.5_f32, palette.error);
+        }
+        job.append(&text[span.start..span.end], 0.0, format);
         index = span.end;
     }
     if index < text.len() {
@@ -139,6 +157,7 @@ fn syntax_color(kind: PayloadSyntaxKind, palette: Palette) -> Color32 {
         PayloadSyntaxKind::Tag => palette.tag,
         PayloadSyntaxKind::Attribute => palette.attr,
         PayloadSyntaxKind::Comment => palette.comment,
+        PayloadSyntaxKind::Error => palette.error,
     }
 }
 

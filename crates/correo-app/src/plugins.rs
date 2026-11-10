@@ -853,6 +853,7 @@ fn payload_syntax_span(span: correo_plugins::PayloadSyntaxSpan) -> PayloadSyntax
             correo_plugins::PayloadSyntaxKind::Tag => PayloadSyntaxKind::Tag,
             correo_plugins::PayloadSyntaxKind::Attribute => PayloadSyntaxKind::Attribute,
             correo_plugins::PayloadSyntaxKind::Comment => PayloadSyntaxKind::Comment,
+            correo_plugins::PayloadSyntaxKind::Error => PayloadSyntaxKind::Error,
         },
     }
 }

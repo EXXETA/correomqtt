@@ -22,6 +22,7 @@ pub enum PayloadSyntaxKind {
     Tag,
     Attribute,
     Comment,
+    Error,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,7 +59,53 @@ pub(super) fn format_xml(
 }
 
 pub fn highlight_json(text: &str) -> Option<Vec<PayloadSyntaxSpan>> {
-    highlight_json_syntax(text).map(|spans| spans.into_iter().map(json_span).collect())
+    let spans = highlight_json_syntax(text)?.into_iter().map(json_span);
+    let Some(error) = json_error_range(text) else {
+        return Some(spans.collect());
+    };
+    let mut marked = Vec::new();
+    for span in spans {
+        if span.end <= error.start || span.start >= error.end {
+            marked.push(span);
+            continue;
+        }
+        if span.start < error.start {
+            marked.push(PayloadSyntaxSpan {
+                end: error.start,
+                ..span
+            });
+        }
+        if span.end > error.end {
+            marked.push(PayloadSyntaxSpan {
+                start: error.end,
+                ..span
+            });
+        }
+    }
+    marked.push(PayloadSyntaxSpan {
+        start: error.start,
+        end: error.end,
+        kind: PayloadSyntaxKind::Error,
+    });
+    Some(marked)
+}
+
+fn json_error_range(text: &str) -> Option<std::ops::Range<usize>> {
+    let error = serde_json::from_str::<serde::de::IgnoredAny>(text).err()?;
+    let line_start: usize = text
+        .split_inclusive('\n')
+        .take(error.line().saturating_sub(1))
+        .map(str::len)
+        .sum();
+    // serde_json counts the offending byte as already read, so it sits one before the column.
+    let reported = (line_start + error.column().saturating_sub(1)).min(text.len());
+    // At the end of input or on whitespace there is nothing to mark, so mark the last token.
+    let (start, marked) = text
+        .char_indices()
+        .take_while(|(index, _)| *index <= reported)
+        .filter(|(_, ch)| !ch.is_whitespace())
+        .last()?;
+    Some(start..start + marked.len_utf8())
 }
 
 pub fn highlight_xml(text: &str) -> Option<Vec<PayloadSyntaxSpan>> {
@@ -157,5 +204,42 @@ fn xml_diagnostic(diagnostic: XmlFormatDiagnostic) -> HookDiagnosticDto {
             XmlFormatDiagnosticSeverity::Warning => HookDiagnosticSeverityDto::Warning,
         },
         message: diagnostic.message,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn error_text(text: &str) -> Option<&str> {
+        highlight_json(text)?
+            .into_iter()
+            .find(|span| span.kind == PayloadSyntaxKind::Error)
+            .map(|span| &text[span.start..span.end])
+    }
+
+    #[test]
+    fn valid_json_has_no_error_span() {
+        assert_eq!(error_text("{\"a\": [1, true]}"), None);
+    }
+
+    #[test]
+    fn marks_the_character_the_parser_rejects() {
+        assert_eq!(error_text("{\n  \"ä\": 1,\n  \"b\": x\n}"), Some("x"));
+    }
+
+    #[test]
+    fn marks_the_last_token_when_input_ends_early() {
+        assert_eq!(error_text("{\"a\": [1,\n"), Some(","));
+    }
+
+    #[test]
+    fn error_span_does_not_overlap_syntax_spans() {
+        let mut spans = highlight_json("{\"a\": \"b\" \"c\"}").expect("json spans");
+        spans.sort_by_key(|span| span.start);
+        assert!(spans.windows(2).all(|pair| pair[0].end <= pair[1].start));
+        assert!(spans
+            .iter()
+            .any(|span| span.kind == PayloadSyntaxKind::Error));
     }
 }

@@ -14,6 +14,7 @@ pub enum PayloadSyntaxKind {
     Tag,
     Attribute,
     Comment,
+    Error,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

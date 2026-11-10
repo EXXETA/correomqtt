@@ -72,6 +72,21 @@ pub(crate) fn editor(
     if payload_response.changed() {
         send(commands, AppCommand::UpdatePublishPayload(payload));
     }
+    let error_position = payload_highlight::error_position(
+        &snapshot.workbench.publish.payload,
+        payload_highlighter,
+        &snapshot.plugins.active_plugin_ids(),
+    );
+    if let Some((line, column)) = error_position {
+        let error_rect =
+            retained_row_rect.with_max_x(retained_row_rect.right() - layout::RETAINED_WIDTH);
+        child_ui(ui, error_rect, |ui| {
+            ui.colored_label(
+                ui.visuals().error_fg_color,
+                format!("JSON error at line {line}, column {column}"),
+            );
+        });
+    }
     retained_row(ui, retained_row_rect, snapshot, commands);
 }
 
