@@ -59,6 +59,9 @@ pub fn sidebar(
     commands: &AppCommandSender,
     i18n: &I18n,
 ) {
+    // In narrow windows the sidebar replaces the detail view, so it has to handle keys too.
+    keyboard::handle(ui.ctx(), &snapshot.plugins, commands);
+
     if snapshot.plugins.load_state != PluginLoadState::Ready {
         empty_state(ui, &snapshot.plugins, tokens, i18n);
         return;
