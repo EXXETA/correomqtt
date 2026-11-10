@@ -1,11 +1,13 @@
 use correo_core::{AppCommand, AppCommandSender, AppSnapshot, PayloadTransform};
 use correo_style::layout;
-use egui::{Button, Label, Rect, RichText, Sense, TextEdit, Ui, UiBuilder};
+use egui::{
+    text_edit::TextEditState, Button, Label, Rect, RichText, Sense, TextEdit, Ui, UiBuilder,
+};
 use egui_phosphor::regular;
 
 use crate::{
     i18n::I18n,
-    payload_highlight, responsive,
+    json_auto_close, payload_highlight, responsive,
     theme::{ThemeTokens, CONTROL_HEIGHT},
     widgets::{
         checkbox, edit_pulldown, padded_text_edit, paint_focus_outline, square_icon_button_size,
@@ -70,6 +72,13 @@ pub(crate) fn editor(
             .layouter(&mut layouter),
     );
     if payload_response.changed() {
+        auto_close_typed_character(
+            ui,
+            &payload_response,
+            &mut payload,
+            payload_highlighter,
+            snapshot,
+        );
         send(commands, AppCommand::UpdatePublishPayload(payload));
     }
     let status_rect =
@@ -195,6 +204,45 @@ fn topic_row(
     });
 }
 
+fn auto_close_typed_character(
+    ui: &Ui,
+    payload_response: &egui::Response,
+    payload: &mut String,
+    payload_highlighter: Option<&PayloadHighlighter>,
+    snapshot: &AppSnapshot,
+) {
+    let typed = ui.input(|input| {
+        let mut texts = input.events.iter().filter_map(|event| match event {
+            egui::Event::Text(text) => Some(text.as_str()),
+            _ => None,
+        });
+        let mut chars = texts.next()?.chars();
+        let typed = chars.next()?;
+        (chars.next().is_none() && texts.next().is_none()).then_some(typed)
+    });
+    let cursor = TextEditState::load(ui.ctx(), payload_response.id)
+        .and_then(|state| state.cursor.char_range())
+        .filter(|range| range.primary.index == range.secondary.index)
+        .map(|range| range.primary.index);
+    let (Some(typed), Some(cursor)) = (typed, cursor) else {
+        return;
+    };
+    if looks_like_json(payload)
+        && payload_highlight::is_highlighted(
+            payload,
+            payload_highlighter,
+            &snapshot.plugins.active_plugin_ids(),
+        )
+    {
+        json_auto_close::apply(payload, cursor, typed);
+    }
+}
+
+// shortcut: the UI guesses JSON from the first character, replace with a capability from the executor once a second format gets these actions.
+fn looks_like_json(payload: &str) -> bool {
+    payload.trim_start().starts_with(['{', '['])
+}
+
 fn json_status(
     ui: &mut Ui,
     snapshot: &AppSnapshot,
@@ -221,8 +269,7 @@ fn json_status(
         ui.add(Label::new(message).truncate());
         return;
     }
-    // shortcut: the UI guesses JSON from the first character, replace with a capability from the executor once a second format gets these actions.
-    if !payload.trim_start().starts_with(['{', '['])
+    if !looks_like_json(payload)
         || !payload_highlight::is_highlighted(payload, payload_highlighter, &active_plugin_ids)
     {
         return;
