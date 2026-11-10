@@ -193,7 +193,11 @@ fn assert_connect(packet: &[u8], protocol: MqttProtocolVersion) {
     assert!(flags & 0x80 != 0);
     assert_eq!(cursor.u16(), 5);
     if protocol == MqttProtocolVersion::Mqtt5 {
-        assert_eq!(cursor.varint(), 0);
+        const MAXIMUM_PACKET_SIZE_PROPERTY: u8 = 0x27;
+        assert_eq!(cursor.varint(), 5);
+        assert_eq!(cursor.u8(), MAXIMUM_PACKET_SIZE_PROPERTY);
+        let maximum_packet_size = (u32::from(cursor.u16()) << 16) | u32::from(cursor.u16());
+        assert!(maximum_packet_size > 0);
     }
     assert_eq!(cursor.string(), "correo-test-client");
     if protocol == MqttProtocolVersion::Mqtt5 {
