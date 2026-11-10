@@ -1,5 +1,5 @@
 use correo_storage::legacy::LegacyProfile;
-use correo_storage::migration::{MigrationApplier, MigrationPreview};
+use correo_storage::migration::{recover_interrupted_rollback, MigrationApplier, MigrationPreview};
 use correo_storage::StorageError;
 use std::path::{Path, PathBuf};
 
@@ -45,4 +45,50 @@ fn migration_apply_rejects_nested_backup_root_before_copying() {
         .unwrap()
         .contains("before"));
     assert!(target.join("scripts/original.js").exists());
+}
+
+#[test]
+fn interrupted_rollback_moves_displaced_target_back() {
+    let temp = tempfile::tempdir().unwrap();
+    let target = temp.path().join("current");
+    let displaced = temp.path().join(".current-rollback-previous-1-2");
+    let staging = temp.path().join(".current-rollback-staging-1-3");
+    seed_existing_target(&displaced);
+    seed_existing_target(&staging);
+
+    assert!(recover_interrupted_rollback(&target).unwrap());
+
+    assert!(target.join("scripts/original.js").exists());
+    assert!(!displaced.exists());
+    assert!(!staging.exists());
+    assert!(!recover_interrupted_rollback(&target).unwrap());
+}
+
+#[test]
+fn interrupted_rollback_leaves_existing_target_alone() {
+    let temp = tempfile::tempdir().unwrap();
+    let target = temp.path().join("current");
+    let displaced = temp.path().join(".current-rollback-previous-1-2");
+    seed_existing_target(&target);
+    seed_existing_target(&displaced);
+
+    assert!(!recover_interrupted_rollback(&target).unwrap());
+
+    assert!(displaced.exists());
+}
+
+#[test]
+fn interrupted_rollback_refuses_to_pick_between_two_displaced_targets() {
+    let temp = tempfile::tempdir().unwrap();
+    let target = temp.path().join("current");
+    seed_existing_target(&temp.path().join(".current-rollback-previous-1-2"));
+    seed_existing_target(&temp.path().join(".current-rollback-previous-3-4"));
+
+    let error = recover_interrupted_rollback(&target).unwrap_err();
+
+    assert!(matches!(
+        error,
+        StorageError::MigrationRollbackSafety { .. }
+    ));
+    assert!(!target.exists());
 }

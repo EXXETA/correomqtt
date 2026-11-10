@@ -27,8 +27,8 @@ use hooks::migrate_legacy_hooks;
 use scripting::{migrate_scripts, record_script_unknowns};
 
 pub use safety::{
-    MappedLegacyField, MigrationApplier, MigrationApplyOutcome, MigrationBackup,
-    MigrationDiagnostic, MigrationDiagnostics,
+    recover_interrupted_rollback, MappedLegacyField, MigrationApplier, MigrationApplyOutcome,
+    MigrationBackup, MigrationDiagnostic, MigrationDiagnostics,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]

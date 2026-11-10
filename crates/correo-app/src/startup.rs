@@ -12,7 +12,7 @@ use correo_storage::current::{
     ScriptStore,
 };
 use correo_storage::legacy::LegacyProfile;
-use correo_storage::migration::MigrationPreview;
+use correo_storage::migration::{recover_interrupted_rollback, MigrationPreview};
 
 use crate::plugins::{load_startup_plugins, StartupPlugins};
 
@@ -24,6 +24,9 @@ pub struct LoadedStartup {
 
 pub fn load_startup_state(fallback_theme: ThemeMode) -> LoadedStartup {
     for root in correo_storage::current::current_roots() {
+        if let Err(error) = recover_interrupted_rollback(&root) {
+            tracing::warn!(root = %root.display(), %error, "interrupted rollback not recovered");
+        }
         if !root.join("config.json").exists() {
             continue;
         }

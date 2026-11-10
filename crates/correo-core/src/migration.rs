@@ -67,6 +67,9 @@ struct PendingMigration {
 #[derive(Debug, Clone)]
 struct RecoverableBackup {
     backup: MigrationBackup,
+    // shortcut: kept in memory only, so a restore after a restart leaves migrated keyring
+    // entries in place; persist the affected references if that case needs covering.
+    secret_snapshot: Vec<(SecretReference, Option<SecretMaterial>)>,
 }
 
 impl MigrationPersistenceWorker {
@@ -333,7 +336,10 @@ fn apply(
     }
     match applier.apply_preview_with_backup(&pending.preview, &backup) {
         Ok(diagnostics) => {
-            *recoverable_backup = Some(RecoverableBackup { backup });
+            *recoverable_backup = Some(RecoverableBackup {
+                backup,
+                secret_snapshot,
+            });
             let completion = completion_from_diagnostics(&diagnostics);
             let state = startup_state_from_migration(pending.preview, fallback_theme);
             vec![
@@ -349,7 +355,10 @@ fn apply(
         }
         Err(error) => {
             let _ = restore_secret_snapshot(secret_store.as_ref(), secret_snapshot);
-            *recoverable_backup = Some(RecoverableBackup { backup });
+            *recoverable_backup = Some(RecoverableBackup {
+                backup,
+                secret_snapshot: Vec::new(),
+            });
             vec![migration_event(MigrationRecoveryEvent::ApplyFailed {
                 failure: MigrationRecoveryFailure {
                     stage: MigrationFailureStage::AfterWrite,
@@ -366,13 +375,29 @@ fn restore(
     backup_name: String,
     backup_path_hint: String,
 ) -> Vec<AppEvent> {
+    let secret_snapshot = backup
+        .map(|backup| backup.secret_snapshot.clone())
+        .unwrap_or_default();
     let backup = backup
         .map(|backup| backup.backup.clone())
         .unwrap_or_else(|| applier.backup_from_path(backup_name, backup_path_hint));
-    match applier.rollback(&backup) {
-        Ok(_) => vec![migration_event(MigrationRecoveryEvent::RestoreCompleted)],
-        Err(error) => vec![migration_event(MigrationRecoveryEvent::RestoreFailed {
-            message: error.to_string(),
+    let restored = applier
+        .rollback(&backup)
+        .map_err(|error| error.to_string())
+        .and_then(|_| {
+            if secret_snapshot.is_empty() {
+                return Ok(());
+            }
+            restore_secret_snapshot(default_secret_store().as_ref(), secret_snapshot).map_err(
+                |error| {
+                    format!("Files were restored, but migrated secrets could not be reset: {error}")
+                },
+            )
+        });
+    match restored {
+        Ok(()) => vec![migration_event(MigrationRecoveryEvent::RestoreCompleted)],
+        Err(message) => vec![migration_event(MigrationRecoveryEvent::RestoreFailed {
+            message,
         })],
     }
 }
