@@ -5,7 +5,9 @@ use std::fmt;
 use crate::PluginMarketplaceRow;
 use correo_mqtt::ConnectionId;
 
-use crate::{PayloadSyntaxSpan, PluginDiagnosticSeverity, PluginHookKind, QosLevel};
+use crate::{
+    PayloadSyntaxSpan, PayloadTransform, PluginDiagnosticSeverity, PluginHookKind, QosLevel,
+};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MessageDetailSnapshot {
@@ -152,6 +154,16 @@ pub trait PluginHookExecutor: fmt::Debug + Send + Sync + 'static {
         None
     }
 
+    fn transform_payload(
+        &self,
+        text: &str,
+        transform: PayloadTransform,
+        active_plugin_ids: &[String],
+    ) -> Option<String> {
+        let _ = (text, transform, active_plugin_ids);
+        None
+    }
+
     fn connection_action(
         &self,
         request: PluginConnectionActionRequest,
@@ -195,6 +207,15 @@ where
         active_plugin_ids: &[String],
     ) -> Option<Vec<PayloadSyntaxSpan>> {
         (**self).highlight_payload(text, active_plugin_ids)
+    }
+
+    fn transform_payload(
+        &self,
+        text: &str,
+        transform: PayloadTransform,
+        active_plugin_ids: &[String],
+    ) -> Option<String> {
+        (**self).transform_payload(text, transform, active_plugin_ids)
     }
 
     fn connection_action(

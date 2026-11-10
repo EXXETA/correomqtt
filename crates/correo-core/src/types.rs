@@ -14,6 +14,14 @@ pub enum PayloadSyntaxKind {
     Tag,
     Attribute,
     Comment,
+    Error,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PayloadTransform {
+    Format,
+    Minify,
+    Repair,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

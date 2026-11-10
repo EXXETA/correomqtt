@@ -15,7 +15,9 @@ use correo_plugins_xml_xsd_validator::{
     config_schema_document, validate_xml_xsd, XmlXsdValidation,
 };
 use formatting::{format_json, format_xml};
-pub use formatting::{highlight_json, highlight_xml, PayloadSyntaxKind, PayloadSyntaxSpan};
+pub use formatting::{
+    highlight_json, highlight_xml, reformat_json, repair_json, PayloadSyntaxKind, PayloadSyntaxSpan,
+};
 use gzip::{gzip_config_schema, transform_gzip_detail, GzipTransformError};
 use semver::{Version, VersionReq};
 use serde::Deserialize;

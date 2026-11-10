@@ -517,6 +517,23 @@ impl PluginHookExecutor for InstalledPluginExecutor {
         }
     }
 
+    fn transform_payload(
+        &self,
+        text: &str,
+        transform: correo_core::PayloadTransform,
+        active_plugin_ids: &[String],
+    ) -> Option<String> {
+        active_plugin_ids
+            .iter()
+            .any(|plugin_id| plugin_id == correo_plugins::JSON_FORMAT_ID)
+            .then(|| match transform {
+                correo_core::PayloadTransform::Format => correo_plugins::reformat_json(text, false),
+                correo_core::PayloadTransform::Minify => correo_plugins::reformat_json(text, true),
+                correo_core::PayloadTransform::Repair => correo_plugins::repair_json(text),
+            })
+            .flatten()
+    }
+
     fn connection_action(
         &self,
         request: PluginConnectionActionRequest,
@@ -853,6 +870,7 @@ fn payload_syntax_span(span: correo_plugins::PayloadSyntaxSpan) -> PayloadSyntax
             correo_plugins::PayloadSyntaxKind::Tag => PayloadSyntaxKind::Tag,
             correo_plugins::PayloadSyntaxKind::Attribute => PayloadSyntaxKind::Attribute,
             correo_plugins::PayloadSyntaxKind::Comment => PayloadSyntaxKind::Comment,
+            correo_plugins::PayloadSyntaxKind::Error => PayloadSyntaxKind::Error,
         },
     }
 }

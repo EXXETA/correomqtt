@@ -10,10 +10,10 @@ use crate::{
     ConnectionSummary, Diagnostic, GlobalSettingField, GlobalSettingFlag, GlobalSettingsSnapshot,
     MessageInspectorTab, MigrationApplyStage, MigrationRecoveryCompletion, MigrationRecoveryCounts,
     MigrationRecoveryDiagnostic, MigrationRecoveryFailure, MigrationRecoveryRow,
-    MigrationRecoveryWarning, MqttCommand, MqttEvent, PluginHookKind, PluginSurfaceTab,
-    PluginWorkflowEvent, QosLevel, ScriptDetailTab, ScriptExecutionError, ScriptExecutionStatus,
-    ScriptLogLevel, SecretInput, SettingsSection, StartupState, ThemeMode, TransferSection,
-    TransferStep, WorkbenchTab, Workspace,
+    MigrationRecoveryWarning, MqttCommand, MqttEvent, PayloadTransform, PluginHookKind,
+    PluginSurfaceTab, PluginWorkflowEvent, QosLevel, ScriptDetailTab, ScriptExecutionError,
+    ScriptExecutionStatus, ScriptLogLevel, SecretInput, SettingsSection, StartupState, ThemeMode,
+    TransferSection, TransferStep, WorkbenchTab, Workspace,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -83,6 +83,7 @@ pub enum AppCommand {
     SelectWorkbenchTab(WorkbenchTab),
     UpdatePublishTopic(String),
     UpdatePublishPayload(String),
+    TransformPublishPayload(PayloadTransform),
     UpdatePublishQos(QosLevel),
     SetPublishRetained(bool),
     SearchPublishHistory(String),

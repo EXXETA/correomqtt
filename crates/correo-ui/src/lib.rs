@@ -6,6 +6,7 @@ mod connection_settings;
 mod diagnostics;
 mod i18n;
 mod icons;
+mod json_auto_close;
 mod migration_recovery;
 mod modal_style;
 mod motion;
