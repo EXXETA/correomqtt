@@ -425,13 +425,18 @@ fn plugin_staging_dir(config_root: &Path, plugin_id: &str) -> PathBuf {
 }
 
 fn safe_plugin_dir_name(plugin_id: &str) -> String {
-    plugin_id
+    let name: String = plugin_id
         .chars()
         .map(|character| match character {
             'a'..='z' | 'A'..='Z' | '0'..='9' | '.' | '-' | '_' => character,
             _ => '_',
         })
-        .collect()
+        .collect();
+    // "", "." and ".." would resolve to the plugins directory or its parent.
+    if name.chars().all(|character| character == '.') {
+        return "_".repeat(name.len().max(1));
+    }
+    name
 }
 
 fn log_plugin_warning(message: String) {

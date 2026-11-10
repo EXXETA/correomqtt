@@ -184,4 +184,21 @@ mod tests {
             .iter()
             .any(|capability| capability.as_str() == "mqtt.retained"));
     }
+
+    #[test]
+    fn plugin_install_dir_stays_inside_plugins_directory() {
+        let plugins_dir = Path::new("config").join("plugins");
+        for plugin_id in ["", ".", "..", "../..", "a/../b"] {
+            let install_dir = plugin_install_dir(Path::new("config"), plugin_id);
+            assert_eq!(install_dir.parent(), Some(plugins_dir.as_path()));
+            assert!(matches!(
+                install_dir.components().next_back(),
+                Some(std::path::Component::Normal(_))
+            ));
+        }
+        assert_eq!(
+            safe_plugin_dir_name("org.correomqtt.plugins.base64"),
+            "org.correomqtt.plugins.base64"
+        );
+    }
 }
